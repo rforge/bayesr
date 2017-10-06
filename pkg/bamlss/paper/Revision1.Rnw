@@ -66,11 +66,15 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   authors start this part more or less with providing score vectors and also deriving the second
   derivative of the likelihood: This is of course correct and highly accurate, but I am not terribly
   convinced that it really helps to illustrate the capabilities of \pkg{bamlss}.}
+  
+  Yes indeed, you are completely right. Given the initial length of the paper we followed your advise and put the score vectors and second derivatives to an online supplement. This makes Section 6 better understandable for the purpose of the illustration. Interest readers can get detailed information about implementation in the supplement.
 
 \item \emph{The manuscript is clearly too long. It’s perfectly understandable that the authors want to
   highlight the different aspects of their framework and to emphasize the details of the
   underlying methodology. However, Section 4, in my point could still be presented in much a
   more concise fashion.}
+  
+  We had several careful reads and have found several places to be more precise and concise. This includes some paragraphs of Section 4 as well. In total, we reduced the initial, submitted version by XXX PAGES so that we are now at XXX pages in total. FIXME SHOULD WE OFFER TO SHORTEN MORE ON REQUEST???
 
 \item \emph{The illustration examples highlight the enormous and versatile capabilities of the bamlss
   framework and are nicely presented. However, I guess an additional smaller and faster toy
@@ -109,9 +113,13 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   supplementary. I can't advise you on what to split out. The paper itself needs to read fluently,
   and retain the examples, but details that a reader may want to look up secondarily would be
   suitable for shifting.}
+  
+  Following your and the referee's advise, we shortened the paper thoughtfully and removed some derivations to an online supplement. In total, we reduced the initial, submitted version by XXX PAGES so that we are now at XXX pages in total. FIXME SHOULD WE OFFER TO SHORTEN MORE ON REQUEST???
 
 \item \emph{In your figure captions, add a sentence telling the reader the most important thing to
   learn by looking at the plot.}
+  
+  Excellent idea, As suggest, we added a story-telling sentence at certain captions.
 
 \end{itemize}
 
