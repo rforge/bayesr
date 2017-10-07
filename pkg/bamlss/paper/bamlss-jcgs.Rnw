@@ -1576,8 +1576,7 @@ The latter however, is currently restricted to distributions with only one predi
 usable for instance a heteroscedastic Gaussian model.
 
 Interesting extensions in the future include efficient matrix transformations for additional effect
-types based on Gaussian processes \citep{bamlss:Paciorek:2007}. Straight forward is to include
-further model types like state-space models \citep{bamlss:Carter+Kohn:1994}.
+types based on Gaussian processes \citep{bamlss:Paciorek:2007} and the broadening of the available model classes in bamlss such as state-space models \citep{bamlss:Carter+Kohn:1994}.
 
 \bigskip
 
