@@ -259,10 +259,8 @@ $\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
 Note that using basis functions the individual model components
 $\mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$ can be further
 decomposed into a mixed model representation given by
-\begin{equation} \label{eqn:mixed}
-\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
-  \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk},
-\end{equation}
+$\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
+  \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk}$,
 where $\tilde{\boldsymbol{\gamma}}_{jk}$ represents the fixed effects parameters and 
 $\tilde{\boldsymbol{\beta}}_{jk} \sim \mathcal{N}(\mathbf{0}, \tau^2_{jk}\mathbf{I})$ i.i.d.\ random effects.
 The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
@@ -1080,7 +1078,7 @@ This proceeds in the following steps:
   \item A generic method for setting up model terms and a \code{model.frame} along with the
     corresponding prior structures. A \code{transformer} can optionally set up modified terms,
     e.g., design and penalty matrices for smooth terms when using the mixed model representation
-    (\ref{eqn:mixed}).
+    (see Section~\ref{sec:model}).
 
   \item Support for modular and exchangeable updating functions or complete model fitting engines
     in order to optionally implement either \ref{E1} or \ref{E2}.
