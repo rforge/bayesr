@@ -1586,6 +1586,10 @@ types based on Gaussian processes \citep{bamlss:Paciorek:2007} and the broadenin
 
 \begin{description}
 
+\item[Algorithmic details:] Detailed information about algorithmic derivations and ``Lego bricks''
+  used in the main manuscript are provided in the accompanying online supplementary material
+  \code{.pdf}.
+
 \item[\proglang{R}-package:] \proglang{R}-package \pkg{bamlss}, including the data sets for
   reproducing the illustrations, is available at \url{http://CRAN.R-project.org/package=bamlss}.
 
