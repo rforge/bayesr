@@ -144,7 +144,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   learn by looking at the plot.}
   
   Excellent idea, as suggested, we added a story-telling sentence at certain captions. \fixme{Achim,
-  can you look at the captions, too. Maybe you have some edits?}
+  can you look at the captions, too. Maybe you have some more good edits?}
 
 \end{itemize}
 
