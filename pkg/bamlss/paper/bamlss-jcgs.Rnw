@@ -49,6 +49,10 @@
 \DefineVerbatimEnvironment{Code}{Verbatim}{fontshape=sl}
 \DeclareMathOperator{\diag}{diag}
 
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
 %% Sweave/vignette information and metadata
 \usepackage{Sweave}
 \SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
@@ -233,7 +237,7 @@ $i = 1, \ldots, n$ observations is then given by
 \begin{equation} \label{eqn:functions}
 \mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk}),
 \end{equation}
-where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix and the structure of $\mathbf{X}_{jk}$
+where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix \fixme{Achim, this is what the reviewer did not understand, any suggestions?} and the structure of $\mathbf{X}_{jk}$
 only depends on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
 In this notation the $k$-th parameter vector is given by
 \begin{equation*} \label{eqn:addpar}

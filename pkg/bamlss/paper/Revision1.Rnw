@@ -143,7 +143,8 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 \item \emph{In your figure captions, add a sentence telling the reader the most important thing to
   learn by looking at the plot.}
   
-  Excellent idea, as suggested, we added a story-telling sentence at certain captions.
+  Excellent idea, as suggested, we added a story-telling sentence at certain captions. \fixme{Achim,
+  can you look at the captions, too. Maybe you have some edits?}
 
 \end{itemize}
 
