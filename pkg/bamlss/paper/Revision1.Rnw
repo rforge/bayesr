@@ -59,7 +59,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 \begin{itemize}
 
 \item \emph{The manuscript is well written, however, in my opinion the authors sometimes provide too
-  many details on each of the necessary steps and their “lego bricks”, so that the reader
+  many details on each of the necessary steps and their ``Lego bricks'', so that the reader
   sometimes has problems to follow the bigger picture (and loses interest to start playing with
   them). For example, in Section 6.1. the authors present their first data example (climatology
   model on precipitation) with the homstart-data - I did really like this application: However, the
@@ -67,27 +67,45 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   derivative of the likelihood: This is of course correct and highly accurate, but I am not terribly
   convinced that it really helps to illustrate the capabilities of \pkg{bamlss}.}
   
-  Yes indeed, you are completely right. Given the initial length of the paper we followed your advise and put the score vectors and second derivatives to an online supplement. This makes Section 6 better understandable for the purpose of the illustration. Interest readers can get detailed information about implementation in the supplement.
+  Yes indeed, you are completely right. Given the initial length of the paper we followed your advise
+  and put the score vectors and second derivatives to an online supplement. This makes Section~6
+  better understandable for the purpose of the illustration. Interested readers can get detailed
+  information about the implementation in the supplement.
 
 \item \emph{The manuscript is clearly too long. It’s perfectly understandable that the authors want to
   highlight the different aspects of their framework and to emphasize the details of the
-  underlying methodology. However, Section 4, in my point could still be presented in much a
+  underlying methodology. However, Section~4, in my point could still be presented in much a
   more concise fashion.}
   
-  We had careful reads and have found several places to be more precise and concise. This includes some paragraphs of Section 4 as well. In total, we reduced the initial, submitted version by XXX PAGES so that we are now at XXX pages in total. FIXME SHOULD WE OFFER TO SHORTEN MORE ON REQUEST???
+  We had careful reads and have found several places to be more precise and concise. This includes
+  some paragraphs of Section~4 as well. In total, we reduced the initial, submitted version by 4
+  pages so that we are now at 34 pages up to the Summary (40 pages including references, before 47
+  pages including the references). Note that this is based on the JCGS review style using line spacing
+  of 1.45 in the \LaTeX~template. If we switch to the common line spacing the manuscript
+  is exactly 30 pages. If this is still too long, we could probably drop the last example. However,
+  because the last illustration particularly reflects the strengths of this approach, we would prefer
+  to keep the section in the manuscript.
 
-\item \emph{The illustration examples highlight the enormous and versatile capabilities of the bamlss
-  framework and are nicely presented. However, I guess an additional smaller and faster toy
-  example (perhaps in Section 5 with a few lines of R-code) could help to illustrate how to apply
-  \pkg{bamlss} and how to start using it.}
+\item \emph{The illustration examples highlight the enormous and versatile capabilities of the
+  \pkg{bamlss} framework and are nicely presented. However, I guess an additional smaller and faster
+  toy example (perhaps in Section 5 with a few lines of \proglang{R}-code) could help to illustrate
+  how to apply \pkg{bamlss} and how to start using it.}
   
-  Thank you very much for this comment. We liked the idea of a smaller toy example and added the simple illustration of the popular motorcycle data \texttt{mcycle} from the \texttt{MASS} package in R. This data set with measurements of head acceleration in a simulated motorcycle accident is well suited to demonstrate the benefits of a location-scale model within the bamlss framework. As suggested, we are explicit on lines of code in R and some explanations in Section 5.
+  Thank you very much for this comment. We liked the idea of a smaller toy example and added the
+  simple illustration of the popular motorcycle data \code{mcycle} from the \pkg{MASS} package in
+  \proglang{R}. This data set with measurements of head acceleration in a simulated motorcycle
+  accident is well suited to demonstrate the benefits of a location-scale model within the
+  \pkg{bamlss} framework. As suggested, we are explicit on lines of code in \proglang{R} and some
+  explanations in Section 5.
 
 \item \emph{I think it is good practice to highlight also the limitations of the approach (e.g.\
   in the Summary) and for which type of data settings other estimation schemes might be more
   suitable.}
   
-  You are completely right that some critics, placement in a wider context and directions of future research are good practice at the end of the paper. We added possible remedies for problems that require even faster (possible approximative) methods but we also discuss several extensions and directions to broaden the available model class of bamlss in the near future.
+  You are completely right that some critics, placement in a wider context and directions of future
+  research are good practice at the end of the paper. We added possible remedies for problems that
+  require even faster (possible approximative) methods but we also discuss several extensions and
+  directions to broaden the available model class of \pkg{bamlss} in the near future.
 
 \item \emph{p3, l7 (Introduction): Not only for practitioners.}
 
@@ -114,7 +132,13 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   and retain the examples, but details that a reader may want to look up secondarily would be
   suitable for shifting.}
   
-  Following your and the referee's advise, we shortened the paper thoughtfully and removed some derivations to an online supplement. In total, we reduced the initial, submitted version by XXX PAGES so that we are now at XXX pages in total. FIXME SHOULD WE OFFER TO SHORTEN MORE ON REQUEST???
+  Following your and the referee's advise, we shortened the paper thoughtfully and removed some
+  derivations to an online supplement. As mentioned in the answers to reviewer 1, we reduced the
+  initial manuscript size by 4 pages up to the summary and by 7 pages including the references. If
+  we drop the JCGS review \LaTeX-template line spacing of 1.45 the manuscript is exactly 30 pages
+  long now. We could drop the last example if necessary, however, we believe this illustration
+  particularity presents the strengths of this approach and we would therefore prefer to keep it
+  in the manuscript.
 
 \item \emph{In your figure captions, add a sentence telling the reader the most important thing to
   learn by looking at the plot.}
