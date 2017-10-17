@@ -1136,7 +1136,7 @@ where the first two lines basically represent the standard model frame specifica
 \end{picture}
 \caption{\label{fig:blocks} Flexible functional BAMLSS architecture. Each building block in the
   middle part can be exchanged by the user. Usually only the \code{optimizer} and \code{sampler}
-  function is adapted for implementing new models.}
+  functions are adapted for implementing new models.}
 \end{figure}
 
 The \code{formula} combines the classic \citet{bamlss:Wilkinson+Rogers:1973} symbolic description
@@ -1145,17 +1145,17 @@ with the infrastructure for smooth model terms like \fct{s}, \fct{te}, \fct{ti},
 -- based on recommended \proglang{R} package \pkg{mgcv} --
 and handling multiple additive predictors -- utilizing the extended formula processing
 of \cite{bamlss:Zeileis+Croissant:2010}. Thus, a formula can be as simple as in a typical
-linear regression model with a response variable \code{y} and regressors \code{x1} and \code{x2}
-\code{y} $\sim$ \code{x1 + x2}
-but also with smooth terms in further covariates \code{x3}, \code{x4}, and \code{x5}
-\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}
-or even with different additive predictors for different model parameters, e.g.,
+linear regression model with a response variable \code{y} and two regressors:
+\code{y} $\sim$ \code{x1 + x2}.
+But it can also encompas smooth terms in further covariates:
+\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4, x5)}.
+Or it may even have different additive predictors for different model parameters:
 \code{list(}$\,$\code{y} $\sim$ \code{x1 + x2 + s(x3) + s(x4),}
-$\,$ \code{sigma} $\sim$ \code{x1 + x2 + s(x3)}$\,$\code{)}
+\code{sigma} $\sim$ \code{x1 + x2 + s(x3)}$\,$\code{)}, e.g.,
 in a normal model with $y~\sim~\mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})$.
 
 Similarly to other flexible model fitting functions users can specify their own \code{family}
-objects in order to plug in different Lego bricks for \ref{item:1}--\ref{item:8}. Family objects from the \pkg{gamlss} package are readily supported.
+objects in order to plug in different Lego bricks for \ref{item:1}--\ref{item:8}. Family objects from the \pkg{gamlss} suite are readily supported.
 
 Estimation is performed by an \code{optimizer} and/or \code{sampler} function, which can be provided by
 the user. The default optimizer function implements the IWLS backfitting algorithm (\ref{eqn:blockbackfit})
@@ -1165,16 +1165,16 @@ using slice sampling, see also Section~\ref{sec:legobricks}. For writing new opt
 functions only a simple general format of function arguments and return values must be adhered to.
 More technical details are deferred to the documentation manual of package \pkg{bamlss}.
 
-To give a brief insight how to use \pkg{bamlss} we illustrate the basic steps on a small toy
-example using the well-known simulated motorcycle accident data \citep{bamlss:Silverman:1985}, which
-was used to test crash helmets. The data set contains measurements of the head acceleration
+To give a brief insight how to use \pkg{bamlss} we illustrate the basic steps on a small textbook
+example using the well-known simulated motorcycle accident data \citep{bamlss:Silverman:1985}.
+The data contain measurements of the head acceleration
 (in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after impact (variable \code{times}). To estimate a Gaussian location-scale model with
 $\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))$
 we use the following model formula
 <<>>=
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 @
-where function \fct{s} is the smooth term constructor of the \pkg{mgcv} package. The model is
+where \fct{s} is the smooth term constructor from \pkg{mgcv}. The model is
 then fitted by
 <<eval=FALSE>>=
 data("mcycle", package = "MASS")
