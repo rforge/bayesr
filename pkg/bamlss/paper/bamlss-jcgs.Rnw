@@ -122,7 +122,7 @@ library("survival")
   probabilistic distributional models capturing location, scale, shape (and other aspects) of the
   response distribution. In order to embed many different approaches suggested in literature
   and software, a unified modeling architecture for distributional GAMs is established that
-dunn  distributions, estimation techniques (posterior mode or posterior mean), and model terms
+  exploits distributions, estimation techniques (posterior mode or posterior mean), and model terms
   (fixed, random, smooth, spatial, \dots). It is shown that within this framework
   implementing algorithms for complex regression problems, as well as the integration of already
   existing software, is relatively straightforward. The usefulness is emphasized with two
@@ -146,8 +146,8 @@ as higher moments (scale and shape) in terms of covariates. This is
 especially useful in cases where, e.g., the response does not follow the exponential family or
 particular interest lies on scale and shape parameters. Moreover, covariate effects can have
 flexible forms such as, e.g., linear, nonlinear, spatial or random effects. Hence, each parameter
-of the distribution is linked to an additive predictor in similar fashion as for the well
-established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
+of the distribution is linked to an additive predictor in similar fashion as for the
+well-established generalized additive model (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}).
 
 The terms of an additive predictor are most commonly represented by basis function approaches. This
 leads to a very generic model structure and can be further exploited because each term
@@ -187,8 +187,8 @@ combination of single ``bricks''. Due to many parallels to the GAMLSS class, the
 framework is called BAMLSS (\emph{Bayesian additive models for location, scale and shape}). However,
 it also encompasses many more general model terms \emph{beyond} linear combinations in a design matrix
 with regression coefficients. The toolbox can be exploited in three ways: First, to quickly develop
-new models and algorithms, secondly, to compare existing algorithms and samplers,
-and third to easily integrate existing implementations. A proof of concept is given in the
+new models and algorithms. Second, to compare existing algorithms and samplers.
+Third, to easily integrate existing implementations. A proof of concept is given in the
 corresponding \proglang{R} package \pkg{bamlss} \citep{bamlss:Umlauf+Klein+Zeileis:2016}.
 
 The remainder of the paper is structured as follows. In Section~\ref{sec:model} the models supported by this
@@ -267,7 +267,7 @@ $\mathbf{f}_{jk} = \tilde{\mathbf{X}}_{jk}\tilde{\boldsymbol{\gamma}}_{jk} +
   \mathbf{U}_{jk}\tilde{\boldsymbol{\beta}}_{jk}$,
 where $\tilde{\boldsymbol{\gamma}}_{jk}$ represents the fixed effects parameters and 
 $\tilde{\boldsymbol{\beta}}_{jk} \sim \mathcal{N}(\mathbf{0}, \tau^2_{jk}\mathbf{I})$ i.i.d.\ random effects.
-The design matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
+The matrix $\mathbf{U}_{jk}$ is derived from a spectral decomposition of the penalty matrix
 $\mathbf{K}_{jk}$ and $\tilde{\mathbf{X}}_{jk}$ by finding a basis of the null space of $\mathbf{K}_{jk}$
 such that $\tilde{\mathbf{X}}_{jk}^{\top}\mathbf{K}_{jk} = \mathbf{0}$, i.e., parameters
 $\tilde{\boldsymbol{\gamma}}_{jk}$ are not penalized (see, e.g.,
@@ -308,7 +308,7 @@ where $\boldsymbol{\tau} = (\boldsymbol{\tau}_1^\top, \ldots, \boldsymbol{\tau}_
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
 the vector of all assigned hyper-parameters used within prior functions $p_{jk}( \cdot )$
 and similarly $\boldsymbol{\alpha}$ is the set of all fixed prior specifications. More precisely,
-the rather general prior for the $jk$-th model term is given by
+the rather general prior for the $j$-th model term of the $k$-th parameter is given by
 \begin{equation} \label{eqn:gprior}
 p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) \propto
    d_{\boldsymbol{\beta}_{jk}}(\boldsymbol{\beta}_{jk} | \, \boldsymbol{\tau}_{jk};
@@ -700,12 +700,12 @@ with the following score vector $\mathbf{s}(\boldsymbol{\beta})$ and Hessian mat
     \partial \boldsymbol{\beta}}
 = \frac{\partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})}{\partial \boldsymbol{\beta}} +
     \sum_{k = 1}^K\sum_{j = 1}^{J_k} \left[ \frac{\partial \log \,
-    p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}} \right].\\
+    p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})}{\partial \boldsymbol{\beta}} \right],\\
 \label{eqn:hessian}
 \mathbf{H}_{ks}(\boldsymbol{\beta}) & = &
 \frac{\partial \mathbf{s}(\boldsymbol{\beta}_k)}{\partial \boldsymbol{\beta}_s^\top} =
 \frac{\partial^2 \log \,  \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \mathbf{X}, \boldsymbol{\alpha})}{
-  \partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top},
+  \partial \boldsymbol{\beta}_k \partial \boldsymbol{\beta}_s^\top}.
 \end{eqnarray*}
 By chain rule, the part of the score vector involving
 the derivatives of the log-likelihood for the $k$-th parameter can be further decomposed to
@@ -783,11 +783,11 @@ penalty matrix $\mathbf{K}_{jk}$.
 Similarly, the score vector is
 $$
 \mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right) =
-\begin{pmatrix}
-\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}(\boldsymbol{\tau}_{1k})\boldsymbol{\beta}_{1k}^{(t)} \\
-\vdots \\
-\mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}(\boldsymbol{\tau}_{J_kk})\boldsymbol{\beta}_{J_kk}^{(t)} \\
-\end{pmatrix}
+\left(
+\mathbf{X}_{1k}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{1k}(\boldsymbol{\tau}_{1k})\boldsymbol{\beta}_{1k}^{(t)},\,
+\ldots\,,
+\mathbf{X}_{J_kk}^\top \mathbf{u}_k^{(t)} - \mathbf{G}_{J_kk}(\boldsymbol{\tau}_{J_kk})\boldsymbol{\beta}_{J_kk}^{(t)}
+\right)^{\top}
 $$
 and derivatives $\mathbf{u}_k = \partial \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
 \partial \boldsymbol{\eta}_k$. Focusing on the $j$-th row of (\ref{eqn:blocknewton}) leads to single
@@ -814,7 +814,7 @@ can be further generalized to
 $\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
   \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}, \, \cdot \,\right)$,
 i.e., theoretically any updating function applied on the ``partial residuals''
-$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
+$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this
 is equivalent to updating function
 \begin{equation} \label{eqn:blockblocknewton}
 \boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,)
@@ -881,10 +881,8 @@ derived by each of the following methods:
   necessarily result in i.i.d.\ behavior of the Markov chain. Therefore, a commonly-used
   alternative for the covariance matrix of the jumping distribution is to use the local curvature
   information
-  $$
-  \boldsymbol{\Sigma}_{jk} = -\left( \frac{\partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X})}{
-    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top} \right)^{-1},
-  $$
+  $\boldsymbol{\Sigma}_{jk} = -\left( \partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) /
+    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top \right)^{-1}$,
   or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$,
   requiring building blocks \ref{item:7a} and \ref{item:8}.
   However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
@@ -892,9 +890,9 @@ derived by each of the following methods:
   probability mass of the posterior distribution. A solution with good mixing properties is to
   construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
   second order Taylor series expansion of the log-posterior centered at the last state 
-  \citep{bamlss:Gamerman:1997, Klein+Kneib+Lang:2015}.
-  The resulting proposal density is multivariate normal (see supplemental material Section~4 for a
-  detailed derivation) with precision matrix and mean given by
+  \citep{bamlss:Gamerman:1997, bamlss:Klein+Kneib+Lang:2015}.
+  The resulting proposal density $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})$
+  is again normal (see supplements Section~4) with precision matrix and mean given by
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \qquad
   \boldsymbol{\mu}_{jk}^{(t)} =  \boldsymbol{\beta}_{jk}^{(t)} -
@@ -905,12 +903,8 @@ derived by each of the following methods:
   be build using blocks \ref{item:7a} and \ref{item:8}.
   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
   the current step.
-  The proposal density for $\boldsymbol{\beta}_{jk}$ then is
-  $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)}) =
-    \mathcal{N}(\boldsymbol{\mu}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk}^{(t)})$ which is used to compute the usual acceptance probability.
 
-  Again, assuming a basis function approach for functions $f_{jk}( \cdot )$ the precision matrix 
-  and mean can be written as
+  Again, assuming a basis function approach for $f_{jk}( \cdot )$ the precision and mean are
   $$
   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})
@@ -930,7 +924,7 @@ derived by each of the following methods:
   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
   in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS). If
-  the computation of the weights $\mathbf{W}_{kk}$ is expensive, one simple strategy is to update
+  the computation of the weights is expensive, one simple strategy is to update
   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 
 \item \emph{Slice sampling}: \label{sec:smcmc}
@@ -988,10 +982,9 @@ Graphically, histograms of the $u_i$ can be used for this purpose.
 
 \subsubsection{Smoothing variances with posterior mode} \label{sec:smoothvarsel}
 
-As already mentioned in Section~\ref{sec:bricksmodelfit}, depending on the structure of the priors
+As noted in Section~\ref{sec:bricksmodelfit}, depending on the structure of the priors
 (\ref{eqn:gprior}) parameters $\boldsymbol{\tau}_{jk}$ cannot be estimated by maximization of the
-log-posterior (\ref{eqn:logpost}). For example, this is the case for GAM-type models in
-combination with priors based on multivariate normal kernels (\ref{eqn:mvnormprior}) where
+log-posterior (\ref{eqn:logpost}), e.g., this is the case for GAM-type models using normal priors (\ref{eqn:mvnormprior}) where
 $\boldsymbol{\tau}_{jk}$ represents smoothing variances.
 
 Then, goodness-of-fit criteria like the Akaike information criterion (AIC), or the corrected AIC,
@@ -1074,12 +1067,12 @@ sections, a general BAMLSS software system can be set up as shown in Figure~\ref
 This proceeds in the following steps:
 \begin{enumerate}
 
-  \item A unified model description where a \code{formula} specifies how to set up the linear predictors
+  \item A unified model description where a \code{formula} specifies how to set up the predictors
     from the \code{data} and the \code{family} provides information about the Lego bricks \ref{item:1}--\ref{item:8}.
 
   \item A generic method for setting up model terms and a \code{model.frame} along with the
     corresponding prior structures. A \code{transformer} can optionally set up modified terms,
-    e.g., design and penalty matrices for smooth terms when using the mixed model representation
+    e.g., using mixed model representation for smooth terms
     (see Section~\ref{sec:model}).
 
   \item Support for modular and exchangeable updating functions or complete model fitting engines
@@ -1285,8 +1278,7 @@ y^\star \sim \mathcal{N}(\mu, \sigma^2),\,\, \mu = \eta_{\mu},\,\,
   \log(\sigma) = \eta_{\sigma},\,\, y = \max(0, y^\star).
 $$
 Because precipitation in the Alps is driven by the season and local characteristics, e.g.,
-differing altitude form north to south, we use the following additive predictor for parameter
-$\mu$ and $\sigma$:
+differing altitude form north to south, we use the following predictor for $\mu$ and $\sigma$:
 $$
 \eta = \beta_0 + f_1(\texttt{alt}) + f_2(\texttt{day}) +
   f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{day}, \texttt{lon}, \texttt{lat}),
@@ -1330,9 +1322,8 @@ For usage within \pkg{bamlss} see also the documentation of estimation engines \
 the corresponding updating functions \fct{bfit\_iwls} and \fct{GMCMC\_iwls}.
 
 With a total of 4000 iterations of the MCMC sampler, on a Linux system with 8
-Intel i7-2600 3.40GHz processors running the model takes approximately 17 hours. For computing the
-final model output the first $2000$ samples of every core are withdrawn and only every 10th sample
-is saved.
+Intel i7-2600 3.40GHz processors running the model takes approximately 17 hours.
+For each core, the first $2000$ samples are withdrawn and only every 10th sample is saved.
 
 The plots of the estimated effects are shown in Figure~\ref{fig:rainmodeleffects}.
 The top row illustrates the spatial variation of the seasonal effect (solid lines) together with the
