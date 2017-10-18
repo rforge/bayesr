@@ -68,8 +68,8 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   convinced that it really helps to illustrate the capabilities of \pkg{bamlss}.}
   
   Yes indeed, you are completely right. Given the initial length of the paper we followed your advise
-  and put the score vectors and second derivatives to an online supplement. This makes Section~6
-  better understandable for the purpose of the illustration. Interested readers can get detailed
+  and put the score vectors and second derivatives into an online supplement. This makes Section~6
+  better understandable for the purpose of the illustration. Interested readers can obtain detailed
   information about the implementation in the supplement.
 
 \item \emph{The manuscript is clearly too long. It’s perfectly understandable that the authors want to
@@ -78,13 +78,13 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   more concise fashion.}
   
   We had careful reads and have found several places to be more precise and concise. This includes
-  some paragraphs of Section~4 as well. In total, we reduced the initial, submitted version by 4
-  pages so that we are now at 34 pages up to the Summary (40 pages including references, before 47
+  some paragraphs of Section~4 as well. In total, we reduced the initial, submitted version by 6
+  pages so that we are now at 33 pages up to the Summary (38 pages including references, before 47
   pages including the references). Note that this is based on the JCGS review style using line spacing
   of 1.45 in the \LaTeX~template. If we switch to the common line spacing the manuscript
-  is exactly 30 pages. If this is still too long, we could probably drop the last example. However,
-  because the last illustration particularly reflects the strengths of this approach, we would prefer
-  to keep the section in the manuscript.
+  is exactly 30 pages including references. If this is still too long, we could probably drop the
+  last example. However, because the last illustration particularly reflects the strengths of this
+  approach, we would prefer to keep the section in the manuscript.
 
 \item \emph{The illustration examples highlight the enormous and versatile capabilities of the
   \pkg{bamlss} framework and are nicely presented. However, I guess an additional smaller and faster
@@ -119,7 +119,7 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
 \item \emph{Notation is obviously a mess for this huge framework of different model classes: However,
   just wondering, for example in Equation (1): shouldn’t that be capital letter X?}
 
-  \fixme{Achim, any good suggestion?}
+  Yes indeed, we have now revised this paragraph and tried to describe everything more clearly.
 
 \end{itemize}
 
@@ -134,17 +134,16 @@ options(width = 70, prompt = "R> ", continue = "+  ", scipen = 2,
   
   Following your and the referee's advise, we shortened the paper thoughtfully and removed some
   derivations to an online supplement. As mentioned in the answers to reviewer 1, we reduced the
-  initial manuscript size by 4 pages up to the summary and by 7 pages including the references. If
+  initial manuscript size by 6 pages up to the summary and by 9 pages including the references. If
   we drop the JCGS review \LaTeX-template line spacing of 1.45 the manuscript is exactly 30 pages
-  long now. We could drop the last example if necessary, however, we believe this illustration
-  particularity presents the strengths of this approach and we would therefore prefer to keep it
-  in the manuscript.
+  long now (including the references). We could drop the last example if necessary, however, we
+  believe this illustration particularity presents the strengths of this approach and we would
+  therefore prefer to keep it in the manuscript.
 
 \item \emph{In your figure captions, add a sentence telling the reader the most important thing to
   learn by looking at the plot.}
   
-  Excellent idea, as suggested, we added a story-telling sentence at certain captions. \fixme{Achim,
-  can you look at the captions, too. Maybe you have some more good edits?}
+  Excellent idea, as suggested, we added a story-telling sentence at certain captions.
 
 \end{itemize}
 
