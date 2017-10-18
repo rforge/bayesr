@@ -86,12 +86,22 @@
   \medskip
 } \fi
 
+\bigskip
+\begin{abstract}
+  This document provides more detailed information about algorithmic derivations and ``Lego bricks''
+  used in the main manuscript. Section~\ref{supps:priors} provides an overview of commonly used
+  priors for GAM-type model terms. Section~\ref{supps:cnorm} presents the ``Lego bricks'' for
+  estimating censored Gaussian models and Section~\ref{supps:cox} for the Cox model. The detailed
+  derivations for posterior mode estimation and MCMC are then presented in Section~\ref{supps:pmodeiwls}
+  and \ref{supps:fullcond1}
+\end{abstract}
+
 \newpage
 
 \spacingset{1.45} % DON'T change the spacing!
 
 
-\section{``Lego brick'' B3, prior structures in BAMLSS}
+\section{``Lego brick'' B3, prior structures in BAMLSS} \label{supps:priors}
 
 Table~\ref{tab:mlegobricks} provides an overview of commonly used ``Lego bricks'' for GAM-type
 prior structures used within building block B3 in Section~4.
@@ -135,7 +145,7 @@ Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multi
   scale-dependent (SD) and half-normal (HN).}
 \end{table}
 
-\section{``Lego bricks'' for the censored Gaussian distribution}
+\section{``Lego bricks'' for the censored Gaussian distribution} \label{supps:cnorm}
 
 The following presents the ``Lego bricks'' of example Section~6.1 in the main manuscript that are
 used for the construction of iteratively weighted least squares (IWLS) updating functions
@@ -200,9 +210,9 @@ and
 \end{enumerate}
 
 
-\section{``Lego bricks'' for the Cox model}
+\section{``Lego bricks'' for the Cox model} \label{supps:cox}
 
-Based on the usrvival function
+Based on the survival function
 $$
 S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 $$
@@ -260,7 +270,7 @@ Section~3.2 in the main manuscript):
 \end{enumerate}
 
 
-\section{Posterior mode updating based on IWLS} \label{appendix:pmodeiwls}
+\section{Posterior mode updating based on IWLS} \label{supps:pmodeiwls}
 
 The following shows the steps needed to derive the iterative updating scheme based on IWLS in
 Section~4.2. Focusing on the $j$-th row of (14) gives
@@ -336,7 +346,7 @@ Section~4.2. Focusing on the $j$-th row of (14) gives
 \end{eqnarray*}
 This yields the updating function $U_{jk}( \cdot )$ shown in (16) in the main manuscript.
 
-\section{Approximate full conditionals for MCMC} \label{appendix:fullcond1}
+\section{Approximate full conditionals for MCMC} \label{supps:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based
 on a second order Taylor series expansion of the log-posterior centered at the last state of
 $\boldsymbol{\beta}_{jk}$.
