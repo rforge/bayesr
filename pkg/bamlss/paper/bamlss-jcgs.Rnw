@@ -228,7 +228,7 @@ The additive predictor for the $k$-th parameter is given by
   f_{1k}(\mathbf{X}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{X}; \boldsymbol{\beta}_{J_kk}),
 \end{equation}
 based on $j = 1, \ldots, J_k$ unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$, applied to each row
-of the generic data matrix $\mathbf{X}$ -- encompassing all available covariate information.
+of the generic data matrix $\mathbf{X}$, encompassing all available covariate information.
 The corresponding parameters $\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
 typically regression coefficients pertaining to model matrices
 $\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$,
@@ -244,13 +244,11 @@ where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is the design matrix of the $j$-th t
 the $k$-th parameter. In the case where it is derived through a basis function approach, it
 can be written as $\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$.
 
-
 While functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
 a typical GAM-type or so-called structured additive predictor
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}), in this paper
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
-$\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$).
-but more general and complex terms are also allowed in the BAMLSS framework. A simple
+and regression coefficients. A simple
 example for a $f_{jk}( \cdot )$ that is nonlinear in the parameters $\boldsymbol{\beta}_{jk}$
 would be a Gompertz growth curve
 $\mathbf{f}_{jk} = \beta_{1} \cdot \exp \left( -\exp\left( \beta_{2} +
@@ -283,8 +281,8 @@ computational reasons its logarithm. Estimation typically requires to evaluate t
 function
 \begin{equation*} \label{eqn:loglik}
 \ell(\boldsymbol{\beta} ; \mathbf{y}, \mathbf{X}) =
-  \sum_{i = 1}^n \log \, d_y(y_i ; \theta_{i1} = h_1^{-1}(\eta_{i1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
-  \theta_{iK} = h_K^{-1}(\eta_{iK}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
+  \sum_{i = 1}^n \log \, d_y(y_i ; \theta_{i1} = h_1^{-1}(\eta_{1}(\mathbf{x}_i; \boldsymbol{\beta}_1)), \ldots,
+  \theta_{iK} = h_K^{-1}(\eta_{K}(\mathbf{x}_i; \boldsymbol{\beta}_K)))
 \end{equation*}
 a number of times, where the vector
 $\boldsymbol{\beta} = (\boldsymbol{\beta}_1^\top, \ldots, \boldsymbol{\beta}_K^\top)^\top$ 
@@ -1198,24 +1196,27 @@ p <- predict(b, model = "mu", FUN = mean)
 \begin{figure}[!t]
 \setkeys{Gin}{width=0.27\textwidth}
 \centering
-<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+<<echo=FALSE, fig=TRUE, width=3, height=3.4>>=
+par(mar = c(4.1, 4.1, 2.1, 1.1))
 p <- predict(b0, model = "mu", FUN = c95)
 plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
   xlab = "times", ylab = expression(paste("Effect on ", mu)))
 points(mcycle, cex = 0.6)
+mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", beta[0], ")")),
+  side = 3, line = 1)
 @
-<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+\hspace*{4ex}
+\setkeys{Gin}{width=0.54\textwidth}
+<<echo=FALSE, fig=TRUE, width=6, height=3.4>>=
+par(mar = c(4.1, 4.1, 0, 1.1), mfrow = c(1, 2), oma = c(0, 0, 2.1, 0))
 p <- predict(b, model = "mu", FUN = c95)
 plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
   xlab = "times", ylab = expression(paste("Effect on ", mu)))
 points(mcycle, cex = 0.6)
-@
-<<echo=FALSE, fig=TRUE, width=3, height=2.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", term = "s(times)", spar = FALSE, scheme = 2, grid = 100,
   ylab = expression(paste("Effect on ", log(sigma))))
+mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f(times), ")")),
+  side = 3, line = 1, outer = TRUE)
 @
 \caption{\label{fig:toymodel} Estimated effects of the Gaussian location-scale model using the
   simulated motorcycle accident data together with $95\%$ credible bands computed from the empirical 
