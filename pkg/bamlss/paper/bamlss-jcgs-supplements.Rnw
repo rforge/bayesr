@@ -95,9 +95,10 @@
 
 Table~\ref{tab:mlegobricks} provides an overview of commonly used ``Lego bricks'' for GAM-type
 prior structures used within building block B3 in Section~4.
+\begin{center}
 \begin{sidewaystable}
-\small
 \centering
+\resizebox{19cm}{!} {\begin{minipage}{\textwidth}
 \begin{tabular}{llll}
 \hline
 Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multicolumn{2}{l}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
@@ -127,7 +128,11 @@ Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multi
   terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
   is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
   scale-dependent (SD) and half-normal (HN).}
+\end{minipage}}
 \end{sidewaystable}
+\end{center}
+
+\newpage
 
 \section{``Lego bricks'' for the censored Gaussian distribution}
 
