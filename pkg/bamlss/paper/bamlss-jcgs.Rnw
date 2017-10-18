@@ -222,38 +222,34 @@ $h_{k}(\cdot)$. Note that the response may also be a
 $q$-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
 $\mathbf{\mathcal{D}}$ is a multivariate distribution
 (see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
-The $k$-th additive predictor is given by
+The additive predictor for the $k$-th parameter is given by
 \begin{equation} \label{eqn:addpred}
-\eta_k = \eta_k(\mathbf{x}; \boldsymbol{\beta}_k) =
-  f_{1k}(\mathbf{x}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{x}; \boldsymbol{\beta}_{J_kk}),
+\boldsymbol{\eta}_k = \eta_k(\mathbf{X}; \boldsymbol{\beta}_k) =
+  f_{1k}(\mathbf{X}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{X}; \boldsymbol{\beta}_{J_kk}),
 \end{equation}
-with unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$ of subvectors of a vector
-$\mathbf{x}$ collecting all available covariate information, $j = 1, \ldots, J_k$ and $k = 1, \ldots, K$ and
-$\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
-parameters, typically regression coefficients that need to estimated from the data. The vector of
-function evaluations $\mathbf{f}_{jk} = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
-  f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk}))^{\top}$ of the
-$i = 1, \ldots, n$ observations is then given by
+based on $j = 1, \ldots, J_k$ unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$, applied to each row
+of the generic data matrix $\mathbf{X}$ -- encompassing all available covariate information.
+The corresponding parameters $\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ are
+typically regression coefficients pertaining to model matrices
+$\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$,
+whose structure only depend on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
+For notational convenience, the vector of function evaluations (across all observations
+$i = 1, \ldots, n$) is also denoted by
 \begin{equation} \label{eqn:functions}
-\mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk}),
+\mathbf{f}_{jk} = f_{jk}(\mathbf{X}_{jk}; \boldsymbol{\beta}_{jk})
+  = (f_{jk}(\mathbf{x}_{1}; \boldsymbol{\beta}_{jk}), \ldots,
+  f_{jk}(\mathbf{x}_{n}; \boldsymbol{\beta}_{jk}))^{\top},
 \end{equation}
-where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is a design matrix \fixme{Achim, this is what the reviewer did not understand, any suggestions?} and the structure of $\mathbf{X}_{jk}$
-only depends on the type of covariate(s) and prior assumptions about $f_{jk}( \cdot )$.
-In this notation the $k$-th parameter vector is given by
-\begin{equation*} \label{eqn:addpar}
-h_k(\boldsymbol{\theta}_k) = \boldsymbol{\eta}_k = \eta_k(\mathbf{X}_k ; \boldsymbol{\beta}_k) =
-  \mathbf{f}_{1k} + \ldots + \mathbf{f}_{J_kk},
-\end{equation*}
-where $\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$ is the combined design
-matrix for the $k$-th parameter.
+where $\mathbf{X}_{jk}$ ($n \times m_{jk}$) is the design matrix of the $j$-th term for
+the $k$-th parameter. In the case where it is derived through a basis function approach, it
+can be written as $\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$.
+
 
 While functions $f_{jk}(\cdot)$ are usually based on a basis function approach, where $\eta_k$ then is
 a typical GAM-type or so-called structured additive predictor
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}), in this paper
 we relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 $\mathbf{x}$ and regression coefficients $\boldsymbol{\beta}_{jk}$ ($q_{jk} \times 1$).
-In the case where it is derived through a basis function approach, it can be written as
-$\mathbf{f}_{jk} = \mathbf{X}_{jk}\boldsymbol{\beta}_{jk}$,
 but more general and complex terms are also allowed in the BAMLSS framework. A simple
 example for a $f_{jk}( \cdot )$ that is nonlinear in the parameters $\boldsymbol{\beta}_{jk}$
 would be a Gompertz growth curve

@@ -95,10 +95,13 @@
 
 Table~\ref{tab:mlegobricks} provides an overview of commonly used ``Lego bricks'' for GAM-type
 prior structures used within building block B3 in Section~4.
-\begin{center}
-\begin{sidewaystable}
+
+\medskip
+
+\begin{table}[ht!]
 \centering
-\resizebox{19cm}{!} {\begin{minipage}{\textwidth}
+\hspace*{-28ex}\resizebox{11cm}{!} {
+\begin{minipage}{\textwidth}
 \begin{tabular}{llll}
 \hline
 Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multicolumn{2}{l}{Prior densities $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$} \\
@@ -124,15 +127,13 @@ Covariates & Effect types $f_{jk}(\mathbf{x}; \boldsymbol{\beta}_{jk})$ & \multi
 \multirow{2}{*}{time variable $t$}& Space-time effect $f(s, t)$ & & \multirow{2}{*}{HN $\propto \tau^{1/2 -1} \exp(-\tau/(2a^2))$} \\
 & Functional random intercept $f_s(t)$ & & \\ \hline
 \end{tabular}
+\end{minipage}
+}
 \caption{\label{tab:mlegobricks} Commonly used ``Lego bricks'', building block B3, for model
   terms in BAMLSS. Priors for linear effects assume that the precision matrix $\mathbf{P}(\boldsymbol{\tau})$
   is fixed. For smooth effects, prior densities are: inverse gamma (IG), half-Cauchy (HC),
   scale-dependent (SD) and half-normal (HN).}
-\end{minipage}}
-\end{sidewaystable}
-\end{center}
-
-\newpage
+\end{table}
 
 \section{``Lego bricks'' for the censored Gaussian distribution}
 
@@ -335,7 +336,7 @@ Section~4.2. Focusing on the $j$-th row of (14) gives
 \end{eqnarray*}
 This yields the updating function $U_{jk}( \cdot )$ shown in (16) in the main manuscript.
 
-\section{Approximate full conditionals for derivative-based MCMC} \label{appendix:fullcond1}
+\section{Approximate full conditionals for MCMC} \label{appendix:fullcond1}
 The following shows the steps to derive a multivariate normal jumping distribution based
 on a second order Taylor series expansion of the log-posterior centered at the last state of
 $\boldsymbol{\beta}_{jk}$.
