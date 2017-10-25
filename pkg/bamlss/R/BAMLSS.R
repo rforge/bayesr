@@ -4207,8 +4207,10 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$lasso <- list("trans" = list())
   k <- 1
   for(j in tl) {
-    contr.list <- list()
-    contr.list[[j]] <- contr
+    if(is.factor(data[[j]])) {
+      contr.list <- list()
+      contr.list[[j]] <- contr
+    } else contr.list <- NULL
     object$X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data,
       contrasts = contr.list))
     if(length(i <- grep("Intercept", colnames(object$X[[j]]))))
@@ -4433,9 +4435,16 @@ Predict.matrix.lasso.smooth <- function(object, data)
 {
   data <- as.data.frame(data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
+  contr <- object$xt$contrast.arg
+  if(is.null(contr))
+    contr <- "contr.sum"
   X <- list()
   for(j in tl) {
-    X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data))
+    if(is.factor(data[[j]])) {
+      contr.list <- list()
+      contr.list[[j]] <- contr
+    } else contr.list <- NULL
+    X[[j]] <- as.matrix(model.matrix(as.formula(paste("~", j)), data = data, contrasts = contr.list))
     if(length(i <- grep("Intercept", colnames(X[[j]]))))
       X[[j]] <- X[[j]][, -i, drop = FALSE]
     is_f <- is.factor(data[[j]])

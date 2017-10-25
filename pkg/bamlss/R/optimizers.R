@@ -3716,8 +3716,9 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
       if(!is.null(name))
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
       if(max(mstop) > nrow(tpar))
-        mstop <- 1:nrow(tpar)
-      tpar <- tpar[mstop, , drop = FALSE]
+        mstop <- nrow(tpar)
+      tpar <- tpar[1:mstop, , drop = FALSE]
+print(nrow(tpar))
       xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[1] })
       if(length(unique(xn)) < 2)
         xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[3] })
@@ -3731,7 +3732,6 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           rep(color, length.out = length(unique(xn)))
         }
       }
-    
       matplot(tpar, type = "l", lty = 1, col = cols[as.factor(xn)],
         xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE)
       if(is.null(labels)) {
@@ -3859,7 +3859,7 @@ dl.bamlss <- function(object, offset = NULL, weights = NULL,
   if(is.null(keras.model)) {
     keras_model <- list()
     if(is.null(optimizer))
-      optimizer <- optimizer_rmsprop(lr = 0.0001)
+      optimizer <- keras::optimizer_rmsprop(lr = 0.0001)
     if(is.character(optimizer)) {
       optimizer <- match.arg(optimizer, c("adam", "sgd", "rmsprop", "adagrad", "adadelta", "adamax", "nadam"))
     }
@@ -3915,7 +3915,7 @@ dl.bamlss <- function(object, offset = NULL, weights = NULL,
       if(ncol(X[[j]]) > 0) {
         keras_model[[j]]$stop_training <- keras::fit(keras_model[[j]], X[[j]],
           matrix(if(!is.null(offset[[j]])) z - eta[[j]] else z, ncol = 1),
-          epochs = epochs, batch_size = batch_size, verbose = 0)
+          epochs = epochs, batch_size = batch_size, verbose = 0, sample_weight = array(1/hess))
         fit <- as.numeric(predict(keras_model[[j]], X[[j]]))
         eta2 <- eta
         eta2[[j]] <- eta2[[j]] - fits[[j]] + fit
