@@ -3717,8 +3717,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
         tpar <- tpar[, grep2(name, colnames(tpar), fixed = TRUE), drop = FALSE]
       if(max(mstop) > nrow(tpar))
         mstop <- nrow(tpar)
-      tpar <- tpar[1:mstop, , drop = FALSE]
-print(nrow(tpar))
+      tpar <- tpar[if(length(mstop) < 2) 1:mstop else mstop, , drop = FALSE]
       xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[1] })
       if(length(unique(xn)) < 2)
         xn <- sapply(strsplit(colnames(tpar), ".", fixed = TRUE), function(x) { x[3] })

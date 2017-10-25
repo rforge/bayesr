@@ -164,7 +164,7 @@ summary(b2)
 plot(b2)
 
 ci <- confint(b2, model = "mu", pterms = FALSE, sterms = TRUE)
-lasso.plot(b1, which = 2, model = "mu", name = "s.la(id).id", spar = FALSE)
+lasso.plot(b1, which = 2, model = "mu", name = "mu.s.la(id).id", spar = FALSE)
 for(i in 1:8) {
   abline(h = ci[i, 1], lty = 2, col = "red")
   abline(h = ci[i, 2], lty = 2, col = "red")
