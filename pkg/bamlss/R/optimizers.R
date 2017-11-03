@@ -4025,3 +4025,54 @@ predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
   return(pred)
 }
 
+
+## Most likeliy transformations.
+bfit_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
+{
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("design construct names mismatch with family names!")
+  
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, update = update, ...)
+  
+  criterion <- match.arg(criterion)
+  np <- length(nx)
+  
+  if(!is.null(nu)) {
+    if(nu < 0)
+      nu <- NULL
+  }
+  
+  no_ff <- !inherits(y, "ffdf")
+  
+  nobs <- nrow(y)
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+  
+  if(!is.null(start))
+    x <- set.starting.values(x, start)
+  eta <- get.eta(x)
+  
+  if(!is.null(weights))
+    weights <- as.data.frame(weights)
+  if(!is.null(offset)) {
+    offset <- as.data.frame(offset)
+    for(j in nx) {
+      if(!is.null(offset[[j]]))
+        eta[[j]] <- eta[[j]] + offset[[j]]
+    }
+  } else {
+    if(is.null(start))
+      eta <- init.eta(eta, y, family, nobs)
+  }
+  
+  ia <- if(flush) interactive() else FALSE
+
+  stop("here!")
+}

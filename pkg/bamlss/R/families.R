@@ -3226,3 +3226,18 @@ rho_score_mvnormAR1 <- function(y, par)
   return(.Call("rho_score_mvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
 }
 
+
+## Most likely transformations.
+mlt_bamlss <- function(link = "probit")
+{
+  rval <- list(
+    "family" = "mlt",
+    "names" = "alpha",
+    "links" = c("alpha" = link),
+    "optimizer" = bfit_mlt,
+    "sampler" = FALSE
+  )
+  class(rval) <- "family.bamlss"
+  rval
+}
+
