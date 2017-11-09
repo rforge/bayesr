@@ -3228,16 +3228,61 @@ rho_score_mvnormAR1 <- function(y, par)
 
 
 ## Most likely transformations.
-mlt_bamlss <- function(link = "probit")
+mlt_bamlss <- function(todistr = "Normal")
 {
   rval <- list(
     "family" = "mlt",
-    "names" = "alpha",
-    "links" = c("alpha" = link),
-    "optimizer" = bfit_mlt,
+    "names" = "mu",
+    "links" = c("mu" = "identity"),
+    "optimizer" = mlt.mode,
     "sampler" = FALSE
   )
+  rval$distr <- mlt_distr(todistr)
   class(rval) <- "family.bamlss"
   rval
 }
 
+mlt_Normal <- function() {
+    list(p = pnorm, d = dnorm, q = qnorm, 
+         ### see also MiscTools::ddnorm
+         dd = function(x) -dnorm(x = x) * x,
+         ddd = function(x) dnorm(x = x) * (x^2 - 1), 
+         name = "normal")
+}
+
+mlt_Logistic <- function() {
+    list(p = plogis, d = dlogis, q = qlogis,
+         dd = function(x) {
+             ex <- exp(x)
+             (ex - exp(2 * x)) / (1 + ex)^3
+         },
+         ddd = function(x) {
+             ex <- exp(x)
+             (ex - 4*(exp(2 * x)) + exp(3 * x)) / (1 + ex)^4
+         },
+         name = "logistic")
+}
+
+mlt_MinExtrVal <- function() {
+    list(p = function(x) 1 - exp(-exp(x)),
+         q = function(p) log(-log(1 - p)),
+         d = function(x, log = FALSE) {
+             ret <- x - exp(x)
+             if (!log) return(exp(ret))
+             ret
+         },
+         dd = function(x) {
+             ex <- exp(x)
+             (ex - exp(2 * x)) / exp(ex)
+         },
+         ddd = function(x) {
+             ex <- exp(x)
+             (ex - 3*exp(2 * x) + exp(3 * x)) / exp(ex)
+         },
+         name = "minimum extreme value")
+}
+
+mlt_distr <- function(which = c("Normal", "Logistic", "MinExtrVal")) {
+    which <- match.arg(which)
+    do.call(paste("mlt_", which, sep = ""), list())
+}

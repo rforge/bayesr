@@ -1769,9 +1769,10 @@ bfit_optim <- function(x, family, y, eta, id, weights, criterion, ...)
       return(drop(-1 * grad))
     }
   } else NULL
-  
+
   suppressWarnings(opt <- try(optim(get.par(tpar, "b"), fn = objfun, gr = grad,
-    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2"), hessian = TRUE),
+    method = "BFGS", control = list(), tau2 = get.par(tpar, "tau2"), hessian = TRUE,
+    lower = if(!is.null(x$force.positive)) 1e-10 else -Inf),
     silent = TRUE))
   
   if(!inherits(opt, "try-error")) {
@@ -4027,7 +4028,7 @@ predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
 
 
 ## Most likeliy transformations.
-bfit_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+mlt.mode <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
@@ -4037,7 +4038,23 @@ bfit_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("design construct names mismatch with family names!")
   
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, update = update, ...)
+    x <- bamlss.engine.setup(x, ...)
+
+  nobs <- nrow(y)
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
+  Fy <- ecdf(y)
+  Fy <- Fy(y)
+  Fy[Fy > 0.9999] <- 0.999
+  Fy[Fy < 0.0001] <- 0.001
+  Yhat <- family$distr$q(Fy)
+
+  opt <- bfit(x = x, y = data.frame("y" = Yhat),
+    family = complete.bamlss.family(Gaussian_bamlss()),
+    eps = eps, maxit = maxit, nu = nu, update = bfit_optim())
   
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -4047,16 +4064,10 @@ bfit_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       nu <- NULL
   }
   
-  no_ff <- !inherits(y, "ffdf")
-  
-  nobs <- nrow(y)
-  if(is.data.frame(y)) {
-    if(ncol(y) < 2)
-      y <- y[[1]]
-  }
-  
   if(!is.null(start))
     x <- set.starting.values(x, start)
+  else
+    x <- set.starting.values(x, opt$parameters)
   eta <- get.eta(x)
   
   if(!is.null(weights))
@@ -4074,5 +4085,40 @@ bfit_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   
   ia <- if(flush) interactive() else FALSE
 
+  eps0 <- eps + 1; iter <- 0
+  edf <- get.edf(x, type = 2)
+  ptm <- proc.time()
+  while(eps0 > eps & iter < maxit) {
+    eta0 <- eta
+    ## Cycle through all terms.
+    for(sj in seq_along(x$mu$smooth.construct)) {
+      ## Get updated parameters.
+      p.state <- mlt_update(x$mu$smooth.construct[[sj]],
+        family$distr, y, eta, edf = edf, weights = weights$mu,
+        iteration = iter, criterion = criterion)
+    }
+  }
+
   stop("here!")
 }
+
+mlt_update <- function(x, distr, y, eta, edf, weights, iteration, criterion)
+{
+  beta <- get.par(x$state$parameters, "b")
+  score <- t(x$X) %*% (distr$dd(eta$mu) / distr$d(eta$mu))
+  if(inherits(x, "mlt.smooth"))
+    score <- score + t(x$dX) %*% as.numeric((1 / (x$dX %*% beta + 1e-10)))
+  w <- distr$ddd(eta$mu) / distr$d(eta$mu) - (distr$dd(eta$mu) / distr$d(eta$mu))^2
+  hess <- crossprod(x$X * w, x$X)
+  if(inherits(x, "mlt.smooth"))
+    hess <- hess - crossprod(x$dX * as.numeric(1 / (x$dX %*% beta + 1e-10)^2), x$dX)
+
+print(beta)
+
+  beta <- beta + hess %*% score
+
+print(beta)
+
+  stop("yess!\n")
+}
+

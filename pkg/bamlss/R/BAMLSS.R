@@ -2003,10 +2003,10 @@ complete.bamlss.family <- function(family)
   err11 <- .Machine$double.eps^(1/4)
   err12 <- err11 * 2
 
-  if(is.null(family$score))
+  if(is.null(family$score) & !is.null(family$d))
     family$score <- list()
   for(i in family$names) {
-    if(is.null(family$score[[i]])) {
+    if(is.null(family$score[[i]]) & !is.null(family$d)) {
       fun <- c(
         "function(y, par, ...) {",
         paste("  eta <- linkfun[['", i, "']](par[['", i, "']]);", sep = ""),
@@ -2022,10 +2022,10 @@ complete.bamlss.family <- function(family)
     }
   }
 
-  if(is.null(family$hess))
+  if(is.null(family$hess) & !is.null(family$d))
     family$hess <- list()
   for(i in family$names) {
-    if(is.null(family$hess[[i]])) {
+    if(is.null(family$hess[[i]]) & !is.null(family$d)) {
       fun <- if(!is.null(attr(family$score[[i]], "dnum"))) {
         c(
           "function(y, par, ...) {",
@@ -7940,10 +7940,10 @@ smooth.construct.ispline.smooth.spec <- function(object, data, knots, ...)
     (knots < max(data[[object$term]]))]
   object$knots <- knots
   object$X <- iSpline(data[[object$term]],
-    knots = knots, degree = 3, intercept = TRUE, derivs = 0L)
+    knots = knots, degree = 3, intercept = FALSE, derivs = 0L)
   object$S <- list(crossprod(diff(diag(ncol(object$X)), differences = 2)))
   object$derivMat <- iSpline(data[[object$term]],
-    knots = knots, degree = 3, intercept = TRUE, derivs = 1L)
+    knots = knots, degree = 3, intercept = FALSE, derivs = 1L)
   class(object) <- "ispline.smooth"
   return(object)
 }
@@ -7951,16 +7951,35 @@ smooth.construct.ispline.smooth.spec <- function(object, data, knots, ...)
 smooth.construct.mlt.smooth.spec <- function(object, data, knots, ...)
 {
   stopifnot(requireNamespace("splines2"))
-  class(object) <- "tensor.smooth.spec"
-  object <- smoothCon(object, data, knots, absorb.cons = TRUE)
+  object$margin[[1]] <- smooth.construct(object$margin[[1]], data, knots)
+  if(length(object$margin) > 1) {
+    for(j in 2:length(object$margin))
+      object$margin[[j]] <- smoothCon(object$margin[[j]], data, knots, absorb.cons = TRUE)[[1]]
+  }
+  object$X <- tensor.prod.model.matrix(lapply(object$margin, function(x) { x$X } ))
+  dX <- list(object$margin[[1]]$derivMat)
+  if(length(object$margin) > 1)
+    dX <- c(dX, lapply(object$margin[2:length(object$margin)], function(x) { x$X } ))
+  object$dX <- tensor.prod.model.matrix(dX)
+  object$S <- tensor.prod.penalties(sapply(object$margin, function(x) { x$S } ))
+  object$force.positive <- TRUE
+  class(object) <- "mlt.smooth"
   object
 }
 
 Predict.matrix.ispline.smooth <- function(object, data)
 {
   X <- iSpline(data[[object$term]],
-    knots = object$knots, degree = 3, intercept = TRUE, derivs = 0L)
+    knots = object$knots, degree = 3, intercept = FALSE, derivs = 0L)
   attr(X, "deriv") <- iSpline(data[[object$term]],
-    knots = object$knots, degree = 3, intercept = TRUE, derivs = 1L)
+    knots = object$knots, degree = 3, intercept = FALSE, derivs = 1L)
+  X
+}
+
+Predict.matrix.mlt.smooth <- function(object, data)
+{
+  X <- lapply(object$margin, function(x) { PredictMat(x, as.data.frame(data)) })
+  X <- tensor.prod.model.matrix(X)
+  X
 }
 
