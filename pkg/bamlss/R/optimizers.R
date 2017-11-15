@@ -2227,6 +2227,18 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(is.null(maxit))
       maxit <- 10000
   }
+
+  always2 <- FALSE
+  if(!is.logical(always)) {
+    if(is.character(always)) {
+      if(!is.na(pmatch(always, "best"))) {
+        always2 <- TRUE
+        always <- TRUE
+      } else {
+        always <- FALSE
+      }
+    }
+  }
   
   if(is.null(maxit))
     stop("please set either argument 'maxit' or 'mstop'!")
@@ -2320,7 +2332,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     sum(family$d(y, family$map2par(eta)) * W)
   }
   ptm <- proc.time()
-  while(iter <= maxit & qsel <= maxq) {
+  while(iter <= maxit & qsel < maxq) {
     eta0 <- eta
     
     ## Cycle through all parameters
@@ -2432,26 +2444,29 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       } else {
         sum(family$d(y, family$map2par(eta), log = TRUE) * W)
       }
-      for(ii in nx) {
+      nxa <- if(always2) take[1] else nx
+      for(ii in nxa) {
         if("(Intercept)" %in% names(x[[ii]]$smooth.construct)) {
-          peta <- family$map2par(eta)
+          if((take[1] == ii) & (take[2] != "(Intercept)")) {
+            peta <- family$map2par(eta)
       
-          ## Actual gradient.
-          grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
+            ## Actual gradient.
+            grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
 
-          ## Update.
-          states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
-            boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
-              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
-          } else {
-            .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
-              if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
+            ## Update.
+            states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
+              boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+                hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
+            } else {
+              .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+                if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
+            }
+            eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
+            x[[ii]]$smooth.construct[["(Intercept)"]]$state <- increase(x[[ii]]$smooth.construct[["(Intercept)"]]$state,
+              states[[ii]][["(Intercept)"]])
+            x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
+            x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
           }
-          eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
-          x[[ii]]$smooth.construct[["(Intercept)"]]$state <- increase(x[[ii]]$smooth.construct[["(Intercept)"]]$state,
-            states[[ii]][["(Intercept)"]])
-          x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
-          x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
         }
       }
     }
@@ -3029,7 +3044,9 @@ get.qsel <- function(x, iter)
   rval <- 0
   for(i in names(x)) {
     for(j in names(x[[i]]$smooth.construct)) {
-      rval <- rval + 1 * any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0)
+      rval <- rval + 1 *
+       (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
+        j != "(Intercept)")
     }
   }
   rval
@@ -4027,7 +4044,7 @@ predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
 }
 
 
-## Most likeliy transformations.
+## Most likely transformations.
 mlt.mode <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,

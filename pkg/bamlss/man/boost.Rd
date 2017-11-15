@@ -91,7 +91,10 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
     will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
     freedom in each boosting iteration, i.e., it is possible to compute information criteria
     like the AIC or BIC for selecting the optimum number of boosting iterations.}
-  \item{always}{Logical. Should the intercepts forced to be updated in each boosting iteration?}
+  \item{always}{Logical or character. Should the intercepts forced to be updated in each boosting iteration?
+    If \code{always = TRUE} each intercept of each distributional parameter is updated,
+    if \code{always = "best"} only the intercept corresponding to the distributional of the best
+    fitting model term is updated.}
   \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
   \item{summary}{Should the summary be printed?}
   \item{which}{Which of the three provided plots should be created?}
