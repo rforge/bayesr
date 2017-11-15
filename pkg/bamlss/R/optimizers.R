@@ -2447,26 +2447,24 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       nxa <- if(always2) take[1] else nx
       for(ii in nxa) {
         if("(Intercept)" %in% names(x[[ii]]$smooth.construct)) {
-          if((take[1] == ii) & (take[2] != "(Intercept)")) {
-            peta <- family$map2par(eta)
+          peta <- family$map2par(eta)
       
-            ## Actual gradient.
-            grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
+          ## Actual gradient.
+          grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
 
-            ## Update.
-            states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
-              boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
-                hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
-            } else {
-              .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
-                if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
-            }
-            eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
-            x[[ii]]$smooth.construct[["(Intercept)"]]$state <- increase(x[[ii]]$smooth.construct[["(Intercept)"]]$state,
-              states[[ii]][["(Intercept)"]])
-            x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
-            x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+          ## Update.
+          states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
+            boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
+          } else {
+            .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+              if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
           }
+          eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
+          x[[ii]]$smooth.construct[["(Intercept)"]]$state <- increase(x[[ii]]$smooth.construct[["(Intercept)"]]$state,
+            states[[ii]][["(Intercept)"]])
+          x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
+          x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
         }
       }
     }
