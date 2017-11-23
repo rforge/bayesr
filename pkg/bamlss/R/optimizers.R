@@ -2262,7 +2262,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
     weights = weights, ...)
-  
+
   ## Create a list() that saves the states for
   ## all parameters and model terms.
   states <- make.state.list(x)
@@ -2537,7 +2537,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       }
     }
   }
-  
+  X <<- x  
   elapsed <- c(proc.time() - ptm)[3]
   
   if(verbose) {
@@ -3041,10 +3041,18 @@ get.qsel <- function(x, iter)
 {
   rval <- 0
   for(i in names(x)) {
-    for(j in names(x[[i]]$smooth.construct)) {
-      rval <- rval + 1 *
-       (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
-        j != "(Intercept)")
+    labels <- attr(x[[i]]$terms, "term.labels")
+    sID <- grepl("^[a-z]*[(]", labels)
+    for(j in labels[sID]) {
+      label <- eval(parse(text=j))$label
+      rval <- rval + 1 * any(x[[i]]$smooth.construct[[label]]$selected[1:iter] > 0)
+    }
+    for(j in labels[!sID]) {
+      slct <- NULL
+      for(m in grep(paste0("^", j), names(x[[i]]$smooth.construct))) {
+        slct <- c(slct, any(x[[i]]$smooth.construct[[m]]$selected[1:iter] > 0))
+      }
+      rval <- rval + 1 * any(slct)
     }
   }
   rval
