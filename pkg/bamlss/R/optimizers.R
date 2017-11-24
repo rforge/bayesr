@@ -3050,11 +3050,10 @@ get.qsel <- function(x, iter)
     asssel  <- list()
     for(m in assign)
       asssel[[m]] <- 0
- 
+
     for(j in names(x[[i]]$smooth.construct)) {
-      rval <- rval + 1 * any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0)
-      if(j == "(Intercept)")
-        rval <- rval - 1
+      rval <- rval + 1 * (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
+                          j != "(Intercept)")
 
       if(!is.null(x[[i]]$smooth.construct[[j]]$assign)) {
         m <- as.character(x[[i]]$smooth.construct[[j]]$assign)
@@ -3067,6 +3066,7 @@ get.qsel <- function(x, iter)
     
     for(m in assign)
       rval <- rval - max(0, asssel[[m]] - 1)
+    rm(asssel)
   }
   rval
 }

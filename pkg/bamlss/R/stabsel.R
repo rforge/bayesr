@@ -1,0 +1,152 @@
+stabsel <- function(formula, data, family = "gaussian",
+                    q, B = 100, thr = .9, ...) {
+    ## Stability Selection
+    ## TODO: ... go to bamlss call in StabStep
+    ##       parallel option
+    stabselection <- lapply(1:B, function(i) StabStep(formula = formula,
+                            data = data, family = family, q = q, seed = i))
+    stabselection <- unlist(stabselection)
+    tabsel <- sort(table(stabselection), decreasing = FALSE)
+
+    ## Re-build formula
+    formula <- bamlss.formula(formula, family, env = NULL)
+    family <- bamlss.family(family)
+    f <- StabFormula(tabsel, formula, family, thr, B)
+
+    ## return
+    rval <- list("table"       = tabsel, "raw" = stabselection,
+                 "formula.org" = formula,
+                 "formula.new" = f,
+                 "family"      = family,
+                 "parameter"   = list("q" = q, "B" = B, "thr" = thr))
+    class(rval) <- c("stabsel", "list")
+    return(rval)
+}
+
+StabStep <- function(formula, data, family = "gaussian", q, seed = NULL) {
+    if(!is.null(seed))
+        set.seed(seed)
+    d <- data[sample(nrow(data), size = round(nrow(data)/2)), ]
+    b <- bamlss(formula, data = d, family = family, optimizer = boost,
+                sampler = FALSE, maxit = 10000,
+                binning = FALSE, maxq = q,
+                plot = FALSE, verbose = FALSE)
+
+    rval <- NULL
+    for (model in b$family$names) {
+        boosum <- b$model.stats$optimizer$boost.summary$summary[[model]]
+        selterms <- rownames(boosum)[boosum[,1] > 0]
+
+        ## ignore intercept
+        selterms <- selterms[!(selterms == "(Intercept)")]
+
+        ## grep names of parametric terms
+        labels <- attr(b$terms[[model]], "term.labels")
+        pID <- !grepl("^[a-z]*[(]", labels)
+        pterms <- labels[pID]
+        foo <- function(x) {
+            if(class(b$model.frame[[x]]) == "factor") {
+                rval <- rep(x, nlevels(b$model.frame[[x]]))
+                names(rval) <- paste0(x, levels(b$model.frame[[x]]))
+            } else {
+                rval <- x
+                names(rval) <- x
+            }
+            rval
+        }
+        facLabels <- NULL
+        for (x in pterms) { facLabels <- c(facLabels, foo(x)) }
+
+        ## merge factor dummies
+        assign <- attr(b$x[[model]]$model.matrix, "assign")
+        names(assign) <- colnames(b$x$mu$model.matrix)
+        assign <- assign[names(assign) != "(Intercept)"]
+        for(j in unique(assign)) {
+            labels <- names(assign)[assign == j]
+            if(any(selterms %in% labels)) {
+                selterms <- selterms[!(selterms %in% labels)]
+                res <- facLabels[names(facLabels) %in% labels][1]
+                names(res) <- NULL
+                selterms <- c(selterms, res)
+            }
+        }
+        if (length(selterms) > 0)
+            rval <- c(rval, paste(selterms, model, sep = "."))
+    }
+
+    return(rval)
+}
+
+StabFormula <- function(tabsel, formula, family, thr, B) {
+    ## Select terms
+    p <- names(tabsel)[tabsel > (thr*B)]
+    ## grep model identifier
+    modelID <- substring(p, regexpr("\\.[a-z]+$", p) + 1)
+    ## skip model identifier
+    p <- gsub("\\.[a-z]+$", "", p)
+
+    family <- bamlss.family(family)
+    models <- family$names
+    f <- list()
+    for (i in seq_along(models)) {
+        p2 <- p[modelID == models[i]]
+
+        ## replace variables with term.labels
+        labels <- attr(terms(formula)[[models[i]]], "term.labels")
+        ## smooth terms
+        sID <- grepl("^[a-z]+[(]", labels)
+        pure <- sapply(labels[sID], function(x) { eval(parse(text=x))$label })
+        names(pure) <- NULL
+        rhs <- labels[sID][pure %in% p2]
+        ## parametric terms
+        p2para <- p2[!(p2 %in% pure[pure %in% p2])]
+        paral <- unlist(lapply(labels[!sID], function(pat) { any(grepl(pat, p2para)) }))
+        rhs <- c(rhs, labels[!sID][paral])
+        ## stack formula
+        rhs <- paste(rhs, collapse = " + ", sep="")
+        if (rhs == "")
+            rhs <- "1"
+        
+        ## response
+        resp <- all.vars(formula[[models[i]]]$formula)[1]
+        lhs <- ifelse(i == 1, resp, "")
+
+        f[[i]] <- eval(parse(text = paste(lhs, "~", rhs)))
+    }
+    #f <- bamlss.formula(f, family, env = parent.frame())
+
+    return(f)
+}
+
+## methods for stabsel object
+plot.stabsel <- function(x, show = NULL, col = NULL, ...) {
+
+    tabsel <- x$table
+    thr    <- x$parameter$thr
+    B      <- x$parameter$B
+    models <- x$family$names
+
+    p <- names(tabsel)
+    modelID <- substring(p, regexpr("\\.[a-z]+$", p) + 1)        
+    modelID <- as.factor(modelID)
+    names(tabsel) <- gsub("\\.[a-z]+$", "", p)
+    
+    n <- length(tabsel)
+    start <- ifelse(is.null(show), 1 , n - show + 1)
+
+    if (is.null(col))
+        col <- gray(seq(.8, .5, length = nlevels(modelID)))
+
+    par(mar = c(4, 12, 1, 2) + .1)
+    bp <- barplot(tabsel[start:n], horiz = TRUE, las = 1,
+                  col = col[modelID[start:n]], ...)
+    title(xlab = "Relative frequency", line = 2.4)
+    abline(v = thr*B, col = 1, lty = 3, lwd = 2)
+
+    invisible(bp)
+}
+
+#print.stabel <- function(x, ...) {}
+#summary.stabel <- function(x, ...) {}
+#print.summary.stabel <- function(x, ...) {}
+
