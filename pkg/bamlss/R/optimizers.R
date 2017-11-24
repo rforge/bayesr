@@ -2537,7 +2537,6 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       }
     }
   }
-  X <<- x  
   elapsed <- c(proc.time() - ptm)[3]
   
   if(verbose) {
@@ -2613,6 +2612,7 @@ boost.transform <- function(x, y, df = NULL, family,
       cn <- colnames(x[[nx[j]]]$smooth.construct[[ii]]$X)
       g0 <- get.par(x[[nx[j]]]$smooth.construct[[ii]]$state$parameters, "b")
       nm <- NULL
+      assign <- attr(x[[nx[j]]]$smooth.construct[[ii]]$X, "assign")
       for(pj in 1:ncol(x[[nx[j]]]$smooth.construct[[ii]]$X)) {
         model.matrix[[pj]] <- list()
         model.matrix[[pj]]$label <- cn[pj]
@@ -2638,12 +2638,14 @@ boost.transform <- function(x, y, df = NULL, family,
         model.matrix[[pj]]$sparse.setup <- sparse.setup(model.matrix[[pj]]$X, S = model.matrix[[pj]]$S)
         model.matrix[[pj]]$upper <- Inf
         model.matrix[[pj]]$lower <- -Inf
+        model.matrix[[pj]]$assign <- assign[pj]
         class(model.matrix[[pj]]) <- class(x[[nx[j]]]$smooth.construct[[ii]])
       }
       names(model.matrix) <- cn
       x[[nx[j]]]$smooth.construct[[ii]] <- NULL
       x[[nx[j]]]$smooth.construct <- c(model.matrix, x[[nx[j]]]$smooth.construct)
     }
+    attr(x[[nx[j]]], "assign") <- assign
   }
   
   ## Save more info.
@@ -3041,19 +3043,30 @@ get.qsel <- function(x, iter)
 {
   rval <- 0
   for(i in names(x)) {
-    labels <- attr(x[[i]]$terms, "term.labels")
-    sID <- grepl("^[a-z]*[(]", labels)
-    for(j in labels[sID]) {
-      label <- eval(parse(text=j))$label
-      rval <- rval + 1 * any(x[[i]]$smooth.construct[[label]]$selected[1:iter] > 0)
-    }
-    for(j in labels[!sID]) {
-      slct <- NULL
-      for(m in grep(paste0("^", j), names(x[[i]]$smooth.construct))) {
-        slct <- c(slct, any(x[[i]]$smooth.construct[[m]]$selected[1:iter] > 0))
+    assign  <- as.character(attr(x[[i]], "assign"))
+    uassign <- unique(assign)
+    facID   <- sapply(uassign, function(x) { sum(assign == x) > 1 })
+    assign  <- uassign[facID]
+    asssel  <- list()
+    for(m in assign)
+      asssel[[m]] <- 0
+ 
+    for(j in names(x[[i]]$smooth.construct)) {
+      rval <- rval + 1 * any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0)
+      if(j == "(Intercept)")
+        rval <- rval - 1
+
+      if(!is.null(x[[i]]$smooth.construct[[j]]$assign)) {
+        m <- as.character(x[[i]]$smooth.construct[[j]]$assign)
+        if(m %in% assign) {
+          asssel[[m]] <- asssel[[m]] +
+            1 * any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0)
+        }
       }
-      rval <- rval + 1 * any(slct)
     }
+    
+    for(m in assign)
+      rval <- rval - max(0, asssel[[m]] - 1)
   }
   rval
 }
