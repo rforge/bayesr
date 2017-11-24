@@ -6,8 +6,10 @@
 Performs stability selection based on gradient boosting.
 }
 \usage{
-stabsel <- function(formula, data, family = "gaussian",
-                    q, B = 100, thr = .9, ...)
+stabsel(formula, data, family = "gaussian",
+  q, B = 100, thr = .9, ...)
+
+## Plot selection frequencies.
 \method{plot}{stabsel}(x, show = NULL, col = NULL, ...)
 }
 \arguments{
