@@ -4196,7 +4196,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   
   contr <- object$xt$contrast.arg
   if(is.null(contr))
-    contr <- "contr.sum"
+    contr <- "contr.treatment"
   
   data <- as.data.frame(data)
   nobs <- nrow(data)
