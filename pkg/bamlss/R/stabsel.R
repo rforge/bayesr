@@ -93,6 +93,9 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
 
         ## replace variables with term.labels
         labels <- attr(terms(formula)[[models[i]]], "term.labels")
+        if(is.null(labels) & length(models) == 1)
+            labels <- attr(terms(formula), "term.labels")
+
         ## smooth terms
         sID <- grepl("^[a-z]+[(]", labels)
         pure <- sapply(labels[sID], function(x) { eval(parse(text=x))$label })

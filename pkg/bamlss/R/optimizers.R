@@ -2320,7 +2320,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   rho <- new.env()
 
   if(is.null(maxq))
-    maxq <- get.maxq(x)
+    maxq <- Inf
   qsel <- 0
   
   ## Start boosting.
@@ -2509,7 +2509,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     ## Compute number of selected base learners.
-    qsel <- get.qsel(x, iter)
+    if(maxq != Inf)
+      qsel <- get.qsel(x, iter)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
