@@ -1594,7 +1594,39 @@ weibull_bamlss <- function(...)
       alpha <- par$alpha
       lambda <- par$lambda
       rweibull(y, scale = lambda, shape = alpha, ...)
-    }
+    },
+    "score" = list(
+      "lambda" = function(y, par, ...) {
+        sc <- par$lambda
+        sh <- par$alpha
+        (-sh/sc) + sh * y^sh * sc^(-sh-1)
+      },
+      "alpha" = function(y, par, ...) {
+        sc <- par$lambda
+        sh <- par$alpha
+        (1/sh) - log(sh) + log(y) - (y/sc)^sh * log(y/sc)
+      }
+    ),
+    "hess" = list(
+      "lambda" = function(y, par, ...) {
+        sc <- par$lambda
+        sh <- par$alpha
+        (sh/sc^2) - (sh+1) * sh * y^sh * sc^(-sh-2)
+      },
+      "alpha" = function(y, par, ...) {
+        sc <- par$lambda
+        sh <- par$alpha
+        (-1/sh^2) - (y/sc)^sh * log(y/sc)^2
+      }
+    ),
+    "loglik" = function(y, par, ...) {
+       sum(dweibull(y, shape = par$alpha, scale = par$lambda,
+                    log = TRUE), na.rm = TRUE)
+    },
+    "initialize" = list(
+      "lambda" = function(y, ...) { rep(mean(y), length(y)) },
+      "alpha" = function(y, ...) { rep(1, length(y)) }
+    )
   )
   
   class(rval) <- "family.bamlss"
