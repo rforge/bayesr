@@ -1599,24 +1599,26 @@ weibull_bamlss <- function(...)
       "lambda" = function(y, par, ...) {
         sc <- par$lambda
         sh <- par$alpha
-        (-sh/sc) + sh * y^sh * sc^(-sh-1)
+        -sh * (1 - (y/sc)^sh)
       },
       "alpha" = function(y, par, ...) {
         sc <- par$lambda
         sh <- par$alpha
-        (1/sh) - log(sh) + log(y) - (y/sc)^sh * log(y/sc)
+        1 + sh*log(y/sc) - sh*((y/sc)^sh)*log(y/sc)
       }
     ),
     "hess" = list(
       "lambda" = function(y, par, ...) {
         sc <- par$lambda
         sh <- par$alpha
-        (sh/sc^2) - (sh+1) * sh * y^sh * sc^(-sh-2)
+        sh^2 * (y/sc)^sh
       },
       "alpha" = function(y, par, ...) {
         sc <- par$lambda
         sh <- par$alpha
-        (-1/sh^2) - (y/sc)^sh * log(y/sc)^2
+        k1 <- log(y/sc)
+        k2 <- (y/sc)^sh
+        -sh*k1 + sh*k2*k1 + (sh^2)*k2*(k1^2)
       }
     ),
     "loglik" = function(y, par, ...) {
