@@ -1609,16 +1609,13 @@ weibull_bamlss <- function(...)
     ),
     "hess" = list(
       "lambda" = function(y, par, ...) {
-        sc <- par$lambda
-        sh <- par$alpha
-        sh^2 * (y/sc)^sh
+        par$alpha^2
       },
       "alpha" = function(y, par, ...) {
-        sc <- par$lambda
-        sh <- par$alpha
-        k1 <- log(y/sc)
-        k2 <- (y/sc)^sh
-        -sh*k1 + sh*k2*k1 + (sh^2)*k2*(k1^2)
+        ## page 16 in
+        ## https://projecteuclid.org/download/suppdf_2/euclid.aoas/1437397122
+        ## 1 + trigamma(2) + digamma(2)^2
+        rep(1.823681, length(y))
       }
     ),
     "loglik" = function(y, par, ...) {
@@ -1626,8 +1623,14 @@ weibull_bamlss <- function(...)
                     log = TRUE), na.rm = TRUE)
     },
     "initialize" = list(
-      "lambda" = function(y, ...) { rep(mean(y), length(y)) },
-      "alpha" = function(y, ...) { rep(1, length(y)) }
+      "lambda" = function(y, ...) {
+        k <- 1.283 / var(log(y))
+        exp(log(y) + 0.5772 / k)
+      },
+      "alpha" = function(y, ...) {
+        k <- 1.283 / var(log(y))
+        rep(k, length(y))
+      }
     )
   )
   
