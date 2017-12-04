@@ -149,6 +149,7 @@ export(
   "boostm",
   "boost.summary",
   "boost.plot",
+  "boost.frame",
   "la",
   "lasso",
   "lasso.plot",

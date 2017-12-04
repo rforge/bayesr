@@ -5,6 +5,7 @@
 \alias{boost.plot}
 \alias{print.boost.summary}
 \alias{plot.boost.summary}
+\alias{boost.frame}
 
 \title{Boosting BAMLSS}
 
@@ -47,6 +48,9 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
   which = c("loglik", "loglik.contrib"), intercept = TRUE,
   spar = TRUE, ...)
 \method{plot}{boost.summary}(x, ...)
+
+## Model frame for out-of-sample selection.
+boost.frame(formula, data = NULL, family = "gaussian", ...)
 }
 
 \arguments{
@@ -100,6 +104,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
   \item{which}{Which of the three provided plots should be created?}
   \item{intercept}{Should the coefficient paths of intercepts be dropped in the plot?}
   \item{spar}{Should graphical parmeters be set with \code{\link[graphics]{par}}?}
+  \item{formula, data, family}{See \code{\link{bamlss.frame}}.}
   \item{\dots}{For function \code{boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
     for function \code{boost.summary()} arguments passed to function \code{print.boost.summary()}.}
 }
@@ -171,6 +176,36 @@ b <- bamlss(f, data = d, optimizer = boostm,
   maxit = 1000)
 
 plot(b)
+
+## Out-of-sample selection of model terms.
+set.seed(123)
+d <- GAMart(n = 1000)
+
+## Split data into training and testing
+i <- sample(1:2, size = nrow(d), replace = TRUE)
+d.test <- subset(d, i == 1)
+d.train <- subset(d, i == 2)
+
+## Model formula
+f <- num ~ s(x1) + s(x2) + s(x3) + te(lon,lat)
+
+## Create model frame for out-of-sample selection.
+sm <- boost.frame(f, data = d.test, family = "gaussian")
+
+## Out-of-sample selection function.
+sfun <- function(parameters) {
+  sm$parameters <- parameters
+  p <- predict(sm, type = "parameter")
+  -1 * sum(sm$family$d(d.test$num, p, log = TRUE))
+}
+
+## Start boosting with out-of-sample negative
+## log-likelihood selection of model terms.
+b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = boost,
+  selectfun = sfun, nu = 0.01)
+
+## Plot curve of negative out-of-sample log-likelihood.
+boost.plot(b, which = "user")
 }
 }
 

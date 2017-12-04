@@ -135,7 +135,7 @@ library("survival")
 \vfill
 
 \newpage
-\spacingset{1.45} % DON'T change the spacing!
+%\spacingset{1.45} % DON'T change the spacing!
 
 \section{Introduction} \label{sec:intro}
 

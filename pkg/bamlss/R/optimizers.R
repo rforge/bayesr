@@ -2263,6 +2263,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
     weights = weights, ...)
 
+  if(!is.null(list(...)$ret.x)) {
+    if(list(...)$ret.x)
+      return(x)
+  }
+
   ## Create a list() that saves the states for
   ## all parameters and model terms.
   states <- make.state.list(x)
@@ -2310,6 +2315,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     Imat <- diag(nobs)
   }
   selectfun <- list(...)$selectfun
+  selectmodel <- list(...)$selectmodel
+  if(is.null(selectmodel))
+    selectmodel <- TRUE
   if(!is.null(selectfun))
     save.ic <- rep(NA, maxit)
 
@@ -2388,7 +2396,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           }
         } else {
           rss[[i]][j] <- selfun(iter = iter, i = i, j = j, state = states[[i]][[j]],
-            parm = parm, x = x, family = family, sfun = selectfun, yname = yname, weights = weights)
+            parm = parm, x = x, family = family, sfun = selectfun, yname = yname, weights = weights,
+            selectmodel = selectmodel)
         }
       }
       
@@ -2551,25 +2560,67 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf, hatmatrix, length(eta[[1]]))
   if(plot)
     plot.boost.summary(bsum)
+
+  if(!is.null(selectfun)) {
+    if(is.null(bsum$criterion))
+      bsum$criterion <- list()
+    bsum$criterion$userIC <- save.ic[1:(if(is.null(nback)) maxit else (iter - 1))]
+  }
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 
 
-selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights)
+selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights, selectmodel = TRUE)
 {
+  if(is.null(selectmodel))
+    selectmodel <- FALSE
   parm[[i]][[j]][iter, ] <- get.par(state$parameters, "b")
   parm <- parm2mat(parm, mstop = iter, fixed = iter)
+  if(!selectmodel) {
+    formula <- list()
+    for(i in names(x))
+      formula[[i]] <- x[[i]][c("formula", "fake.formula")]
+    class(formula) <- c("bamlss.formula", "list")
+    environment(formula) <- environment(formula[[1]]$formula)
+    attr(formula, "response.name") <- yname
+    m <- list("formula" = formula, "x" = x, "family" = family, "parameters" = parm)
+    class(m) <- c("bamlss", "bamlss.frame", "list")
+    return(sfun(m))
+  } else {
+    return(sfun(parm))
+  }
+}
+
+
+boost.frame <- function(formula, data = NULL, family = "gaussian", ...)
+{
+  bf <- bamlss.frame(formula, data = data, family = family, ...)
+  yname <- names(bf$y)
+  family <- bf$family
+  bf <- boost(x = bf$x, y = bf$y, family = bf$family,
+    weights = model.weights(bf$model.frame),
+    offset = model.offset(bf$model.frame), ret.x = TRUE, ...)
   formula <- list()
-  for(i in names(x))
-    formula[[i]] <- x[[i]][c("formula", "fake.formula")]
+  for(i in names(bf))
+    formula[[i]] <- bf[[i]][c("formula", "fake.formula")]
   class(formula) <- c("bamlss.formula", "list")
   environment(formula) <- environment(formula[[1]]$formula)
   attr(formula, "response.name") <- yname
-  m <- list("formula" = formula, "x" = x, "family" = family, "parameters" = parm)
-  class(m) <- c("bamlss", "bamlss.frame", "list")
-  sfun(m)
+  bf <- list("formula" = formula, "x" = bf, "family" = family)
+  class(bf) <- c("boost.frame", "list")
+  bf
+}
+
+predict.boost.frame <- function(object, type = c("link", "parameter"), ...)
+{
+  type <- match.arg(type)
+  object$x <- set.starting.values(object$x, object$parameters)
+  fit <- get.eta(object$x, expand = TRUE)
+  if(type == "parameter")
+    fit <- object$family$map2par(fit)
+  return(fit)
 }
 
 
@@ -2806,6 +2857,8 @@ parm2mat <- function(x, mstop, fixed = NULL)
       } else {
         x[[i]][[j]] <- x[[i]][[j]][1:mstop, , drop = FALSE]
       }
+      if(!is.matrix(x[[i]][[j]]))
+        x[[i]][[j]] <- matrix(x[[i]][[j]], ncol = length(cn))
       colnames(x[[i]][[j]]) <- cn
     }
     if(!is.null(is.mm)) {
@@ -3153,10 +3206,10 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
   
   if(plot) {
     if(!is.character(which)) {
-      which <- c("loglik", "loglik.contrib", "parameters", "aic", "bic")[as.integer(which)]
+      which <- c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user")[as.integer(which)]
     } else {
       which <- tolower(which)
-      which <- match.arg(which, c("loglik", "loglik.contrib", "parameters", "aic", "bic"), several.ok = TRUE)
+      which <- match.arg(which, c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user"), several.ok = TRUE)
     }
     
     if(spar) {
@@ -3192,14 +3245,15 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
         axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
       }
-      if(w %in% c("aic", "bic")) {
+      if(w %in% c("aic", "bic", "user")) {
         if(!is.null(x$criterion)) {
           if(spar)
             par(mar = c(5.1, 4.1, 2.1, 2.1))
-          plot(x$criterion[[w]], type = "l", xlab = "Iteration", ylab = toupper(w), ...)
+          plot(x$criterion[[if(w == "user") "userIC" else w]], type = "l", xlab = "Iteration", ylab = toupper(w), ...)
           i <- which.min(x$criterion[[w]])
           abline(v = i, lwd = 3, col = "lightgray")
-          axis(3, at = i, labels = paste("mstop = ", i, ", edf = ", round(x$criterion$edf[i], digits = 2), sep = ""))
+          if(!is.null(x$criterion$edf))
+            axis(3, at = i, labels = paste("mstop = ", i, ", edf = ", round(x$criterion$edf[i], digits = 2), sep = ""))
         }
       }
     }
@@ -3214,7 +3268,7 @@ plot.boost.summary <- function(x, ...)
   print.boost.summary(x, summary = FALSE, plot = TRUE, ...) 
 }
 
-boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic"),
+boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user"),
   intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, labels = NULL, color = NULL, ...)
 {
   if(!is.character(which)) {
@@ -3237,7 +3291,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
   x$model.stats$optimizer$boost.summary$loglik <- x$model.stats$optimizer$boost.summary$loglik[1:mstop, , drop = FALSE]
   
   for(w in which) {
-    if(w %in% c("loglik", "loglik.contrib", "aic", "bic")) {
+    if(w %in% c("loglik", "loglik.contrib", "aic", "bic", "user")) {
       if((w == "loglik") & spar)
         par(mar = c(5.1, 4.1, 2.1, 2.1))
       if((w == "loglik.contrib") & spar)
@@ -3277,8 +3331,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
         }
       } else labs <- rep(labels, length.out = ncol(x$parameters))
       
-      matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration",
-              ylab = "Value", ...)
+      matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration", ...)
       abline(v = mstop, lwd = 3, col = "lightgray")
       axis(4, at = p[nrow(p), ], labels = labs, las = 1)
       axis(3, at = mstop, labels = paste("mstop =", mstop))
@@ -3331,6 +3384,8 @@ set.starting.values <- function(x, start)
           tl <- x[[id]]$smooth.construct[[j]]$label
           take <- grep(tl <- paste(id, "s", tl, sep = "."),
                        nstart[tns %in% id], fixed = TRUE, value = TRUE)
+          if(is.null(x[[id]]$smooth.construct[[j]]$by))
+            x[[id]]$smooth.construct[[j]]$by <- "NA"
           if(x[[id]]$smooth.construct[[j]]$by == "NA") {
             take <- take[!grepl(paste(tl, ":", sep = ""), take, fixed = TRUE)]
           }
