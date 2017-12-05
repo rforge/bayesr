@@ -29,8 +29,7 @@ A object of class stabsel.
 }
 \author{Thorsten Simon}
 \examples{
-\dontrun{
-## Simulate some data.
+\dontrun{## Simulate some data.
 d <- GAMart()
 n <- nrow(d)
 
