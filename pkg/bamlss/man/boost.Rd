@@ -106,7 +106,7 @@ boost.frame(formula, train, test, family = "gaussian", ...)
   \item{which}{Which of the three provided plots should be created?}
   \item{intercept}{Should the coefficient paths of intercepts be dropped in the plot?}
   \item{spar}{Should graphical parmeters be set with \code{\link[graphics]{par}}?}
-  \item{formula, family}{See \code{\link{bamlss.frame}}.}
+  \item{formula}{See \code{\link{bamlss.frame}}.}
   \item{train, test}{Data frames used for training and testing the model..}
   \item{\dots}{For function \code{boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
     for function \code{boost.summary()} arguments passed to function \code{print.boost.summary()}.}

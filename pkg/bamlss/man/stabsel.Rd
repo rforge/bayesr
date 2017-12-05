@@ -10,7 +10,7 @@ stabsel(formula, data, family = "gaussian",
   q, B = 100, thr = .9, ...)
 
 ## Plot selection frequencies.
-\method{plot}{stabsel}(x, show = NULL, col = NULL, ...)
+\method{plot}{stabsel}(x, show = NULL, pal = gray.colors, ...)
 }
 \arguments{
 \item{formula}{ A formula or extended formula. }
@@ -22,7 +22,7 @@ stabsel(formula, data, family = "gaussian",
 \item{x}{ A object of class stabsel. }
 \item{show}{ Number of terms to be shown. }
 \item{pal}{ Color palette for different model terms. }
-\item{\dots}{ Not used yet in stabsel. }
+\item{\dots}{ Not used yet in \code{stabsel}. }
 }
 \value{
 A object of class stabsel.

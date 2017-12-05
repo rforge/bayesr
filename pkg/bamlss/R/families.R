@@ -417,7 +417,7 @@ binomial_bamlss <- function(link = "logit", ...)
       pbinom(y, size = 1, prob = par$pi, ...)
     },
     "r" = function(n, par) {
-      rbinom(r, size = 1, prob = par$pi)
+      rbinom(n, size = 1, prob = par$pi)
     },
     "score" = list(
       "pi" = function(y, par, ...) {
