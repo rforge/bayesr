@@ -21,7 +21,7 @@ stabsel(formula, data, family = "gaussian",
 \item{thr}{ Cut-off threshold for selection. }
 \item{x}{ A object of class stabsel. }
 \item{show}{ Number of terms to be shown. }
-\item{col}{ Colors for different model terms. }
+\item{pal}{ Color palette for different model terms. }
 \item{\dots}{ Not used yet in stabsel. }
 }
 \value{

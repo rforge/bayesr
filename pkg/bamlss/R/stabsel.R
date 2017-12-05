@@ -1,36 +1,54 @@
 stabsel <- function(formula, data, family = "gaussian",
-                    q, B = 100, thr = .9, ...) {
+                    q = ceiling(sqrt(ncol(d))), B = 100,
+                    thr = .9, ...) {
+
+    ## Scale data
+    for(i in seq(ncol(d))) {
+        if(class(d[,i]) == "numeric")
+            d[,i] <- scale(d[,i])
+    }
+
     ## Stability Selection
-    ## TODO: ... go to bamlss call in StabStep
-    ##       parallel option
-    stabselection <- lapply(1:B, function(i) StabStep(formula = formula,
-                            data = data, family = family, q = q, seed = i))
-    stabselection <- unlist(stabselection)
-    tabsel <- sort(table(stabselection), decreasing = FALSE)
+    ## TODO: parallel option
+    stabselection <- NULL
+    for(i in seq(B)) {
+        xx <- StabStep(formula = formula, data = data,
+                       family  = family, q = q, seed = i, ...)
+        stabselection <- c(stabselection, xx$sel)
+    }
+    formula <- xx$formula
+    family  <- xx$family
 
     ## Re-build formula
-    formula <- bamlss.formula(formula, family, env = NULL)
-    family <- bamlss.family(family)
+    tabsel <- sort(table(stabselection), decreasing = FALSE)
     f <- StabFormula(tabsel, formula, family, thr, B)
 
-    ## return
+    ## Comupte per-family-error-rate
+    p <- 0
+    for(i in seq(length(formula))) {
+        p <- p + length(attr(terms(formula[[i]]$formula), "term.labels"))
+    }
+    PFER <- (q^2) / ((2*thr - 1)*p)
+
+    ## Return
     rval <- list("table"       = tabsel, "raw" = stabselection,
                  "formula.org" = formula,
                  "formula.new" = f,
                  "family"      = family,
-                 "parameter"   = list("q" = q, "B" = B, "thr" = thr))
+                 "parameter"   = list("q" = q, "B" = B, "thr" = thr,
+                                      "p" = p, "PFER" = PFER))
     class(rval) <- c("stabsel", "list")
     return(rval)
 }
 
-StabStep <- function(formula, data, family = "gaussian", q, seed = NULL) {
+StabStep <- function(formula, data, family = "gaussian", q, seed = NULL, ...) {
     if(!is.null(seed))
         set.seed(seed)
     d <- data[sample(nrow(data), size = round(nrow(data)/2)), ]
     b <- bamlss(formula, data = d, family = family, optimizer = boost,
                 sampler = FALSE, maxit = 10000,
-                binning = FALSE, maxq = q,
-                plot = FALSE, verbose = FALSE)
+                binning = TRUE, maxq = q, scale.d = FALSE,
+                plot = FALSE, verbose = FALSE, ...)
 
     rval <- NULL
     for (model in b$family$names) {
@@ -74,6 +92,9 @@ StabStep <- function(formula, data, family = "gaussian", q, seed = NULL) {
             rval <- c(rval, paste(selterms, model, sep = "."))
     }
 
+    rval <- list("sel"     = rval,
+                 "family"  = family(b),
+                 "formula" = formula(b))
     return(rval)
 }
 
@@ -86,7 +107,7 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
     p <- gsub("\\.[a-z]+$", "", p)
 
     family <- bamlss.family(family)
-    models <- family$names
+    models <- names(formula)
     f <- list()
     for (i in seq_along(models)) {
         p2 <- p[modelID == models[i]]
@@ -113,16 +134,19 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
         ## response
         resp <- all.vars(formula[[models[i]]]$formula)[1]
         lhs <- ifelse(i == 1, resp, "")
+        if(family$family == "multinomial")
+            lhs <- formula[[models[i]]]$response
 
-        f[[i]] <- eval(parse(text = paste(lhs, "~", rhs)))
+        f[[models[i]]] <- eval(parse(text = paste(lhs, "~", rhs)))
+        environment(f[[models[i]]]) <- NULL
     }
-    #f <- bamlss.formula(f, family, env = parent.frame())
+    f <- bamlss.formula(f, family)
 
     return(f)
 }
 
 ## methods for stabsel object
-plot.stabsel <- function(x, show = NULL, col = NULL, ...) {
+plot.stabsel <- function(x, show = NULL, pal = gray.colors, ...) {
 
     tabsel <- x$table
     thr    <- x$parameter$thr
@@ -137,8 +161,7 @@ plot.stabsel <- function(x, show = NULL, col = NULL, ...) {
     n <- length(tabsel)
     start <- ifelse(is.null(show), 1 , n - show + 1)
 
-    if (is.null(col))
-        col <- gray(seq(.8, .5, length = nlevels(modelID)))
+    col <- rev(pal(nlevels(modelID)))
 
     par(mar = c(4, 12, 1, 2) + .1)
     bp <- barplot(tabsel[start:n], horiz = TRUE, las = 1,

@@ -98,7 +98,7 @@ gpareto_bamlss(...)
   are organized in a named list, see the examples below.
 
   In addition, for the cumulative distribution function (\code{p(y, par, ...)}), for the quantile
-  function (\code{q(y, par, ...)}) or for creating random numbers (\code{r(y, par, ...)}) the same
+  function (\code{q(y, par, ...)}) or for creating random numbers (\code{r(n, par, ...)}) the same
   structure is assumed. See, e.g., the code of function \code{gaussian.bamlss()}.
 
   Some model fitting engines can initialize the distributional parameters which oftentimes

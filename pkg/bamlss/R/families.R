@@ -200,6 +200,13 @@ beta_bamlss <- function(...)
        a <- mu * (1 - sigma2) / (sigma2)
        b <- a * (1 - mu) / mu
        pbeta(y, shape1 = a, shape2 = b, ...)
+    },
+    "r" = function(n, par) {
+       mu <- par$mu
+       sigma2 <- par$sigma2
+       a <- mu * (1 - sigma2) / (sigma2)
+       b <- a * (1 - mu) / mu
+       rbeta(n, shape1 = a, shape2 = b)
     }
   )
   class(rval) <- "family.bamlss"
@@ -409,6 +416,9 @@ binomial_bamlss <- function(link = "logit", ...)
       y <- process_factor_response(y)
       pbinom(y, size = 1, prob = par$pi, ...)
     },
+    "r" = function(n, par) {
+      rbinom(r, size = 1, prob = par$pi)
+    },
     "score" = list(
       "pi" = function(y, par, ...) {
         y <- process_factor_response(y)
@@ -495,6 +505,9 @@ cloglog_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       pbinom(y, size = 1, prob = par$pi, ...)
+    },
+    "r" = function(n, par) {
+      pbinom(n, size = 1, prob = par$pi)
     }
   )
 
@@ -637,6 +650,9 @@ gaussian_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    },
+    "r" = function(n, par) {
+      rnorm(n, mean = par$mu, sd = par$sigma)
     },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
@@ -1124,7 +1140,7 @@ cnorm_bamlss <- function(...)
     rval <- qnorm(y) * par$sigma + par$mu
     pmax(pmin(rval, Inf), 0)
   }
-  f$r <- function(n, y, par, ...) {
+  f$r <- function(n, par, ...) {
     rval <- rnorm(n) * par$sigma + par$mu
     pmax(pmin(rval, Inf), 0)
   }
@@ -1593,7 +1609,12 @@ weibull_bamlss <- function(...)
     "p" = function(y, par, ...) {
       alpha <- par$alpha
       lambda <- par$lambda
-      rweibull(y, scale = lambda, shape = alpha, ...)
+      pweibull(y, scale = lambda, shape = alpha, ...)
+    },
+    "r" = function(n, par) {
+      alpha <-  par$alpha
+      lambda <- par$lambda
+      rweibull(n, scale = lambda, shape = alpha)
     },
     "score" = list(
       "lambda" = function(y, par, ...) {
@@ -1695,6 +1716,11 @@ gamma_bamlss <- function(...)
       s <- par$mu / par$sigma
       pgamma(y, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
     },
+    "r" = function(n, par) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      rgamma(n, shape = a, scale = s)
+    },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(1, length(y)) }
@@ -1764,6 +1790,9 @@ lognormal_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       plnorm(y, meanlog = par$mu, sdlog = par$sigma, ...)
+    },
+    "r" = function(n, par) {
+      rlnorm(n, meanlog = par$mu, sdlog = par$sigma)
     }
   )
 
@@ -1805,6 +1834,9 @@ lognormal2_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       plnorm(y, meanlog = par$mu, sdlog = sqrt(par$sigma2), ...)
+    },
+    "r" = function(n, par) {
+      rlnorm(n, meanlog = par$mu, sdlog = sqrt(par$sigma2))
     }
   )
 
@@ -2419,6 +2451,9 @@ poisson_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       ppois(y, lambda = par$lambda, ...)
+    },
+    "r" = function(n, par) {
+      rpois(n, lambda = par$lambda)
     },
     "score" = list(
       "lambda" = function(y, par, ...) {
