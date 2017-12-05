@@ -180,7 +180,7 @@ plot(b)
 
 ## Out-of-sample selection of model terms.
 set.seed(123)
-d <- GAMart()
+d <- GAMart(n = 5000)
 
 ## Split data into training and testing
 i <- sample(1:2, size = nrow(d), replace = TRUE)
@@ -208,7 +208,7 @@ sfun <- function(parameters) {
 ## Start boosting with out-of-sample negative
 ## log-likelihood selection of model terms.
 b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = boost,
-  selectfun = sfun, nu = 0.01, maxit = 2000)
+  selectfun = sfun, maxit = 10000)
 
 ## Plot curve of negative out-of-sample log-likelihood.
 boost.plot(b, which = "user")

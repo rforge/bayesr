@@ -220,7 +220,7 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
   if(!is.null(x$margin)) {
     x$xt <- c(x$xt, x$margin[[1]]$xt)
     x$xt <- x$xt[unique(names(x$xt))]
-    x$fixed <- x$margn[[1]]$fixed
+    x$fixed <- x$margin[[1]]$fixed
   }
   if(is.null(x$binning) & !is.null(x$xt[["binning"]])) {
     if(is.logical(x$xt[["binning"]])) {
@@ -228,18 +228,25 @@ bamlss.engine.setup.smooth.default <- function(x, spam = FALSE, Matrix = FALSE, 
         x$binning <- match.index(x$X)
         x$binning$order <- order(x$binning$match.index)
         x$binning$sorted.index <- x$binning$match.index[x$binning$order]
+        assign <- attr(x$X, "assign")
         x$X <- x$X[x$binning$nodups, , drop = FALSE]
+        attr(x$X, "assign") <- assign
       }
     } else {
       x$binning <- match.index(x$X)
       x$binning$order <- order(x$binning$match.index)
       x$binning$sorted.index <- x$binning$match.index[x$binning$order]
+      assign <- attr(x$X, "assign")
       x$X <- x$X[x$binning$nodups, , drop = FALSE]
+      attr(x$X, "assign") <- assign
     }
   }
   if(!is.null(x$binning)) {
-    if(nrow(x$X) != length(x$binning$nodups))
+    if(nrow(x$X) != length(x$binning$nodups)) {
+      assign <- attr(x$X, "assign")
       x$X <- x$X[x$binning$nodups, , drop = FALSE]
+      attr(x$X, "assign") <- assign
+    }
   }
   if(is.null(x$binning)) {
     nr <- nrow(x$X)
@@ -2518,8 +2525,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     ## Compute number of selected base learners.
-    if(maxq != Inf)
-      qsel <- get.qsel(x, iter)
+    qsel <- get.qsel(x, iter)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -3293,7 +3299,12 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
         if(!is.null(x$criterion)) {
           if(spar)
             par(mar = c(5.1, 4.1, 2.1, 2.1))
-          plot(x$criterion[[if(w == "user") "userIC" else w]], type = "l", xlab = "Iteration", ylab = toupper(w), ...)
+          args <- list()
+          if(is.null(args$xlab))
+            args$xlab <- "Iteration"
+          if(is.null(args$ylab))
+            args$ylab <- if(w == "user") "User IC" else toupper(w)
+          plot(x$criterion[[if(w == "user") "userIC" else w]], type = "l", xlab = args$xlab, ylab = args$ylab)
           i <- which.min(x$criterion[[w]])
           abline(v = i, lwd = 3, col = "lightgray")
           if(!is.null(x$criterion$edf))
