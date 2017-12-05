@@ -30,23 +30,24 @@ A object of class stabsel.
 \author{Thorsten Simon}
 \examples{
 \dontrun{
-## simulate some data
+## Simulate some data.
 d <- GAMart()
 n <- nrow(d)
-## add some noise variables
-for (i in 4:9)
-    d[[paste0("x",i)]] <- rnorm(n)
 
-f <- paste0("~ ", paste("s(x", 1:9,")", collapse = " + ", sep=""))
+## Add some noise variables.
+for(i in 4:9)
+  d[[paste0("x",i)]] <- rnorm(n)
+
+f <- paste0("~ ", paste("s(x", 1:9, ")", collapse = "+", sep = ""))
 f <- paste(f, "+ te(lon,lat)")
-f <- eval(parse(text=f))
+f <- eval(parse(text = f))
 f <- list(update(f, num ~ .), f)
 
-## run stability selection
+## Run stability selection.
 sel <- stabsel(f, data = d, q = 6, B = 10)
 plot(sel)
 
-## estimate selected model
+## Estimate selected model.
 b <- bamlss(sel$formula.new, data = d)
 plot(b)
 }
