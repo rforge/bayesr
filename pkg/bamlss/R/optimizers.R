@@ -2217,7 +2217,8 @@ boostm <- function(x, y, family, offset = NULL,
 
 ## Gradient boosting.
 boost <- function(x, y, family, weights = NULL, offset = NULL,
-  nu = 0.1, df = 4, maxit = 400, mstop = NULL, maxq = NULL,
+  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
+  maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
@@ -2525,7 +2526,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     ## Compute number of selected base learners.
-    qsel <- get.qsel(x, iter)
+    qsel <- get.qsel(x, iter, qsel.splitfactor = qsel.splitfactor)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -3143,7 +3144,7 @@ increase <- function(state0, state1)
 
 
 ## Extract number of selected base learners
-get.qsel <- function(x, iter)
+get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
 {
   rval <- 0
   for(i in names(x)) {
@@ -3168,8 +3169,12 @@ get.qsel <- function(x, iter)
       }
     }
     
-    for(m in assign)
-      rval <- rval - max(0, asssel[[m]] - 1)
+    if(!qsel.splitfactor) {
+        for(m in assign) {
+            rval <- rval - max(0, asssel[[m]] - 1)
+        }
+    }
+
     rm(asssel)
   }
   rval

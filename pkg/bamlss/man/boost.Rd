@@ -72,6 +72,7 @@ boost.frame(formula, train, test, family = "gaussian", ...)
   \item{mstop}{For convenience, overwrites \code{maxit}.}
   \item{maxq}{Integer, defines the maximum number of selected base-learners. The algorithm stops
     if this numer is exceeded.}
+  \item{qsel.splitfactor}{Logical, if set to \code{TRUE} dummy variables of categorical predictors are counted individually.}
   \item{name}{Character, the name of the coefficient (group) that should be plotted. Note that
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
