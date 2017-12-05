@@ -2594,22 +2594,66 @@ selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights, sel
 }
 
 
-boost.frame <- function(formula, data = NULL, family = "gaussian", ...)
+boost.frame <- function(formula, train, test, family = "gaussian", ...)
 {
-  bf <- bamlss.frame(formula, data = data, family = family, ...)
+  if(!all(names(test) == names(train)))
+    stop("test and training data must contain the same variables!")
+
+  bf <- bamlss.frame(formula, data = train, family = family, ...)
+
+  for(i in names(bf$x)) {
+    for(j in seq_along(bf$x[[i]]$smooth.construct)) {
+      if(!inherits(bf$x[[i]]$smooth.construct[[j]], "no.mgcv") & !inherits(bf$x[[i]]$smooth.construct[[j]], "special")) {
+        if(!is.null(bf$x[[i]]$smooth.construct[[j]]$is.refund)) {
+          rfcall <- bf$x[[i]]$smooth.construct[[j]]$refund.call
+          tfm <- eval(parse(text = rfcall), envir = test)
+          tfme <- eval(tfm$call, envir = tfm$data)
+          bf$x[[i]]$smooth.construct[[j]]$X <- smoothCon(tfme, data = tfm$data, n = nrow(tfm$data[[1L]]),
+            knots = NULL, absorb.cons = TRUE)[[1]]$X
+          rm(tfm)
+          rm(tfme)
+        } else {
+          bf$x[[i]]$smooth.construct[[j]]$X <- PredictMat(bf$x[[i]]$smooth.construct[[j]], test)
+        }
+      } else {
+        if(is.null(x[[jj]]$PredictMat)) {
+          bf$x[[i]]$smooth.construct[[j]]$X <- PredictMat(bf$x[[i]]$smooth.construct[[j]], test)
+        } else {
+          bf$x[[i]]$smooth.construct[[j]]$X <- bf$x[[i]]$smooth.construct[[j]]$PredictMat(x[[jj]], test)
+        }
+      }
+    }
+    if(!is.null(bf$x[[i]]$model.matrix)) {
+      sc <- attr(bf$x[[i]]$model.matrix, "scale")
+      bf$x[[i]]$model.matrix <- model.matrix(drop.terms.bamlss(bf$x[[i]]$terms,
+        sterms = FALSE, keep.response = FALSE, data = test), data = test)
+      if(ncol(bf$x[[i]]$model.matrix) > 0) {
+        if(!is.null(sc)) {
+          for(name in unique(unlist(lapply(sc, names)))) {
+            bf$x[[i]]$model.matrix[,name] <- (bf$x[[i]]$model.matrix[,name] - sc$center[name] ) / sc$scale[name]
+          }
+        }
+      } else bf$x[[i]]$model.matrix <- NULL
+    }
+  }
+
   yname <- names(bf$y)
   family <- bf$family
+
   bf <- boost(x = bf$x, y = bf$y, family = bf$family,
     weights = model.weights(bf$model.frame),
-    offset = model.offset(bf$model.frame), ret.x = TRUE, ...)
+    offset = model.offset(bf$model.frame), ret.x = TRUE, initialize = FALSE, ...)
+
   formula <- list()
   for(i in names(bf))
     formula[[i]] <- bf[[i]][c("formula", "fake.formula")]
   class(formula) <- c("bamlss.formula", "list")
   environment(formula) <- environment(formula[[1]]$formula)
   attr(formula, "response.name") <- yname
+
   bf <- list("formula" = formula, "x" = bf, "family" = family)
   class(bf) <- c("boost.frame", "list")
+
   bf
 }
 

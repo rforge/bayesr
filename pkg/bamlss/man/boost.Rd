@@ -50,7 +50,7 @@ boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
 \method{plot}{boost.summary}(x, ...)
 
 ## Model frame for out-of-sample selection.
-boost.frame(formula, data = NULL, family = "gaussian", ...)
+boost.frame(formula, train, test, family = "gaussian", ...)
 }
 
 \arguments{
@@ -104,7 +104,8 @@ boost.frame(formula, data = NULL, family = "gaussian", ...)
   \item{which}{Which of the three provided plots should be created?}
   \item{intercept}{Should the coefficient paths of intercepts be dropped in the plot?}
   \item{spar}{Should graphical parmeters be set with \code{\link[graphics]{par}}?}
-  \item{formula, data, family}{See \code{\link{bamlss.frame}}.}
+  \item{formula, family}{See \code{\link{bamlss.frame}}.}
+  \item{train, test}{Data frames used for training and testing the model..}
   \item{\dots}{For function \code{boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
     for function \code{boost.summary()} arguments passed to function \code{print.boost.summary()}.}
 }
@@ -179,7 +180,7 @@ plot(b)
 
 ## Out-of-sample selection of model terms.
 set.seed(123)
-d <- GAMart(n = 1000)
+d <- GAMart()
 
 ## Split data into training and testing
 i <- sample(1:2, size = nrow(d), replace = TRUE)
@@ -187,10 +188,15 @@ d.test <- subset(d, i == 1)
 d.train <- subset(d, i == 2)
 
 ## Model formula
-f <- num ~ s(x1) + s(x2) + s(x3) + te(lon,lat)
+f <- list(
+  num ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),
+  sigma ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+)
 
 ## Create model frame for out-of-sample selection.
-sm <- boost.frame(f, data = d.test, family = "gaussian")
+sm <- boost.frame(f, train = d.train, test = d.test, family = "gaussian")
 
 ## Out-of-sample selection function.
 sfun <- function(parameters) {
@@ -202,7 +208,7 @@ sfun <- function(parameters) {
 ## Start boosting with out-of-sample negative
 ## log-likelihood selection of model terms.
 b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = boost,
-  selectfun = sfun, nu = 0.01)
+  selectfun = sfun, nu = 0.01, maxit = 2000)
 
 ## Plot curve of negative out-of-sample log-likelihood.
 boost.plot(b, which = "user")
