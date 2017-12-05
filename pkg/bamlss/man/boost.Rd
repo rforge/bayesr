@@ -40,7 +40,7 @@ boost.summary(object, ...)
 
 ## Plot all boosting paths.
 boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
-  "aic", "bic"), intercept = TRUE, spar = TRUE, mstop = NULL,
+  "aic", "bic", "user"), intercept = TRUE, spar = TRUE, mstop = NULL,
   name = NULL, labels = NULL, color = NULL, ...)
 
 ## Boosting summary printing and plotting.
@@ -87,8 +87,9 @@ boost.frame(formula, train, test, family = "gaussian", ...)
   \item{plot}{Should the boosting summary be printed and plotted?}
   \item{initialize}{Logical, should intercepts be initialized?}
   \item{stop.criterion}{Character, selects the information criterion that should be used
-    to determine the optimum number of boosting iterations. Either \code{"AIC"} or \code{"BIC"},
-    is possible. Note that this feature requires to compute hat-matrices for each distributional
+    to determine the optimum number of boosting iterations. Either \code{"AIC"}, \code{"BIC"} or
+    if user defined selection was performed \code{"user"}, is possible. Note that this feature
+    requires to compute hat-matrices for each distributional
     parameter, therefore, the routine may be slow and computer storage intensive.}
   \item{force.stop}{Logical, should the algorithm stop if the information criterion increases?}
   \item{do.optim}{Logical. Should smoothing parameters be optimized in each boosting iteration?}
