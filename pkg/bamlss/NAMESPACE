@@ -40,9 +40,8 @@ importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
   "write.table", "combn")
 
-  importFrom("graphics", "barplot", "title")
-  importFrom("stats", "ecdf", "pweibull", "qlogis", "rbeta", "rbinom",
-             "rlnorm", "rpois")
+import("spam")
+import("Matrix")
 
 export(
   ## main user interface

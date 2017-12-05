@@ -7970,9 +7970,10 @@ smooth.construct.mlt.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.ispline.smooth <- function(object, data)
 {
-  X <- iSpline(data[[object$term]],
+  stopifnot(requireNamespace("splines2"))
+  X <- splines2::iSpline(data[[object$term]],
     knots = object$knots, degree = 3, intercept = FALSE, derivs = 0L)
-  attr(X, "deriv") <- iSpline(data[[object$term]],
+  attr(X, "deriv") <- splines2::iSpline(data[[object$term]],
     knots = object$knots, degree = 3, intercept = FALSE, derivs = 1L)
   X
 }
