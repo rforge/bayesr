@@ -12,10 +12,12 @@ stabsel <- function(formula, data, family = "gaussian",
     ## TODO: parallel option
     stabselection <- NULL
     for(i in seq(B)) {
+        cat(sprintf("Stability selection boosting run %d / %d \r", i, B))
         xx <- StabStep(formula = formula, data = data,
                        family  = family, q = q, seed = i, ...)
         stabselection <- c(stabselection, xx$sel)
     }
+    cat("\n")
     formula <- xx$formula
     family  <- xx$family
 
@@ -141,17 +143,28 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
         environment(f[[models[i]]]) <- NULL
     }
     f <- bamlss.formula(f, family)
+    
+    ## Add attributes of orig.formula
+    if(!is.null(attr(formula, "orig.formula")))
+        attr(f, "orig.formula") <- attr(formula, "orig.formula")
+    if(!is.null(attr(formula, "response.name")))
+        attr(f, "response.name") <- attr(formula, "response.name")
+    for (i in seq_along(models)) {
+        if(any(names(formula[[models[i]]]) %in% "response"))
+            f[[models[i]]]$response <- formula[[models[i]]]$response
+    }
 
     return(f)
 }
 
 ## methods for stabsel object
-plot.stabsel <- function(x, show = NULL, pal = gray.colors, ...) {
+plot.stabsel <- function(x, show = NULL,
+    pal = function(n) gray.colors(n, start = 0.9, end = 0.3), ...) {
 
     tabsel <- x$table
     thr    <- x$parameter$thr
     B      <- x$parameter$B
-    models <- x$family$names
+    models <- names(x$formula.new)
 
     p <- names(tabsel)
     modelID <- substring(p, regexpr("\\.[a-z]+$", p) + 1)        
@@ -161,18 +174,29 @@ plot.stabsel <- function(x, show = NULL, pal = gray.colors, ...) {
     n <- length(tabsel)
     start <- ifelse(is.null(show), 1 , n - show + 1)
 
-    col <- rev(pal(nlevels(modelID)))
+    col <- pal(nlevels(modelID))
 
-    par(mar = c(4, 12, 1, 2) + .1)
+    par(mar = c(5, 12, 4, 2) + .1)
     bp <- barplot(tabsel[start:n], horiz = TRUE, las = 1,
                   col = col[modelID[start:n]], ...)
-    title(xlab = "Relative frequency", line = 2.4)
     abline(v = thr*B, col = 1, lty = 3, lwd = 2)
+    legend("bottomright", fill = col, legend = levels(modelID), bg = "white")
+    title(xlab = "Frequency")
 
     invisible(bp)
 }
 
-#print.stabel <- function(x, ...) {}
+print.stabsel <- function(x, ...) {
+    cat("Stability selection:\n")
+    cat("---\n")
+    cat(sprintf("Family: %s\n", x$family$family))
+    cat("---\n")
+    cat(sprintf("Per family error rate: %.3f\n", x$parameter$PFER))
+    cat("---\n")
+    cat("Selected formula:\n")
+    print(x$formula.new)
+}
+
 #summary.stabel <- function(x, ...) {}
 #print.summary.stabel <- function(x, ...) {}
 
