@@ -19,8 +19,9 @@
 ## Gradient boosting optimizer.
 boost(x, y, family, weights = NULL,
   offset = NULL, nu = 0.1, df = 4, maxit = 400,
-  mstop = NULL, maxq = NULL, verbose = TRUE,
-  digits = 4, flush = TRUE, eps = .Machine$double.eps^0.25,
+  mstop = NULL, maxq = NULL, qsel.splitfactor = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25,
   nback = NULL, plot = TRUE, initialize = TRUE,
   stop.criterion = NULL, force.stop = TRUE,
   hatmatrix = !is.null(stop.criterion),

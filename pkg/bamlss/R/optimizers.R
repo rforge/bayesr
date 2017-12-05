@@ -2623,10 +2623,10 @@ boost.frame <- function(formula, train, test, family = "gaussian", ...)
           bf$x[[i]]$smooth.construct[[j]]$X <- PredictMat(bf$x[[i]]$smooth.construct[[j]], test)
         }
       } else {
-        if(is.null(x[[jj]]$PredictMat)) {
+        if(is.null(bf$x[[i]]$smooth.construct[[j]]$PredictMat)) {
           bf$x[[i]]$smooth.construct[[j]]$X <- PredictMat(bf$x[[i]]$smooth.construct[[j]], test)
         } else {
-          bf$x[[i]]$smooth.construct[[j]]$X <- bf$x[[i]]$smooth.construct[[j]]$PredictMat(x[[jj]], test)
+          bf$x[[i]]$smooth.construct[[j]]$X <- bf$x[[i]]$smooth.construct[[j]]$PredictMat(bf$x[[i]]$smooth.construct[[j]], test)
         }
       }
     }

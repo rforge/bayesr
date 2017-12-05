@@ -7933,16 +7933,17 @@ h <- function(...)
 
 smooth.construct.ispline.smooth.spec <- function(object, data, knots, ...)
 {
+  stopifnot(requireNamespace("splines2"))
   class(object) <- "ps.smooth.spec"
   object <- smooth.construct(object, data, knots)
   knots <- object$knots
   knots <- knots[(knots > min(data[[object$term]])) &
     (knots < max(data[[object$term]]))]
   object$knots <- knots
-  object$X <- iSpline(data[[object$term]],
+  object$X <- splines2::iSpline(data[[object$term]],
     knots = knots, degree = 3, intercept = FALSE, derivs = 0L)
   object$S <- list(crossprod(diff(diag(ncol(object$X)), differences = 2)))
-  object$derivMat <- iSpline(data[[object$term]],
+  object$derivMat <- splines2::iSpline(data[[object$term]],
     knots = knots, degree = 3, intercept = FALSE, derivs = 1L)
   class(object) <- "ispline.smooth"
   return(object)
