@@ -189,10 +189,8 @@ d.train <- subset(d, i == 2)
 
 ## Model formula
 f <- list(
-  num ~ x1 + x2 + x3 + lon + lat +
-    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),
-  sigma ~ x1 + x2 + x3 + lon + lat +
-    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+  num ~ s(x1) + s(x2) + s(x3),
+  sigma ~ s(x1) + s(x2) + s(x3)
 )
 
 ## Create model frame for out-of-sample selection.
@@ -208,7 +206,7 @@ sfun <- function(parameters) {
 ## Start boosting with out-of-sample negative
 ## log-likelihood selection of model terms.
 b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = boost,
-  selectfun = sfun, maxit = 10000)
+  selectfun = sfun, always = "best")
 
 ## Plot curve of negative out-of-sample log-likelihood.
 boost.plot(b, which = "user")
