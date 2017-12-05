@@ -33,8 +33,11 @@ gra2nb(graObject)
  
 \examples{
 ## first nb to gra:
-if(requireNamespace("spdep") & requireNamespace("rgdal")) {
+if(requireNamespace("spdep") &
+  requireNamespace("rgdal") &
+  requireNamespace("spData")) {
   library("spdep")
+  library("spData")
   library("rgdal")
 
   columbus <- readOGR(system.file("shapes/columbus.shp", package="spData")[1])
