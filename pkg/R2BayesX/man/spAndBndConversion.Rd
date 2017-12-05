@@ -45,7 +45,8 @@ germany <- read.bnd(file)
 spGermany <- bnd2sp(germany)
 
 ## plot the result together with the neighborhood graph
-if(requireNamespace("sp") & requireNamespace("spdep")) {
+if(requireNamespace("spdep")) {
+  library("spdep")
   plot(spGermany)
   nbGermany <- poly2nb(spGermany)
   plot(nbGermany, coords = coordinates(spGermany), add = TRUE)

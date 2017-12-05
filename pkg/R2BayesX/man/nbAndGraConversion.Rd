@@ -34,7 +34,9 @@ gra2nb(graObject)
 \examples{
 ## first nb to gra:
 if(requireNamespace("spdep") & requireNamespace("rgdal")) {
+  library("spdep")
   library("rgdal")
+
   columbus <- readOGR(system.file("shapes/columbus.shp", package="spData")[1])
 
   colNb <- poly2nb(columbus)
