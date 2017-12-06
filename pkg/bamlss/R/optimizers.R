@@ -944,6 +944,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           
           ## Compute working observations.
           z <- eta[[nx[j]]] + 1 / hess * score
+
         } else z <- hess <- score <- NULL
         
         if(iter < 2)
@@ -3435,7 +3436,7 @@ set.starting.values <- function(x, start)
                 names(tau2) <- gsub(paste(id, "p.", sep = "."), "", names(tau2), fixed = TRUE)
                 tpar <- c(tpar, tau2)
               }
-              x[[id]]$smooth.construct$model.matrix$state$parameters <- tpar
+              x[[id]]$smooth.construct$model.matrix$state$parameters[names(tpar)] <- tpar
               x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
             }
           }
