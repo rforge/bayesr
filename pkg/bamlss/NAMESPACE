@@ -19,7 +19,7 @@ importFrom("grDevices", "chull", "dev.interactive", "devAskNewPage",
   "gray", "gray.colors", "n2mfrow", "trans3d", "rgb")
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
   "layout", "lcm", "lines", "matplot", "mtext", "par",
-  "points", "rect", "text", "plot.default", "barplot", "title")
+  "points", "rect", "text", "plot.default", "barplot", "title", "legend")
 importFrom("methods", "is", "as", "slot")
 importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "contrasts<-", "dbeta", "dbinom", "delete.response",

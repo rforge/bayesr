@@ -10,7 +10,8 @@ stabsel(formula, data, family = "gaussian",
   q, B = 100, thr = .9, ...)
 
 ## Plot selection frequencies.
-\method{plot}{stabsel}(x, show = NULL, pal = gray.colors, ...)
+\method{plot}{stabsel}(x, show = NULL,
+  pal = function(n) gray.colors(n, start = 0.9, end = 0.3), ...)
 }
 \arguments{
 \item{formula}{ A formula or extended formula. }
