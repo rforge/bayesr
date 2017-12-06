@@ -2002,9 +2002,10 @@ boostm <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
-  initialize = TRUE, stop.criterion = NULL, force.stop = !is.null(stop.criterion),
-  do.optim = TRUE, ...)
-{  
+  initialize = TRUE, stop.criterion = "BIC",
+  force.stop = !is.null(stop.criterion),
+  do.optim = TRUE, always = FALSE, ...)
+{
   ## FIXME: hard coded!
   offset <- weights <- NULL
 
@@ -2020,6 +2021,18 @@ boostm <- function(x, y, family, offset = NULL,
   
   if(is.null(maxit))
     stop("please set either argument 'maxit' or 'mstop'!")
+
+  always2 <- FALSE
+  if(!is.logical(always)) {
+    if(is.character(always)) {
+      if(!is.na(pmatch(always, "best"))) {
+        always2 <- TRUE
+        always <- TRUE
+      } else {
+        always <- FALSE
+      }
+    }
+  }
   
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, df = NULL, ...)
@@ -2036,7 +2049,7 @@ boostm <- function(x, y, family, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, set.nnet = FALSE, ...)
+    weights = weights, set.nnet = FALSE)
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2101,6 +2114,13 @@ boostm <- function(x, y, family, offset = NULL,
       z <- eta[[i]] + 1 / hess * grad
  
       for(j in names(x[[i]]$smooth.construct)) {
+        if(always) {
+          if(j == "(Intercept)") {
+            crit[[i]][j] <- -Inf
+            next
+          }
+        }
+
         ## Get update.
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boostm.fit"]])) {
           boostm_fit(x[[i]]$smooth.construct[[j]], grad, hess, z, nu, stop.criterion,
@@ -2131,12 +2151,6 @@ boostm <- function(x, y, family, offset = NULL,
     }
 
     i <- which.max(sapply(crit, function(x) { max(x) }))
-
-    if(all(unlist(crit) <= 0)) {
-      warning("criterion is decreasing!")
-      if(force.stop & (iter > 2))
-        break
-    }
     
     ## Which term to update.
     take <- c(nx[i], names(crit[[i]])[select[i]])
@@ -2147,12 +2161,52 @@ boostm <- function(x, y, family, offset = NULL,
     ## Save parameters.
     parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b") - get.par(x[[take[1]]]$smooth.construct[[take[2]]]$state$parameters, "b")
     medf <- medf - x[[take[1]]]$smooth.construct[[take[2]]]$state$edf + states[[take[1]]][[take[2]]]$edf
-    edf[iter] <- medf
 
     ## Write to x.
     x[[take[1]]]$smooth.construct[[take[2]]]$state <- states[[take[1]]][[take[2]]]
     x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
     x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- ll.contrib[[take[1]]][take[2]]
+
+    ## Intercept updating.
+    if(always) {
+      nxa <- if(always2) take[1] else nx
+
+      for(ii in nxa) {
+        if("(Intercept)" %in% names(x[[ii]]$smooth.construct)) {
+          ## Actual gradient.
+          grad <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
+
+          ## Actual hessian.
+          hess <- process.derivs(family$score[[ii]](y, peta, id = ii), is.weight = FALSE)
+
+          ## Working response.
+          z <- eta[[ii]] + 1 / hess * grad
+
+          ## Get update.
+          states[[ii]][["(Intercept)"]] <- boostm_fit(x[[ii]]$smooth.construct[["(Intercept)"]],
+            grad, hess, z, nu, stop.criterion, family, y, eta, medf, id = i, do.optim = do.optim, ...)
+
+          ll <- family$loglik(y, family$map2par(eta))
+
+          ## Update predictor.
+          eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]]) - fitted(x[[ii]]$smooth.construct[["(Intercept)"]]$state)
+
+          ## Save parameters.
+          parm[[ii]][["(Intercept)"]][iter, ] <- get.par(states[[ii]][["(Intercept)"]]$parameters, "b") - get.par(x[[ii]]$smooth.construct[["(Intercept)"]]$state$parameters, "b")
+          medf <- medf - x[[ii]]$smooth.construct[["(Intercept)"]]$state$edf + states[[ii]][["(Intercept)"]]$edf
+
+          tll <- family$loglik(y, family$map2par(eta))
+          ll.contrib[[ii]]["(Intercept)"] <- tll - ll
+
+          ## Write to x.
+          x[[ii]]$smooth.construct[["(Intercept)"]]$state <- states[[ii]][["(Intercept)"]]
+          x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
+          x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- ll.contrib[[ii]]["(Intercept)"]
+        }
+      }
+    }
+
+    edf[iter] <- medf
     
     ## Change.
     eps0 <- do.call("cbind", eta)
@@ -2164,6 +2218,8 @@ boostm <- function(x, y, family, offset = NULL,
 
     save.ll <- c(save.ll, ll)
     save.ic[iter] <- ic0
+
+    qsel <- get.qsel(x, iter)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -2172,7 +2228,8 @@ boostm <- function(x, y, family, offset = NULL,
         "logLik ", fmt(ll, width = 8, digits = digits),
         " edf ", fmt(edf[iter], width = 4, digits = digits), " ",
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
-        " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
+        " iteration ", formatC(iter, width = nchar(maxit)),
+        " qsel ", qsel, sep = "")
       cat(vtxt)
       
       if(.Platform$OS.type != "unix" & ia) flush.console()
@@ -2202,17 +2259,19 @@ boostm <- function(x, y, family, offset = NULL,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
   
-  bsum <- make.boost.summary(x, if(!stopped) maxit else (iter - 1), save.ll, edf, FALSE, nobs)
+  itr <- if(!stopped) maxit else (iter - 1)
+  bsum <- make.boost.summary(x, itr, save.ll, edf, FALSE, nobs)
   bsum$criterion <- list(
-    "bic" = -2 * save.ll[1:maxit] + edf[1:maxit] * log(nobs),
-    "aic" = -2 * save.ll[1:maxit] + edf[1:maxit] * 2,
-    "edf" = edf[1:maxit]
+    "bic" = -2 * save.ll[1:itr] + edf[1:itr] * log(nobs),
+    "aic" = -2 * save.ll[1:itr] + edf[1:itr] * 2,
+    "edf" = edf[1:itr]
   )
   if(plot)
     plot.boost.summary(bsum)
   
-  return(list("parameters" = parm2mat(parm, if(!stopped) maxit else (iter - 1)),
-    "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+  return(list("parameters" = parm2mat(parm, itr),
+    "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum,
+    "runtime" = elapsed))
 }
 
 

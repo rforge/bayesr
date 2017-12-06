@@ -32,9 +32,9 @@ boostm(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
-  initialize = TRUE, stop.criterion = NULL,
+  initialize = TRUE, stop.criterion = "BIC",
   force.stop = !is.null(stop.criterion),
-  do.optim = TRUE, ...)
+  do.optim = TRUE, always = FALSE, ...)
 
 ## Boosting summary extractor.
 boost.summary(object, ...)
@@ -176,9 +176,14 @@ f <- list(
 
 b <- bamlss(f, data = d, optimizer = boostm,
   sampler = FALSE, scale.d = TRUE, nu = 0.01,
-  maxit = 1000)
+  maxit = 1000, stop.criterion = "AIC")
 
+## Plot estimated effects.
 plot(b)
+
+## Plot AIC and log-lik contributions.
+boost.plot(b, "AIC")
+boost.plot(b, "loglik.contrib")
 
 ## Out-of-sample selection of model terms.
 set.seed(123)
