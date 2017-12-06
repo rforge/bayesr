@@ -1,11 +1,11 @@
 stabsel <- function(formula, data, family = "gaussian",
-                    q = ceiling(sqrt(ncol(d))), B = 100,
+                    q = ceiling(sqrt(ncol(data))), B = 100,
                     thr = .9, ...) {
 
     ## Scale data
-    for(i in seq(ncol(d))) {
-        if(class(d[,i]) == "numeric")
-            d[,i] <- scale(d[,i])
+    for(i in seq(ncol(data))) {
+        if(inherits(data[,i], "numeric"))
+            data[,i] <- scale(data[,i])
     }
 
     ## Stability Selection
@@ -104,9 +104,9 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
     ## Select terms
     p <- names(tabsel)[tabsel > (thr*B)]
     ## grep model identifier
-    modelID <- substring(p, regexpr("\\.[a-z]+$", p) + 1)
+    modelID <- substring(p, regexpr("\\.[a-z0-9]+$", p) + 1)
     ## skip model identifier
-    p <- gsub("\\.[a-z]+$", "", p)
+    p <- gsub("\\.[a-z0-9]+$", "", p)
 
     family <- bamlss.family(family)
     models <- names(formula)
@@ -142,17 +142,6 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
         f[[models[i]]] <- eval(parse(text = paste(lhs, "~", rhs)))
         environment(f[[models[i]]]) <- NULL
     }
-    f <- bamlss.formula(f, family)
-    
-    ## Add attributes of orig.formula
-    if(!is.null(attr(formula, "orig.formula")))
-        attr(f, "orig.formula") <- attr(formula, "orig.formula")
-    if(!is.null(attr(formula, "response.name")))
-        attr(f, "response.name") <- attr(formula, "response.name")
-    for (i in seq_along(models)) {
-        if(any(names(formula[[models[i]]]) %in% "response"))
-            f[[models[i]]]$response <- formula[[models[i]]]$response
-    }
 
     return(f)
 }
@@ -167,9 +156,9 @@ plot.stabsel <- function(x, show = NULL,
     models <- names(x$formula.new)
 
     p <- names(tabsel)
-    modelID <- substring(p, regexpr("\\.[a-z]+$", p) + 1)        
+    modelID <- substring(p, regexpr("\\.[a-z0-9]+$", p) + 1)        
     modelID <- as.factor(modelID)
-    names(tabsel) <- gsub("\\.[a-z]+$", "", p)
+    names(tabsel) <- gsub("\\.[a-z0-9]+$", "", p)
     
     n <- length(tabsel)
     start <- ifelse(is.null(show), 1 , n - show + 1)
