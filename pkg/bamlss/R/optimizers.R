@@ -3436,8 +3436,10 @@ set.starting.values <- function(x, start)
                 names(tau2) <- gsub(paste(id, "p.", sep = "."), "", names(tau2), fixed = TRUE)
                 tpar <- c(tpar, tau2)
               }
-              x[[id]]$smooth.construct$model.matrix$state$parameters[names(tpar)] <- tpar
-              x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
+              if(all(names(tpar) %in% names(x[[id]]$smooth.construct$model.matrix$state$parameters))) {
+                x[[id]]$smooth.construct$model.matrix$state$parameters[names(tpar)] <- tpar
+                x[[id]]$smooth.construct$model.matrix$state$fitted.values <- x[[id]]$smooth.construct$model.matrix$fit.fun(x[[id]]$smooth.construct$model.matrix$X, x[[id]]$smooth.construct$model.matrix$state$parameters)
+              }
             }
           }
         }
