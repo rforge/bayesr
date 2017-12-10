@@ -175,8 +175,8 @@ f <- list(
 )
 
 b <- bamlss(f, data = d, optimizer = boostm,
-  sampler = FALSE, scale.d = TRUE, nu = 0.01,
-  maxit = 1000, stop.criterion = "AIC")
+  sampler = FALSE, scale.d = TRUE, nu = 0.05,
+  maxit = 400, stop.criterion = "AIC", force.stop = FALSE)
 
 ## Plot estimated effects.
 plot(b)

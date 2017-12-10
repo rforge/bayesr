@@ -1452,7 +1452,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     eta2 <- eta
     
     env <- new.env()
-    
+
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
@@ -2050,6 +2050,10 @@ boostm <- function(x, y, family, offset = NULL,
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
     weights = weights, set.nnet = FALSE)
+  for(i in nx) {
+    for(j in names(x[[i]]$smooth.construct))
+      x[[i]]$smooth.construct[[j]]$criterion <- x[[i]]$smooth.construct[[j]]$loglik
+  }
   
   ## Create a list() that saves the states for
   ## all parameters and model terms.
@@ -2140,17 +2144,17 @@ boostm <- function(x, y, family, offset = NULL,
         } else {
           tedf <- medf - x[[i]]$smooth.construct[[j]]$state$edf + states[[i]][[j]]$edf
           ic1 <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-          crit[[i]][j] <- ic0 - ic1
+          crit[[i]][j] <- ic1
         }
         ll.contrib[[i]][j] <- tll - ll
         eta[[i]] <- eta0[[i]]
       }
       
       ## Which one is best?
-      select[i] <- which.max(crit[[i]])
+      select[i] <- which.min(crit[[i]])
     }
 
-    i <- which.max(sapply(crit, function(x) { max(x) }))
+    i <- which.min(sapply(crit, function(x) { min(x) }))
     
     ## Which term to update.
     take <- c(nx[i], names(crit[[i]])[select[i]])
@@ -2166,6 +2170,7 @@ boostm <- function(x, y, family, offset = NULL,
     x[[take[1]]]$smooth.construct[[take[2]]]$state <- states[[take[1]]][[take[2]]]
     x[[take[1]]]$smooth.construct[[take[2]]]$selected[iter] <- 1
     x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- ll.contrib[[take[1]]][take[2]]
+    x[[take[1]]]$smooth.construct[[take[2]]]$criterion[iter] <- -1 * crit[[take[1]]][take[2]]
 
     ## Intercept updating.
     if(always) {
@@ -3255,7 +3260,7 @@ make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
 {
   nx <- names(x)
   labels <- NULL
-  ll.contrib <- NULL
+  ll.contrib <- crit.contrib <- NULL
   bsum <- lmat <- list()
   for(i in nx) {
     rn <- NULL
@@ -3265,6 +3270,8 @@ make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
       bsum[[i]] <- rbind(bsum[[i]], sum(x[[i]]$smooth.construct[[j]]$selected[1:mstop]) / mstop * 100)
       lmat[[i]] <- rbind(lmat[[i]], sum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
       ll.contrib <- cbind(ll.contrib, cumsum(x[[i]]$smooth.construct[[j]]$loglik[1:mstop]))
+      if(!is.null(x[[i]]$smooth.construct[[j]]$criterion))
+        crit.contrib <- cbind(crit.contrib, cumsum(x[[i]]$smooth.construct[[j]]$criterion[1:mstop]))
     }
     if(!is.matrix(bsum[[i]])) bsum[[i]] <- matrix(bsum[[i]], nrow = 1)
     bsum[[i]] <- cbind(bsum[[i]], lmat[[i]])
@@ -3274,6 +3281,8 @@ make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
     bsum[[i]] <- bsum[[i]][order(bsum[[i]][, 2], decreasing = TRUE), , drop = FALSE]
   }
   colnames(ll.contrib) <- labels
+  if(!is.null(crit.contrib))
+    colnames(crit.contrib) <- labels
   names(bsum) <- nx
   bsum <- list("summary" = bsum, "mstop" = mstop,
     "ic" = save.ic[1:mstop], "loglik" = ll.contrib)
@@ -3283,6 +3292,8 @@ make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
     bsum$criterion$aic <- -2 * bsum$ic + edf[1:mstop] * 2
     bsum$criterion$edf <- edf[1:mstop]
   }
+  if(!is.null(crit.contrib))
+    bsum$crit.contrib <- crit.contrib
   class(bsum) <- "boost.summary"
   return(bsum)
 }

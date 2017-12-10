@@ -4584,6 +4584,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     eta[[id]] <- eta[[id]] - fitted(x$state)
 
     b0 <- get.state(x, "b")
+
     nb <- names(b0)
 
     U <- getU(b0)
