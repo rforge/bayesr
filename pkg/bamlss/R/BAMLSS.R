@@ -1994,8 +1994,16 @@ complete.bamlss.family <- function(family)
   }
 
   if(is.null(family$loglik)) {
-    if(!is.null(family$d))
-      family$loglik <- function(y, par, ...) { sum(family$d(y, par, log = TRUE), na.rm = TRUE) }
+    if(!is.null(family$d)) {
+      family$loglik <- function(y, par, ...) {
+        logdens <- family$d(y, par, log = TRUE)
+        if(any(i <- !is.finite(logdens))) {
+          logdens[i] <- 0
+          warning("non finite log density!")
+        }
+        return(sum(logdens, na.rm = TRUE))
+      }
+    }
   }
 
   err01 <- .Machine$double.eps^(1/3)

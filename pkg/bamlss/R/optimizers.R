@@ -741,7 +741,7 @@ fmt <- Vectorize(function(x, width = 8, digits = 2) {
 bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
-  outer = FALSE, inner = FALSE, mgcv = FALSE,
+  outer = NULL, inner = FALSE, mgcv = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
 {
   nx <- family$names
@@ -785,10 +785,21 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
   
   ia <- if(flush) interactive() else FALSE
-  
+
+  if(is.null(outer)) {
+    outer <- FALSE
+    max_outer <- 1
+  } else {
+    max_outer <- if(outer) {
+      maxit + 1
+    } else {
+      0
+    }
+  }
   if(mgcv) {
     outer <- TRUE
     inner <- TRUE
+    max_outer <- maxit + 1
   }
   
   inner_bf <- if(!mgcv) {
@@ -922,7 +933,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       eta0 <- eta
       ## Cycle through all parameters
       for(j in 1:np) {
-        if(outer | iter < 2) {
+        if(iter < max_outer) {
           peta <- family$map2par(eta)
           
           if(no_ff) {

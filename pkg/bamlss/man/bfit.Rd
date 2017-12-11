@@ -25,7 +25,7 @@
 bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
-  outer = FALSE, inner = FALSE, mgcv = FALSE,
+  outer = NULL, inner = FALSE, mgcv = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   nu = NULL, stop.nu = NULL, ...)
 
@@ -64,7 +64,8 @@ bfit_optim(x, family, y, eta, id, weights, criterion, ...)
   \item{maxit}{The maximum number of iterations for the backfitting algorithm}
   \item{outer}{Should the current working observations and weights be computed in one outer
     iteration, otherwise the working observations are computed anew for each model term
-    updating step.}
+    updating step. The default will run one outer iteration first, afterwards model weights
+    are computed for each term anew.}
   \item{inner}{Should the model terms for one parameter of the modeled distribution be
     fully updated until convergence in an inner iteration, i.e., the algorithm waits until
     coefficients for the current distribution parameter do not change anymore before updating
