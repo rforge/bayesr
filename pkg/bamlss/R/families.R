@@ -1611,6 +1611,11 @@ weibull_bamlss <- function(...)
       lambda <- par$lambda
       pweibull(y, scale = lambda, shape = alpha, ...)
     },
+    "q" = function(p, par, ...) {
+      alpha <- par$alpha
+      lambda <- par$lambda
+      qweibull(p, scale = lambda, shape = alpha, ...)
+    },
     "r" = function(n, par) {
       alpha <-  par$alpha
       lambda <- par$lambda
@@ -1711,6 +1716,11 @@ gamma_bamlss <- function(...)
       s <- par$mu / par$sigma
       dgamma(y, shape = a, scale = s, log = log)
     },
+    "q" = function(p, par, lower.tail = TRUE, log.p = FALSE) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      qgamma(p, shape = a, scale = s, lower.tail = lower.tail, log.p = log.p)
+    },
     "p" = function(y, par, lower.tail = TRUE, log.p = FALSE) {
       a <- par$sigma
       s <- par$mu / par$sigma
@@ -1790,6 +1800,9 @@ lognormal_bamlss <- function(...)
     },
     "p" = function(y, par, ...) {
       plnorm(y, meanlog = par$mu, sdlog = par$sigma, ...)
+    },
+    "q" = function(p, par, ...) {
+      qlnorm(p, meanlog = par$mu, sdlog = par$sigma, ...)
     },
     "r" = function(n, par) {
       rlnorm(n, meanlog = par$mu, sdlog = par$sigma)
@@ -3358,3 +3371,4 @@ mlt_distr <- function(which = c("Normal", "Logistic", "MinExtrVal")) {
     which <- match.arg(which)
     do.call(paste("mlt_", which, sep = ""), list())
 }
+

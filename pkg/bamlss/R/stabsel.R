@@ -150,6 +150,10 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
 plot.stabsel <- function(x, show = NULL,
     pal = function(n) gray.colors(n, start = 0.9, end = 0.3), ...) {
 
+    ## keep graphic parameters
+    hold <- par(no.readonly = TRUE)
+    on.exit(par(hold))
+
     tabsel <- x$table
     thr    <- x$parameter$thr
     B      <- x$parameter$B
