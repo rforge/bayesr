@@ -161,7 +161,6 @@ export(
 
   ## neural nets
   "n",
-  "boost.nnet.predict",
   "dl.bamlss",
   "predict.dl.bamlss",
 
