@@ -2060,7 +2060,7 @@ boostm <- function(x, y, family, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, set.nnet = FALSE)
+    weights = weights)
   for(i in nx) {
     for(j in names(x[[i]]$smooth.construct))
       x[[i]]$smooth.construct[[j]]$criterion <- x[[i]]$smooth.construct[[j]]$loglik
@@ -2766,7 +2766,7 @@ hatmat_sumdiag <- function(H)
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
-  eps = .Machine$double.eps^0.25, initialize = TRUE, set.nnet = TRUE, ...)
+  eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -2830,21 +2830,11 @@ boost.transform <- function(x, y, df = NULL, family,
   ## Save more info.
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
-        x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
-        nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
-        nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
-        x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
-        x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
-      } else {
-        if(set.nnet) {
-          b <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
-          b <- rep(0, length(b))
-          x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, b, "b")
-          x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
-          x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values <- rep(0, length(x[[nx[j]]]$smooth.construct[[sj]]$state$fitted.values))
-        }
-      }
+      x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
+      nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
+      nr <- nrow(x[[nx[j]]]$smooth.construct[[sj]]$X)
+      x[[nx[j]]]$smooth.construct[[sj]]$XWX <- matrix(0, nc, nc)
+      x[[nx[j]]]$smooth.construct[[sj]]$XW <- matrix(0, nc, nr)
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$state$rss <- 0
@@ -2979,11 +2969,7 @@ parm2mat <- function(x, mstop, fixed = NULL)
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
       cn <- colnames(x[[i]][[j]])
-      if(is.null(attr(x[[i]][[j]], "is.nnet"))) {
-        x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
-      } else {
-        x[[i]][[j]] <- x[[i]][[j]][1:mstop, , drop = FALSE]
-      }
+      x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
       if(!is.matrix(x[[i]][[j]]))
         x[[i]][[j]] <- matrix(x[[i]][[j]], ncol = length(cn))
       colnames(x[[i]][[j]]) <- cn
@@ -3178,6 +3164,7 @@ boost_fit <- function(x, y, nu, hatmatrix = TRUE, weights = NULL, ...)
   
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
+
   if(x$fixed) {
     P <- matrix_inv(XWX, index = x$sparse.setup)
   } else {

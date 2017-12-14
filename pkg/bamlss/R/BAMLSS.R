@@ -796,9 +796,6 @@ sparse.matrix.fit.fun <- function(X, b, index = NULL)
 ## The model term fitting function.
 make.fit.fun <- function(x, type = 1)
 {
-  if(inherits(x, "nnet.smooth"))
-    return(x$fit.fun)
-
   ff <- function(X, b, expand = TRUE, no.sparse.setup = FALSE) {
     if(!is.null(names(b))) {
       b <- if(!is.null(x$pid)) b[x$pid$b] else get.par(b, "b")
@@ -877,6 +874,7 @@ make.prior <- function(x, sigma = 0.1)
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
     igs <- log((b^a)) - log(gamma(a))
+
     var_prior_fun <- switch(prior,
       "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
       "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
@@ -4498,449 +4496,70 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- as.integer(if(split) nsplit else object$xt$k)
   object$X <- cbind(1, object$X)
-  colnames(object$X) <- NULL
-  nc <- ncol(object$X) + 1
-  npar <- nodes * nc
-
-  nid <- split(1:npar, factor(sort(rep(1:nodes, times = nc))))
-
-  object$fit.fun <- function(X, b, expand = FALSE, ...) {
-    f <- .Call("nnet_fitfun", X, get.par(b, "b"), as.integer(nodes), PACKAGE = "bamlss")
-    if(!is.null(object$binning$match.index) & expand)
-      f <- f[object$binning$match.index]
-    f
-  }
-
-  X <- object$X
-  nr <- nrow(X)
-  nc <- ncol(X)
 
   sigmoid <- function(x) {
     1 / (1 + exp(-x))
   }
 
-  Zmat <- function(b) {
-    Z <- matrix(0, nrow = nr, ncol = nodes)
+  object$Zmat <- function(X, weights) {
+    Z <- matrix(0, nrow = nrow(X), ncol = nodes)
     for(j in 1:nodes)
-      Z[, j] <- sigmoid(X %*% b[nid[[j]]][-1])
+      Z[, j] <- sigmoid(X %*% weights[[j]])
     return(Z)
   }
 
-  Umat <- function(b, j) {
-    U <- matrix(0, nr, nc)
-    o <- -1 * (X %*% b[nid[[j]]][-1])
-    U[, 1] <- exp(o) / (1 + exp(o))^2
-    for(jj in 2:nc)
-      U[, jj] <- b[nid[[j]]][1] * exp(o) * X[, jj] / (1 + exp(o))^2
-    return(U)
+  if(is.null(object$xt$weights)) {
+    object$weights <- lapply(1:nodes, function(i) {
+      nc <- ncol(object$X)
+      w <- rnorm(nc, sd = 1)
+      names(w) <- paste0("w", 0:(nc - 1))
+      w
+    })
+  } else {
+    object$weights <- object$xt$weights
+    if(length(weights) != nodes)
+      stop("not enough weights supplied!")
   }
 
-  object$fixed <- FALSE
-  object$state$parameters <- rnorm(npar, sd = 1)
-  for(j in nid)
-    object$state$parameters[j[1]] <- 0
-  names(object$state$parameters) <- paste("b", 1:npar, sep = "")
-  object$state$parameters <- c(object$state$parameters, "tau21" = 1000)
-  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
-  object$state$edf <- nc * nodes
-  object$special.npar <- npar
-  object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
-  object$nnodes <- nodes
-  object$sparse.setup <- FALSE
-  object$S <- list()
-  object$S[[1]] <- diag(length(nid))
-  object$S[[2]] <- diag(ncol(X))
+  object$X <- scale(object$Zmat(object$X, object$weights))
+  object$scale <- list(
+    "center" = attr(object$X, "scaled:center"),
+    "scale" = attr(object$X, "scaled:scale")
+  )
+  object$S <- list(diag(ncol(object$X)))
+  object$xt$center <- FALSE
+  object$by <- "NA"
+  object$null.space.dim <- 0
+  object$side.constrain <- FALSE
+  object$bs.dim <- ncol(object$X)
+  object$rank <- object$bs.dim
+  object$xt$prior <- "hc"
 
-  update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
-  {
-    args <- list(...)
-  
-    peta <- family$map2par(eta)
-  
-    if(is.null(args$hess)) {
-      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-    } else hess <- args$hess
-  
-    if(!is.null(weights))
-      hess <- hess * weights
-  
-    if(is.null(args$z)) {
-      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-      z <- eta[[id]] + 1 / hess * score
-    } else z <- args$z
+#  if(split) {
+#    nodes <- as.integer(object$xt$k)
+#    object <- rep(list(object), nodes)
+#    for(j in seq_along(object)) {
+#      object[[j]]$term_id <- object[[j]]$label
+#      lab <- strsplit(object[[j]]$label, "")[[1]]
+#      lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
+#      object[[j]]$label <- lab
+#      class(object[[j]]) <- c("nnet.smooth", "no.mgcv")
+#    }
+#    class(object) <- c("nnet.smooth", "mgcv.smooth", "smooth.list")
+#  }
 
-    e <- z - eta[[id]] + fitted(x$state)
-
-    b <- get.state(x, "b")
-    tau2 <- get.state(x, "tau2")
-
-    ## Initial betas.
-    Z <- Zmat(b)
-    ZW <- Z / hess
-    ZWZ <- crossprod(ZW, Z)
-
-    if(x$state$do.optim) {
-      args <- list(...)
-      edf0 <- args$edf - x$state$edf
-      eta2 <- eta
-      eta2[[id]] <- eta2[[id]] - fitted(x$state)
-
-      objfun <- function(tau2) {
-        P <- matrix_inv(ZWZ + 1 / tau2 * x$S[[1]])
-        beta <- drop(P %*% crossprod(ZW, e))
-        fit <- Z %*% beta
-        edf <- sum_diag(ZWZ %*% P) + nc * nodes
-        eta2[[id]] <- eta2[[id]] + fit
-        ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion)
-        return(ic)
-      }
-      tau2 <- tau2.optim(objfun, start = tau2)
-    }
-
-    P <- matrix_inv(ZWZ + 1 / tau2 * x$S[[1]])
-    beta <- drop(P %*% crossprod(ZW, e))
-    fit <- Z %*% beta
-    for(j in 1:nodes)
-      b[nid[[j]][1]] <- beta[j]
-
-    ## Cycle over all nodes.
-    ll0 <- family$loglik(y, family$map2par(eta))
-    eta[[id]] <- eta[[id]] - fitted(x$state)
-    for(j in 1:nodes) {
-      fj <- fit - beta[j] * Z[, j]
-      objfun <- function(w) {
-        eta[[id]] <- eta[[id]] + fj + beta[j] * sigmoid(x$X %*% w)
-        ll <- family$loglik(y, family$map2par(eta)) - 0.001 * sum(w^2)
-        -1 * ll
-      }
-      opt <- optim(b[nid[[j]][-1]], fn = objfun, method = "BFGS")
-      if((-1 * opt$value) > ll0) {
-        b[nid[[j]][-1]] <- opt$par
-        fit <- fj + beta[j] * sigmoid(x$X %*% opt$par)
-      }
-    }
-
-    x$state$parameters <- set.par(x$state$parameters, b, "b")
-    x$state$fitted.values <- fit
-    x$state$edf <- sum_diag(ZWZ %*% P) + nc * nodes
-
-    return(x$state)
-  }
-
-  object$state$special <- object$state$parameters
-
-  object$update <- update_nn
-
-  class(object) <- c("nnet.smooth", "no.mgcv", "special")
+  class(object) <- c("nnet.smooth", "mgcv.smooth")
 
   object
 }
 
 Predict.matrix.nnet.smooth <- function(object, data)
 {
-  X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
-  colnames(X) <- NULL
-  X
-}
-
-
-#smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
-#{
-#  split <- if(is.null(object$xt$split)) FALSE else object$xt$split
-#  nsplit <- if(is.null(object$xt$nsplit)) 5 else object$xt$nsplit
-#  object <- smooth.construct.la.smooth.spec(object, data, knots)
-#  object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-#  nodes <- as.integer(if(split) nsplit else object$xt$k)
-#  object$X <- cbind(1, object$X)
-#  colnames(object$X) <- NULL
-#  nc <- ncol(object$X) + 1
-#  npar <- nodes * nc
-
-#  nid <- split(1:npar, factor(sort(rep(1:nodes, times = nc))))
-
-##  fit.fun0 <- function(X, b, expand = FALSE, ...) {
-##    if(!is.null(names(b)))
-##      b <- get.par(b, "b")
-##    fit <- 0
-##    for(j in seq_along(nid)) {
-##      f <- X %*% b[nid[[j]]][-1]
-##      fit <- fit + b[nid[[j]]][1] / (1 + exp(-f))
-##    }
-##    if(!is.null(object$binning$match.index) & expand)
-##      f <- f[object$binning$match.index]
-##    fit <- fit - mean(fit, na.rm = TRUE)
-##    return(fit)
-##  }
-
-#  object$fit.fun <- function(X, b, expand = FALSE, ...) {
-#    f <- .Call("nnet_fitfun", X, get.par(b, "b"), as.integer(nodes), PACKAGE = "bamlss")
-#    if(!is.null(object$binning$match.index) & expand)
-#      f <- f[object$binning$match.index]
-#    f
-#  }
-
-#  object$fixed <- FALSE
-#  object$state$parameters <- rnorm(npar, sd = 0.5)
-#  for(j in nid)
-#    object$state$parameters[j[1]] <- rnorm(1, sd = 1)
-#  names(object$state$parameters) <- paste("b", 1:npar, sep = "")
-#  object$state$parameters <- c(object$state$parameters, "tau21" = 1000)
-#  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
-#  object$special.npar <- npar
-#  object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
-#  object$nnodes <- nodes
-
-#  X <- object$X
-
-#  getU <- function(b) {
-#    if(!is.null(names(b)))
-#      b <- get.par(b, "b")
-#    k <- ncol(X)
-#    U <- matrix(0, nrow(X), length(b))
-#    i <- 1
-#    for(j in seq_along(nid)) {
-#      u <- X %*% b[nid[[j]]][-1]
-#      o <- 1 / (1 + exp(-u))
-#      U[, i] <- o
-#      i <- i + 1
-#      o2 <- b[nid[[j]]][1] * o * (1 - o)
-#      U[, i] <- o2
-#      i <- i + 1
-#      for(jj in 2:k) {
-#        U[, i] <- o2 * X[, jj]
-#        i <- i + 1
-#      }
-#    }
-#    return(U)
-#  }
-
-#  object$S <- list()
-#  object$S[[1]] <- diag(npar)
-#  object$S[[2]] <- function(parameters) {
-#    UU <- diag(crossprod(getU(parameters)))
-#    diag(UU)
-#  }
-#  prior <- make.prior(object)
-#  object[names(prior)] <- prior
-#  object$sparse.setup <- FALSE
-
-#  update_nn <- function(x, family, y, eta, id, weights, criterion, ...)
-#  {
-#    args <- list(...)
-#  
-#    peta <- family$map2par(eta)
-#  
-#    if(is.null(args$hess)) {
-#      hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-#    } else hess <- args$hess
-#  
-#    if(!is.null(weights))
-#      hess <- hess * weights
-#  
-#    if(is.null(args$z)) {
-#      score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-#      z <- eta[[id]] + 1 / hess * score
-#    } else z <- args$z
-#  
-#    e <- z - eta[[id]]
-#    eta[[id]] <- eta[[id]] - fitted(x$state)
-
-#    b0 <- get.state(x, "b")
-
-#    nb <- names(b0)
-
-#    U <- getU(b0)
-
-#    tUW <- t(U / hess)
-#    UWU <- tUW %*% U
-
-#    edf0 <- args$edf - x$state$edf
-
-#    objfun <- function(tau2) {
-#      H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
-#      b0 <- drop(b0 + H %*% tUW %*% e)
-#      names(b0) <- nb
-#      edf <- sum_diag(UWU %*% H)
-#      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
-#      ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, length(z), criterion)
-#      ic
-#    }
-
-#    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
-
-#    H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
-#    b0 <- drop(b0 + H %*% tUW %*% e)
-#    names(b0) <- nb
-
-#    x$state$parameters <- set.par(x$state$parameters, b0, "b")
-#    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-#    x$state$fitted.values <- x$fit.fun(x$X, b0)
-
-#    x$state$edf <- sum_diag(UWU %*% H)
-
-#    return(x$state)
-#  }
-
-##  propose_nn <- function(family, theta, id, eta, y, data, weights = NULL, ...) {
-##  }
-
-#  tau2 <- get.par(object$state$parameters, "tau2")
-
-#  UU <- crossprod(getU(object$state$parameters))
-#  df <- min(c(length(object$state$parameters), 4))
-
-#  S1 <- diag(ncol(UU))
-#  S2 <- diag(diag(UU))
-
-#  objfun <- function(tau2) {
-#    H <- matrix_inv(UU + 1/tau2[1] * S1)
-#    edf <- sum_diag(UU %*% H)
-#    (df - edf)^2
-#  }
-
-#  tau2 <- tau2.optim(objfun, tau2, maxit = 100)
-#  H <- matrix_inv(UU + 1/tau2 * diag(ncol(UU)))
-#  edf <- sum_diag(UU %*% H)
-#  object$state$parameters <- set.par(object$state$parameters, tau2, "tau2")
-#  object$state$edf <- edf
-#  object$state$special <- object$state$parameters
-
-#  object$update <- update_nn
-
-#  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, ...)
-#  {
-#    b0 <- rnorm(npar, sd = 1)
-#    for(j in nid)
-#      b0[j[1]] <- rnorm(1, sd = 1e-10)
-
-#    nb <- names(b0)
-#    U <- getU(b0)
-#    UU <- crossprod(U, U)
-#    tau2 <- get.par(x$state$parameters, "tau2")
-#    H <- matrix_inv(UU + 1/tau2 * x$S[[1]])
-#    b1 <- b0 + nu * H %*% t(U) %*% (y - x$fit.fun(x$X, b0))
-#    names(b1) <- nb
-#    fit <- x$fit.fun(x$X, b1)
-
-#    x$state$parameters <- set.par(x$state$parameters, b1, "b")
-#    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-#    x$state$fitted.values <- fit
-#    x$state$rss <- sum((y - fit)^2)
-#    if(hatmatrix)
-#      x$state$hat <- nu * U %*% H %*% t(U)
-
-#    return(x$state)
-#  }
-
-#  object$boostm.fit <- function(x, grad, hess, nu, criterion,
-#    family, y, eta, edf, id, do.optim, iteration, ...)
-#  {
-#    z <- eta[[id]] + 1 / hess * grad
-#  
-#    e <- z - eta[[id]]
-#    eta[[id]] <- eta[[id]] - fitted(x$state)
-
-#    b0 <- get.state(x, "b")
-
-#    nb <- names(b0)
-
-#    U <- getU(b0)
-
-#    tUW <- t(U / hess)
-#    UWU <- tUW %*% U
-
-#    edf <- edf - x$state$edf
-
-#    objfun <- function(tau2) {
-#      H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
-#      b0 <- drop(b0 + nu * H %*% tUW %*% e)
-#      names(b0) <- nb
-#      edf <- sum_diag(UWU %*% H)
-#      eta[[id]] <- eta[[id]] + x$fit.fun(x$X, b0)
-#      ic <- get.ic(family, y, family$map2par(eta), edf, length(z), criterion)
-#      ic
-#    }
-
-#    tau2 <- tau2.optim(objfun, start = get.state(x, "tau2"))
-
-#    H <- matrix_inv(UWU + 1/tau2 * x$S[[1]])
-#    b0 <- drop(b0 + nu * H %*% tUW %*% e)
-#    names(b0) <- nb
-
-#    x$state$parameters <- set.par(x$state$parameters, b0, "b")
-#    x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
-#    x$state$fitted.values <- x$fit.fun(x$X, b0)
-
-#    x$state$edf <- sum_diag(UWU %*% H)
-#  
-#    return(x$state)
-#  }
-
-#  object$increase <- function(state0, state1) {
-#    g <- get.par(state1$parameters, "b")
-#    state0$fitted.values <- fitted(state0) + fitted(state1)
-#    state0$parameters <- set.par(state0$parameters, g, "b")
-#    state0$edf <- state1$edf
-#    state0$parameters <- set.par(state0$parameters, get.par(state1$parameters, "tau2"), "tau2")
-#    state0$hat <- state1$hat
-#    state0
-#  }
-
-#  class(object) <- c("nnet.smooth", "no.mgcv", "special")
-
-#  if(split) {
-#    nodes <- as.integer(object$xt$k)
-#    object <- rep(list(object), nodes)
-#    for(j in seq_along(object)) {
-#      b <- rnorm(length(get.par(object[[j]]$state$parameters, "b")), sd = 0.5)
-#      b[1] <- rnorm(1, sd = 1e-10)
-#      names(b) <- paste("b", 1:length(b), sep = "")
-#      object[[j]]$state$parameters <- set.par(object[[j]]$state$parameters, b, "b")
-#      object[[j]]$state$fitted.values <- object[[j]]$fit.fun(object[[j]]$X, object[[j]]$state$parameters)
-#      object[[j]]$state$special <- object[[j]]$state$parameters
-#      object[[j]]$term_id <- object[[j]]$label
-#      lab <- strsplit(object[[j]]$label, "")[[1]]
-#      lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
-#      object[[j]]$label <- lab
-#      class(object) <- c("nnet.smooth", "no.mgcv", "special")
-#    }
-#    class(object) <- c("nnet.smooth", "no.mgcv", "special", "smooth.list")
-#  }
-
-#  object
-#}
-
-Predict.matrix.nnet.smooth <- function(object, data)
-{
-  X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
-  colnames(X) <- NULL
-  X
-}
-
-
-boost.nnet.predict <- function(object, ..., term = NULL, mstop = NULL)
-{
-  if(is.null(dim(object$parameters)))
-    stop("this is not a boosted object!")
-  if(is.null(mstop))
-    mstop <- nrow(object$parameters)
-  if(is.null(term))
-    term <- "n("
-  if(!any(grepl("n(", term, fixed = TRUE)))
-    stop("this function is used to predict the neural net components of the model only!")
-  for(i in 1:mstop) {
-    p <- predict.bamlss(object, ..., term = term, mstop = i, intercept = FALSE)
-    p <- as.data.frame(p)
-    if(i < 2) {
-      fit <- p
-    } else {
-      for(j in 1:ncol(p))
-        fit[[j]] <- fit[[j]] + p[[j]]
-    }
+  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
+  for(j in 1:ncol(X)) {
+    X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
-  if(ncol(fit) < 2)
-    fit <- fit[[1]]
-  return(fit)
+  X
 }
 
 
