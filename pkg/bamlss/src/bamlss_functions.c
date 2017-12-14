@@ -3782,7 +3782,6 @@ SEXP nnet_fitfun(SEXP X, SEXP b, SEXP NODES)
 
   int l = 0;
   double ftmp = 0.0;
-  double fmean = 0.0;
 
   for(i = 0; i < n; i++) {
     fitptr[i] = 0.0;
@@ -3795,13 +3794,6 @@ SEXP nnet_fitfun(SEXP X, SEXP b, SEXP NODES)
       }
       fitptr[i] += bptr[j * (k + 1)] / (1.0 + exp(-ftmp));
     }
-    fmean += fitptr[i];
-  }
-
-  fmean = fmean / n;
-
-  for(i = 0; i < n; i++) {
-    fitptr[i] = fitptr[i] - fmean;
   }
 
   UNPROTECT(1);

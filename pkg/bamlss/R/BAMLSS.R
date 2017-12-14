@@ -4511,17 +4511,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     f
   }
 
-  object$fixed <- FALSE
-  object$state$parameters <- rnorm(npar, sd = 1)
-  for(j in nid)
-    object$state$parameters[j[1]] <- 0
-  names(object$state$parameters) <- paste("b", 1:npar, sep = "")
-  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
-  object$state$edf <- npar
-  object$special.npar <- npar
-  object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
-  object$nnodes <- nodes
-
   X <- object$X
   nr <- nrow(X)
   nc <- ncol(X)
@@ -4546,16 +4535,17 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(U)
   }
 
-  get_beta <- function(b, nid) {
-    sapply(nid, function(i) { b[i[1]] })
-  }
-
-  set_beta <- function(b, beta, nid) {
-    for(j in 1:nodes)
-      b[nid[[j]][1]] <- beta[j]
-    return(b)
-  }
-
+  object$fixed <- FALSE
+  object$state$parameters <- rnorm(npar, sd = 1)
+  for(j in nid)
+    object$state$parameters[j[1]] <- 0
+  names(object$state$parameters) <- paste("b", 1:npar, sep = "")
+  object$state$parameters <- c(object$state$parameters, "tau21" = 1000)
+  object$state$fitted.values <- object$fit.fun(object$X, object$state$parameters)
+  object$state$edf <- nc * nodes
+  object$special.npar <- npar
+  object$prior <- function(b) { sum(dnorm(get.par(b, "b"), sd = 1000, log = TRUE)) }
+  object$nnodes <- nodes
   object$sparse.setup <- FALSE
   object$S <- list()
   object$S[[1]] <- diag(length(nid))
@@ -4582,12 +4572,32 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     e <- z - eta[[id]] + fitted(x$state)
 
     b <- get.state(x, "b")
+    tau2 <- get.state(x, "tau2")
 
     ## Initial betas.
     Z <- Zmat(b)
     ZW <- Z / hess
     ZWZ <- crossprod(ZW, Z)
-    P <- matrix_inv(ZWZ + 1e-10 * x$S[[1]])
+
+    if(x$state$do.optim) {
+      args <- list(...)
+      edf0 <- args$edf - x$state$edf
+      eta2 <- eta
+      eta2[[id]] <- eta2[[id]] - fitted(x$state)
+
+      objfun <- function(tau2) {
+        P <- matrix_inv(ZWZ + 1 / tau2 * x$S[[1]])
+        beta <- drop(P %*% crossprod(ZW, e))
+        fit <- Z %*% beta
+        edf <- sum_diag(ZWZ %*% P) + nc * nodes
+        eta2[[id]] <- eta2[[id]] + fit
+        ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion)
+        return(ic)
+      }
+      tau2 <- tau2.optim(objfun, start = tau2)
+    }
+
+    P <- matrix_inv(ZWZ + 1 / tau2 * x$S[[1]])
     beta <- drop(P %*% crossprod(ZW, e))
     fit <- Z %*% beta
     for(j in 1:nodes)
@@ -4600,7 +4610,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       fj <- fit - beta[j] * Z[, j]
       objfun <- function(w) {
         eta[[id]] <- eta[[id]] + fj + beta[j] * sigmoid(x$X %*% w)
-        ll <- family$loglik(y, family$map2par(eta))
+        ll <- family$loglik(y, family$map2par(eta)) - 0.001 * sum(w^2)
         -1 * ll
       }
       opt <- optim(b[nid[[j]][-1]], fn = objfun, method = "BFGS")
@@ -4612,7 +4622,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     x$state$parameters <- set.par(x$state$parameters, b, "b")
     x$state$fitted.values <- fit
-    x$state$edf <- npar
+    x$state$edf <- sum_diag(ZWZ %*% P) + nc * nodes
 
     return(x$state)
   }
