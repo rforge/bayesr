@@ -4516,9 +4516,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       w
     })
   } else {
-    object$weights <- object$xt$weights
-    if(length(weights) != nodes)
+    if(length(object$xt$weights) != nodes)
       stop("not enough weights supplied!")
+    object$weights <- object$xt$weights
   }
 
   object$X <- scale(object$Zmat(object$X, object$weights))
