@@ -4495,6 +4495,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- as.integer(if(split) nsplit else object$xt$k)
+  if(nodes < 0)
+    nodes <- 10
+
   object$X <- cbind(1, object$X)
 
   sigmoid <- function(x) {
@@ -4534,6 +4537,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$bs.dim <- ncol(object$X)
   object$rank <- object$bs.dim
   object$xt$prior <- "hc"
+  object$C <- matrix(0, 0, ncol(object$X))
 
 #  if(split) {
 #    nodes <- as.integer(object$xt$k)
@@ -4560,6 +4564,22 @@ Predict.matrix.nnet.smooth <- function(object, data)
     X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
   X
+}
+
+
+smooth.construct.nn.smooth.spec <- function(object, data, knots, ...)
+{
+  form <- as.formula(paste("~", paste(object$term, collapse = "+")))
+  term <- object$term
+  object <- n(form, k = object$bs.dim)
+  object$label <- paste0("s(",  paste(term, collapse = ","), ")")
+  object$formula <- form
+  object <- smooth.construct.nnet.smooth.spec(object, data, knots, ...)
+  object$plot.me <- TRUE
+  object$dim <- length(term)
+  object$fixed <- FALSE
+  object$term <- term
+  object
 }
 
 

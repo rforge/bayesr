@@ -1,5 +1,6 @@
 \name{n}
 \alias{n}
+\alias{smooth.construct.nn.smooth.spec}
 
 \title{Neural Networks for BAMLSS}
 
@@ -11,6 +12,9 @@
 \usage{
 ## The neural network smooth constructor.
 n(..., k = 10)
+
+## For mgcv.
+\method{smooth.construct}{nn.smooth.spec}(object, data, knots, ...)
 }
 
 \arguments{
@@ -20,10 +24,12 @@ n(..., k = 10)
   \item{k}{The number of hidden nodes of the network. Note that one can set an argument
     \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5} parts with
     \code{k} nodes each.}
+  \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
 }
 
 \value{
-  Similar to function \code{\link[mgcv]{s}} a simple smooth specification object.
+  Function \code{n()}, similar to function \code{\link[mgcv]{s}} a simple smooth specification
+  object.
 }
 
 

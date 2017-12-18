@@ -165,7 +165,10 @@ export(
   "predict.dl.bamlss",
 
   ## stability selection
-  "stabsel"
+  "stabsel",
+
+  ## neural networks
+  "smooth.construct.nn.smooth.spec"
 )
 
 S3method("plot", "bamlss")
@@ -204,6 +207,7 @@ S3method("smooth.construct", "tensorX.smooth.spec")
 S3method("smooth.construct", "tensorX3.smooth.spec")
 S3method("smooth.construct", "la.smooth.spec")
 S3method("smooth.construct", "nnet.smooth.spec")
+S3method("smooth.construct", "nn.smooth.spec")
 S3method("Predict.matrix", "kriging.smooth")
 S3method("Predict.matrix", "deriv.smooth")
 S3method("Predict.matrix", "tensorX.smooth")
