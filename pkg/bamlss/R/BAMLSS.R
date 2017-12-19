@@ -4443,7 +4443,7 @@ Predict.matrix.lasso.smooth <- function(object, data)
   tl <- term.labels2(terms(object$formula), intercept = FALSE, list = FALSE)
   contr <- object$xt$contrast.arg
   if(is.null(contr))
-    contr <- "contr.sum"
+    contr <- "contr.treatment"
   X <- list()
   for(j in tl) {
     if(is.factor(data[[j]])) {
@@ -4495,49 +4495,69 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- as.integer(if(split) nsplit else object$xt$k)
-  if(nodes < 0)
-    nodes <- 10
+  npen <- if(is.null(object$xt$npen)) 1 else object$xt$npen
+  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
 
-  object$X <- cbind(1, object$X)
-
-  sigmoid <- function(x) {
-    1 / (1 + exp(-x))
-  }
-
-  object$Zmat <- function(X, weights) {
-    Z <- matrix(0, nrow = nrow(X), ncol = nodes)
-    for(j in 1:nodes)
-      Z[, j] <- sigmoid(X %*% weights[[j]])
-    return(Z)
-  }
-
-  if(is.null(object$xt$weights)) {
-    object$weights <- lapply(1:nodes, function(i) {
-      nc <- ncol(object$X)
-      w <- rnorm(nc, sd = 1)
-      names(w) <- paste0("w", 0:(nc - 1))
-      w
-    })
+  if(tp) {
+    tpcall <- eval(parse(text = paste0("s(", paste0(colnames(object$X), collapse = ","), ",bs='tp',k=", nodes, ")")))
+    form <- object$formula
+    lasso <- object$lasso
+    dim <- ncol(object$X)
+    term <- colnames(object$X)
+    lab <- object$label
+    object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
+    object$dim <- dim
+    object$tp <- tp
+    object$formula <- form
+    object$lasso <- lasso
+    object$nnterm <- term
+    object$label <- lab
   } else {
-    if(length(object$xt$weights) != nodes)
-      stop("not enough weights supplied!")
-    object$weights <- object$xt$weights
-  }
+    if(nodes < 0)
+      nodes <- 10
 
-  object$X <- scale(object$Zmat(object$X, object$weights))
-  object$scale <- list(
-    "center" = attr(object$X, "scaled:center"),
-    "scale" = attr(object$X, "scaled:scale")
-  )
-  object$S <- list(diag(ncol(object$X)))
-  object$xt$center <- FALSE
-  object$by <- "NA"
-  object$null.space.dim <- 0
-  object$side.constrain <- FALSE
-  object$bs.dim <- ncol(object$X)
-  object$rank <- object$bs.dim
-  object$xt$prior <- "hc"
-  object$C <- matrix(0, 0, ncol(object$X))
+    object$X <- cbind(1, object$X)
+
+#    sigmoid <- function(x) {
+#      1 / (1 + exp(-x))
+#    }
+
+    object$Zmat <- function(X, weights) {
+      Z <- matrix(0, nrow = nrow(X), ncol = nodes)
+      for(j in 1:nodes)
+        Z[, j] <- dlogis(X %*% weights[[j]])
+      return(Z)
+    }
+
+    if(is.null(object$xt$weights)) {
+      object$weights <- lapply(1:nodes, function(i) {
+        nc <- ncol(object$X)
+        w <- runif(nc, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
+        names(w) <- paste0("w", 0:(nc - 1))
+        w
+      })
+    } else {
+      if(length(object$xt$weights) != nodes)
+        stop("not enough weights supplied!")
+      object$weights <- object$xt$weights
+    }
+
+    object$X <- object$Zmat(object$X, object$weights)
+
+    pid <- sort(rep(1:npen, length.out = ncol(object$X)))
+    object$S <- list()
+    for(j in 1:npen) {
+      object$S[[j]] <- rep(1, ncol(object$X))
+      object$S[[j]][pid != j] <- 0
+      object$S[[j]] <- diag(object$S[[j]])
+    }
+    object$xt$center <- FALSE
+    object$by <- "NA"
+    object$null.space.dim <- 0
+    object$bs.dim <- ncol(object$X)
+    object$rank <- sapply(object$S, sum)
+  }
+  ##object$xt$prior <- "hc"
 
 #  if(split) {
 #    nodes <- as.integer(object$xt$k)
@@ -4559,9 +4579,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.nnet.smooth <- function(object, data)
 {
-  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
-  for(j in 1:ncol(X)) {
-    X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
+  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
+  if(tp) {
+    data <- as.data.frame(Predict.matrix.lasso.smooth(object, data))
+    object$term <- object$nnterm
+    class(object) <- "tprs.smooth"
+    object$dim <- ncol(data)
+    X <- Predict.matrix(object, data)
+  } else {
+    X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
   }
   X
 }
