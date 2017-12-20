@@ -2773,16 +2773,62 @@ boost.transform <- function(x, y, df = NULL, family,
 
   ## Initialize select indicator and intercepts.
   for(j in 1:np) {
+    nid <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!is.null(df)) {
-        x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
-      }
-      if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
-        if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
-          x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
-          x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
-          x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
+      if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
+        if(!is.null(df)) {
+          x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
         }
+        if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
+          if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
+            x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
+            x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
+            x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
+          }
+        }
+      } else {
+        nid <- c(nid, sj)
+      }
+    }
+    if(!is.null(nid)) {
+      NNETS <- list()
+      for(sj in nid) {
+        nnets <- list()
+        g0 <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
+        for(k in 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)) {
+          nnets[[k]] <- list()
+          nnets[[k]]$label <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".", k)
+          nnets[[k]]$term <- paste0("n.", sj, ".", k)
+          nnets[[k]]$X <- x[[nx[j]]]$smooth.construct[[sj]]$X[, k, drop = FALSE]
+          colnames(nnets[[k]]$X) <- NULL
+          nnets[[k]]$binning <- x[[nx[j]]]$smooth.construct[[sj]]$binning
+          nnets[[k]]$nobs <- x[[nx[j]]]$smooth.construct[[sj]]$nobs
+          nnets[[k]]$fixed <- TRUE
+          nnets[[k]]$fxsp <- FALSE
+          nnets[[k]]$weights <- x[[nx[j]]]$smooth.construct[[sj]]$weights
+          nnets[[k]]$rres <- x[[nx[j]]]$smooth.construct[[sj]]$rres
+          nnets[[k]]$fit.reduced <- x[[nx[j]]]$smooth.construct[[sj]]$fit.reduced
+          nnets[[k]]$state <- list("parameters" = g0[k])
+          nnets[[k]]$state$fitted.values <- drop(nnets[[k]]$X %*% g0[k])
+          nnets[[k]]$state$edf <- 0
+          nnets[[k]]$state$rss <- 0
+          nnets[[k]]$state$do.optim <- FALSE
+          nnets[[k]]$is.nnet <- TRUE
+          nnets[[k]]$selected <- rep(0, length = maxit)
+          nnets[[k]]$sparse.setup <- sparse.setup(nnets[[k]]$X, S = NULL)
+          nnets[[k]]$upper <- Inf
+          nnets[[k]]$lower <- -Inf
+          class(nnets[[k]]) <- "nnet.boost"
+        }
+        names(nnets) <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".", 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X))
+        NNETS <- c(NNETS, nnets)
+      }
+      x[[nx[j]]]$smooth.construct[nid] <- NULL
+      x[[nx[j]]]$smooth.construct <- c(x[[nx[j]]]$smooth.construct, NNETS)
+      rm(NNETS, nnets)
+      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.boost"))
+          x[[nx[j]]]$smooth.construct[[sj]]$fit.fun <- make.fit.fun(x[[nx[j]]]$smooth.construct[[sj]])
       }
     }
     if(has_pterms(x[[nx[j]]]$terms)) {
@@ -2964,10 +3010,12 @@ parm2mat <- function(x, mstop, fixed = NULL)
 {
   nx <- names(x)
   for(i in seq_along(x)) {
-    is.mm <- NULL
+    is.mm <- is.nnet <- NULL
     for(j in names(x[[i]])) {
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
+      if(!is.null(attr(x[[i]][[j]], "is.nnet")))
+        is.nnet <- c(is.nnet, j)
       cn <- colnames(x[[i]][[j]])
       x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
       if(!is.matrix(x[[i]][[j]]))
@@ -2978,6 +3026,10 @@ parm2mat <- function(x, mstop, fixed = NULL)
       x[[i]][["p"]] <- do.call("cbind", x[[i]][is.mm])
       colnames(x[[i]][["p"]]) <- is.mm
       x[[i]][is.mm[is.mm != "p"]] <- NULL
+    }
+    if(!is.null(is.nnet)) {
+      x[[i]][["s"]] <- do.call("cbind", x[[i]][is.nnet])
+      x[[i]][is.nnet[is.nnet != "s"]] <- NULL
     }
     sm <- names(x[[i]])
     sm <- sm[sm != "p"]

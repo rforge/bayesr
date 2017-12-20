@@ -4484,6 +4484,7 @@ n <- function(..., k = 10)
     lab <- paste(c(lab[-length(lab)], paste(',node="', node, '")', sep = '')), collapse = "", sep = "")
     ret$label <- lab
   }
+  ret$xt$tp <- FALSE
   class(ret) <- "nnet.smooth.spec"
   ret
 }
@@ -4518,14 +4519,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     object$X <- cbind(1, object$X)
 
-#    sigmoid <- function(x) {
-#      1 / (1 + exp(-x))
-#    }
+    sigmoid <- function(x) {
+      1 / (1 + exp(-x))
+    }
 
     object$Zmat <- function(X, weights) {
       Z <- matrix(0, nrow = nrow(X), ncol = nodes)
       for(j in 1:nodes)
-        Z[, j] <- dlogis(X %*% weights[[j]])
+        Z[, j] <- sigmoid(X %*% weights[[j]])
       return(Z)
     }
 
