@@ -2444,17 +2444,18 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         }
 
         ## Get updated parameters.
+        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) 0.1 * nu else nu
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
-            boost_fit(x[[i]]$smooth.construct[[j]], grad, nu,
+            boost_fit(x[[i]]$smooth.construct[[j]], grad, nu2,
               hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL)
           } else {
-            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu,
+            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu2,
               if(!is.null(weights)) as.numeric(weights[, i]) else numeric(0), rho, PACKAGE = "bamlss")
           }
         } else {
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
-            y = grad, nu = nu, hatmatrix = hatmatrix,
+            y = grad, nu = nu2, hatmatrix = hatmatrix,
             weights = if(!is.null(weights)) weights[, i] else NULL,
             rho = rho)
         }
@@ -2808,8 +2809,9 @@ boost.transform <- function(x, y, df = NULL, family,
           nnets[[k]]$weights <- x[[nx[j]]]$smooth.construct[[sj]]$weights
           nnets[[k]]$rres <- x[[nx[j]]]$smooth.construct[[sj]]$rres
           nnets[[k]]$fit.reduced <- x[[nx[j]]]$smooth.construct[[sj]]$fit.reduced
+          nnets[[k]]$fit.fun <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun
           nnets[[k]]$state <- list("parameters" = g0[k])
-          nnets[[k]]$state$fitted.values <- drop(nnets[[k]]$X %*% g0[k])
+          nnets[[k]]$state$fitted.values <- nnets[[k]]$fit.fun(nnets[[k]]$X, g0[k])
           nnets[[k]]$state$edf <- 0
           nnets[[k]]$state$rss <- 0
           nnets[[k]]$state$do.optim <- FALSE
@@ -2826,10 +2828,6 @@ boost.transform <- function(x, y, df = NULL, family,
       x[[nx[j]]]$smooth.construct[nid] <- NULL
       x[[nx[j]]]$smooth.construct <- c(x[[nx[j]]]$smooth.construct, NNETS)
       rm(NNETS, nnets)
-      for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.boost"))
-          x[[nx[j]]]$smooth.construct[[sj]]$fit.fun <- make.fit.fun(x[[nx[j]]]$smooth.construct[[sj]])
-      }
     }
     if(has_pterms(x[[nx[j]]]$terms)) {
       ii <- which(names(x[[nx[j]]]$smooth.construct) == "model.matrix")
@@ -3233,6 +3231,11 @@ boost_fit <- function(x, y, nu, hatmatrix = TRUE, weights = NULL, ...)
   ## Finalize.
   x$state$parameters <- set.par(x$state$parameters, g, "b")
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+
+if(any(is.na(x$state$fitted.values))) {
+  stop("why?")
+}
+
   x$state$rss <- sum((x$state$fitted.values - y)^2 * weights)
 
   if(hatmatrix)

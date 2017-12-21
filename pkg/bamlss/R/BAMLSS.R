@@ -4484,7 +4484,8 @@ n <- function(..., k = 10)
     lab <- paste(c(lab[-length(lab)], paste(',node="', node, '")', sep = '')), collapse = "", sep = "")
     ret$label <- lab
   }
-  ret$xt$tp <- FALSE
+  if(is.null(ret$xt$tp))
+    ret$xt$tp <- FALSE
   class(ret) <- "nnet.smooth.spec"
   ret
 }
@@ -4558,20 +4559,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$bs.dim <- ncol(object$X)
     object$rank <- sapply(object$S, sum)
   }
-  ##object$xt$prior <- "hc"
-
-#  if(split) {
-#    nodes <- as.integer(object$xt$k)
-#    object <- rep(list(object), nodes)
-#    for(j in seq_along(object)) {
-#      object[[j]]$term_id <- object[[j]]$label
-#      lab <- strsplit(object[[j]]$label, "")[[1]]
-#      lab <- paste(c(lab[-length(lab)], paste(',node="', j, '")', sep = '')), collapse = "", sep = "")
-#      object[[j]]$label <- lab
-#      class(object[[j]]) <- c("nnet.smooth", "no.mgcv")
-#    }
-#    class(object) <- c("nnet.smooth", "mgcv.smooth", "smooth.list")
-#  }
+  object$xt$prior <- "hc"
 
   class(object) <- c("nnet.smooth", "mgcv.smooth")
 
@@ -4598,7 +4586,9 @@ smooth.construct.nn.smooth.spec <- function(object, data, knots, ...)
 {
   form <- as.formula(paste("~", paste(object$term, collapse = "+")))
   term <- object$term
-  object <- n(form, k = object$bs.dim)
+  if(is.null(object$xt$tp))
+    object$xt$tp <- TRUE
+  object <- n(form, k = object$bs.dim, tp = object$xt$tp)
   object$label <- paste0("s(",  paste(term, collapse = ","), ")")
   object$formula <- form
   object <- smooth.construct.nnet.smooth.spec(object, data, knots, ...)
