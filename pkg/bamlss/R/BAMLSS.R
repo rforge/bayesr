@@ -4574,7 +4574,7 @@ Predict.matrix.nnet.smooth <- function(object, data)
     object$term <- object$nnterm
     class(object) <- "tprs.smooth"
     object$dim <- ncol(data)
-    X <- PredictMat(object, data)
+    X <- Predict.matrix.tprs.smooth(object, data)
   } else {
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
   }
