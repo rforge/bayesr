@@ -2339,6 +2339,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(ncol(y) < 2)
       y <- y[[1]]
   }
+
+  if(!is.null(offset))
+    initialize <- FALSE
   
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
