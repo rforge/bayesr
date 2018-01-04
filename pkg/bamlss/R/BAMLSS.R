@@ -4562,18 +4562,18 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     if(is.null(object$xt$weights)) {
       if(length(nodes) < 2) {
+        nc <- ncol(object$X)
         object$weights <- lapply(1:nodes, function(i) {
-          nc <- ncol(object$X)
           w <- runif(nc, -1, 1) #qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
           names(w) <- paste0("w", 0:(nc - 1))
           w
         })
       } else {
         weights <- list()
+        nc <- ncol(object$X)
         for(i in 1:length(nodes)) {
           weights[[i]] <- lapply(1:nodes[i], function(ii) {
             if(i < 2) {
-              nc <- ncol(object$X)
               w <- runif(nc, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
             } else {
               w <- runif(nodes[i - 1] + 1, -1, 1)
