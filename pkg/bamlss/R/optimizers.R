@@ -2447,7 +2447,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         }
 
         ## Get updated parameters.
-        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) 0.1 * nu else nu
+        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) 0.6 * nu else nu
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
             boost_fit(x[[i]]$smooth.construct[[j]], grad, nu2,
@@ -3571,8 +3571,12 @@ set.starting.values <- function(x, start)
         }
         for(j in seq_along(x[[id]]$smooth.construct)) {
           tl <- x[[id]]$smooth.construct[[j]]$label
-          take <- grep(tl <- paste(id, "s", tl, sep = "."),
-                       nstart[tns %in% id], fixed = TRUE, value = TRUE)
+          tl <- paste(id, "s", tl, sep = ".")
+          if(inherits(x[[id]]$smooth.construct[[j]], "nnet.boost")) {
+            take <- tl
+          } else {
+            take <- grep(tl, nstart[tns %in% id], fixed = TRUE, value = TRUE)
+          }
           if(is.null(x[[id]]$smooth.construct[[j]]$by))
             x[[id]]$smooth.construct[[j]]$by <- "NA"
           if(x[[id]]$smooth.construct[[j]]$by == "NA") {
