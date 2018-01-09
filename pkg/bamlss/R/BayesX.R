@@ -1062,7 +1062,7 @@ resplit <- function(x) {
 
 ## Special tensor constructors.
 te2 <- function (..., k = NA, bs = "cr", m = NA, d = NA, by = NA, fx = FALSE, 
-  mp = TRUE, np = TRUE, xt = NULL, id = NULL, sp = NULL, pc = NULL) 
+  mp = TRUE, np = TRUE, xt = NULL, id = NULL, sp = NULL, pc = NULL)
 {
   vars <- as.list(substitute(list(...)))[-1]
   dim <- length(vars)
@@ -1190,7 +1190,7 @@ te2 <- function (..., k = NA, bs = "cr", m = NA, d = NA, by = NA, fx = FALSE,
 tx <- function(..., bs = "ps", k = -1,
   ctr = c("center", "main", "both", "both1", "both2",
     "none", "meanf", "meanfd", "meansimple", "nullspace"),
-  special = TRUE)
+  xt = NULL, special = TRUE)
 {
   if(length(k) < 2) {
     if(k < 0)
@@ -1200,6 +1200,7 @@ tx <- function(..., bs = "ps", k = -1,
   object$constraint <- match.arg(ctr)
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- special
+  object$xt <- xt
   class(object) <- "tensorX.smooth.spec"
   object
 }
@@ -1211,7 +1212,7 @@ tx2 <- function(...)
   object
 }
 
-tx3 <- function(..., bs = "ps", k = c(10, 5), ctr = c("main", "center"), special = TRUE)
+tx3 <- function(..., bs = "ps", k = c(10, 5), ctr = c("main", "center"), xt = NULL, special = TRUE)
 {
   vars <- as.character(unlist(as.list(substitute(list(...)))[-1]))
   if(length(vars) != 3L)
@@ -1233,6 +1234,7 @@ tx3 <- function(..., bs = "ps", k = c(10, 5), ctr = c("main", "center"), special
   object$dim <- 3
   object$special <- special
   object$constraint <- match.arg(ctr)
+  object$xt <- xt
   class(object) <- "tensorX3.smooth.spec"
   object
 }

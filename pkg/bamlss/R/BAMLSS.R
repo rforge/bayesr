@@ -4520,7 +4520,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     object$X <- cbind(1, object$X)
 
-    object$xt$afun <- if(is.null(object$xt$afun)) "tanh" else object$xt$afun
+    object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
 
     if(is.character(object$xt$afun)) {
       object$afun <- switch(object$xt$afun,
@@ -4531,7 +4531,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
         "sigmoid" = function(x) {
           1 / (1 + exp(-x))
         },
-        "tanh" = tanh
+        "tanh" = tanh,
+        "sin" = sin
       )
     }
 
@@ -4564,7 +4565,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       if(length(nodes) < 2) {
         nc <- ncol(object$X)
         object$weights <- lapply(1:nodes, function(i) {
-          w <- runif(nc, -1, 1) #qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
+          w <- runif(nc, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
           names(w) <- paste0("w", 0:(nc - 1))
           w
         })

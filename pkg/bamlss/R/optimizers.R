@@ -2447,7 +2447,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         }
 
         ## Get updated parameters.
-        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) 0.6 * nu else nu
+        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) nu else nu
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
             boost_fit(x[[i]]$smooth.construct[[j]], grad, nu2,
