@@ -1457,10 +1457,10 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaprob <- rep(1 / nraniso, nraniso)
-        object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+        object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior))
       } else {
-        object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
+        object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
           alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior))
       }
       object$xt$scaletau2 <- object$xt$theta
