@@ -1282,6 +1282,33 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
     object$C <- matrix(1, ncol = p1 * p2)
   }
 
+  if(!is.null(object$xt[["ft"]])) {
+    if(object$xt[["ft"]]) {
+      stopifnot(requireNamespace("sdPrior"))
+      if(is.null(object$xt$prior))
+        object$xt$prior <- "ig"
+      object$xt$hyperprior <- switch(object$xt$prior,
+        "ig" = "invgamma",
+        "hn" = "hnormal",
+        "sd" = "scaledep",
+        "hc" = "hcauchy",
+        "u" = "aunif"
+      )
+      if(length(object$margin) > 1) {
+        nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
+        minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
+        omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
+        omegaprob <- rep(1 / nraniso, nraniso)
+        object$xt$theta <- hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior))
+      } else {
+        object$xt$theta <- hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
+          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior))
+      }
+      object$xt$scaletau2 <- object$xt$theta
+    }
+  }
+
   attr(object$C, "always.apply") <- TRUE
 
   object$tx.term <- paste(object$term, collapse = "")
