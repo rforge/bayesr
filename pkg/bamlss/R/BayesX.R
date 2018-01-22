@@ -655,7 +655,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -1411,6 +1411,33 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 
   if(object$by != "NA") {
     object$X <- data[[object$by]] * object$X
+  }
+
+  if(!is.null(object$xt[["ft"]])) {
+    if(object$xt[["ft"]]) {
+      stopifnot(requireNamespace("sdPrior"))
+      if(is.null(object$xt$prior))
+        object$xt$prior <- "ig"
+      object$xt$hyperprior <- switch(object$xt$prior,
+        "ig" = "invgamma",
+        "hn" = "hnormal",
+        "sd" = "scaledep",
+        "hc" = "hcauchy",
+        "u" = "aunif"
+      )
+      if(length(object$margin) > 1) {
+        nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
+        minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
+        omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
+        omegaprob <- rep(1 / nraniso, nraniso)
+        object$xt$theta <- hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior))
+      } else {
+        object$xt$theta <- hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
+          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior))
+      }
+      object$xt$scaletau2 <- object$xt$theta
+    }
   }
 
   if(!is.null(object$C))

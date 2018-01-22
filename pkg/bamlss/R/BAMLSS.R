@@ -832,7 +832,7 @@ make.prior <- function(x, sigma = 0.1)
     prior <- x$xt$prior
     if(is.character(x$xt$prior)) {
       prior <- tolower(prior)
-      if(!(prior %in% c("ig", "hc", "sd", "hn", "hn.lasso")))
+      if(!(prior %in% c("ig", "hc", "sd", "hn", "hn.lasso", "u")))
         stop(paste('smoothing variance prior "', prior, '" not supported!', sep = ''))
     }
   } else {
@@ -867,7 +867,8 @@ make.prior <- function(x, sigma = 0.1)
       theta <- switch(prior,
         "sd" = 0.00877812,
         "hc" = 0.01034553,
-        "hn" = 0.1457644
+        "hn" = 0.1457644,
+        "u" = 0.2723532
       )
     }
 
@@ -884,6 +885,9 @@ make.prior <- function(x, sigma = 0.1)
       "hn.lasso" = function(tau2) {
         theta <- sqrt(pi) / (sigma * sqrt(2))
         log(2 * theta / pi) - (tau2^2 * theta^2) / pi
+      },
+      "u" = function(tau2) {
+        1 - tau2 - exp(tau2 * 3 / theta - 3) / (1 + exp(tau2 * 3 / theta - 3))
       }
     )
     
