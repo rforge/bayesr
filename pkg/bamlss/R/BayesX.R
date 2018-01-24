@@ -1489,6 +1489,39 @@ Predict.matrix.tensorX.smooth <- function(object, data)
 }
 
 
+compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
+  nraniso = 11, minaniso = 0.05, thin = TRUE)
+{
+  if(!(inherits(object, "tensorX.smooth.spec") | inherits(object, "tensorX3.smooth.spec")))
+    stop("needs to be a tensorX object from tx() or tx3()!")
+  stopifnot(requireNamespace("sdPrior"))
+  prior <- match.arg(prior)
+  if(thin) {
+    d2 <- list()
+    for(j in object$term) {
+      if(!is.factor(data[[j]])) {
+        d2[[j]] <- seq(min(data[[j]]), max(data[[j]]), length = 500)
+      } else {
+        d2[[j]] <- unique(data[[j]])
+      }
+    }
+    object <- smooth.construct(object, as.data.frame(d2), NULL)
+  } else {
+    object <- smooth.construct(object, data, NULL)
+  }
+  if(length(object$margin) > 1) {
+    omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
+    omegaprob <- rep(1 / nraniso, nraniso)
+    theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior))
+  } else {
+    theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
+      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior))
+  }
+  return(theta)
+}
+
+
 ## Download the newest version of BayesXsrc.
 get_BayesXsrc <- function(dir = NULL, install = TRUE) {
   owd <- getwd()
