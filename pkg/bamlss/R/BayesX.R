@@ -1490,17 +1490,17 @@ Predict.matrix.tensorX.smooth <- function(object, data)
 
 
 compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
-  nraniso = 11, minaniso = 0.05, thin = TRUE)
+  nraniso = 11, minaniso = 0.05, thin = TRUE, n = 30, sample = TRUE)
 {
   if(!(inherits(object, "tensorX.smooth.spec") | inherits(object, "tensorX3.smooth.spec")))
     stop("needs to be a tensorX object from tx() or tx3()!")
   stopifnot(requireNamespace("sdPrior"))
   prior <- match.arg(prior)
-  if(thin) {
+  if(thin & !sample) {
     d2 <- list()
     for(j in object$term) {
       if(!is.factor(data[[j]])) {
-        d2[[j]] <- seq(min(data[[j]]), max(data[[j]]), length = 500)
+        d2[[j]] <- sample(seq(min(data[[j]]), max(data[[j]]), length = n))
       } else {
         d2[[j]] <- unique(data[[j]])
       }
@@ -1508,6 +1508,9 @@ compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
     object <- smooth.construct(object, as.data.frame(d2), NULL)
   } else {
     object <- smooth.construct(object, data, NULL)
+  }
+  if(thin & sample & (nrow(object$X) > 2000)) {
+    object$X <- object$X[sample(1:nrow(object$X), size = n, replace = FALSE), , drop = FALSE]
   }
   if(length(object$margin) > 1) {
     omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
