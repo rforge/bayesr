@@ -723,6 +723,15 @@ gpareto_bamlss <- function(...)
     "q" = function(p, par, ...) {
       ##(par$sigma / par$xi) * ((1 - p)^(-par$xi) - 1)
       par$sigma * ((1 - p)^(-par$xi) - 1) / par$xi
+    },
+    "r" = function(n, par) {
+      nobs <- length(par[[1]])
+      samps <- matrix(NA, nrow = nobs, ncol = n)
+      for(i in 1:n)
+        samps[, i] <- par$sigma * ((1 - runif(nobs))^(-par$xi) - 1) / par$xi
+      if(n < 2)
+        samps <- as.vector(samps)
+      samps
     }
   )
 
