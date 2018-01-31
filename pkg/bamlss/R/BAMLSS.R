@@ -4368,9 +4368,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
 
-  object$xt[["prior"]] <- "ig"
-  object$xt[["a"]] <- 10
-  object$xt[["b"]] <- 1e-5
+  object$xt[["prior"]] <- "hn"
+#  object$xt[["a"]] <- 10
+#  object$xt[["b"]] <- 1e-5
   object$fixed <- if(is.null(object$xt[["fx"]])) FALSE else object$xt[["fx"]]
   priors <- make.prior(object)
   object$prior <- priors$prior
