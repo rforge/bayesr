@@ -448,7 +448,7 @@ cox.mcmc <- function(x, y, family, start, weights, offset,
       if(inherits(p.state, "try-error")) {
         accepted <- FALSE
         p.state <- list("alpha" = log(0))
-        warning("time varying proposal function encountered an errer!")
+        warning("time varying proposal function encountered an error!")
       } else {
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
       }
