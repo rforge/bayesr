@@ -2491,7 +2491,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
             if(reverse) {
               states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
-                bmat = parm[[i]][[j]][1:iter, , drop = FALSE])
+                bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs)
               tredf <- redf + states[[i]][[j]]$redf$edf
               rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
             } else {
@@ -2697,22 +2697,19 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 }
 
 
-reverse_edf <- function(x, bn, bmat)
+reverse_edf <- function(x, bn, bmat, nobs, snr = 10)
 {
-  b0 <- apply(bmat, 2, sum)
-  bn <- bn + get.par(x$state$parameters, "b")
-  bn <- bn + b0
+  beta <- bn + apply(bmat, 2, sum)
 
-  f0 <- x$X %*% b0
-  f1 <- x$X %*% bn
-  n <- length(f0)
-  f0 <- f0 + rnorm(n, sd = 0.001)
-  f1 <- f1 + rnorm(n, sd = 0.001)
+  fit <- x$X %*% beta
+
+  sd <- sqrt(var(fit) / snr)
+  fit <- fit + rnorm(nobs, sd = sd)
 
   tX <- t(x$X)
   XX <- crossprod(x$X)
 
-  objfun <- function(tau2, fit, beta) {
+  objfun <- function(tau2) {
     if(!x$fixed) {
       S <- 0
       for(j in seq_along(x$S))
@@ -2724,29 +2721,23 @@ reverse_edf <- function(x, bn, bmat)
     mean((beta - b2)^2)
   }
 
-  tau20 <- tau2.optim(objfun, start = x$boost.tau2, maxit = 100, fit = f0, beta = b0)
-  tau21 <- tau2.optim(objfun, start = tau20, maxit = 100, fit = f1, beta = bn)
+  tau2 <- tau2.optim(objfun, start = x$boost.tau2, maxit = 100)
 
   if(!x$fixed) {
-    S0 <- S1 <- 0
-    for(j in seq_along(x$S)) {
-      S0 <- S0 + 1/tau20[j] * x$S[[j]]
-      S1 <- S1 + 1/tau21[j] * x$S[[j]]
-    }
+    S <- 0
+    for(j in seq_along(x$S))
+      S <- S + 1/tau2[j] * x$S[[j]]
   } else {
     I <- diag(1, ncol(x$X))
-    S0 <- 1/tau20 * I
-    S1 <- 1/tau21 * I
+    S <- 1/tau2 * I
   }
 
-  P0 <- matrix_inv(XX + S0, index = x$sparse.setup)
-  edf0 <- sum_diag(XX %*% P0)
+  P <- matrix_inv(XX + S, index = x$sparse.setup)
+  edf <- sum_diag(XX %*% P)
 
-  P1 <- matrix_inv(XX + S1, index = x$sparse.setup)
-  edf1 <- sum_diag(XX %*% P1)
-
-  return(list("edf" = edf1 - edf0, "tau2" = tau21))
+  return(list("edf" = edf - x$state$edf, "tau2" = tau2, "fedf" = edf))
 }
+
 
 if(FALSE) {
   n <- 1000
@@ -2763,6 +2754,8 @@ if(FALSE) {
   plot2d(p1 ~ x, data = d)
   plot2d(p2 ~ x, data = d, add = TRUE, col.lines = "blue")
   plot2d(I(1.2 + sin(x)) ~ x, data = d, add = TRUE, col.lines = "red")
+
+  b1 <- bamlss(y ~ s(x,k=50), data = d, sampler = FALSE)
 }
 
 selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights, selectmodel = TRUE)
@@ -3051,6 +3044,7 @@ boost.transform <- function(x, y, df = NULL, family,
       if(!is.null(x[[i]]$smooth.construct[["(Intercept)"]])) {
         x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- opt$par[i]
         x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(opt$par[i], length = nobs)
+        x[[i]]$smooth.construct[["(Intercept)"]]$state$edf <- 1
       }
     }
   }
@@ -3370,7 +3364,10 @@ increase <- function(state0, state1)
   attr(state0$parameters, "edf") <- attr(state1$parameters, "edf")
   state0$special <- state1$special
   state0$hat <- state1$hat
-  state0$boost.tau2 <- state1$redf$tau2
+  if(!is.null(state1$redf)) {
+    state0$boost.tau2 <- state1$redf$tau2
+    state0$edf <- state1$redf$fedf
+  }
   state0
 }
 
