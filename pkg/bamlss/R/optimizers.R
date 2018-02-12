@@ -1163,7 +1163,7 @@ tau2.optim <- function(f, start, ..., scale = 10, eps = .Machine$double.eps^0.5,
   }
   
   start <- cround(start)
-  ic0 <- f(start)
+  ic0 <- f(start, ...)
   
   iter <- 0; eps0 <- eps + 1
   while((eps0 > eps) & (iter < maxit)) {
@@ -1854,11 +1854,15 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
       if(x[[j]]$smooth.construct[[sj]]$by == "NA") {
         tpar <- tpar[!grepl(":", names(tpar), fixed = TRUE)]
       }
-      x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, tpar, "b")
-      x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X,
-                                                                                                 get.par(tpar, "b"))
+      bb <- get.par(tpar, "b")
+      x[[j]]$smooth.construct[[sj]]$state$parameters <- set.par(x[[j]]$smooth.construct[[sj]]$state$parameters, bb, "b")
+      x[[j]]$smooth.construct[[sj]]$state$fitted.values <- x[[j]]$smooth.construct[[sj]]$fit.fun(x[[j]]$smooth.construct[[sj]]$X, bb)
       eta[[j]] <- eta[[j]] + fitted(x[[j]]$smooth.construct[[sj]]$state)
-      lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[j]]$smooth.construct[[sj]], "tau2"), x[[j]]$smooth.construct[[sj]]$fixed.hyper))
+      if(any(grepl("tau2", names(tpar)))) {
+        lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, x[[j]]$smooth.construct[[sj]]$fixed.hyper))
+      } else {
+        lprior <- lprior + x[[j]]$smooth.construct[[sj]]$prior(c(tpar, get.state(x[[j]]$smooth.construct[[sj]], "tau2"), x[[j]]$smooth.construct[[sj]]$fixed.hyper))
+      }
     }
   }
   ll <- family$loglik(y, family$map2par(eta))
@@ -2298,11 +2302,14 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion), always = FALSE, ...)
+  hatmatrix = !is.null(stop.criterion), reverse = TRUE, always = FALSE, ...)
 { 
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
+
+  if(reverse)
+    hatmatrix <- FALSE
   
   if(!is.null(mstop))
     maxit <- mstop
@@ -2401,6 +2408,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       save.ic <- rep(NA, maxit)
     Imat <- diag(nobs)
   }
+  if(reverse) {
+    edf <- rep(0, maxit)
+    if(!is.null(stop.criterion))
+      save.ic <- rep(NA, maxit)
+  }
   selectfun <- list(...)$selectfun
   selectmodel <- list(...)$selectmodel
   if(is.null(selectmodel))
@@ -2426,6 +2438,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   } else {
     sum(family$d(y, family$map2par(eta)) * W)
   }
+  redf <- if(initialize) length(nx) else 0
   ptm <- proc.time()
   while(iter <= maxit & qsel < maxq) {
     eta0 <- eta
@@ -2474,13 +2487,20 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               tll <- family$loglik(y, family$map2par(teta))
             else
               tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
-            ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
-            tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
-            if(length(nxr <- nx[nx != i])) {
-              for(ii in nxr)
-                tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+            if(reverse) {
+              states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
+                bmat = parm[[i]][[j]][1:iter, , drop = FALSE])
+              tredf <- redf + states[[i]][[j]]$redf$edf
+              rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+            } else {
+              ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+              tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
+              if(length(nxr <- nx[nx != i])) {
+                for(ii in nxr)
+                  tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+              }
+              rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
             }
-            rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
           }
         } else {
           rss[[i]][j] <- selfun(iter = iter, i = i, j = j, state = states[[i]][[j]],
@@ -2595,6 +2615,22 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       }
     }
 
+    if(reverse) {
+      redf <- redf + states[[take[1]]][[take[2]]]$redf$edf
+      edf[iter] <- redf
+      save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+      if(!is.null(stop.criterion)) {
+        if(iter > (if(initialize) 2 else 1)) {
+          if(!is.na(save.ic[iter - 1]) & force.stop) {
+            if(save.ic[iter - 1] < save.ic[iter]) {
+              nback <- TRUE
+              break
+            }
+          }
+        }
+      }
+    }
+
     if(!is.null(selectfun)) {
       save.ic[iter] <- min(unlist(rss))
       if(force.stop & (iter > (if(initialize) 2 else 1))) {
@@ -2613,7 +2649,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       vtxt <- paste(
         if(!is.null(stop.criterion)) paste(stop.criterion, " ", fmt(save.ic[iter], width = 8, digits = digits), " ", sep = "") else NULL,
         "logLik ", fmt(ll, width = 8, digits = digits),
-        if(hatmatrix) paste(" edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
+        if(hatmatrix | reverse) paste(" edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)),
         " qsel ", qsel, sep = "")
@@ -2656,6 +2692,58 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   
   return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+}
+
+
+reverse_edf <- function(x, bn, bmat)
+{
+  b0 <- apply(bmat, 2, sum)
+  bn <- bn + get.par(x$state$parameters, "b")
+  bn <- bn + b0
+
+  f0 <- x$X %*% b0
+  f1 <- x$X %*% bn
+  n <- length(f0)
+  f0 <- f0 + rnorm(n, sd = 0.001)
+  f1 <- f1 + rnorm(n, sd = 0.001)
+
+  tX <- t(x$X)
+  XX <- crossprod(x$X)
+
+  objfun <- function(tau2, fit, beta) {
+    if(!x$fixed) {
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1/tau2[j] * x$S[[j]]
+    } else {
+      S <- 1/tau2 * diag(1, ncol(x$X))
+    }
+    b2 <- matrix_inv(XX + S, index = x$sparse.setup) %*% tX %*% fit
+    mean((beta - b2)^2)
+  }
+
+  tau20 <- tau2.optim(objfun, start = x$boost.tau2, maxit = 100, fit = f0, beta = b0)
+  tau21 <- tau2.optim(objfun, start = tau20, maxit = 100, fit = f1, beta = bn)
+
+  if(!x$fixed) {
+    S0 <- S1 <- 0
+    for(j in seq_along(x$S)) {
+      S0 <- S0 + 1/tau20[j] * x$S[[j]]
+      S1 <- S1 + 1/tau21[j] * x$S[[j]]
+    }
+  } else {
+    I <- diag(1, ncol(x$X))
+    S0 <- 1/tau20 * I
+    S1 <- 1/tau21 * I
+  }
+
+  P0 <- matrix_inv(XX + S0, index = x$sparse.setup)
+  edf0 <- sum_diag(XX %*% P0)
+
+  P1 <- matrix_inv(XX + S1, index = x$sparse.setup)
+  edf1 <- sum_diag(XX %*% P1)
+
+  return(list("edf" = edf1 - edf0, "tau2" = tau21))
 }
 
 
@@ -2870,8 +2958,8 @@ boost.transform <- function(x, y, df = NULL, family,
       names(model.matrix) <- cn
       x[[nx[j]]]$smooth.construct[[ii]] <- NULL
       x[[nx[j]]]$smooth.construct <- c(model.matrix, x[[nx[j]]]$smooth.construct)
+      attr(x[[nx[j]]], "assign") <- assign
     }
-    attr(x[[nx[j]]], "assign") <- assign
   }
   
   ## Save more info.
@@ -2885,6 +2973,10 @@ boost.transform <- function(x, y, df = NULL, family,
       x[[nx[j]]]$smooth.construct[[sj]]$selected <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$loglik <- rep(0, length = maxit)
       x[[nx[j]]]$smooth.construct[[sj]]$state$rss <- 0
+      if(is.null(x[[nx[j]]]$smooth.construct[[sj]]$is.model.matrix))
+        x[[nx[j]]]$smooth.construct[[sj]]$boost.tau2 <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "tau2")
+      else
+        x[[nx[j]]]$smooth.construct[[sj]]$boost.tau2 <- 1000
       if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$S))
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- as.integer(sapply(x[[nx[j]]]$smooth.construct[[sj]]$S, is.function))
       else
@@ -3260,6 +3352,7 @@ increase <- function(state0, state1)
   attr(state0$parameters, "edf") <- attr(state1$parameters, "edf")
   state0$special <- state1$special
   state0$hat <- state1$hat
+  state0$boost.tau2 <- state1$redf$tau2
   state0
 }
 
