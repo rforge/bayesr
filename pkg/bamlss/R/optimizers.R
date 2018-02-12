@@ -2412,6 +2412,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     edf <- rep(0, maxit)
     if(!is.null(stop.criterion))
       save.ic <- rep(NA, maxit)
+    if(is.null(stop.criterion))
+      stop.criterion <- "BIC"
   }
   selectfun <- list(...)$selectfun
   selectmodel <- list(...)$selectmodel
@@ -2746,6 +2748,22 @@ reverse_edf <- function(x, bn, bmat)
   return(list("edf" = edf1 - edf0, "tau2" = tau21))
 }
 
+if(FALSE) {
+  n <- 1000
+  d <- data.frame("x" = runif(n, -3, 3))
+  d$y <- 1.2 + sin(d$x) + rnorm(n, sd = 0.3)
+  plot(d)
+
+  b1 <- bamlss(y ~ s(x,k=50), data = d, sampler = FALSE, optimizer = boost, stop.criterion = "AIC", reverse = TRUE)
+  b1 <- bamlss(y ~ s(x,k=50), data = d, sampler = FALSE, optimizer = boost, stop.criterion = "AIC", reverse = FALSE)
+
+  d$p1 <- predict(b1, model = "mu")
+  d$p2 <- predict(b1, model = "mu")
+
+  plot2d(p1 ~ x, data = d)
+  plot2d(p2 ~ x, data = d, add = TRUE, col.lines = "blue")
+  plot2d(I(1.2 + sin(x)) ~ x, data = d, add = TRUE, col.lines = "red")
+}
 
 selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights, selectmodel = TRUE)
 {
