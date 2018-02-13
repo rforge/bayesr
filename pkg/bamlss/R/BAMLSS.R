@@ -7856,40 +7856,40 @@ Predict.matrix.mlt.smooth <- function(object, data)
   X
 }
 
-bamlss_bridge <- function(object, ...)
-{
-  stopifnot(requireNamespace("bridgesampling"))
+#bamlss_bridge <- function(object, ...)
+#{
+#  stopifnot(requireNamespace("bridgesampling"))
 
-  if(!inherits(object, "bamlss"))
-    stop("object must be a 'bamlss' object!")
-  if(is.null(object$samples))
-    stop("object does not contain any samples!")
+#  if(!inherits(object, "bamlss"))
+#    stop("object must be a 'bamlss' object!")
+#  if(is.null(object$samples))
+#    stop("object does not contain any samples!")
 
-  samps <- samples(object, coef.only = TRUE, drop = FALSE)
+#  samps <- samples(object, coef.only = TRUE, drop = FALSE)
 
-  if(is.data.frame(object$y)) {
-    if(ncol(object$y) < 2)
-      object$y <- object$y[[1]]
-  }
+#  if(is.data.frame(object$y)) {
+#    if(ncol(object$y) < 2)
+#      object$y <- object$y[[1]]
+#  }
 
-  if(is.null(attr(object$x, "bamlss.engine.setup")))
-    object$x <- bamlss.engine.setup(object$x)
+#  if(is.null(attr(object$x, "bamlss.engine.setup")))
+#    object$x <- bamlss.engine.setup(object$x)
 
-  logPost <- function(par, ...) {
-    log_posterior(par, object$x, object$y, object$family, verbose = FALSE)
-  }
+#  logPost <- function(par, ...) {
+#    log_posterior(par, object$x, object$y, object$family, verbose = FALSE)
+#  }
 
-  lb <- rep(-Inf, ncol(samps[[1]]))
-  ub <- rep(Inf, ncol(samps[[1]]))
-  names(lb) <- names(ub) <- colnames(samps[[1]])
-  if(any(grepl("tau2", colnames(samps[[1]]))))
-    lb[grep("tau2", names(lb))] <- 0
+#  lb <- rep(-Inf, ncol(samps[[1]]))
+#  ub <- rep(Inf, ncol(samps[[1]]))
+#  names(lb) <- names(ub) <- colnames(samps[[1]])
+#  if(any(grepl("tau2", colnames(samps[[1]]))))
+#    lb[grep("tau2", names(lb))] <- 0
 
-  bs <- bridge_sampler(samples = samps,
-    log_posterior = logPost,
-    data = list("n" = NA),
-    lb = lb, ub = ub, ...)
+#  bs <- bridge_sampler(samples = samps,
+#    log_posterior = logPost,
+#    data = list("n" = NA),
+#    lb = lb, ub = ub, ...)
 
-  bs
-}
+#  bs
+#}
 
