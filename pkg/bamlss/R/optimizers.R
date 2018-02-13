@@ -2715,10 +2715,8 @@ reverse_edf <- function(x, bn, bmat, nobs, y, eta)
     } else {
       S <- 1/tau2 * diag(1, ncol(x$X))
     }
-    b2 <- matrix_inv(XX + S, index = x$sparse.setup) %*% tX %*% y
-    f2 <- x$X %*% b2
-
-    mean((fit - f2)^2)
+    beta2 <- matrix_inv(XX + S, index = x$sparse.setup) %*% tX %*% y
+    mean((fit - x$X %*% beta2)^2)
   }
 
   tau2 <- tau2.optim(objfun, start = x$boost.tau2, maxit = 100)
