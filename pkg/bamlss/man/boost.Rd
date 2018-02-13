@@ -25,7 +25,7 @@ boost(x, y, family, weights = NULL,
   nback = NULL, plot = TRUE, initialize = TRUE,
   stop.criterion = NULL, force.stop = TRUE,
   hatmatrix = !is.null(stop.criterion),
-  always = FALSE, ...)
+  reverse = FALSE, always = FALSE, ...)
 
 ## Modified likelihood based boosting.
 boostm(x, y, family, offset = NULL,
@@ -97,6 +97,9 @@ boost.frame(formula, train, test, family = "gaussian", ...)
     will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
     freedom in each boosting iteration, i.e., it is possible to compute information criteria
     like the AIC or BIC for selecting the optimum number of boosting iterations.}
+  \item{reverse}{Logical. Instead of computing degrees of freedom with hat-matrices, the actual
+    smoothing parameters are reverse engineered to compute the corresponding actual smoother matrix.
+    Note that this option is still experimental.}
   \item{always}{Logical or character. Should the intercepts forced to be updated in each boosting iteration?
     If \code{always = TRUE} each intercept of each distributional parameter is updated,
     if \code{always = "best"} only the intercept corresponding to the distributional of the best

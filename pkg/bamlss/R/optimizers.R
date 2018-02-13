@@ -2302,7 +2302,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
   initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion), reverse = TRUE, always = FALSE, ...)
+  hatmatrix = !is.null(stop.criterion), reverse = FALSE, always = FALSE, ...)
 { 
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -2491,7 +2491,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
             if(reverse) {
               states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
-                bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs)
+                bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs, grad, teta[[i]])
               tredf <- redf + states[[i]][[j]]$redf$edf
               rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
             } else {
@@ -2697,14 +2697,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 }
 
 
-reverse_edf <- function(x, bn, bmat, nobs, snr = 10)
+reverse_edf <- function(x, bn, bmat, nobs, y, eta)
 {
   beta <- bn + apply(bmat, 2, sum)
 
   fit <- x$X %*% beta
-
-  sd <- sqrt(var(fit) / snr)
-  fit <- fit + rnorm(nobs, sd = sd)
+  y <- y + fit
 
   tX <- t(x$X)
   XX <- crossprod(x$X)
@@ -2717,8 +2715,10 @@ reverse_edf <- function(x, bn, bmat, nobs, snr = 10)
     } else {
       S <- 1/tau2 * diag(1, ncol(x$X))
     }
-    b2 <- matrix_inv(XX + S, index = x$sparse.setup) %*% tX %*% fit
-    mean((beta - b2)^2)
+    b2 <- matrix_inv(XX + S, index = x$sparse.setup) %*% tX %*% y
+    f2 <- x$X %*% b2
+
+    mean((fit - f2)^2)
   }
 
   tau2 <- tau2.optim(objfun, start = x$boost.tau2, maxit = 100)
