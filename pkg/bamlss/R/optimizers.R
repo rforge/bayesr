@@ -2494,7 +2494,22 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
                 if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
                   tredf <- tredf + 1
               } else {
-                tredf <- tredf + nu * x[[i]]$smooth.construct[[j]]$state$init.edf
+                if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+                  if(iter < 2) {
+                    aset <- sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
+                    tredf <- tredf + aset
+                  } else {
+                    aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
+                    aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
+                      get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
+                    aset0 <- sum(abs(aset0) > 1e-10)
+                    aset1 <- sum(abs(aset1) > 1e-10)
+                    aset <- aset1 - aset0
+                    tredf <- tredf + aset
+                  }
+                } else {
+                  tredf <- tredf + nu * x[[i]]$smooth.construct[[j]]$state$init.edf
+                }
               }
               rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
             } else {
@@ -2641,7 +2656,21 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
             x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf <- 1
           }
         } else {
-          redf <- redf + nu * x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf
+          if(inherits(x[[take[1]]]$smooth.construct[[take[2]]], "lasso.smooth")) {
+            if(iter < 2) {
+              aset <- sum(abs(parm[[take[1]]][[take[2]]][iter, ]) > 1e-10)
+              redf <- redf + aset
+            } else {
+              aset0 <- apply(parm[[take[1]]][[take[2]]][1:(iter - 1L), , drop = FALSE], 2, sum)
+              aset1 <- apply(parm[[take[1]]][[take[2]]][1:iter, , drop = FALSE], 2, sum)
+              aset0 <- sum(abs(aset0) > 1e-10)
+              aset1 <- sum(abs(aset1) > 1e-10)
+              aset <- aset1 - aset0
+              redf <- redf + aset
+            }
+          } else {
+            redf <- redf + nu * x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf
+          }
         }
       } else {
         if(is.null(stop.criterion))
