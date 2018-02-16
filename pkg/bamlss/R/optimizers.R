@@ -2413,8 +2413,6 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     edf <- rep(0, maxit)
     if(!is.null(stop.criterion))
       save.ic <- rep(NA, maxit)
-    if(is.null(stop.criterion))
-      stop.criterion <- "BIC"
   }
   selectfun <- list(...)$selectfun
   selectmodel <- list(...)$selectmodel
@@ -2646,14 +2644,16 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           redf <- redf + nu * x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf
         }
       } else {
+        if(is.null(stop.criterion))
+          stop("reverse.edf not implemented!")
         redf <- redf + states[[take[1]]][[take[2]]]$redf$edf
       }
       edf[iter] <- redf
-      save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
       if(!is.null(stop.criterion)) {
+        save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
         if(iter > (if(initialize) 2 else 1)) {
           if(!is.na(save.ic[iter - 1]) & force.stop) {
-            if(save.ic[iter - 1] < save.ic[iter]) {
+            if(save.ic[iter - 1] <= save.ic[iter]) {
               nback <- TRUE
               break
             }
@@ -2665,7 +2665,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(!is.null(selectfun)) {
       save.ic[iter] <- min(unlist(rss))
       if(force.stop & (iter > (if(initialize) 2 else 1))) {
-        if(save.ic[iter - 1] < save.ic[iter]) {
+        if(save.ic[iter - 1] <= save.ic[iter]) {
           nback <- TRUE
           break
         }
@@ -2711,7 +2711,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
   
-  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf, hatmatrix, length(eta[[1]]))
+  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf,
+    (hatmatrix | approx.edf | reverse.edf), length(eta[[1]]))
   if(plot)
     plot.boost.summary(bsum)
 
