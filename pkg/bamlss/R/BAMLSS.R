@@ -2350,7 +2350,7 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
           vars <- c(vars, all.vars(as.formula(paste("~", j)))[1])
         } else {
           tcall <- parse(text = j)[[1]]
-          tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np")] <- NULL
+          tcall[c("k","fx","bs","m","xt","id","sp","pc","d","mp","np","knots")] <- NULL
           tcall <- eval(tcall)
           vars <- c(vars, tcall$term)
           if(!is.null(tcall$by)) {
