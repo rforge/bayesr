@@ -43,7 +43,7 @@ boost.summary(object, ...)
 ## Plot all boosting paths.
 boost.plot(x, which = c("loglik", "loglik.contrib", "parameters",
   "aic", "bic", "user"), intercept = TRUE, spar = TRUE, mstop = NULL,
-  name = NULL, labels = NULL, color = NULL, ...)
+  name = NULL, drop = NULL, labels = NULL, color = NULL, ...)
 
 ## Boosting summary printing and plotting.
 \method{print}{boost.summary}(x, summary = TRUE, plot = TRUE,
@@ -77,6 +77,7 @@ boost.frame(formula, train, test, family = "gaussian", ...)
   \item{qsel.splitfactor}{Logical, if set to \code{TRUE} dummy variables of categorical predictors are counted individually.}
   \item{name}{Character, the name of the coefficient (group) that should be plotted. Note that
     the string provided in \code{name} will be removed from the labels on the 4th axis.}
+  \item{drop}{Character, the name of the coefficient (group) that should not be plotted.}
   \item{labels}{A character string of labels that should be used on the 4 axis.}
   \item{color}{Colors or color function that creates colors for the (group) paths.}
   \item{verbose}{Print information during runtime of the algorithm.}
