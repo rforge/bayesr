@@ -87,7 +87,8 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
                 tdf <- df[x$smooth.construct[[j]]$label]
             } else tdf <- df[1]
           }
-          x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf, do.part = TRUE)
+          if(is.null(list(...)$nodf))
+            x$smooth.construct[[j]] <- assign.df(x$smooth.construct[[j]], tdf, do.part = TRUE)
           if(!is.null(x$smooth.construct[[j]]$xt[["update"]]))
             x$smooth.construct[[j]]$update <- x$smooth.construct[[j]]$xt[["update"]]
           if(is.null(x$smooth.construct[[j]]$update)) {
@@ -481,7 +482,6 @@ assign.df <- function(x, df, do.part = FALSE)
     if(x$fxsp)
       return(x)
   }
-
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df)) {
     nc <- ncol(x$X)
@@ -489,8 +489,6 @@ assign.df <- function(x, df, do.part = FALSE)
   }
   if(df > ncol(x$X))
     df <- ncol(x$X)
-  if(df < 1)
-    df <- 1
   if(inherits(x$X, "spam")) {
     XX <- crossprod.spam(x$X)
   } else {
@@ -516,21 +514,20 @@ assign.df <- function(x, df, do.part = FALSE)
   } else {
     objfun <- function(tau2, ret.edf = FALSE) {
       edf <- sum_diag(XX %*% matrix_inv(XX + 1 / tau2 * (if(is.function(x$S[[1]])) {
-        x$S[[1]](c("b" = rep(0, attr(x$S[[1]], "npar"))))
+        x$S[[1]](c("b" = rep(0, attr(x$S[[1]], "npar")), x$fixed.hyper))
       } else x$S[[1]]), index = x$sparse.setup))
       if(ret.edf)
         return(edf)
       else
         return((df - edf)^2)
     }
-    tau2 <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100,
+    tau2 <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 10,
       add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
     if(inherits(tau2, "try-error"))
       return(x)
   }
   x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   x$state$edf <- objfun(tau2, ret.edf = TRUE)
-
   return(x)
 }
 
@@ -2336,7 +2333,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     stop("please set either argument 'maxit' or 'mstop'!")
   
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, df = NULL, ...)
+    x <- bamlss.engine.setup(x, df = NULL, nodf = TRUE, ...)
   
   np <- length(nx)
   nobs <- nrow(y)
@@ -2937,6 +2934,8 @@ boost.transform <- function(x, y, df = NULL, family,
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
         if(!is.null(df)) {
+          if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "lasso.smooth"))
+            x[[nx[j]]]$smooth.construct[[sj]]$xt$df <- df
           x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
         }
         if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
@@ -3623,7 +3622,7 @@ plot.boost.summary <- function(x, ...)
 }
 
 boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user"),
-  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, labels = NULL, color = NULL, ...)
+  intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, drop = NULL, labels = NULL, color = NULL, ...)
 {
   if(!is.character(which)) {
     which <- c("loglik", "loglik.contrib", "parameters")[as.integer(which)]
@@ -3655,6 +3654,9 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
     if(w == "parameters") {
       if(spar)
         par(mar = c(5.1, 4.1, 2.1, 10.1))
+      if(!is.null(drop)) {
+        x$parameters <- x$parameters[, -grep2(drop, colnames(x$parameters), fixed = TRUE), drop = FALSE]
+      }
       if(!is.null(name)) {
         x$parameters <- x$parameters[, grep2(name, colnames(x$parameters), fixed = TRUE), drop = FALSE]
       }
@@ -3676,18 +3678,36 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
           rep(color, length.out = length(unique(xn)))
         }
       }
-      
+
       if(is.null(labels)) {
-        labs <- colnames(x$parameters)
+        labs <- labs0 <- colnames(p)
+        plab <- p[nrow(p), ]
+        o <- order(plab, decreasing = TRUE)
+        labs <- labs[o]
+        plab <- plab[o]
+        rplab <- diff(range(plab))
+        for(i in 1:(length(plab) - 1)) {
+          dp <- abs(plab[i] - plab[i + 1]) / rplab
+          if(is.na(dp))
+            dp <- 0
+          if(dp <= 0.02) {
+            labs[i + 1] <- paste(c(labs[i], labs[i + 1]), collapse = ",")
+            labs[i] <- ""
+          }
+        }
+        labs <- labs[order(o)]
         if(!is.null(name)) {
           for(j in seq_along(name))
             labs <- gsub(name[j], "", labs, fixed = TRUE)
         }
-      } else labs <- rep(labels, length.out = ncol(x$parameters))
+      } else labs <- rep(labels, length.out = ncol(p))
+      at <- p[nrow(p), ]
+      at <- at[labs != ""]
+      labs <- labs[labs != ""]
       
       matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration", ...)
       abline(v = mstop, lwd = 3, col = "lightgray")
-      axis(4, at = p[nrow(p), ], labels = labs, las = 1)
+      axis(4, at = at, labels = labs, las = 1)
       axis(3, at = mstop, labels = paste("mstop =", mstop))
     }
   }
