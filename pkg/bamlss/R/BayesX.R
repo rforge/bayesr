@@ -1282,18 +1282,28 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
     object$C <- matrix(1, ncol = p1 * p2)
   }
 
+  if(is.null(object$xt$prior))
+    object$xt$prior <- "ig"
+  if(is.null(object$xt$theta)) {
+    object$xt$theta <- switch(object$xt$prior,
+      "sd" = 0.00877812,
+      "hc" = 0.01034553,
+      "hn" = 0.1457644,
+      "u" = 0.2723532
+    )
+  }
+  object$xt$scaletau2 <- object$xt$theta
+  object$xt$hyperprior <- switch(object$xt$prior,
+    "ig" = "invgamma",
+    "hn" = "hnormal",
+    "sd" = "scaledep",
+    "hc" = "hcauchy",
+    "u" = "aunif"
+  )
+
   if(!is.null(object$xt[["ft"]])) {
     if(object$xt[["ft"]]) {
       stopifnot(requireNamespace("sdPrior"))
-      if(is.null(object$xt$prior))
-        object$xt$prior <- "ig"
-      object$xt$hyperprior <- switch(object$xt$prior,
-        "ig" = "invgamma",
-        "hn" = "hnormal",
-        "sd" = "scaledep",
-        "hc" = "hcauchy",
-        "u" = "aunif"
-      )
       if(length(object$margin) > 1) {
         nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
@@ -1440,18 +1450,28 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     object$X <- data[[object$by]] * object$X
   }
 
+  if(is.null(object$xt$prior))
+    object$xt$prior <- "ig"
+  if(is.null(object$xt$theta)) {
+    object$xt$theta <- switch(object$xt$prior,
+      "sd" = 0.00877812,
+      "hc" = 0.01034553,
+      "hn" = 0.1457644,
+      "u" = 0.2723532
+    )
+  }
+  object$xt$scaletau2 <- object$xt$theta
+  object$xt$hyperprior <- switch(object$xt$prior,
+    "ig" = "invgamma",
+    "hn" = "hnormal",
+    "sd" = "scaledep",
+    "hc" = "hcauchy",
+    "u" = "aunif"
+  )
+
   if(!is.null(object$xt[["ft"]])) {
     if(object$xt[["ft"]]) {
       stopifnot(requireNamespace("sdPrior"))
-      if(is.null(object$xt$prior))
-        object$xt$prior <- "ig"
-      object$xt$hyperprior <- switch(object$xt$prior,
-        "ig" = "invgamma",
-        "hn" = "hnormal",
-        "sd" = "scaledep",
-        "hc" = "hcauchy",
-        "u" = "aunif"
-      )
       if(length(object$margin) > 1) {
         nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso

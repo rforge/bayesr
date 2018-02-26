@@ -2493,7 +2493,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               } else {
                 if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
                   if(iter < 2) {
-                    aset <- sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
+                    aset <- sum(abs(unique2(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
+print(aset)
+print(length(get.par(states[[i]][[j]]$parameters, "b")))
+cat("---\n")
                     tredf <- tredf + aset
                   } else {
                     aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
@@ -2790,6 +2793,11 @@ reverse_edf <- function(x, bn, bmat, nobs, y, eta, approx = TRUE)
   edf <- sum_diag(XX %*% P)
 
   return(list("edf" = edf - x$state$edf, "tau2" = tau2, "fedf" = edf))
+}
+
+
+unique2 <- function(x, digits = 10) {
+  unique(round(x, digits = 10))
 }
 
 
