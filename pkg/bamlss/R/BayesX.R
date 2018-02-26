@@ -586,6 +586,24 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 
 sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(object, data, id = NULL, dir = NULL, ...)
 {
+  if(is.null(object$xt$prior))
+    object$xt$prior <- "ig"
+  if(is.null(object$xt$theta)) {
+    object$xt$theta <- switch(object$xt$prior,
+      "sd" = 0.00877812,
+      "hc" = 0.01034553,
+      "hn" = 0.1457644,
+      "u" = 0.2723532
+    )
+  }
+  object$xt$scaletau2 <- object$xt$theta
+  object$xt$hyperprior <- switch(object$xt$prior,
+    "ig" = "invgamma",
+    "hn" = "hnormal",
+    "sd" = "scaledep",
+    "hc" = "hcauchy",
+    "u" = "aunif"
+  )
   object$state <- NULL
   if(!is.null(object$sx.S))
     object$S <- object$sx.S
