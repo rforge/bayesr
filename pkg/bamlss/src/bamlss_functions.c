@@ -3846,3 +3846,49 @@ SEXP hatmat_sumdiag(SEXP H)
   return trace;
 }
 
+/*SEXP nnet_boost_mmult(X, g)*/
+/*{*/
+/*  n = nrows(X), k = ncols(X);*/
+/*  int i,j;*/
+
+/*  SEXP fit;*/
+/*  PROTECT(fit = allocMatrix(REALSXP, n, k));*/
+
+/*  double *xptr = REAL(X);*/
+/*  double *yptr = REAL(y);*/
+/*  double *gptr = REAL(g);*/
+/*  double *fitptr = REAL(fit);*/
+
+/*  double sum = 0.0;*/
+/*  double nu2 = REAL(nu)[0]*/
+
+/*  for(j = 0; j < k; j++) {*/
+/*    for(i = 0; i < n; i++) {*/
+/*      sum += xptr[i + n * j] * yptr[i]*/
+/*    }*/
+/*    gptr[j] = nu2 * sum;*/
+/*    for(i = 0; i < n; i++) {*/
+/*      fitptr[i + n * j] = xptr[i + n * j] * gptr[j]*/
+/*      */
+/*    }*/
+/*  }*/
+
+/*  SEXP rval;*/
+/*  PROTECT(rval = allocVector(VECSXP, 2));*/
+/*  ++nProtected;*/
+
+/*  SEXP nrval;*/
+/*  PROTECT(nrval = allocVector(STRSXP, 2));*/
+/*  ++nProtected;*/
+
+/*  SET_VECTOR_ELT(rval, 0, grad);*/
+/*  SET_VECTOR_ELT(rval, 1, hess);*/
+
+/*  SET_STRING_ELT(nrval, 0, mkChar("grad"));*/
+/*  SET_STRING_ELT(nrval, 1, mkChar("hess"));*/
+/*        */
+/*  setAttrib(rval, R_NamesSymbol, nrval); */
+
+/*  UNPROTECT(nProtected);*/
+/*  return rval;*/
+/*}*/
