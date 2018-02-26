@@ -2493,17 +2493,23 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               } else {
                 if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
                   if(iter < 2) {
-                    aset <- sum(abs(unique2(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
-print(aset)
-print(length(get.par(states[[i]][[j]]$parameters, "b")))
-cat("---\n")
+                    aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
+                      sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
+                    } else {
+                      sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
+                    }
                     tredf <- tredf + aset
                   } else {
                     aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
                     aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
                       get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
-                    aset0 <- sum(abs(aset0) > 1e-10)
-                    aset1 <- sum(abs(aset1) > 1e-10)
+                    if(x[[i]]$smooth.construct[[j]]$fuse) {
+                      aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
+                      aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
+                    } else {
+                      aset0 <- sum(abs(aset0) > 1e-10)
+                      aset1 <- sum(abs(aset1) > 1e-10)
+                    }
                     aset <- aset1 - aset0
                     tredf <- tredf + aset
                   }
@@ -2658,13 +2664,22 @@ cat("---\n")
         } else {
           if(inherits(x[[take[1]]]$smooth.construct[[take[2]]], "lasso.smooth")) {
             if(iter < 2) {
-              aset <- sum(abs(parm[[take[1]]][[take[2]]][iter, ]) > 1e-10)
+              aset <- if(x[[take[1]]]$smooth.construct[[take[2]]]$fuse) {
+                  sum(abs(unique.fuse(parm[[take[1]]][[take[2]]][iter, ])) > 1e-10)
+                } else {
+                  sum(abs(parm[[take[1]]][[take[2]]][iter, ]) > 1e-10)
+                }
               redf <- redf + aset
             } else {
               aset0 <- apply(parm[[take[1]]][[take[2]]][1:(iter - 1L), , drop = FALSE], 2, sum)
               aset1 <- apply(parm[[take[1]]][[take[2]]][1:iter, , drop = FALSE], 2, sum)
-              aset0 <- sum(abs(aset0) > 1e-10)
-              aset1 <- sum(abs(aset1) > 1e-10)
+              if(x[[take[1]]]$smooth.construct[[take[2]]]$fuse) {
+                aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
+                aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
+              } else {
+                aset0 <- sum(abs(aset0) > 1e-10)
+                aset1 <- sum(abs(aset1) > 1e-10)
+              }
               aset <- aset1 - aset0
               redf <- redf + aset
             }
@@ -2796,8 +2811,8 @@ reverse_edf <- function(x, bn, bmat, nobs, y, eta, approx = TRUE)
 }
 
 
-unique2 <- function(x, digits = 10) {
-  unique(round(x, digits = 10))
+unique.fuse <- function(x, digits = 4) {
+  unique(round(x, digits = digits))
 }
 
 
