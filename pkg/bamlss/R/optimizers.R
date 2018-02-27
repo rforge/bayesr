@@ -3007,7 +3007,7 @@ boost.transform <- function(x, y, df = NULL, family,
             nnets[[k]]$init.edf <- 0
             class(nnets[[k]]) <- "nnet.boost"
           }
-          names(nnets) <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".", 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X))
+          names(nnets) <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".[].", 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X))
           NNETS <- c(NNETS, nnets)
         }
       }
@@ -3029,10 +3029,10 @@ boost.transform <- function(x, y, df = NULL, family,
             if(!is.null(weights))
               stop("weights is not supported!")
 
-            g <- nu * apply(x$N * y, 2, sum)
+            g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
 
             fit <- t(t(x$X) * g)
-            rss <- apply((fit - y)^2, 2, sum)
+            rss <- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
 
             j <- which.min(rss)
             g2 <- rep(0, length(g))
@@ -3040,7 +3040,7 @@ boost.transform <- function(x, y, df = NULL, family,
   
             ## Finalize.
             x$state$parameters <- set.par(x$state$parameters, g2, "b")
-            x$state$fitted.values <- fit[, j]
+            x$state$fitted.values <- fit[x$binning$match.index, j]
 
             x$state$rss <- rss[j]
 
@@ -3223,8 +3223,8 @@ make.par.list <- function(x, iter)
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
         if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
           attr(rval[[j]], "is.model.matrix") <- TRUE
-        if(inherits(x$smooth.construct[[j]], "nnet.smooth"))
-          attr(rval[[j]], "is.nnet") <- TRUE
+        if(inherits(x$smooth.construct[[j]], "nnet.boost"))
+          class(rval[[j]]) <- "nnet.boost"
       }
     }
   } else {
@@ -3244,7 +3244,7 @@ parm2mat <- function(x, mstop, fixed = NULL)
     for(j in names(x[[i]])) {
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
-      if(!is.null(attr(x[[i]][[j]], "is.nnet")))
+      if(inherits(x[[i]][[j]], "nnet.boost"))
         is.nnet <- c(is.nnet, j)
       cn <- colnames(x[[i]][[j]])
       x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
@@ -3259,8 +3259,10 @@ parm2mat <- function(x, mstop, fixed = NULL)
     }
     if(!is.null(is.nnet)) {
       if(length(is.nnet) > 1) {
-        x[[i]][["s"]] <- do.call("cbind", x[[i]][is.nnet])
-        x[[i]][is.nnet[is.nnet != "s"]] <- NULL
+        is.nnet2 <- unique(sapply(strsplit(is.nnet, ".[]", fixed = TRUE), function(x) { x[1] }))
+        for(j in is.nnet2) {
+          x[[i]][[j]] <- do.call("cbind", x[[i]][grep(j, is.nnet, fixed = TRUE)])
+        }
       }
     }
     sm <- names(x[[i]])

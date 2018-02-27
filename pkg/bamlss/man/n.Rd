@@ -49,7 +49,7 @@ set.seed(123)
 d <- GAMart()
 
 ## Estimate model.
-f <- num ~ n(x1,k=50) + n(x2,k=50) + n(x3,k=50) + n(~lon+lat,k=50)
+f <- num ~ n(x1,k=50) + n(x2,k=50) + n(x3,k=50) + n(~lon+lat,k=50,split=TRUE)
 
 ## Set the seed, weights are initialized randomly.
 set.seed(111)

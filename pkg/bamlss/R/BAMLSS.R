@@ -4533,6 +4533,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(tp) {
     tpcall <- eval(parse(text = paste0("s(", paste0(colnames(object$X), collapse = ","), ",bs='tp',k=", nodes, ")")))
     form <- object$formula
+    split <- object$split
     lasso <- object$lasso
     dim <- ncol(object$X)
     term <- colnames(object$X)
@@ -4544,6 +4545,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$lasso <- lasso
     object$nnterm <- term
     object$label <- lab
+    object$split <- split
   } else {
     if(length(nodes) < 2) {
       if(nodes < 0)
