@@ -2487,11 +2487,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
             if(approx.edf) {
               tredf <- redf
-              if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix)) {
+              if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix) | inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) {
                 if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
                   tredf <- tredf + 1
               } else {
-                if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth")) {
+                if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
                   if(iter < 2) {
                     aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
                       sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
@@ -2656,13 +2656,13 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 
     if(reverse.edf | approx.edf) {
       if(approx.edf) {
-        if(!is.null(x[[take[1]]]$smooth.construct[[take[2]]]$is.model.matrix)) {
+        if(!is.null(x[[take[1]]]$smooth.construct[[take[2]]]$is.model.matrix) | inherits(x[[take[1]]]$smooth.construct[[take[2]]], "nnet.boost")) {
           if(x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf < 1) {
             redf <- redf + 1
             x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf <- 1
           }
         } else {
-          if(inherits(x[[take[1]]]$smooth.construct[[take[2]]], "lasso.smooth")) {
+          if(inherits(x[[take[1]]]$smooth.construct[[take[2]]], "lasso.smooth") | inherits(x[[take[1]]]$smooth.construct[[take[2]]], "nnet.smooth")) {
             if(iter < 2) {
               aset <- if(x[[take[1]]]$smooth.construct[[take[2]]]$fuse) {
                   sum(abs(unique.fuse(parm[[take[1]]][[take[2]]][iter, ])) > 1e-10)
@@ -3004,6 +3004,7 @@ boost.transform <- function(x, y, df = NULL, family,
             nnets[[k]]$sparse.setup <- sparse.setup(nnets[[k]]$X, S = NULL)
             nnets[[k]]$upper <- Inf
             nnets[[k]]$lower <- -Inf
+            nnets[[k]]$init.edf <- 0
             class(nnets[[k]]) <- "nnet.boost"
           }
           names(nnets) <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".", 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X))
@@ -3113,6 +3114,8 @@ boost.transform <- function(x, y, df = NULL, family,
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- as.integer(sapply(x[[nx[j]]]$smooth.construct[[sj]]$S, is.function))
       else
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- 0L
+      if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth"))
+        x[[nx[j]]]$smooth.construct[[sj]]$fuse <- FALSE
     }
   }
   
@@ -3510,6 +3513,10 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
       asssel[[m]] <- 0
 
     for(j in names(x[[i]]$smooth.construct)) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
+        rval <- rval + sum(abs(get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")) > 1e-10)
+        next
+      }
       rval <- rval + 1 * (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
                           j != "(Intercept)")
 

@@ -4501,7 +4501,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   nodes <- object$xt$k
   npen <- if(is.null(object$xt$npen)) 1 else object$xt$npen
   tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
-  object$split <- if(is.null(object$xt$split)) TRUE else object$xt$split
+  object$split <- if(is.null(object$xt$split)) FALSE else object$xt$split
 
   if(tp) {
     tpcall <- eval(parse(text = paste0("s(", paste0(colnames(object$X), collapse = ","), ",bs='tp',k=", nodes, ")")))
@@ -5872,6 +5872,12 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
           samplestats(object[[j]])
         } else ms$optimizer
       } else ms$sampler
+      if(("boost.summary" %in% names(ms)) & is.null(mstop)) {
+        llb <- ms$boost.summary$ic
+        edfb <- ms$boost.summary$criterion$edf
+        ll <- c(ll, llb)
+        edf <- c(edf, edfb)
+      }
       if(is.null(ms) & !optimizer)
         ms <- samplestats(object[[j]])
       if(is.null(ms)) {
@@ -5911,7 +5917,8 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
         rval <- ll[[1]]
     } else {
       rval <- cbind("logLik" = ll, "edf" = edf, "nobs" = nobs)
-      row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
+      if(length(mn) == nrow(rval))
+        row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
     }
   } else rval <- NULL
   rval
