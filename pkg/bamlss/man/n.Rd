@@ -1,6 +1,7 @@
 \name{n}
 \alias{n}
 \alias{smooth.construct.nn.smooth.spec}
+\alias{n.weights}
 
 \title{Neural Networks for BAMLSS}
 
@@ -13,6 +14,9 @@
 ## The neural network smooth constructor.
 n(..., k = 10)
 
+## Initialize weights.
+n.weights(nodes, k)
+
 ## For mgcv.
 \method{smooth.construct}{nn.smooth.spec}(object, data, knots, ...)
 }
@@ -21,9 +25,11 @@ n(..., k = 10)
   \item{\dots}{For function \code{n()} a formula of the type \code{~x1+x2+x3} that specifies
     the covariates that should be modeled by the neural network. For function
     \code{boost.nnet.predict()} arguments passed to function \code{\link{predict.bamlss}}.}
-  \item{k}{The number of hidden nodes of the network. Note that one can set an argument
-    \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5} parts with
-    \code{k} nodes each.}
+  \item{k}{For function \code{n()}, the number of hidden nodes of the network. Note that one can set
+    an argument \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5}
+    parts with \code{k} nodes each. For function \code{nnet.weights()}, argument \code{k}
+    is the number of input variables of the network (number of covariates).}
+  \item{nodes}{Number of nodes for each layer, i.e., can also be a vector.}
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
 }
 
@@ -72,6 +78,10 @@ f <- list(
 
 b <- bamlss(f, data = d)
 plot(b, ask = FALSE)
+
+## Initialize some weights.
+set.seed(111)
+n.weights(10, 3)
 }
 }
 

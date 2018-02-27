@@ -4494,6 +4494,33 @@ n <- function(..., k = 10)
   ret
 }
 
+
+n.weights <- function(nodes, k)
+{
+  k <- k + 1
+  if(length(nodes) < 2) {
+    weights <- lapply(1:nodes, function(i) {
+      w <- runif(k, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(k, sd = 1)
+      names(w) <- paste0("w", 0:(k - 1))
+      w
+    })
+  } else {
+    weights <- list()
+    for(i in 1:length(nodes)) {
+      weights[[i]] <- lapply(1:nodes[i], function(ii) {
+        if(i < 2) {
+          w <- runif(k, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(k, sd = 1)
+        } else {
+          w <- runif(nodes[i - 1] + 1, -1, 1)
+        }
+        names(w) <- paste0("w", 0:(length(w) - 1))
+        w
+      })
+    }
+  }
+  return(weights)
+}
+
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
   object <- smooth.construct.la.smooth.spec(object, data, knots)
@@ -4567,29 +4594,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
 
     if(is.null(object$xt$weights)) {
-      if(length(nodes) < 2) {
-        nc <- ncol(object$X)
-        object$weights <- lapply(1:nodes, function(i) {
-          w <- runif(nc, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
-          names(w) <- paste0("w", 0:(nc - 1))
-          w
-        })
-      } else {
-        weights <- list()
-        nc <- ncol(object$X)
-        for(i in 1:length(nodes)) {
-          weights[[i]] <- lapply(1:nodes[i], function(ii) {
-            if(i < 2) {
-              w <- runif(nc, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(nc, sd = 1)
-            } else {
-              w <- runif(nodes[i - 1] + 1, -1, 1)
-            }
-            names(w) <- paste0("w", 0:(length(w) - 1))
-            w
-          })
-        }
-        object$weights <- weights
-      }
+      object$weights <- n.weights(nodes, ncol(object$X) - 1L)
     } else {
       if(length(object$xt$weights) != nodes)
         stop("not enough weights supplied!")

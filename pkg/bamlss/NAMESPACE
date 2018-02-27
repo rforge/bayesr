@@ -161,6 +161,7 @@ export(
 
   ## neural nets
   "n",
+  "n.weights",
   "dl.bamlss",
   "predict.dl.bamlss",
 
