@@ -60,9 +60,19 @@ StabStep <- function(formula, data, family = "gaussian", q, seed = NULL, ...) {
         ## ignore intercept
         selterms <- selterms[!(selterms == "(Intercept)")]
 
+        ## grep nets
+        nterms   <- selterms[grepl("^n\\(", selterms)]
+        selterms <- selterms[!grepl("^n\\(", selterms)]
+        for(nterm in nterms) {
+            cn <- colnames(b$parameters)[grepl(nterm, colnames(b$parameters), fixed = TRUE)]
+            nr <- nrow(b$parameters)
+            nsel <- cn[which(b$parameters[nr, cn] != 0)]
+            selterms <- c(selterms, regmatches(nsel, regexpr("n\\([^\\)]*\\)\\..*$", nsel)))
+        }
+
         ## grep names of parametric terms
         labels <- attr(b$terms[[model]], "term.labels")
-        pID <- !grepl("^[a-z]*[(]", labels)
+        pID <- !grepl("^[a-z]*\\(", labels)
         pterms <- labels[pID]
         foo <- function(x) {
             if(class(b$model.frame[[x]]) == "factor") {
@@ -79,7 +89,7 @@ StabStep <- function(formula, data, family = "gaussian", q, seed = NULL, ...) {
 
         ## merge factor dummies
         assign <- attr(b$x[[model]]$model.matrix, "assign")
-        names(assign) <- colnames(b$x$mu$model.matrix)
+        names(assign) <- colnames(b$x[[model]]$model.matrix)
         assign <- assign[names(assign) != "(Intercept)"]
         for(j in unique(assign)) {
             labels <- names(assign)[assign == j]
@@ -157,11 +167,11 @@ plot.stabsel <- function(x, show = NULL,
     tabsel <- x$table
     thr    <- x$parameter$thr
     B      <- x$parameter$B
-    models <- names(x$formula.new)
+    models <- x$family$names
 
     p <- names(tabsel)
     modelID <- substring(p, regexpr("\\.[a-z0-9]+$", p) + 1)        
-    modelID <- as.factor(modelID)
+    modelID <- factor(modelID, levels = models)
     names(tabsel) <- gsub("\\.[a-z0-9]+$", "", p)
     
     n <- length(tabsel)
