@@ -18,7 +18,7 @@ stabsel(formula, data, family = "gaussian",
 \item{data}{ A \code{\link{data.frame}}. }
 \item{family}{ A \code{\link{bamlss.family}} object. }
 \item{q}{ An integer specifying how many terms to select in each boosting run. }
-\item{B}{ An integer. The bossting is run B times. }
+\item{B}{ An integer. The boosting is run B times. }
 \item{thr}{ Cut-off threshold for selection. }
 \item{x}{ A object of class stabsel. }
 \item{show}{ Number of terms to be shown. }

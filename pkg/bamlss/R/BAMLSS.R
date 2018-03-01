@@ -4184,6 +4184,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   ridge <- if(is.null(object$xt[["ridge"]])) FALSE else object$xt[["ridge"]]
   fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
   standardize <- if(is.null(object$xt[["standardize"]])) FALSE else object$xt[["standardize"]]
+  standardize01 <- if(is.null(object$xt[["standardize01"]])) FALSE else object$xt[["standardize01"]]
   fuse_type <- "nominal"
   if(is.logical(fuse)) {
     if(fuse)
@@ -4203,6 +4204,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   object$fuse <- fuse
   object$fuse_type <- fuse_type
   object$standardize <- standardize
+  object$standardize01 <- standardize01
   
   contr <- object$xt$contrast.arg
   if(is.null(contr))
@@ -4243,11 +4245,19 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     if(!fuse | standardize) {
       if(!is_f) {
-        object$X[[j]] <- scale(object$X[[j]])
-        object$lasso$trans[[j]] <- list(
-          "center" = attr(object$X[[j]], "scaled:center"),
-          "scale" = attr(object$X[[j]], "scaled:scale")
-        )
+        if(standardize01) {
+          xmin <- apply(object$X[[j]], 2, min, na.rm = TRUE)
+          xmax <- apply(object$X[[j]], 2, max, na.rm = TRUE)
+          for(jj in 1:ncol(object$X[[j]]))
+            object$X[[j]][, jj] <- (object$X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
+          object$lasso$trans[[j]] <- list("xmin" = xmin, "xmax" = xmax)
+        } else {
+          object$X[[j]] <- scale(object$X[[j]])
+          object$lasso$trans[[j]] <- list(
+            "center" = attr(object$X[[j]], "scaled:center"),
+            "scale" = attr(object$X[[j]], "scaled:scale")
+          )
+        }
       } else {
         object$X[[j]] <- blockstand(object$X[[j]], n = nobs)
         object$lasso$trans[[j]] <- list("blockscale" = attr(object$X[[j]], "blockscale"))
@@ -4469,7 +4479,14 @@ Predict.matrix.lasso.smooth <- function(object, data)
     if(is_f & is.null(object$lasso$trans[[j]]$blockscale))
       is_f <- FALSE
     if(!is_f) {
-      X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
+      if(object$standardize01) {
+        xmin <- object$lasso$trans[[j]]$xmin
+        xmax <- object$lasso$trans[[j]]$xmax
+        for(jj in 1:ncol(X[[j]]))
+          X[[j]][, jj] <- (X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
+      } else {
+        X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
+      }
     } else {
       X[[j]] <- X[[j]] %*% object$lasso$trans[[j]]$blockscale
     }
@@ -4495,12 +4512,37 @@ n <- function(..., k = 10)
 }
 
 
-n.weights <- function(nodes, k)
+n.weights <- function(nodes, k, r = NULL, s = NULL)
 {
   k <- k + 1
+  if(is.null(r) & is.null(s)) {
+    rs <- expand.grid(
+      "r" = seq(0.4, 0.49, length = ceiling(sqrt(nodes))),
+      "s" = seq(99, 100, length = ceiling(sqrt(nodes)))
+    )
+    r <- rs$r
+    s <- rs$s
+    nodes <- nrow(rs)
+  }
+  if(any(r >= 0.5))
+    r[r >= 0.5] <- 0.49
+  if(any(r < 0.01))
+    r[r < 0.01] <- 0.01
+  if(any(s < 1.01))
+    s[s < 1.01] <- 1.01
+  r <- 0.1
+  s <- 10
+  r <- rep(r, length.out = nodes)
+  s <- rep(s, length.out = nodes)
   if(length(nodes) < 2) {
     weights <- lapply(1:nodes, function(i) {
-      w <- runif(k, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(k, sd = 1)
+      sw <- runif(1, log((1 - r[i])/r[i]), s[i] * log((1 - r[i])/r[i]))
+      w <- runif(k - 1, -1, 1)
+      w <- w * sw / sum(w)
+      if(length(w) < 2)
+        w <- w * sample(c(-1, 1), size = 1)
+      b <- t(-w) %*% runif(k - 1, 0, 1)
+      w <- c(b, w)
       names(w) <- paste0("w", 0:(k - 1))
       w
     })
@@ -4509,10 +4551,11 @@ n.weights <- function(nodes, k)
     for(i in 1:length(nodes)) {
       weights[[i]] <- lapply(1:nodes[i], function(ii) {
         if(i < 2) {
-          w <- runif(k, qnorm(0.01/2), qnorm(1 - 0.01/2)) ## rnorm(k, sd = 1)
+          w <- runif(k, -1, 1)
         } else {
           w <- runif(nodes[i - 1] + 1, -1, 1)
         }
+        w[1] <- runif(1, 0, 1)
         names(w) <- paste0("w", 0:(length(w) - 1))
         w
       })
@@ -4521,13 +4564,54 @@ n.weights <- function(nodes, k)
   return(weights)
 }
 
+n.stabsel <- function(x, model = NULL, thr = 0.9, plot = TRUE)
+{
+  if(is.null(model))
+    model <- x$family$names
+  if(!all(model %in% x$family$names))
+    stop("model names not in family!")
+  if(plot) {
+    hold <- par(no.readonly = TRUE)
+    on.exit(par(hold))
+    par(mar = c(5, 12, 4, 2) + .1)
+  }
+  ntab0 <- names(x$table)
+  B <- x$parameter$B
+  rval <- list()
+  for(j in model) {
+    i <- grepl("n(", ntab0, fixed = TRUE) & grepl(paste0(".", j), ntab0, fixed = TRUE)
+    if(any(i)) {
+      ntab <- ntab0[i]
+      tab <- x$table[i] / B
+      rval[[j]] <- sapply(strsplit(ntab[tab >= thr], ".", fixed = TRUE), function(x) { as.integer(gsub("b", "", x[2])) })
+      if(plot) {
+        col <- rep("lightgray", length(tab))
+        col[tab >= thr] <- "yellow"
+        barplot(tab, horiz = TRUE, las = 1, col = col)
+        abline(v = thr, lty = 2)
+      }
+    }
+  }
+  rval
+}
+
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
+  if(is.null(object$formula)) {
+    object$formula <- as.formula(paste("~", paste(object$term, collapse = "+")))
+    object$dim <- length(object$term)
+    object$by <- "NA"
+    object$type <- "single"
+    object$xt$fx <- FALSE
+  }
+  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
+  object$standardize01 <- object$xt$standardize01 <- if(tp) FALSE else TRUE
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- object$xt$k
+  if(!is.null(object$xt$weights))
+    nodes <- length(object$xt$weights)
   npen <- if(is.null(object$xt$npen)) 1 else object$xt$npen
-  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
   object$split <- if(is.null(object$xt$split)) FALSE else object$xt$split
 
   if(tp) {
@@ -4538,7 +4622,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     dim <- ncol(object$X)
     term <- colnames(object$X)
     lab <- object$label
+    take <- object$xt$take
     object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
+    if(!is.null(take)) {
+      object$X <- object$X[, take, drop = FALSE]
+      ## object$S[[1]] <- object$S[[1]][take, take, drop = FALSE]
+      object$xt$take <- take
+    }
     object$dim <- dim
     object$tp <- tp
     object$formula <- form
@@ -4546,6 +4636,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$nnterm <- term
     object$label <- lab
     object$split <- split
+    object$standardize01 <- object$xt$standardize01 <- FALSE
   } else {
     if(length(nodes) < 2) {
       if(nodes < 0)
@@ -4572,8 +4663,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     if(length(nodes) < 2) {
       object$Zmat <- function(X, weights) {
-        Z <- matrix(0, nrow = nrow(X), ncol = nodes)
-        for(j in 1:nodes)
+        nc <- length(weights)
+        Z <- matrix(0, nrow = nrow(X), ncol = nc)
+        for(j in 1:nc)
           Z[, j] <- object$afun(X %*% weights[[j]])
         return(Z)
       }
@@ -4582,8 +4674,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
         Z <- list()
         n <- nrow(X)
         for(i in 1:length(weights)) {
-          Z[[i]] <- matrix(0, nrow = n, ncol = nodes[i])
-          for(j in 1:nodes[i]) {
+          Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
+          for(j in 1:length(weights[[i]])) {
             if(i < 2) {
               Z[[i]][, j] <- object$afun(X %*% weights[[i]][[j]])
             } else {
@@ -4605,6 +4697,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     object$X <- object$Zmat(object$X, object$weights)
 
+    if(!is.null(object$xt$take))
+      object$X <- object$X[, object$xt$take, drop = FALSE]
+
     pid <- sort(rep(1:npen, length.out = ncol(object$X)))
     object$S <- list()
     for(j in 1:npen) {
@@ -4619,6 +4714,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$rank <- sapply(object$S, sum)
   }
   object$xt$prior <- "hc"
+  object$xt$fx <- FALSE
+
+  if(!is.null(object$xt$take)) {
+    object$S <- NULL
+    object$fx <- object$xt$fx <- object$fixed <- TRUE
+  }
+
+#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)))
+#stop()
 
   class(object) <- c("nnet.smooth", "mgcv.smooth")
 
@@ -4635,8 +4739,12 @@ Predict.matrix.nnet.smooth <- function(object, data)
     object$dim <- ncol(data)
     X <- Predict.matrix.tprs.smooth(object, data)
   } else {
+    object$standardize01 <- TRUE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
   }
+  if(!is.null(object$xt$take))
+    X <- X[, object$xt$take, drop = FALSE]
+
   X
 }
 
