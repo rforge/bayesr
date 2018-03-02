@@ -2437,8 +2437,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     sum(family$d(y, family$map2par(eta)) * W)
   }
   redf <- if(initialize) length(nx) else 0
+  loglik <- loglik2 <- NULL
   ptm <- proc.time()
   while(iter <= maxit & qsel < maxq) {
+    if(iter > 2)
+      loglik2 <- loglik
+
     eta0 <- eta
     
     ## Cycle through all parameters
@@ -2565,6 +2569,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       i <- which.max(loglik)
     } else {
       i <- which.min(sapply(rss, function(x) { min(x) }))
+    }
+
+    if((iter > 2) & all(loglik2 == loglik)) {
+      warning("no more improvements in the log-likelihood!")
+      nback <- TRUE
+      break
     }
     
     ## Which term to update.
@@ -3031,7 +3041,10 @@ boost.transform <- function(x, y, df = NULL, family,
 
             g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
 
-            fit <- t(t(x$X) * g)
+            fit <- t(x$X) * g
+            mfit <- apply(fit, 1, mean)
+            fit <- t(fit - mfit)
+
             rss <- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
 
             j <- which.min(rss)

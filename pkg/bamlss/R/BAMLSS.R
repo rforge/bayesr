@@ -4512,13 +4512,28 @@ n <- function(..., k = 10)
 }
 
 
-n.weights <- function(nodes, k, r = NULL, s = NULL)
+n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
 {
+  if(inherits(nodes, "bamlss")) {
+    if(!is.null(nodes$parameters)) {
+      rval <- list()
+      for(j in nodes$family$name) {
+        cb <- coef.bamlss(nodes, model = j, pterms = FALSE, hyper.parameters = FALSE, ...)
+        if(any(i <- grepl(paste0(j, ".s.n("), names(cb), fixed = TRUE))) {
+          cb <- cb[i]
+          id <- as.integer(sapply(strsplit(names(cb), ").b", fixed = TRUE), function(x) { x[2] }))
+          id <- id[abs(cb) > 1e-10]
+          rval[[j]] <- id
+        }
+      }
+      return(rval)
+    } else return(NULL)
+  }
   k <- k + 1
   if(is.null(r) & is.null(s)) {
     rs <- expand.grid(
-      "r" = seq(0.4, 0.49, length = ceiling(sqrt(nodes))),
-      "s" = seq(99, 100, length = ceiling(sqrt(nodes)))
+      "r" = seq(0.1, 0.5, length = ceiling(sqrt(nodes))),
+      "s" = seq(1, 100, length = ceiling(sqrt(nodes)))
     )
     r <- rs$r
     s <- rs$s
@@ -4526,12 +4541,12 @@ n.weights <- function(nodes, k, r = NULL, s = NULL)
   }
   if(any(r >= 0.5))
     r[r >= 0.5] <- 0.49
-  if(any(r < 0.01))
-    r[r < 0.01] <- 0.01
-  if(any(s < 1.01))
-    s[s < 1.01] <- 1.01
-  r <- 0.1
-  s <- 10
+  if(any(r < 0))
+    r[r < 0] <- 0.01
+  if(any(s < 1))
+    s[s < 1] <- 1
+#  r <- 0.1
+#  s <- 10
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   if(length(nodes) < 2) {
@@ -4626,7 +4641,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
     if(!is.null(take)) {
       object$X <- object$X[, take, drop = FALSE]
-      ## object$S[[1]] <- object$S[[1]][take, take, drop = FALSE]
+      object$S[[1]] <- object$S[[1]][take, take, drop = FALSE]
       object$xt$take <- take
     }
     object$dim <- dim
@@ -4713,13 +4728,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$bs.dim <- ncol(object$X)
     object$rank <- sapply(object$S, sum)
   }
-  object$xt$prior <- "hc"
+  object$xt$prior <- "ig"
   object$xt$fx <- FALSE
-
-  if(!is.null(object$xt$take)) {
-    object$S <- NULL
-    object$fx <- object$xt$fx <- object$fixed <- TRUE
-  }
+  object$xt$force.center <- TRUE
 
 #plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)))
 #stop()
