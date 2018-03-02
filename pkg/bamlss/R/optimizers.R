@@ -3041,9 +3041,7 @@ boost.transform <- function(x, y, df = NULL, family,
 
             g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
 
-            fit <- t(x$X) * g
-            mfit <- apply(fit, 1, mean)
-            fit <- t(fit - mfit)
+            fit <- t(t(x$X) * g)
 
             rss <- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
 
