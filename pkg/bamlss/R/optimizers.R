@@ -2570,11 +2570,6 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     } else {
       i <- which.min(sapply(rss, function(x) { min(x) }))
     }
-
-    if((iter > 2) & all(loglik2 == loglik)) {
-      warning("no more improvements in the log-likelihood, setting nu = nu/2!")
-      nu <- nu / 2
-    }
     
     ## Which term to update.
     take <- c(nx[i], names(rss[[i]])[select[i]])
@@ -2740,6 +2735,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       cat(vtxt)
       
       if(.Platform$OS.type != "unix" & ia) flush.console()
+    }
+
+    if((iter > 2) & all(loglik2 == loglik)) {
+      warning("no more improvements in the log-likelihood, setting nu = nu/2!")
+      nu <- nu / 2
     }
     
     iter <- iter + 1
