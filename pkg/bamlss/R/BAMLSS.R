@@ -4531,9 +4531,17 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
   }
   k <- k + 1
   if(is.null(r) & is.null(s)) {
+    rint <- list(...)$rint
+    sint <- list(...)$sint
+    if(is.null(rint))
+      rint <- c(0.1, 0.5)
+    if(is.null(sint))
+      sint <- c(1, 500)
+    sint <- sort(sint)
+    rint <- sort(rint)
     rs <- expand.grid(
-      "r" = seq(0.1, 0.5, length = ceiling(sqrt(nodes))),
-      "s" = seq(1, 100, length = ceiling(sqrt(nodes)))
+      "r" = seq(rint[1], rint[2], length = ceiling(sqrt(nodes))),
+      "s" = seq(sint[1], sint[2], length = ceiling(sqrt(nodes)))
     )
     r <- rs$r
     s <- rs$s
@@ -4703,7 +4711,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
 
     if(is.null(object$xt$weights)) {
-      object$weights <- n.weights(nodes, ncol(object$X) - 1L)
+      object$weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint)
     } else {
       if(length(object$xt$weights) != nodes)
         stop("not enough weights supplied!")
@@ -4732,6 +4740,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$xt$fx <- FALSE
   object$xt$force.center <- TRUE
 
+#for(j in 1:ncol(object$X)) {
+#  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
+#  Sys.sleep(2)
+#}
 #plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)))
 #stop()
 
