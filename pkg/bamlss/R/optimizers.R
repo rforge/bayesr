@@ -2572,9 +2572,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     if((iter > 2) & all(loglik2 == loglik)) {
-      warning("no more improvements in the log-likelihood!")
-      nback <- TRUE
-      break
+      warning("no more improvements in the log-likelihood, setting nu = nu/2!")
+      nu <- nu / 2
     }
     
     ## Which term to update.
