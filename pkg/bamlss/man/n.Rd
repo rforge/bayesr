@@ -15,7 +15,7 @@
 n(..., k = 10)
 
 ## Initialize weights.
-n.weights(nodes, k, lower = -20, upper = 20)
+n.weights(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
 
 ## For mgcv.
 \method{smooth.construct}{nn.smooth.spec}(object, data, knots, ...)
@@ -30,8 +30,10 @@ n.weights(nodes, k, lower = -20, upper = 20)
     parts with \code{k} nodes each. For function \code{nnet.weights()}, argument \code{k}
     is the number of input variables of the network (number of covariates).}
   \item{nodes}{Number of nodes for each layer, i.e., can also be a vector.}
-  \item{lower, upper}{Lower and upper limits for uniformly sampling the weights.}
+  \item{r, s}{Parameters controlling the shape of the activation functions.}
+  \item{type}{The type of activation function that should be used.}
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
+  \item{\dots}{Currently only for experimental usage.}
 }
 
 \value{

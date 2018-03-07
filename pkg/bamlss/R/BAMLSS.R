@@ -3163,10 +3163,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   } else {
     if(is.null(object$parameters))
       stop("cannot find any parameters!")
-    samps <- parameters(object, model = model, list = FALSE, extract = TRUE, ...)
-    cn <- names(samps)
-    samps <- matrix(samps, nrow = 1)
-    colnames(samps) <- cn
+    if(!is.null(dim(object$parameters)) & !is.null(object$model.stats$optimizer$boost.summary) & is.null(list(...)$mstop)) {
+      samps <- object$parameters
+      FUN <- function(x) { x }
+      FUN2 <- function(x, ...) FUN(x)
+    } else {
+      samps <- parameters(object, model = model, list = FALSE, extract = TRUE, ...)
+      cn <- names(samps)
+      samps <- matrix(samps, nrow = 1)
+      colnames(samps) <- cn
+    }
     samps <- as.mcmc(samps)
   }
 
@@ -4512,7 +4518,7 @@ n <- function(..., k = 10)
 }
 
 
-n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
+n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
 {
   if(inherits(nodes, "bamlss")) {
     if(!is.null(nodes$parameters)) {
@@ -4521,9 +4527,20 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
         cb <- coef.bamlss(nodes, model = j, pterms = FALSE, hyper.parameters = FALSE, ...)
         if(any(i <- grepl(paste0(j, ".s.n("), names(cb), fixed = TRUE))) {
           cb <- cb[i]
-          id <- as.integer(sapply(strsplit(names(cb), ").b", fixed = TRUE), function(x) { x[2] }))
-          id <- id[abs(cb) > 1e-10]
-          rval[[j]] <- id
+          terms <- unique(paste0(sapply(strsplit(names(cb), ").b", fixed = TRUE), function(x) { x[1] }), ")"))
+          if(length(terms) > 1) {
+            rval[[j]] <- list()
+            for(tj in terms) {
+              cb2 <- cb[grep(tj, names(cb), fixed = TRUE)]
+              id <- as.integer(sapply(strsplit(names(cb2), ").b", fixed = TRUE), function(x) { x[2] }))
+              id <- id[abs(cb2) > 1e-10]
+              rval[[j]][[tj]] <- id
+            }
+          } else {
+            id <- as.integer(sapply(strsplit(names(cb), ").b", fixed = TRUE), function(x) { x[2] }))
+            id <- id[abs(cb) > 1e-10]
+            rval[[j]] <- id
+          }
         }
       }
       return(rval)
@@ -4534,9 +4551,9 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
     rint <- list(...)$rint
     sint <- list(...)$sint
     if(is.null(rint))
-      rint <- c(0.1, 0.5)
+      rint <- c(0.001, 0.5)
     if(is.null(sint))
-      sint <- c(1, 500)
+      sint <- c(1, 100000)
     sint <- sort(sint)
     rint <- sort(rint)
     rs <- expand.grid(
@@ -4547,19 +4564,23 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, ...)
     s <- rs$s
     nodes <- nrow(rs)
   }
-  if(any(r >= 0.5))
-    r[r >= 0.5] <- 0.49
+  if(any(r > 0.5))
+    r[r > 0.5] <- 0.49
   if(any(r < 0))
     r[r < 0] <- 0.01
   if(any(s < 1))
     s[s < 1] <- 1
-#  r <- 0.1
-#  s <- 10
+#  r <- 0.4
+#  s <- 1000
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
+  type <- match.arg(type)
   if(length(nodes) < 2) {
     weights <- lapply(1:nodes, function(i) {
-      sw <- runif(1, log((1 - r[i])/r[i]), s[i] * log((1 - r[i])/r[i]))
+      sw <- switch(type,
+        "sigmoid" = runif(1, log((1 - r[i])/r[i]), s[i] * log((1 - r[i])/r[i])),
+        "gauss" = runif(1, sqrt(-log(r[i])), s[i] * sqrt(-log(r[i])))
+      )
       w <- runif(k - 1, -1, 1)
       w <- w * sw / sum(w)
       if(length(w) < 2)
@@ -4680,7 +4701,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
           1 / (1 + exp(-x))
         },
         "tanh" = tanh,
-        "sin" = sin
+        "sin" = sin,
+        "gauss" = function(x) { exp(-x^2) }
       )
     }
 
@@ -4720,6 +4742,18 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     object$X <- object$Zmat(object$X, object$weights)
 
+    if(!is.null(object$xt$prc)) {
+      if(object$xt$prc) {
+        prX <- prcomp(object$X)
+        prXs <- summary(prX)
+        i <- which(prXs$importance[3, ] <= 0.995)
+        object$X <- prX$x[, i, drop = FALSE]
+        colnames(object$X) <- NULL
+        object$prcomp <- prX
+        object$prcomp_id <- i
+      }
+    }
+
     if(!is.null(object$xt$take))
       object$X <- object$X[, object$xt$take, drop = FALSE]
 
@@ -4744,8 +4778,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
 #  Sys.sleep(2)
 #}
-#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)))
+#plot2d(object$X ~ d$x2, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
+##Sys.sleep(2)
 #stop()
+##print(dim(object$X))
 
   class(object) <- c("nnet.smooth", "mgcv.smooth")
 
@@ -4765,6 +4801,12 @@ Predict.matrix.nnet.smooth <- function(object, data)
     object$standardize01 <- TRUE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
   }
+
+  if(!is.null(object[["prcomp"]])) {
+    X <- predict(object[["prcomp"]], newdata = X)
+    X <- X[, object[["prcomp_id"]], drop = FALSE]
+  }
+
   if(!is.null(object$xt$take))
     X <- X[, object$xt$take, drop = FALSE]
 

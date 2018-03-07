@@ -2438,6 +2438,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   }
   redf <- if(initialize) length(nx) else 0
   loglik <- loglik2 <- NULL
+  iter_ll2 <- 0
   ptm <- proc.time()
   while(iter <= maxit & qsel < maxq) {
     if(iter > 2)
@@ -2738,8 +2739,15 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     if((iter > 2) & all(loglik2 == loglik)) {
-      warning("no more improvements in the log-likelihood, setting nu = nu/2!")
-      nu <- nu / 2
+      warning("no more improvements in the log-likelihood, setting nu = nu * 0.9!")
+      nu <- nu * 0.9
+      iter_ll2 <- iter_ll2 + 1
+    }
+
+    if(iter_ll2 > 50) {
+      nback <- TRUE
+      warning("no more improvements in the log-likelihood, stopped!")
+      break
     }
     
     iter <- iter + 1
