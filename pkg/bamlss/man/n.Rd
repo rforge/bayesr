@@ -33,7 +33,6 @@ n.weights(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
   \item{r, s}{Parameters controlling the shape of the activation functions.}
   \item{type}{The type of activation function that should be used.}
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
-  \item{\dots}{Currently only for experimental usage.}
 }
 
 \value{
