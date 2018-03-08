@@ -4747,6 +4747,21 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$Xkeep <- which(d > 1e-10)
     object$X <- object$X[, object$Xkeep, drop = FALSE]
 
+    if(!is.null(object$xt$lowrank)) {
+      if(object$xt$lowrank) {
+        if(is.null(object$xt$K))
+          object$xt$K <- 10
+        E <- eigen(object$X)
+        Omega <- Re(E$values)
+        i <- order(abs(Omega), decreasing = TRUE)
+        Omega <- Omega[i]
+        V <- Re(E$vectors[, i])
+        Vk <- V[, 1:object$xt$K]
+        Omegak <- Omega[1:object$xt$K]
+        object$X <- Vk %*% diag(Omegak)
+      }
+    }
+
     if(!is.null(object$xt$prc)) {
       if(object$xt$prc) {
         prX <- prcomp(object$X)
@@ -4808,6 +4823,18 @@ Predict.matrix.nnet.smooth <- function(object, data)
     object$standardize01 <- TRUE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
     X <- X[, object$Xkeep, drop = FALSE]
+    if(!is.null(object$xt$lowrank)) {
+      if(object$xt$lowrank) {
+        E <- eigen(object$X)
+        Omega <- Re(E$values)
+        i <- order(abs(Omega), decreasing = TRUE)
+        Omega <- Omega[i]
+        V <- Re(E$vectors[, i])
+        Vk <- V[, 1:object$xt$K]
+        Omegak <- Omega[1:object$xt$K]
+        object$X <- Vk %*% diag(Omegak)
+      }
+    }
   }
 
   if(!is.null(object[["prcomp"]])) {
