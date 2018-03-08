@@ -524,6 +524,27 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
     }
   }
 
+  if(is.null(rval$xt$prior))
+    rval$xt$prior <- "ig"
+  if(is.null(rval$xt$theta)) {
+    rval$xt$theta <- switch(rval$xt$prior,
+      "sd" = 0.00877812,
+      "hc" = 0.01034553,
+      "hn" = 0.1457644,
+      "u" = 0.2723532
+    )
+  }
+  rval$xt$scaletau2 <- rval$xt$theta
+  rval$xt$hyperprior <- switch(rval$xt$prior,
+    "ig" = "invgamma",
+    "hn" = "hnormal",
+    "sd" = "scaledep",
+    "hc" = "hcauchy",
+    "u" = "aunif"
+  )
+  rval$xt$prior <- NULL
+  rval$xt$theta <- NULL
+
   rval$special <- TRUE
   rval$sx.construct <- TRUE
   class(rval) <- c(class(rval), "no.mgcv")
@@ -1328,10 +1349,11 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaprob <- rep(1 / nraniso, nraniso)
         object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior))
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior,lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))))
       } else {
         object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
-          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior))
+          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
+          lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
       }
       object$xt$scaletau2 <- object$xt$theta
     }
@@ -1496,10 +1518,10 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaprob <- rep(1 / nraniso, nraniso)
         object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior))
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
       } else {
         object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
-          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior))
+          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
       }
       object$xt$scaletau2 <- object$xt$theta
     }
@@ -1554,10 +1576,10 @@ compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
     omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
     omegaprob <- rep(1 / nraniso, nraniso)
     theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior))
+      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
   } else {
     theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
-      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior))
+      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
   }
   return(theta)
 }

@@ -4553,7 +4553,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     if(is.null(rint))
       rint <- c(0.001, 0.5)
     if(is.null(sint))
-      sint <- c(1, 100000)
+      sint <- c(1, 1000)
     sint <- sort(sint)
     rint <- sort(rint)
     rs <- expand.grid(
@@ -4585,7 +4585,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
       w <- w * sw / sum(w)
       if(length(w) < 2)
         w <- w * sample(c(-1, 1), size = 1)
-      b <- t(-w) %*% runif(k - 1, 0, 1)
+      b <- -1 * (t(w) %*% runif(k - 1, 0, 1))
       w <- c(b, w)
       names(w) <- paste0("w", 0:(k - 1))
       w
@@ -4637,6 +4637,15 @@ n.stabsel <- function(x, model = NULL, thr = 0.9, plot = TRUE)
     }
   }
   rval
+}
+
+
+X_center <- function(X, S) {
+  QR <- qr(crossprod(X, rep(1, length = nrow(X))))
+  Q2 <- qr.Q(QR, complete = TRUE)[, -1]
+  X <- X %*% Q2
+  S[[1]] <- crossprod(Q2, S[[1]]) %*% Q2
+  return(list("X" = X, "S" = S))
 }
 
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
@@ -4772,7 +4781,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
   object$xt$prior <- "ig"
   object$xt$fx <- FALSE
-  object$xt$force.center <- TRUE
+  ##object$xt$force.center <- TRUE
+
+  ##object[c("X", "S")] <- X_center(object$X, object$S)
 
 #for(j in 1:ncol(object$X)) {
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
