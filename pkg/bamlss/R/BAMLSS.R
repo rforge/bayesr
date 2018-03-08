@@ -4553,7 +4553,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     if(is.null(rint))
       rint <- c(0.001, 0.5)
     if(is.null(sint))
-      sint <- c(1, 1000)
+      sint <- c(1, 50)
     sint <- sort(sint)
     rint <- sort(rint)
     rs <- expand.grid(
@@ -4637,15 +4637,6 @@ n.stabsel <- function(x, model = NULL, thr = 0.9, plot = TRUE)
     }
   }
   rval
-}
-
-
-X_center <- function(X, S) {
-  QR <- qr(crossprod(X, rep(1, length = nrow(X))))
-  Q2 <- qr.Q(QR, complete = TRUE)[, -1]
-  X <- X %*% Q2
-  S[[1]] <- crossprod(Q2, S[[1]]) %*% Q2
-  return(list("X" = X, "S" = S))
 }
 
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
@@ -4781,15 +4772,18 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
   object$xt$prior <- "ig"
   object$xt$fx <- FALSE
+
+  nobs <- nrow(object$X)
+  object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+
   ##object$xt$force.center <- TRUE
 
   ##object[c("X", "S")] <- X_center(object$X, object$S)
 
 #for(j in 1:ncol(object$X)) {
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
-#  Sys.sleep(2)
 #}
-#plot2d(object$X ~ d$x2, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
+##plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
 ##Sys.sleep(2)
 #stop()
 ##print(dim(object$X))
@@ -4820,6 +4814,9 @@ Predict.matrix.nnet.smooth <- function(object, data)
 
   if(!is.null(object$xt$take))
     X <- X[, object$xt$take, drop = FALSE]
+
+  nobs <- nrow(X)
+  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
 
   X
 }

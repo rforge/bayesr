@@ -3846,6 +3846,66 @@ SEXP hatmat_sumdiag(SEXP H)
   return trace;
 }
 
+
+SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind)
+{
+  int i, j;
+  int n = nrows(X);
+  int k = ncols(X);
+
+  SEXP g;
+  PROTECT(g = allocVector(REALSXP, k));
+
+  SEXP fit;
+  PROTECT(fit = allocMatrix(REALSXP, n, k));
+
+  SEXP rss;
+  PROTECT(rss = allocVector(REALSXP, k));
+
+  double *Xptr = REAL(X);
+  double *Nptr = REAL(N);
+  double *yptr = REAL(y);
+  int *indptr = INTEGER(ind);
+  double *gptr = REAL(g);
+  double *fitptr = REAL(fit);
+  double *rssptr = REAL(rss);
+
+  double nu2 = REAL(nu)[0];
+
+  for(j = 0; j < k; j++) {
+    gptr[j] = 0.0;
+    rssptr[j] = 0.0;
+    for(i = 0; i < n; i++) {
+      gptr[j] += Nptr[(indptr[i] - 1) + n * j] * yptr[i];
+    }
+    gptr[j] = nu2 * gptr[j];
+    for(i = 0; i < n; i++) {
+      fitptr[i + n * j] = Xptr[(indptr[i] - 1) + n * j] * gptr[j];
+      rssptr[j] += pow(fitptr[i + n * j] - yptr[i], 2.0);
+    }
+  }
+
+  SEXP rval;
+  PROTECT(rval = allocVector(VECSXP, 3));
+
+  SEXP nrval;
+  PROTECT(nrval = allocVector(STRSXP, 3));
+
+  SET_VECTOR_ELT(rval, 0, g);
+  SET_VECTOR_ELT(rval, 1, fit);
+  SET_VECTOR_ELT(rval, 2, rss);
+
+  SET_STRING_ELT(nrval, 0, mkChar("g"));
+  SET_STRING_ELT(nrval, 1, mkChar("fit"));
+  SET_STRING_ELT(nrval, 2, mkChar("rss"));
+        
+  setAttrib(rval, R_NamesSymbol, nrval);
+
+  UNPROTECT(5);
+
+  return rval;
+}
+
 /*SEXP nnet_boost_mmult(X, g)*/
 /*{*/
 /*  n = nrows(X), k = ncols(X);*/

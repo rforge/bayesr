@@ -3046,21 +3046,17 @@ boost.transform <- function(x, y, df = NULL, family,
             if(!is.null(weights))
               stop("weights is not supported!")
 
-            g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
+            bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
 
-            fit <- t(t(x$X) * g)
-
-            rss <- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
-
-            j <- which.min(rss)
-            g2 <- rep(0, length(g))
-            g2[j] <- g[j]
+            j <- which.min(bf$rss)
+            g2 <- rep(0, length(bf$g))
+            g2[j] <- bf$g[j]
   
             ## Finalize.
             x$state$parameters <- set.par(x$state$parameters, g2, "b")
-            x$state$fitted.values <- fit[x$binning$match.index, j]
+            x$state$fitted.values <- bf$fit[, j]
 
-            x$state$rss <- rss[j]
+            x$state$rss <- bf$rss[j]
 
             if(hatmatrix)
               stop("hatmatrix is not supported!")
@@ -3193,6 +3189,12 @@ boost.transform <- function(x, y, df = NULL, family,
   }
   
   return(x)
+}
+
+
+boost_fit_nnet <- function(nu, X, N, y, ind)
+{
+  .Call("boost_fit_nnet", nu, X, N, y, ind)
 }
 
 
