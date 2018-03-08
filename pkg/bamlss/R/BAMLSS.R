@@ -4551,9 +4551,9 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     rint <- list(...)$rint
     sint <- list(...)$sint
     if(is.null(rint))
-      rint <- c(0.001, 0.5)
+      rint <- c(0.01, 0.495)
     if(is.null(sint))
-      sint <- c(1, 50)
+      sint <- c(1.01, 100000)
     sint <- sort(sint)
     rint <- sort(rint)
     rs <- expand.grid(
@@ -4564,14 +4564,14 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     s <- rs$s
     nodes <- nrow(rs)
   }
-  if(any(r > 0.5))
-    r[r > 0.5] <- 0.49
+  if(any(r >= 0.5))
+    r[r >= 0.5] <- 0.495
   if(any(r < 0))
     r[r < 0] <- 0.01
-  if(any(s < 1))
-    s[s < 1] <- 1
-#  r <- 0.4
-#  s <- 1000
+  if(any(s <= 1))
+    s[s <= 1] <- 1.01
+#  r <- 0.49
+#  s <- 10
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   type <- match.arg(type)
@@ -4741,6 +4741,11 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
 
     object$X <- object$Zmat(object$X, object$weights)
+    nobs <- nrow(object$X)
+    object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+    d <- abs(apply(apply(object$X, 2, range), 2, diff))
+    object$Xkeep <- which(d > 1e-10)
+    object$X <- object$X[, object$Xkeep, drop = FALSE]
 
     if(!is.null(object$xt$prc)) {
       if(object$xt$prc) {
@@ -4773,9 +4778,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$xt$prior <- "ig"
   object$xt$fx <- FALSE
 
-  nobs <- nrow(object$X)
-  object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
-
   ##object$xt$force.center <- TRUE
 
   ##object[c("X", "S")] <- X_center(object$X, object$S)
@@ -4805,6 +4807,7 @@ Predict.matrix.nnet.smooth <- function(object, data)
   } else {
     object$standardize01 <- TRUE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
+    X <- X[, object$Xkeep, drop = FALSE]
   }
 
   if(!is.null(object[["prcomp"]])) {

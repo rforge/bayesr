@@ -2739,12 +2739,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     if((iter > 2) & all(loglik2 == loglik)) {
-      warning("no more improvements in the log-likelihood, setting nu = nu * 0.9!")
-      nu <- nu * 0.9
+      warning("no more improvements in the log-likelihood, setting nu = nu * 0.5!")
+      nu <- nu * 0.5
       iter_ll2 <- iter_ll2 + 1
     }
 
-    if(iter_ll2 > 50) {
+    if(iter_ll2 > 10) {
       nback <- TRUE
       warning("no more improvements in the log-likelihood, stopped!")
       break
@@ -3051,6 +3051,25 @@ boost.transform <- function(x, y, df = NULL, family,
             j <- which.min(bf$rss)
             g2 <- rep(0, length(bf$g))
             g2[j] <- bf$g[j]
+
+
+#if(g2[j] > 100) {
+
+#apply(x$X, 2, range)
+
+#  Y <<- y
+#  BF <<- bf
+#  NU <<- nu
+#  X <<- x$X
+#  N <<- x$N
+#  id <<- x$binning$match.index
+
+#            G2 <<- g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
+#            fit <- t(t(x$X) * g)
+#            rss2 <<- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
+
+#  stop()
+#}
   
             ## Finalize.
             x$state$parameters <- set.par(x$state$parameters, g2, "b")
