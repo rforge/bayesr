@@ -2298,7 +2298,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
-  initialize = TRUE, stop.criterion = NULL, force.stop = TRUE,
+  initialize = TRUE, stop.criterion = NULL, select.type = 1, force.stop = TRUE,
   hatmatrix = !is.null(stop.criterion), reverse.edf = FALSE, approx.edf = FALSE,
   always = FALSE, ...)
 {
@@ -2484,59 +2484,63 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           if(is.null(stop.criterion)) {
             rss[[i]][j] <- states[[i]][[j]]$rss
           } else {
-            teta <- eta
-            teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
-            if(is.null(W))
-              tll <- family$loglik(y, family$map2par(teta))
-            else
-              tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
-            if(approx.edf) {
-              tredf <- redf
-              if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix) | inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) {
-                if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
-                  tredf <- tredf + 1
-              } else {
-                if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
-                  if(iter < 2) {
-                    aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
-                      sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
-                    } else {
-                      sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
-                    }
-                    tredf <- tredf + aset
-                  } else {
-                    aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
-                    aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
-                      get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
-                    if(x[[i]]$smooth.construct[[j]]$fuse) {
-                      aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
-                      aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
-                    } else {
-                      aset0 <- sum(abs(aset0) > 1e-10)
-                      aset1 <- sum(abs(aset1) > 1e-10)
-                    }
-                    aset <- aset1 - aset0
-                    tredf <- tredf + aset
-                  }
-                } else {
-                  tredf <- tredf + nu * x[[i]]$smooth.construct[[j]]$state$init.edf
-                }
-              }
-              rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+            if(select.type == 1) {
+              rss[[i]][j] <- states[[i]][[j]]$rss
             } else {
-              if(reverse.edf) {
-                states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
-                  bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs, grad, teta[[i]])
-                tredf <- redf + states[[i]][[j]]$redf$edf
+              teta <- eta
+              teta[[i]] <- teta[[i]] + fitted(states[[i]][[j]])
+              if(is.null(W))
+                tll <- family$loglik(y, family$map2par(teta))
+              else
+                tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
+              if(approx.edf) {
+                tredf <- redf
+                if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix) | inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) {
+                  if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
+                    tredf <- tredf + 1
+                } else {
+                  if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
+                    if(iter < 2) {
+                      aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
+                        sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
+                      } else {
+                        sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
+                      }
+                      tredf <- tredf + aset
+                    } else {
+                      aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
+                      aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
+                        get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
+                      if(x[[i]]$smooth.construct[[j]]$fuse) {
+                        aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
+                        aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
+                      } else {
+                        aset0 <- sum(abs(aset0) > 1e-10)
+                        aset1 <- sum(abs(aset1) > 1e-10)
+                      }
+                      aset <- aset1 - aset0
+                      tredf <- tredf + aset
+                    }
+                  } else {
+                    tredf <- tredf + nu * x[[i]]$smooth.construct[[j]]$state$init.edf
+                  }
+                }
                 rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
               } else {
-                ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
-                tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
-                if(length(nxr <- nx[nx != i])) {
-                  for(ii in nxr)
-                    tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+                if(reverse.edf) {
+                  states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
+                    bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs, grad, teta[[i]])
+                  tredf <- redf + states[[i]][[j]]$redf$edf
+                  rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+                } else {
+                  ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+                  tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
+                  if(length(nxr <- nx[nx != i])) {
+                    for(ii in nxr)
+                      tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+                  }
+                  rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
                 }
-                rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
               }
             }
           }
@@ -2569,7 +2573,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(is.null(stop.criterion) & is.null(selectfun)) {
       i <- which.max(loglik)
     } else {
-      i <- which.min(sapply(rss, function(x) { min(x) }))
+      i <- if(select.type == 1) {
+        which.max(loglik)
+      } else {
+        which.min(sapply(rss, function(x) { min(x) }))
+      }
     }
     
     ## Which term to update.
@@ -2700,9 +2708,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       edf[iter] <- redf
       if(!is.null(stop.criterion)) {
         save.ic[iter] <- -2 * ll + edf[iter] * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-        if(iter > (if(initialize) 2 else 1)) {
+        if(iter > ((if(initialize) 2 else 1) * 100)) {
           if(!is.na(save.ic[iter - 1]) & force.stop) {
-            if(save.ic[iter - 1] <= save.ic[iter]) {
+            if(save.ic[iter - 1] < save.ic[iter]) {
               nback <- TRUE
               break
             }
@@ -2714,7 +2722,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(!is.null(selectfun)) {
       save.ic[iter] <- min(unlist(rss))
       if(force.stop & (iter > (if(initialize) 2 else 1))) {
-        if(save.ic[iter - 1] <= save.ic[iter]) {
+        if(save.ic[iter - 1] < save.ic[iter]) {
           nback <- TRUE
           break
         }
@@ -3041,7 +3049,7 @@ boost.transform <- function(x, y, df = NULL, family,
             function(x) {
               return((1/crossprod(x)) %*% t(x))
             })
-          x[[nx[j]]]$smooth.construct[[sj]]$boost.fit <- function(x, y, nu, hatmatrix = TRUE, weights = NULL, ...) {
+          x[[nx[j]]]$smooth.construct[[sj]]$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
             ## process weights.
             if(!is.null(weights))
               stop("weights is not supported!")
@@ -3077,8 +3085,9 @@ boost.transform <- function(x, y, df = NULL, family,
 
             x$state$rss <- bf$rss[j]
 
-            if(hatmatrix)
-              stop("hatmatrix is not supported!")
+            if(hatmatrix) {
+              x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+            }
   
             return(x$state)
           } 

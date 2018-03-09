@@ -4750,15 +4750,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     if(!is.null(object$xt$lowrank)) {
       if(object$xt$lowrank) {
         if(is.null(object$xt$K))
-          object$xt$K <- 10
-        E <- eigen(object$X)
-        Omega <- Re(E$values)
-        i <- order(abs(Omega), decreasing = TRUE)
-        Omega <- Omega[i]
-        V <- Re(E$vectors[, i])
-        Vk <- V[, 1:object$xt$K]
-        Omegak <- Omega[1:object$xt$K]
-        object$X <- Vk %*% diag(Omegak)
+          object$xt$K <- 20
       }
     }
 
@@ -4801,6 +4793,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
 #}
 ##plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
+##stop()
 ##Sys.sleep(2)
 #stop()
 ##print(dim(object$X))
