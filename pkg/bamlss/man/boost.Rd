@@ -23,8 +23,8 @@ boost(x, y, family, weights = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25,
   nback = NULL, plot = TRUE, initialize = TRUE,
-  stop.criterion = NULL, force.stop = TRUE,
-  hatmatrix = !is.null(stop.criterion),
+  stop.criterion = NULL, select.type = 1,
+  force.stop = TRUE, hatmatrix = !is.null(stop.criterion),
   reverse.edf = FALSE, approx.edf = FALSE,
   always = FALSE, ...)
 
@@ -93,6 +93,8 @@ boost.frame(formula, train, test, family = "gaussian", ...)
     to determine the optimum number of boosting iterations. Either \code{"AIC"} or \code{"BIC"}
     is possible. Note that this feature requires to compute hat-matrices for each distributional
     parameter, therefore, the routine may be slow and computer storage intensive.}
+  \item{select.type}{Should model terms be selected by the log-likelihood contribution,
+    \code{select.type = 1}, or by the corresponding \code{stop.criterion}, \code{select.type = 2}.}
   \item{force.stop}{Logical, should the algorithm stop if the information criterion increases?}
   \item{do.optim}{Logical. Should smoothing parameters be optimized in each boosting iteration?}
   \item{hatmatrix}{Logical, if set to \code{TRUE} the hat-matrices for each distributional parameter
