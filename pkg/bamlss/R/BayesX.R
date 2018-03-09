@@ -1348,12 +1348,20 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaprob <- rep(1 / nraniso, nraniso)
-        object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior,lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))))
+        object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000,
+          type = toupper(object$xt$prior,lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
+          k = min(c(50, ceiling(0.5 * ncol(object$X)))))), silent = TRUE)
       } else {
-        object$xt$theta <- sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
+        object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
           alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
-          lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
+          lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
+          k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
+      }
+      if(inherits(object$xt$theta, "try-error")) {
+        print(object$xt$theta)
+        print(object$label)
+        stop("problems with sdPrior!")
       }
       object$xt$scaletau2 <- object$xt$theta
     }
@@ -1517,11 +1525,18 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaprob <- rep(1 / nraniso, nraniso)
-        object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
+        object$xt$theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+          alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior),
+          lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
       } else {
-        object$xt$theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
-          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
+        object$xt$theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
+          alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
+          lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
+      }
+      if(inherits(object$xt$theta, "try-error")) {
+        print(object$xt$theta)
+        print(object$label)
+        stop("problems with sdPrior!")
       }
       object$xt$scaletau2 <- object$xt$theta
     }
@@ -1575,11 +1590,18 @@ compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
   if(length(object$margin) > 1) {
     omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
     omegaprob <- rep(1 / nraniso, nraniso)
-    theta <- sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
+    theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior),
+      lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
   } else {
-    theta <- sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
-      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior),lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X)))))
+    theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
+      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior),
+      lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
+  }
+  if(inherits(theta, "try-error")) {
+    print(theta)
+    print(object$label)
+    stop("problems with sdPrior!")
   }
   return(theta)
 }
