@@ -495,6 +495,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       }
       if(length(unique(sl)) < length(sl)) {
         sld <- sl[duplicated(sl)]
+        k <- 1
         for(j in seq_along(sld)) {
           for(jj in which(sl == sld[j])) {
             clj <- class(obj$smooth.construct[[jj]])
@@ -502,6 +503,8 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             if(clj == "random")
               clj <- "re"
             sl[jj] <- paste(sl[jj], clj, sep = ":")
+            sl[jj] <- gsub(paste0("):", clj), paste0(",id='", clj, k, "')"), sl[jj], fixed = TRUE)
+            k <- k + 1
           }
         }
       }
