@@ -4328,39 +4328,45 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           rep(color, length.out = length(unique(xn)))
         }
       }
+      add <- if(is.null(list(...)$add)) FALSE else list(...)$add
+      nolabels <- if(is.null(list(...)$nolabels)) FALSE else list(...)$nolabels
       matplot(tpar, type = "l", lty = 1, col = cols[as.factor(xn)],
-        xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE)
-      if(is.null(labels)) {
-        labs <- labs0 <- colnames(tpar)
-        plab <- tpar[nrow(tpar), ]
-        o <- order(plab, decreasing = TRUE)
-        labs <- labs[o]
-        plab <- plab[o]
-        rplab <- diff(range(plab))
-        for(i in 1:(length(plab) - 1)) {
-          dp <- abs(plab[i] - plab[i + 1]) / rplab
-          if(dp <= 0.02) {
-            labs[i + 1] <- paste(c(labs[i], labs[i + 1]), collapse = ",")
-            labs[i] <- ""
+        xlab = expression(log(lambda)), ylab = expression(beta[j]), axes = FALSE, add = add,
+        lwd = list(...)$lwd)
+      if(!nolabels) {
+        if(is.null(labels)) {
+          labs <- labs0 <- colnames(tpar)
+          plab <- tpar[nrow(tpar), ]
+          o <- order(plab, decreasing = TRUE)
+          labs <- labs[o]
+          plab <- plab[o]
+          rplab <- diff(range(plab))
+          for(i in 1:(length(plab) - 1)) {
+            dp <- abs(plab[i] - plab[i + 1]) / rplab
+            if(dp <= 0.02) {
+              labs[i + 1] <- paste(c(labs[i], labs[i + 1]), collapse = ",")
+              labs[i] <- ""
+            }
           }
-        }
-        labs <- labs[order(o)]
-        if(!is.null(name)) {
-          for(j in seq_along(name))
-            labs <- gsub(name[j], "", labs, fixed = TRUE)
-        }
-      } else labs <- rep(labels, length.out = ncol(tpar))
-      at <- tpar[nrow(tpar), ]
-      at <- at[labs != ""]
-      labs <- labs[labs != ""]
-      axis(4, at = at, labels = labs, las = 1)
+          labs <- labs[order(o)]
+          if(!is.null(name)) {
+            for(j in seq_along(name))
+              labs <- gsub(name[j], "", labs, fixed = TRUE)
+          }
+        } else labs <- rep(labels, length.out = ncol(tpar))
+        at <- tpar[nrow(tpar), ]
+        at <- at[labs != ""]
+        labs <- labs[labs != ""]
+        axis(4, at = at, labels = labs, las = 1, cex.axis = list(...)$labcex)
+      }
       at <- pretty(1:nrow(tpar))
       at[at == 0] <- 1
       axis(1, at = at, labels = as.numeric(fmt(log_lambda[take, paste("lambda", m, sep = ".")][at], digits)))
       axis(2)
       if(show.lambda) {
         i <- which.min(ic[take, nic])
-        abline(v = i, col = "lightgray", lwd = 2, lty = 2)
+        abline(v = i, col = "lightgray", lwd = 1, lty = 2)
+        cat(colnames(tpar)[abs(tpar[i, ]) > 0.009], "\n")
         val <- round(lambda_min[paste("lambda", m, sep = ".")], digits)
         if(multiple) {
           lval <- parse(text = paste('paste(lambda[', m, '], "=", ', val, ')', sep = ''))
