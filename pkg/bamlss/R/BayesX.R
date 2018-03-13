@@ -1347,6 +1347,7 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
         nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
+        omegaseq[5] <- 0.4099
         omegaprob <- rep(1 / nraniso, nraniso)
         object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000,
@@ -1524,7 +1525,9 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         nraniso <- if(is.null(object$xt$nraniso)) 11 else object$xt$nraniso
         minaniso <- if(is.null(object$xt$minaniso)) 0.05 else object$xt$minaniso
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
+        omegaseq[5] <- 0.4099
         omegaprob <- rep(1 / nraniso, nraniso)
+
         object$xt$theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior),
           lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
@@ -1561,49 +1564,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 Predict.matrix.tensorX.smooth <- function(object, data) 
 {
   Predict.matrix.tensor.smooth(object, data)
-}
-
-
-compute_theta <- function(object, data, prior = c("ig", "hc", "hn", "sd"),
-  nraniso = 11, minaniso = 0.05, thin = TRUE, n = 30, sample = TRUE)
-{
-  if(!(inherits(object, "tensorX.smooth.spec") | inherits(object, "tensorX3.smooth.spec")))
-    stop("needs to be a tensorX object from tx() or tx3()!")
-  stopifnot(requireNamespace("sdPrior"))
-  prior <- match.arg(prior)
-  if(thin & !sample) {
-    d2 <- list()
-    for(j in object$term) {
-      if(!is.factor(data[[j]])) {
-        d2[[j]] <- sample(seq(min(data[[j]]), max(data[[j]]), length = n))
-      } else {
-        d2[[j]] <- unique(data[[j]])
-      }
-    }
-    object <- smooth.construct(object, as.data.frame(d2), NULL)
-  } else {
-    object <- smooth.construct(object, data, NULL)
-  }
-  if(thin & sample & (nrow(object$X) > 2000)) {
-    object$X <- object$X[sample(1:nrow(object$X), size = n, replace = FALSE), , drop = FALSE]
-  }
-  if(length(object$margin) > 1) {
-    omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
-    omegaprob <- rep(1 / nraniso, nraniso)
-    theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
-      alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(prior),
-      lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
-  } else {
-    theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
-      alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(prior),
-      lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
-  }
-  if(inherits(theta, "try-error")) {
-    print(theta)
-    print(object$label)
-    stop("problems with sdPrior!")
-  }
-  return(theta)
 }
 
 
@@ -1652,4 +1612,5 @@ get_BayesXsrc <- function(dir = NULL, install = TRUE) {
   setwd(owd)
   return(ok)
 }
+
 
