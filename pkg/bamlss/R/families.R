@@ -35,73 +35,88 @@ print.family.bamlss <- function(x, full = TRUE, ...)
 make.link2 <- function(link)
 {
   link0 <- link
-  mu.eta2 <- function(x) {
-    if(link0 == "identity") {
-      x$mu.eta2 <- function(eta) rep.int(0, length(eta))
-      return(x)
-    }
-    if(link0 == "log") {
-      x$mu.eta2 <- function(eta) exp(eta)
-      return(x)
-    }
-    if(link0 == "logit") {
-      x$mu.eta2 <- function(eta) {
-        eta <- exp(eta)
-        return(-eta * (eta - 1) / (eta + 1)^3)
-      }
-      return(x)
-    }
-    if(link0 == "probit") {
-      x$mu.eta2 <- function(eta) {
-        -eta * dnorm(eta, mean = 0, sd = 1)
-      }
-      return(x)
-    }
-    if(link0 == "inverse") {
-      x$mu.eta2 <- function(eta) {
-        2 / (eta^3)
-      }
-      return(x)
-    }
-    if(link0 == "1/mu^2") {
-      x$mu.eta2 <- function(eta) {
-        0.75 / eta^(2.5)
-      }
-      return(x)
-    }
-    if(link0 == "sqrt") {
-      x$mu.eta2 <- function(eta) { rep(2, length = length(eta)) }
-      return(x)
-    }
-    x$mu.eta2 <- function(eta) rep.int(0, length(eta))
-    warning(paste('higher derivatives of link "', link, '" not available!', sep = ''))
-    return(x)
-  }
-
-  if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
-                 "log", "sqrt", "1/mu^2", "inverse")) {
-    rval <- make.link(link)
-  } else {
-    rval <- switch(link,
-      "rhogit" = list(
-        "linkfun" = function(mu) { mu / sqrt(1 - mu^2) },
-        "linkinv" = function(eta) { eta / sqrt(1 + eta^2) }, 
-        "mu.eta" = function(eta) { 1 / (1 + eta^2)^1.5 }
-      ),
-      "cloglog2" = list(
-        "linkfun" = function(mu) { log(-log(mu)) },
-        "linkinv" = function(eta) {
-          pmax(pmin(1 - expm1(-exp(eta)), .Machine$double.eps), .Machine$double.eps)
-        },
-        "mu.eta" = function(eta) {
-          eta <- pmin(eta, 700)
-          pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
-        }
+  if(link0 == "tanhalf"){
+    rval <- list(
+      "linkfun" = function (mu) {
+        tan(mu/2)},
+      "linkinv" = function(eta) {
+        2 * atan(eta)},
+      "mu.eta" = function(eta) {
+        2 / (eta^2 + 1)},
+      "mu.eta2" = function(eta) {
+        (-4 * eta ) / (eta^2 + 1)^2},
+      "valideta" = function(eta) TRUE,
+      "name" = "tanhalf"
       )
-    )
+  } else {
+    mu.eta2 <- function(x) {
+      if(link0 == "identity") {
+        x$mu.eta2 <- function(eta) rep.int(0, length(eta))
+        return(x)
+      }
+      if(link0 == "log") {
+        x$mu.eta2 <- function(eta) exp(eta)
+        return(x)
+      }
+      if(link0 == "logit") {
+        x$mu.eta2 <- function(eta) {
+          eta <- exp(eta)
+          return(-eta * (eta - 1) / (eta + 1)^3)
+        }
+        return(x)
+      }
+      if(link0 == "probit") {
+        x$mu.eta2 <- function(eta) {
+          -eta * dnorm(eta, mean = 0, sd = 1)
+        }
+        return(x)
+      }
+      if(link0 == "inverse") {
+        x$mu.eta2 <- function(eta) {
+          2 / (eta^3)
+        }
+        return(x)
+      }
+      if(link0 == "1/mu^2") {
+        x$mu.eta2 <- function(eta) {
+          0.75 / eta^(2.5)
+        }
+        return(x)
+      }
+      if(link0 == "sqrt") {
+        x$mu.eta2 <- function(eta) { rep(2, length = length(eta)) }
+        return(x)
+      }
+      x$mu.eta2 <- function(eta) rep.int(0, length(eta))
+      warning(paste('higher derivatives of link "', link, '" not available!', sep = ''))
+      return(x)
+    }
+
+    if(link %in% c("logit", "probit", "cauchit", "cloglog", "identity",
+                   "log", "sqrt", "1/mu^2", "inverse")) {
+      rval <- make.link(link)
+    } else {
+      rval <- switch(link,
+        "rhogit" = list(
+          "linkfun" = function(mu) { mu / sqrt(1 - mu^2) },
+          "linkinv" = function(eta) { eta / sqrt(1 + eta^2) },
+          "mu.eta" = function(eta) { 1 / (1 + eta^2)^1.5 }
+        ),
+        "cloglog2" = list(
+          "linkfun" = function(mu) { log(-log(mu)) },
+          "linkinv" = function(eta) {
+            pmax(pmin(1 - expm1(-exp(eta)), .Machine$double.eps), .Machine$double.eps)
+          },
+          "mu.eta" = function(eta) {
+            eta <- pmin(eta, 700)
+            pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
+          }
+        )
+      )
+    }
+
+    rval <- mu.eta2(rval)
   }
-  
-  rval <- mu.eta2(rval)
   rval$name <- link
   rval
 }

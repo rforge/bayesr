@@ -4574,7 +4574,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
   if(any(s <= 1))
     s[s <= 1] <- 1.01
 #  r <- 0.49
-#  s <- 10
+#  s <- 100000
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   type <- match.arg(type)
@@ -4736,14 +4736,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
 
     if(is.null(object$xt$weights)) {
-      object$weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint)
+      object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint)
     } else {
       if(length(object$xt$weights) != nodes)
         stop("not enough weights supplied!")
-      object$weights <- object$xt$weights
+      object$n.weights <- object$xt$weights
     }
 
-    object$X <- object$Zmat(object$X, object$weights)
+    object$Xn <- object$X
+    object$X <- object$Zmat(object$X, object$n.weights)
     nobs <- nrow(object$X)
     object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
     d <- abs(apply(apply(object$X, 2, range), 2, diff))
@@ -4787,6 +4788,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
   object$xt$prior <- "ig"
   object$xt$fx <- FALSE
+  object$xt$df <- 4
 
   ##object$xt$force.center <- TRUE
 
@@ -4795,8 +4797,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #for(j in 1:ncol(object$X)) {
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
 #}
-##plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
-##stop()
+#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
 ##Sys.sleep(2)
 #stop()
 ##print(dim(object$X))
@@ -4817,7 +4818,7 @@ Predict.matrix.nnet.smooth <- function(object, data)
     X <- Predict.matrix.tprs.smooth(object, data)
   } else {
     object$standardize01 <- TRUE
-    X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$weights)
+    X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
     X <- X[, object$Xkeep, drop = FALSE]
     if(!is.null(object$xt$lowrank)) {
       if(object$xt$lowrank) {

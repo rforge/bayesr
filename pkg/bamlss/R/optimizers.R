@@ -3060,7 +3060,6 @@ boost.transform <- function(x, y, df = NULL, family,
             g2 <- rep(0, length(bf$g))
             g2[j] <- bf$g[j]
 
-
 #if(g2[j] > 100) {
 
 #apply(x$X, 2, range)
