@@ -1240,6 +1240,10 @@ tx <- function(..., bs = "ps", k = -1,
   object$label <- gsub("te(", "tx(", object$label, fixed = TRUE)
   object$special <- special
   object$xt <- xt
+  if(any(i <- sapply(object$margin, class) == "mrf.smooth.spec")) {
+    xt <- c(object$xt, object$margin[[i]]$xt)
+    object$xt <- object$margin[[i]]$xt <- xt
+  }
   class(object) <- "tensorX.smooth.spec"
   object
 }
