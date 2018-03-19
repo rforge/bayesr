@@ -4787,7 +4787,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$rank <- sapply(object$S, sum)
   }
   object$xt$prior <- "ig"
-  object$xt$fx <- FALSE
+  object$fx <- object$xt$fx <- FALSE
   object$xt$df <- 4
 
   ##object$xt$force.center <- TRUE
@@ -5256,6 +5256,9 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
     op <- par(no.readonly = TRUE)
     on.exit(par(op))
   }
+
+  if(!is.null(list(...)$pages))
+    ask <- !(list(...)$pages == 1)
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
