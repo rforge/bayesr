@@ -47,7 +47,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     stop("BayesX specifications missing in family object, cannot set up model!")
 
   if(is.null(attr(x, "bamlss.engine.setup")))
-    x <- bamlss.engine.setup(x, update = update, parametric2smooth = FALSE, ...)
+    x <- bamlss.engine.setup(x, update = update, parametric2smooth = FALSE, nodf = TRUE, ...)
 
   if(!is.null(start))
     x <- set.starting.values(x, start) ## FIXME: starting values for parametric parts?
@@ -208,7 +208,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   eqn <- list()
   prgex <- NULL
   n <- 1
-  main <- if(is.null(family$main)) c(TRUE, rep(FALSE, length(x) - 1)) else family$main
+  main <- if(is.null(family$bayesx$main)) c(TRUE, rep(FALSE, length(x) - 1)) else family$bayesx$main
   pcmd <- control$prg$predict
   control$prg$predict <- NULL
   control$prg$quantile <- family$bayesx$quantile
@@ -251,6 +251,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(modeonly) " modeonly" else paste(" predict=", pcmd, sep = "")
         } else NULL,
         if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
+print(teqn)
+stop()
       eqn[[i]] <- teqn
       prgex <- c(prgex, msp$prgex)
     }
