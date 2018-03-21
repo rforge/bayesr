@@ -251,8 +251,6 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
           if(modeonly) " modeonly" else paste(" predict=", pcmd, sep = "")
         } else NULL,
         if(!is.null(msp$dname)) paste(" using", msp$dname) else NULL, sep = "")
-print(teqn)
-stop()
       eqn[[i]] <- teqn
       prgex <- c(prgex, msp$prgex)
     }

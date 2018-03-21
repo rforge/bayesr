@@ -56,6 +56,10 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       }
       attr(bf$y, "reference") <- cf$reference
       family$names <- names(formula)
+      if(!is.null(family$bayesx)) {
+        family$bayesx <- rep(family$bayesx, length(family$names))
+        names(family$bayesx) <- family$names
+      }
       family$links <- rep(family$links, length.out = length(formula))
       names(family$links) <- names(formula)
       attr(formula, "orig.formula") <- orig.formula
