@@ -1333,24 +1333,26 @@ param_Xtimegrid <- function(formula, data, grid, yname, type = 1, derivMat = FAL
   }
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
-      if(!inherits(x[[j]], "no.mgcv") & !inherits(x[[j]], "special")) {
-        X <- sm_Xtimegrid(x[[j]], newdata, grid, yname, derivMat = derivMat)
-        sn <- snames[grep2(paste(id, "s", j, sep = "."), snames, fixed = TRUE)]
-        random <- if(!is.null(x[[j]]$margin)) {
-            any(sapply(x[[j]]$margin, function(z) { inherits(z, "random.effect") }))
-        } else inherits(x[[j]], "random.effect")
-        ok <- if(random) {
-          if(ncol(X) == length(samps[, sn, drop = FALSE])) TRUE else FALSE
-        } else TRUE
-        if(ok) {
-          eta <- if(is.null(eta)) {
-            fitted_matrix(X, samps[, sn, drop = FALSE])
-          } else {
-            eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+      for(jj in grep(j, names(x), fixed = TRUE, value = TRUE)) {
+        if(!inherits(x[[jj]], "no.mgcv") & !inherits(x[[jj]], "special")) {
+          X <- sm_Xtimegrid(x[[jj]], newdata, grid, yname, derivMat = derivMat)
+          sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
+          random <- if(!is.null(x[[jj]]$margin)) {
+              any(sapply(x[[jj]]$margin, function(z) { inherits(z, "random.effect") }))
+          } else inherits(x[[jj]], "random.effect")
+          ok <- if(random) {
+            if(ncol(X) == length(samps[, sn, drop = FALSE])) TRUE else FALSE
+          } else TRUE
+          if(ok) {
+            eta <- if(is.null(eta)) {
+              fitted_matrix(X, samps[, sn, drop = FALSE])
+            } else {
+              eta + fitted_matrix(X, samps[, sn, drop = FALSE])
+            }
           }
+        } else {
+          stop("no predictions for special terms available yet!")
         }
-      } else {
-        stop("no predictions for special terms available yet!")
       }
     }
   }
