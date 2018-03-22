@@ -8123,3 +8123,42 @@ Predict.matrix.mlt.smooth <- function(object, data)
 #  bs
 #}
 
+smooth.construct.re2.smooth.spec <- function(object, data, knots, ...)
+{
+  isn <- NULL
+  for(j in object$term) {
+    isn <- c(isn, is.numeric(data[[j]]))
+  }
+  if(any(isn) & FALSE) {
+    center <- scale <- NULL
+    for(j in which(isn)) {
+      m <- mean(data[[j]])
+      sd <- sd(data[[j]])
+      data[[j]] <- (data[[j]] - m) / sd
+      center <- c(center, m)
+      scale <- c(scale, sd)
+    }
+    object$isn <- isn
+    object$center <- center
+    object$scale <- scale
+  }
+  object <- smooth.construct.re.smooth.spec(object, data, knots)
+  class(object) <- if (inherits(object, "tensor.smooth.spec")) 
+      c("random2.effect", "tensor.smooth", "random.effect")
+    else c("random2.effect", "random.effect")
+  object
+}
+
+Predict.matrix.random2.effect <- function(object, data) 
+{
+  if(!is.null(object$isn)) {
+    i <- 1
+    for(j in which(object$isn)) {
+      data[[j]] <- (data[[j]] - object$center[i]) / object$scale[i]
+      i <- i + 1
+    }
+  }
+  X <- model.matrix(object$form, data)
+  X
+}
+
