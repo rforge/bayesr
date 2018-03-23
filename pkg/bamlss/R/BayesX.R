@@ -80,6 +80,11 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
 
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
   cny <- colnames(y)
   for(j in seq_along(cny))
     cny[j] <- all.vars(as.formula(paste("~", cny[j])))
@@ -177,10 +182,14 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
 
     rn <- response.name(as.formula(x$formula), hierarchical = FALSE)
-    if(rn %in% family$names)
-      rn <- NA
-    if(is.na(rn))
-      rn <- yname
+
+    if(is.null(family$cat)) {
+      if(rn %in% family$names)
+        rn <- NA
+      if(is.na(rn))
+        rn <- yname
+    }
+
     eqn <- paste(rn, "=", paste(rhs, collapse = " + "))
     rval <- list("eqn" = eqn, "prgex" = prgex)
 
@@ -242,7 +251,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     } else {
       msp <- single_eqn(x[[i]], y, id = i)
       teqn <- paste(model.name, ".hregress ", msp$eqn, ", family=", fbx[[i]][1],
-        " equationtype=", fbx[[i]][2],
+        " equationtype=", if(!main[n]) fbx[[i]][length(fbx[[i]])] else fbx[[i]][2],
         if(n == length(x)) {
           paste(paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " ")),
             if(modeonly) " modeonly" else "", sep = "")
