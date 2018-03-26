@@ -81,8 +81,9 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   }
 
   if(is.data.frame(y)) {
-    if(ncol(y) < 2)
-      y <- y[[1]]
+    if(ncol(y) < 2) {
+      y <- y[, 1, drop = FALSE]
+    }
   }
 
   cny <- colnames(y)
@@ -124,7 +125,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         sdata <- as.data.frame(x$model.matrix[, cn, drop = FALSE])
       }
       if("Intercept" %in% colnames(x$model.matrix)) {
-        sdata <- cbind("Intercept" = rep(1, nrow(y)), sdata)
+        sdata <- cbind("Intercept" = rep(1, if(is.null(dim(y))) length(y) else nrow(y)), sdata)
         rhs <- c("const", rhs)
       }
     }
@@ -198,7 +199,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         if(is.factor(sdata[[j]]))
           sdata[[j]] <- as.integer(as.character(sdata[[j]]))
       }
-      if(nrow(sdata) == nrow(y))
+      if(nrow(sdata) == (if(is.null(dim(y))) length(y) else nrow(y)))
         sdata <- cbind(sdata, y)
       rval$dname <- paste(paste(id, collapse = "_"), data.name, sep = "_")
       write.table(sdata, file = file.path(dir, paste(rval$dname, ".raw", sep = "")),
@@ -543,14 +544,17 @@ sx <- function(x, z = NULL, bs = "ps", by = NA, ...)
       "u" = 0.2723532
     )
   }
-  rval$xt$scaletau2 <- rval$xt$theta
-  rval$xt$hyperprior <- switch(rval$xt$prior,
-    "ig" = "invgamma",
-    "hn" = "hnormal",
-    "sd" = "scaledep",
-    "hc" = "hcauchy",
-    "u" = "aunif"
-  )
+  if(is.null(rval$xt$scaletau2))
+    rval$xt$scaletau2 <- rval$xt$theta
+  if(is.null(rval$xt$hyperprior)) {
+    rval$xt$hyperprior <- switch(rval$xt$prior,
+      "ig" = "invgamma",
+      "hn" = "hnormal",
+      "sd" = "scaledep",
+      "hc" = "hcauchy",
+      "u" = "aunif"
+    )
+  }
   rval$xt$prior <- NULL
   rval$xt$theta <- NULL
 
@@ -703,7 +707,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "scaletau2", "hyperprior")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
