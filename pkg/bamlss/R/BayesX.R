@@ -620,15 +620,29 @@ do.xt <- function(term, object, not = NULL, noco = FALSE)
 
 sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(object, data, id = NULL, dir = NULL, ...)
 {
-  if(is.null(object$xt$prior))
-    object$xt$prior <- "ig"
-  if(is.null(object$xt$theta)) {
-    object$xt$theta <- switch(object$xt$prior,
-      "sd" = 0.00877812,
-      "hc" = 0.01034553,
-      "hn" = 0.1457644,
-      "u" = 0.2723532
+  if(is.null(object$xt$hyperprior)) {
+    if(is.null(object$xt$prior))
+      object$xt$prior <- "ig"
+  } else {
+    object$xt$prior <- switch(object$xt$hyperprior,
+       "invgamma" = "ig",
+       "hnormal" = "hn",
+       "scaledep" = "sd",
+       "hcauchy" = "hc",
+       "aunif" = "u"
     )
+  }
+  if(is.null(object$xt$scaletau2)) {
+    if(is.null(object$xt$theta)) {
+      object$xt$theta <- switch(object$xt$prior,
+        "sd" = 0.00877812,
+        "hc" = 0.01034553,
+        "hn" = 0.1457644,
+        "u" = 0.2723532
+      )
+    }
+  } else {
+    object$xt$theta <- object$xt$scaletau2
   }
   object$xt$scaletau2 <- object$xt$theta
   object$xt$hyperprior <- switch(object$xt$prior,
@@ -706,6 +720,8 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     term <- paste(term, ",betastart=", Pn, sep = "")
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
+print(object$xt)
+stop()
   term <- paste(do.xt(term, object,
     c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta")), ")", sep = "")
 
@@ -1338,15 +1354,29 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
     object$C <- matrix(1, ncol = p1 * p2)
   }
 
-  if(is.null(object$xt$prior))
-    object$xt$prior <- "ig"
-  if(is.null(object$xt$theta)) {
-    object$xt$theta <- switch(object$xt$prior,
-      "sd" = 0.00877812,
-      "hc" = 0.01034553,
-      "hn" = 0.1457644,
-      "u" = 0.2723532
+  if(is.null(object$xt$hyperprior)) {
+    if(is.null(object$xt$prior))
+      object$xt$prior <- "ig"
+  } else {
+    object$xt$prior <- switch(object$xt$hyperprior,
+       "invgamma" = "ig",
+       "hnormal" = "hn",
+       "scaledep" = "sd",
+       "hcauchy" = "hc",
+       "aunif" = "u"
     )
+  }
+  if(is.null(object$xt$scaletau2)) {
+    if(is.null(object$xt$theta)) {
+      object$xt$theta <- switch(object$xt$prior,
+        "sd" = 0.00877812,
+        "hc" = 0.01034553,
+        "hn" = 0.1457644,
+        "u" = 0.2723532
+      )
+    }
+  } else {
+    object$xt$theta <- object$xt$scaletau2
   }
   object$xt$scaletau2 <- object$xt$theta
   object$xt$hyperprior <- switch(object$xt$prior,
@@ -1516,15 +1546,29 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
     object$X <- data[[object$by]] * object$X
   }
 
-  if(is.null(object$xt$prior))
-    object$xt$prior <- "ig"
-  if(is.null(object$xt$theta)) {
-    object$xt$theta <- switch(object$xt$prior,
-      "sd" = 0.00877812,
-      "hc" = 0.01034553,
-      "hn" = 0.1457644,
-      "u" = 0.2723532
+  if(is.null(object$xt$hyperprior)) {
+    if(is.null(object$xt$prior))
+      object$xt$prior <- "ig"
+  } else {
+    object$xt$prior <- switch(object$xt$hyperprior,
+       "invgamma" = "ig",
+       "hnormal" = "hn",
+       "scaledep" = "sd",
+       "hcauchy" = "hc",
+       "aunif" = "u"
     )
+  }
+  if(is.null(object$xt$scaletau2)) {
+    if(is.null(object$xt$theta)) {
+      object$xt$theta <- switch(object$xt$prior,
+        "sd" = 0.00877812,
+        "hc" = 0.01034553,
+        "hn" = 0.1457644,
+        "u" = 0.2723532
+      )
+    }
+  } else {
+    object$xt$theta <- object$xt$scaletau2
   }
   object$xt$scaletau2 <- object$xt$theta
   object$xt$hyperprior <- switch(object$xt$prior,
