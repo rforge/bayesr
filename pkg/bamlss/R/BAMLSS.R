@@ -3433,7 +3433,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
             } else inherits(x[[jj]], "random.effect")
           }
           if(random) {
-            if(ncol(X) == length(samps[, sn, drop = FALSE]))
+            if(ncol(X) == ncol(samps[, sn, drop = FALSE]))
               eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
           } else {
             eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
