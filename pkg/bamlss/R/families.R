@@ -3391,7 +3391,7 @@ glogis_bamlss <- function(...) {
                   as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
          }
       ),
-      "links"  = bamlss:::parse.links(links,c(mu="identity",sigma="log",alpha="log"),...),
+      "links"  = parse.links(links,c(mu="identity",sigma="log",alpha="log"),...),
       "loglik" = function(y, par, ... ) {
          .Call("bamlss_glogis_loglik",as.numeric(y),
                   as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
