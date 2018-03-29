@@ -1396,8 +1396,8 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
         omegaprob <- rep(1 / nraniso, nraniso)
         object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000,
-          type = toupper(object$xt$prior,lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
-          k = min(c(50, ceiling(0.5 * ncol(object$X)))))), silent = TRUE)
+          type = toupper(object$xt$prior), lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
+          k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
       } else {
         object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
           alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
