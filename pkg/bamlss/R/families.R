@@ -669,6 +669,21 @@ gaussian_bamlss <- function(...)
     "r" = function(n, par) {
       rnorm(n, mean = par$mu, sd = par$sigma)
     },
+	# Inputs 'par' have to be on the parameter scale!
+    # ..$moments(fitted(bamlssmodel, type = "parameter"))
+    "moments" = function(par, which=NULL) {
+        mom <- list(
+          "mean"      = function(par) par[[1]],
+          "variance"  = function(par) par[[2]]^2
+        )
+        # If input which is not set: return all moments.
+        if ( is.null(which) ) { which <- 1:length(mom) }
+        else if ( is.character(which) ) { which <- match(which, names(mom)) }
+        # Compute moments
+        res <- list()
+        for ( w in which ) res[[names(mom)[w]]] <- mom[[w]](par)
+        if ( length(res) == 1 ) return( res[[1]]) else return( as.data.frame(res) )
+    },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
@@ -3333,6 +3348,96 @@ rho_score_mvnormAR1 <- function(y, par)
   mj <- grep("mu", cn)
   rj <- as.integer(grep("rho", cn))
   return(.Call("rho_score_mvnormAR1", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
+}
+
+
+# -------------------------------------------------------------------
+# Generalized logistic type I distribution with gradients.
+# -------------------------------------------------------------------
+glogis_bamlss <- function(...) {
+
+   requireNamespace('glogis')
+
+   links <- c(mu="identity",sigma="log",alpha="log")
+
+   rval <- list(
+      "family" = "Gernalized Logistic Distribution Type I (a.k.a. skewed logistic distribution)",
+      "names"  = c("mu","sigma","alpha"),
+      "score" = list(
+         "mu" = function(y,par,...) {
+            .Call("bamlss_glogis_score",as.integer(1),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         },
+         "sigma" = function(y,par,...) {
+            .Call("bamlss_glogis_score",as.integer(2),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         },
+         "alpha" = function(y,par,...) {
+            .Call("bamlss_glogis_score",as.integer(3),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         }
+      ),
+      "hess" = list(
+         "mu" = function(y,par,...) {
+            .Call("bamlss_glogis_hesse",as.integer(1),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         },
+         "sigma" = function(y,par,...) {
+            .Call("bamlss_glogis_hesse",as.integer(2),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         },
+         "alpha" = function(y,par,...) {
+            .Call("bamlss_glogis_hesse",as.integer(3),as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+         }
+      ),
+      "links"  = bamlss:::parse.links(links,c(mu="identity",sigma="log",alpha="log"),...),
+      "loglik" = function(y, par, ... ) {
+         .Call("bamlss_glogis_loglik",as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+      },
+      "d" = function(y,par,log=FALSE) {
+         .Call("bamlss_glogis_density",as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha),
+                  as.integer(log))
+      },
+      "p" = function(y,par,...) {
+         .Call("bamlss_glogis_distr",as.numeric(y),
+                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+      },
+      "q" = function(y,par,...) {
+         .Call("bamlss_glogis_quantile",as.numeric(y),
+               as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+      },
+      "r" = function(y,par,...) {
+         glogis::rglogis(y,par$mu,par$sigma,par$alpha)
+      },
+      "initialize" = list(
+         "mu"    = function(y, ...) { (y + mean(y)) / 2 },
+         "sigma" = function(y, ...) { rep(sd(y), length(y)) },
+         "alpha" = function(y, ...) { rep(1,length(y)) }
+      ),
+      # Inputs 'par' have to be on the parameter scale!
+      # ..$moments(fitted(bamlssmodel, type = "parameter"))
+      "moments" = function(par, which=NULL) {
+         mom <- list(
+           "mean"      = function(par) as.vector(par[[1]] + (digamma(par[[3]]) - digamma(1)) * par[[2]]),
+           "variance"  = function(par) as.vector((psigamma(par[[3]], deriv = 1) + psigamma(1, deriv = 1)) * par[[2]]),
+           "skewness"  = function(par) as.vector((psigamma(par[[3]], deriv = 2) - psigamma(1, deriv = 2)) /
+                         (psigamma(par[[3]], deriv = 1) + psigamma(1, deriv = 1))^(3/2))
+         )
+         # If input which is not set: return all moments.
+         if ( is.null(which) ) { which <- 1:length(mom) }
+         else if ( is.character(which) ) { which <- match(which, names(mom)) }
+         res <- list()
+         for ( w in which ) res[[names(mom)[w]]] <- mom[[w]](par)
+         if ( length(res) == 1 ) return( res[[1]]) else return( as.data.frame(res) )
+      }
+   )
+
+   # Return family object
+   class(rval) <- "family.bamlss"
+   return(rval)
 }
 
 

@@ -2,6 +2,12 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
+SEXP bamlss_glogis_score(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP bamlss_glogis_hesse(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP bamlss_glogis_density(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP bamlss_glogis_loglik(SEXP, SEXP, SEXP, SEXP);
+SEXP bamlss_glogis_distr(SEXP, SEXP, SEXP, SEXP);
+SEXP bamlss_glogis_quantile(SEXP, SEXP, SEXP, SEXP);
 SEXP block_inverse(SEXP, SEXP);
 SEXP bivnorm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP boost_fit(SEXP, SEXP, SEXP, SEXP);
@@ -47,6 +53,12 @@ SEXP sigma_score_mvnormAR1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP rho_score_mvnormAR1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static R_CallMethodDef callMethods[] = {
+  {"bamlss_glogis_score", (DL_FUNC) &bamlss_glogis_score, 5},
+  {"bamlss_glogis_hesse", (DL_FUNC) &bamlss_glogis_hesse, 5},
+  {"bamlss_glogis_density", (DL_FUNC) &bamlss_glogis_density, 5},
+  {"bamlss_glogis_loglik", (DL_FUNC) &bamlss_glogis_loglik, 4},
+  {"bamlss_glogis_distr", (DL_FUNC) &bamlss_glogis_distr, 4},
+  {"bamlss_glogis_quantile", (DL_FUNC) &bamlss_glogis_quantile, 4},
   {"block_inverse", (DL_FUNC) &block_inverse, 2},
   {"bivnorm_loglik", (DL_FUNC) &bivnorm_loglik, 7},
   {"boost_fit", (DL_FUNC) &boost_fit, 4},
