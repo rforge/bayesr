@@ -93,6 +93,7 @@ export(
   "poisson_bamlss",
   "quant_bamlss",
   "gpareto_bamlss",
+  "glogis_bamlss",
   "gF",
 
   ## extractor functions

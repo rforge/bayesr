@@ -15,6 +15,7 @@
 \alias{mvnormAR1_bamlss}
 \alias{poisson_bamlss}
 \alias{gpareto_bamlss}
+\alias{glogis_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -45,6 +46,7 @@ mvnorm_bamlss(k = 2, ...)
 mvnormAR1_bamlss(k = 2, ...)
 poisson_bamlss(...)
 gpareto_bamlss(...)
+glogis_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
