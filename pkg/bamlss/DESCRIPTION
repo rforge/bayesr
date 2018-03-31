@@ -14,7 +14,7 @@ Description: Infrastructure for estimating probabilistic distributional regressi
   The conceptual and computational framework is introduced in Umlauf, Klein, Zeileis (2017)
   <http://EconPapers.RePEc.org/RePEc:inn:wpaper:2017-05>.
 Depends: R (>= 3.2.3), coda, colorspace, mgcv
-Imports: Formula, MBA, mvtnorm, sp, spam, Matrix, survival, methods, parallel
+Imports: Formula, MBA, mvtnorm, sp, Matrix, survival, methods, parallel
 Suggests: akima, bit, fields, gamlss, geoR, rjags, BayesX, BayesXsrc, mapdata, maps, maptools,
   raster, spatstat, spdep, zoo, keras, splines2, sdPrior, glogis
 License: GPL-2 | GPL-3

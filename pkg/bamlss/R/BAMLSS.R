@@ -639,18 +639,6 @@ sparse.matrix.index <- function(x, ...)
   index
 }
 
-
-## Bandwidth minimization permutation.
-sparse.matrix.ordering <- function(x, ...)
-{
-  x <- as.spam(x)
-  i <- try(ordering(chol.spam(x)), silent = TRUE)
-  if(inherits(i, "try-error"))
-    i <- 1:nrow(x)
-  return(i)
-}
-
-
 ## Setup sparse indices for various algorithms.
 sparse.setup <- function(x, S = NULL, ...)
 {
@@ -807,7 +795,7 @@ make.fit.fun <- function(x, type = 1)
     if(!is.null(names(b))) {
       b <- if(!is.null(x$pid)) b[x$pid$b] else get.par(b, "b")
     }
-    if(inherits(X, "spam") | inherits(X, "Matrix")) {
+    if(inherits(X, "Matrix")) {
       f <- as.matrix(X %*% b)
     } else {
       what <- if(type < 2) "matrix" else "grid.matrix"
@@ -7680,15 +7668,11 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
     return(1 / x)
   rn <- rownames(x)
   cn <- colnames(x)
-  if(!is.null(index) & is(x, "spam")) {
-    p <- update.spam.chol.NgPeyton(index$spam.cholFactor, x)
-  } else {
-    p <- try(chol(x), silent = TRUE)
-  }
+  p <- try(chol(x), silent = TRUE)
   p <- if(inherits(p, "try-error")) {
     try(solve(x), silent = TRUE)
   } else {
-    try(if(inherits(x, "spam")) chol2inv.spam(p) else chol2inv(p), silent = TRUE)
+    try(chol2inv(p), silent = TRUE)
   }
   if(inherits(p, "try-error")) {
     diag(x) <- jitter(diag(x), amount = 1e-5)
@@ -7871,8 +7855,6 @@ scale_model.frame <- function(x, not = "")
 ## Sum of diagonal elements.
 sum_diag <- function(x)
 {
-  if(inherits(x, "spam"))
-    return(sum(diag.spam(x), na.rm = TRUE))
   if(inherits(x, "Matrix"))
     return(sum(diag(x), na.rm = TRUE))
   if(is.null(dx <- dim(x)))
@@ -7884,10 +7866,6 @@ sum_diag <- function(x)
 
 sum_diag2 <- function(x, y)
 {
-  if(inherits(x, "spam"))
-    x <- as.matrix(x)
-  if(inherits(y, "spam"))
-    y <- as.matrix(y)
   if(is.null(dx <- dim(x)))
     stop("x must be a matrix!")
   if(is.null(dy <- dim(y)))

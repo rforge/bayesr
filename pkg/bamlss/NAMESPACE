@@ -41,7 +41,6 @@ importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
   "write.table", "combn")
 
-import("spam")
 import("Matrix")
 
 export(
@@ -53,7 +52,6 @@ export(
   "bfit",
   "bfit_iwls",
   "bfit_iwls_Matrix",
-  "bfit_iwls_spam",
   "bfit_lm",
   "bfit_optim",
   "GMCMC",
