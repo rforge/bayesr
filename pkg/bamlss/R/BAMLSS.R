@@ -1501,6 +1501,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
 
   ## Start sampling.
   if(is.function(functions$sampler)) {
+    ptm <- proc.time()
     if(is.null(cores)) {
       bf$samples <- functions$sampler(x = bf$x, y = bf$y, family = bf$family,
         weights = model.weights(bf$model.frame),
@@ -1518,6 +1519,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       }
       bf$samples <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
     }
+    elapsed <- c(proc.time() - ptm)[3]
     if(!inherits(bf$samples, "mcmc")) {
       if(!is.null(bf$samples)) {
         if(is.list(bf$samples)) {
@@ -1545,6 +1547,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       if(!is.null(bf$model.stats))
         bf$model.stats <- list("optimizer" = bf$model.stats)
     }
+    bf$model.stats$sampler$runtime <- elapsed
   } else {
     if(!is.null(bf$model.stats))
       bf$model.stats <- list("optimizer" = bf$model.stats)
@@ -5903,7 +5906,9 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       for(j in sort(names(x$model.stats$sampler))) {
         if(length(x$model.stats$sampler[[j]]) < 2) {
           ok <- TRUE
-          cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$sampler[[j]], digits), sep = "")
+          cat(if(k > 1) " " else "", j, " = ", if(is.numeric(x$model.stats$sampler[[j]])) {
+              round(x$model.stats$sampler[[j]], digits)
+            } else x$model.stats$sampler[[j]], sep = "")
           k <- k + 1
           if(k == 4) {
             k <- 1
