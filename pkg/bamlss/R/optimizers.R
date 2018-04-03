@@ -462,6 +462,8 @@ assign.df <- function(x, df, do.part = FALSE)
     if(x$fxsp)
       return(x)
   }
+  if(!is.null(x$no.assign.df))
+    return(x)
   df <- if(is.null(x$xt$df)) df else x$xt$df
   if(is.null(df)) {
     nc <- ncol(x$X)

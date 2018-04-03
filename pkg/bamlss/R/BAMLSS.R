@@ -4797,6 +4797,61 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #stop()
 ##print(dim(object$X))
 
+  if(is.null(object$xt$foldid))
+    object$xt$foldid <- sample(1:10, size = nrow(object$X), replace = TRUE)
+  if(is.null(object$xt$alpha))
+    object$xt$alpha <- 1
+  if(is.null(object$xt$nlambda))
+    object$xt$nlambda <- 100
+  if(is.null(object$xt$lambda.min.ratio))
+    object$xt$lambda.min.ratio <- 1e-20
+  if(is.null(object$xt$update))
+    object$xt$update <- bfit_iwls
+
+  if(!is.function(object$xt$update)) {
+    if(object$xt$update == "lasso") {
+      object$no.assign.df <- TRUE
+      object$update <- function(x, family, y, eta, id, weights, criterion, ...) {
+        args <- list(...)
+        peta <- family$map2par(eta)
+  
+        hess <- if(is.null(args$hess)) {
+          hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+        } else args$hess
+  
+        if(!is.null(weights))
+          hess <- hess * weights
+  
+        if(is.null(args$z)) {
+          score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    
+          ## Compute working observations.
+          z <- eta[[id]] + 1 / hess * score
+        } else z <- args$z
+  
+        ## Compute partial predictor.
+        eta[[id]] <- eta[[id]] - fitted(x$state)
+  
+        ## Compute reduced residuals.
+        e <- z - eta[[id]]
+
+        b <- cv.glmnet(x$X, e, foldid = object$xt$foldid, alpha = object$xt$alpha,
+          nlambda = object$xt$nlambda, standardize = FALSE, intercept = FALSE,
+          type.measure = "mse", lambda.min.ratio = object$xt$lambda.min.ratio,
+          weights = hess)
+
+        x$state$parameters <- set.par(x$state$parameters, as.numeric(b$lambda.min), "tau2")
+        cb <- coef(b, s = "lambda.min")[-1]
+        x$state$parameters <- set.par(x$state$parameters, cb, "b")
+        x$state$fitted.values <- x$X %*% cb
+        x$state$edf <- sum(abs(cb) > 1e-10)
+
+        return(x$state)    
+      }
+      object$xt$update <- NULL
+    }
+  }
+
   class(object) <- c("nnet.smooth", "mgcv.smooth")
 
   object
