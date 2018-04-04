@@ -4450,6 +4450,21 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
+  if(is.null(object$xt$alpha))
+    object$xt$alpha <- 1
+  if(is.null(object$xt$nlambda))
+    object$xt$nlambda <- 100
+  if(is.null(object$xt$lambda.min.ratio))
+    object$xt$lambda.min.ratio <- 1e-20
+  if(is.null(object$xt$update)) {
+    object$xt$update <- bfit_iwls
+  } else {
+    if(is.character(object$xt$update)) {
+      if(object$xt$update == "glmnet")
+        object$xt$update <- bfit_glmnet
+    }
+  }
+
   class(object) <- "lasso.smooth"
 
   object
@@ -4548,28 +4563,35 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
   if(is.null(r) & is.null(s)) {
     rint <- list(...)$rint
     sint <- list(...)$sint
-    if(is.null(rint))
-      rint <- c(0.01, 0.495)
-    if(is.null(sint))
-      sint <- c(1.01, 100000)
+    if(type == "sigmoid") {
+      if(is.null(rint))
+        rint <- c(0.01, 0.495)
+      if(is.null(sint))
+        sint <- c(1.01, 1000)
+    }
+    if(type == "gauss") {
+      if(is.null(rint))
+        rint <- c(0.01, 0.99)
+      if(is.null(sint))
+        sint <- c(1.01, 100)
+    }
     sint <- sort(sint)
     rint <- sort(rint)
-    rs <- expand.grid(
-      "r" = seq(rint[1], rint[2], length = ceiling(sqrt(nodes))),
-      "s" = seq(sint[1], sint[2], length = ceiling(sqrt(nodes)))
-    )
-    r <- rs$r
-    s <- rs$s
-    nodes <- nrow(rs)
+    r <- runif(nodes, rint[1], rint[2])
+    s <- runif(nodes, sint[1], sint[2])
   }
-  if(any(r >= 0.5))
-    r[r >= 0.5] <- 0.495
+  if(type == "sigmoid") {
+    if(any(r >= 0.5))
+      r[r >= 0.5] <- 0.495
+  }
+  if(type == "gauss") {
+    if(any(r >= 1))
+      r[r >= 1] <- 0.99
+  }
   if(any(r < 0))
     r[r < 0] <- 0.01
   if(any(s <= 1))
     s[s <= 1] <- 1.01
-#  r <- 0.49
-#  s <- 100000
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   type <- match.arg(type)
@@ -4655,6 +4677,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     nodes <- length(object$xt$weights)
   npen <- if(is.null(object$xt$npen)) 1 else object$xt$npen
   object$split <- if(is.null(object$xt$split)) FALSE else object$xt$split
+  dotake <- FALSE
 
   if(tp) {
     tpcall <- eval(parse(text = paste0("s(", paste0(colnames(object$X), collapse = ","), ",bs='tp',k=", nodes, ")")))
@@ -4665,8 +4688,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     term <- colnames(object$X)
     lab <- object$label
     take <- object$xt$take
+    update <- object$xt$update
     object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
     if(!is.null(take)) {
+      dotake <- TRUE
       object$X <- object$X[, take, drop = FALSE]
       object$S[[1]] <- object$S[[1]][take, take, drop = FALSE]
       object$xt$take <- take
@@ -4678,6 +4703,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$nnterm <- term
     object$label <- lab
     object$split <- split
+    object$xt$update <- update
     object$standardize01 <- object$xt$standardize01 <- FALSE
   } else {
     if(length(nodes) < 2) {
@@ -4688,6 +4714,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$X <- cbind(1, object$X)
 
     object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
+    type <- object$xt$afun
 
     if(is.character(object$xt$afun)) {
       object$afun <- switch(object$xt$afun,
@@ -4731,7 +4758,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
 
     if(is.null(object$xt$weights)) {
-      object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint)
+      object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type)
     } else {
       if(length(object$xt$weights) != nodes)
         stop("not enough weights supplied!")
@@ -4765,8 +4792,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       }
     }
 
-    if(!is.null(object$xt$take))
+    if(!is.null(object$xt$take)) {
+      dotake <- TRUE
       object$X <- object$X[, object$xt$take, drop = FALSE]
+    }
 
     pid <- sort(rep(1:npen, length.out = ncol(object$X)))
     object$S <- list()
@@ -4785,20 +4814,16 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$fx <- object$xt$fx <- FALSE
   object$xt$df <- 4
 
-  ##object$xt$force.center <- TRUE
-
-  ##object[c("X", "S")] <- X_center(object$X, object$S)
-
 #for(j in 1:ncol(object$X)) {
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
+#  Sys.sleep(0.3)
 #}
-#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
-##Sys.sleep(2)
 #stop()
+##plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
+##Sys.sleep(2)
+##stop()
 ##print(dim(object$X))
 
-  if(is.null(object$xt$foldid))
-    object$xt$foldid <- sample(1:10, size = nrow(object$X), replace = TRUE)
   if(is.null(object$xt$alpha))
     object$xt$alpha <- 1
   if(is.null(object$xt$nlambda))
@@ -4811,43 +4836,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(!is.function(object$xt$update)) {
     if(object$xt$update == "lasso") {
       object$no.assign.df <- TRUE
-      object$update <- function(x, family, y, eta, id, weights, criterion, ...) {
-        args <- list(...)
-        peta <- family$map2par(eta)
-  
-        hess <- if(is.null(args$hess)) {
-          hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
-        } else args$hess
-  
-        if(!is.null(weights))
-          hess <- hess * weights
-  
-        if(is.null(args$z)) {
-          score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
-    
-          ## Compute working observations.
-          z <- eta[[id]] + 1 / hess * score
-        } else z <- args$z
-  
-        ## Compute partial predictor.
-        eta[[id]] <- eta[[id]] - fitted(x$state)
-  
-        ## Compute reduced residuals.
-        e <- z - eta[[id]]
-
-        b <- cv.glmnet(x$X, e, foldid = object$xt$foldid, alpha = object$xt$alpha,
-          nlambda = object$xt$nlambda, standardize = FALSE, intercept = FALSE,
-          type.measure = "mse", lambda.min.ratio = object$xt$lambda.min.ratio,
-          weights = hess)
-
-        x$state$parameters <- set.par(x$state$parameters, as.numeric(b$lambda.min), "tau2")
-        cb <- coef(b, s = "lambda.min")[-1]
-        x$state$parameters <- set.par(x$state$parameters, cb, "b")
-        x$state$fitted.values <- x$X %*% cb
-        x$state$edf <- sum(abs(cb) > 1e-10)
-
-        return(x$state)    
-      }
+      object$update <- if(!dotake) bfit_iwls_glmnet else bfit_iwls
       object$xt$update <- NULL
     }
   }

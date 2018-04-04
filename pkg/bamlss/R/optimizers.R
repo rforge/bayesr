@@ -97,7 +97,10 @@ bamlss.engine.setup <- function(x, update = "iwls", propose = "iwlsC_gp",
                 update <- paste("bfit", update, sep = "_")
               update <- get(update)
             }
-            x$smooth.construct[[j]]$update <- update
+            if(is.null(x$smooth.construct[[j]]$is.model.matrix))
+              x$smooth.construct[[j]]$update <- update
+            else
+              x$smooth.construct[[j]]$update <- bfit_iwls
           }
           if(is.null(x$smooth.construct[[j]]$propose)) {
             if(is.character(propose)) {
@@ -1610,6 +1613,64 @@ bfit_iwls_Matrix <- function(x, family, y, eta, id, weights, criterion, ...)
   return(x$state)
 }
 
+
+bfit_glmnet <- function(x, family, y, eta, id, weights, criterion, ...)
+{
+  requireNamespace("glmnet")
+
+  args <- list(...)
+  peta <- family$map2par(eta)
+  
+  hess <- if(is.null(args$hess)) {
+    hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+  } else args$hess
+  
+  if(!is.null(weights))
+    hess <- hess * weights
+ 
+  if(is.null(args$z)) {
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    
+    ## Compute working observations.
+    z <- eta[[id]] + 1 / hess * score
+  } else z <- args$z
+  
+  ## Compute partial predictor.
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+  
+  ## Compute residuals.
+  e <- z - eta[[id]]
+
+  if(is.null(x$xt$alpha))
+    x$xt$alpha <- 1
+  if(is.null(x$xt$nlambda))
+    x$xt$nlambda <- 100
+  if(is.null(x$xt$lambda.min.ratio))
+    x$xt$lambda.min.ratio <- 1e-20
+
+  b <- glmnet::glmnet(x$X, e, alpha = x$xt$alpha,
+    nlambda = x$xt$nlambda, standardize = FALSE, intercept = FALSE,
+    lambda.min.ratio = x$xt$lambda.min.ratio,
+    weights = hess)
+
+  tLL <- b$nulldev - deviance(b)
+  k <- b$df
+  n <- b$nobs
+  IC <- switch(criterion,
+    "AICc" = -tLL + 2*k + 2*k*(k + 1)/(n - k - 1),
+    "BIC" = -tLL + k * log(n),
+    "AIC" = -tLL + 2 * k
+  )
+  i <- which.min(IC)
+
+  x$state$parameters <- set.par(x$state$parameters, as.numeric(b$lambda[i]), "tau2")
+  cb <- as.numeric(coef(b, s = b$lambda[i])[-1])
+  x$state$parameters <- set.par(x$state$parameters, cb, "b")
+  x$state$fitted.values <- x$X %*% cb
+  x$state$edf <- b$df[i]
+
+  return(x$state)
+}
 
 
 ## Updating based on optim.
