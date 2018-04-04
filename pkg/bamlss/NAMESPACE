@@ -36,7 +36,7 @@ importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "terms", "terms.formula", "time", "uniroot", "update",
   "var", "window", "median", "asOneSidedFormula", "ecdf",
   "pweibull", "qlogis", "rbeta", "rbinom", "rlnorm", "rpois",
-  "qgamma", "qlnorm", "qweibull", "prcomp")
+  "qgamma", "qlnorm", "qweibull", "prcomp", "deviance")
 importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
   "write.table", "combn")

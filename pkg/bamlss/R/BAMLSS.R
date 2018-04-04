@@ -4836,7 +4836,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(!is.function(object$xt$update)) {
     if(object$xt$update == "lasso") {
       object$no.assign.df <- TRUE
-      object$update <- if(!dotake) bfit_iwls_glmnet else bfit_iwls
+      object$update <- if(!dotake) bfit_glmnet else bfit_iwls
       object$xt$update <- NULL
     }
   }
