@@ -54,6 +54,7 @@ export(
   "bfit_iwls_Matrix",
   "bfit_lm",
   "bfit_optim",
+  "bfit_glmnet",
   "GMCMC",
   "GMCMC_iwls",
   "GMCMC_iwlsC",

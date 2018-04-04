@@ -6,6 +6,7 @@
 \alias{bfit_iwls_optim}
 \alias{bfit_lm}
 \alias{bfit_optim}
+\alias{bfit_glmnet}
 
 \title{
   Fit BAMLSS with Backfitting
@@ -33,6 +34,7 @@ bfit_iwls(x, family, y, eta, id, weights, criterion, ...)
 bfit_iwls_Matrix(x, family, y, eta, id, weights, criterion, ...)
 bfit_lm(x, family, y, eta, id, weights, criterion, ...)
 bfit_optim(x, family, y, eta, id, weights, criterion, ...)
+bfit_glmnet(x, family, y, eta, id, weights, criterion, ...)
 }
 
 \arguments{
