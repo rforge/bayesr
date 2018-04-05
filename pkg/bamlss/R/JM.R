@@ -168,7 +168,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       alpha_mu <- eval(parse(text = f_alpha_mu))
       alpha_mu$C <- C
       x$alpha$smooth.construct <- smoothCon(alpha_mu, data = data, knots = list(mu = k), 
-                                            absorb.cons = TRUE, n = nrow(data), scale=FALSE) 
+                                            absorb.cons = TRUE, n = nrow(data), scale.penalty=FALSE) 
     }
     if(fac){
       ## smooth function of mu per factor
@@ -176,7 +176,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       alpha_mu <- eval(parse(text = f_alpha_mu))
       alpha_mu$C <- C
       x$alpha$smooth.construct <- smoothCon(alpha_mu, data = data, knots = list(mu = k), 
-                                            absorb.cons = TRUE, n = nrow(data), scale=FALSE) 
+                                            absorb.cons = TRUE, n = nrow(data), scale.penalty=FALSE) 
       # insert factor again
       f_alpha_mu <- paste0(interaction_vars, " + s(mu, bs = \"ps\", by = ", interaction_vars, ", k = ", k_mu, ")")
     }
@@ -190,7 +190,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       alpha_mu <- eval(parse(text = f_alpha_mu))
       alpha_mu$C <- C
       x$alpha$smooth.construct <- smoothCon(alpha_mu, data = data, knots = list(mu = k), 
-                                            absorb.cons = FALSE, n = nrow(data), scale=FALSE) 
+                                            absorb.cons = FALSE, n = nrow(data), scale.penalty=FALSE) 
     }
     names(x$alpha$smooth.construct) <- alpha_mu$label
     formula$alpha$formula <- update(formula$alpha$formula, paste0("alpha ~ ", f_alpha_mu))
