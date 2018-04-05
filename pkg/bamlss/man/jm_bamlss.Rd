@@ -12,7 +12,7 @@
 
 \description{
   Family object to fit a flexible additive joint model for longitudinal and survival
-  data under a Bayesian approach as presented in Koehler et al. (2016). 
+  data under a Bayesian approach as presented in Koehler et al. (2017a, b). 
   All parts of the joint model can be specified as structured additive predictors. 
   See the details and examples.
 }
@@ -23,25 +23,24 @@ jm_bamlss(...)
 
 ## "bamlss.frame" transformer function
 ## to set up joint models.
-jm.transform(x, y, data, terms, knots, formula,
-  family, subdivisions = 25,
-  timedependent = c("lambda", "mu", "alpha", "dalpha"),
-  timevar = NULL, idvar = NULL, alpha = .Machine$double.eps,
-  mu = NULL, sigma = NULL, sparse = TRUE, ...)
-
+jm.transform(x, y, data, terms, knots, formula, family, subdivisions = 25,
+  timedependent = c("lambda", "mu", "alpha", "dalpha"), timevar = NULL, 
+  idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL, 
+  sparse = TRUE, interaction = FALSE, edf_alt = FALSE, start_mu = NULL, 
+  k_mu = 6, ...)
+                    
 ## Posterior mode optimizing engine.     
-jm.mode(x, y, start = NULL, weights = NULL,
-  offset = NULL, criterion = c("AICc", "BIC", "AIC"),
-  maxit = c(100, 1), nu = c("lambda" = 0.1, "gamma" = 0.1,
-    "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001,
-  ic.eps = 1e-08, nback = 40, verbose = TRUE,
-  digits = 4, ...)
+jm.mode(x, y, start = NULL, weights = NULL, offset = NULL, 
+  criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1), 
+  nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, 
+  "alpha" = 0.1, "dalpha" = 0.1),
+  update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, 
+  nback = 40, verbose = TRUE, digits = 4, ...)
 
 ## Sampler function.
-jm.mcmc(x, y, family, start = NULL, weights = NULL,
-  offset = NULL, n.iter = 1200, burnin = 200, thin = 1,
-  verbose = TRUE, digits = 4, step = 20, ...)
+jm.mcmc(x, y, family, start = NULL, weights = NULL, offset = NULL, 
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, 
+  step = 20, ...)
   
 ## Predict function, set to default in jm_bamlss().
 jm.predict(object, newdata,
@@ -80,8 +79,16 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
   \item{alpha}{Numeric, a starting value for the intercept of the association parameter alpha.}
   \item{mu}{Numeric, a starting value for the intercept of the mu parameter.}
   \item{sigma}{Numeric, a starting value for the intercept of the sigma parameter.}
-  \item{sparse}{Logical, should sparse matrix structures be used for updating and sampling
-    of mu parameter model terms?}
+  \item{sparse}{Logical, indicating if sparse matrix structures are used for updating and sampling
+    of mu parameter model terms.}
+  \item{interaction}{Logical, indicating if association is nonlinear in mu. See Details on the different
+    model specifications.}
+  \item{edf_alt}{Logical, indicating if an alternative computation of estimated degrees of freedom 
+    for penalized model terms should be used.}
+  \item{start_mu}{Starting values for the computation of mu. For estimating associations which are 
+    nonlinear in mu, knot placement is based on these starting values which can improve stability. }
+  \item{k_mu}{Number of knots for spline basis of association nonlinear in mu. Reducing this number
+    improves stability of the estimation.}
   \item{start}{A named numeric vector containing possible starting values, the names are based on
     function \code{\link{parameters}}.}
   \item{weights}{Currently not supported.}
@@ -139,14 +146,15 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
 }
 
 \details{
-We refer to the paper of Koehler et al. (2016) for details on the flexible
+We refer to the papers of Koehler et al. (2017a, b) for details on the flexible
 additive joint model. In short, we model the hazard of subject \eqn{i} an event at time
 \eqn{t} as
-\deqn{h_{i}(t) = \exp [\eta_{\lambda i}(t) + \eta_{\gamma i}+\eta_{\alpha i}(t) \cdot \eta_{\mu i}(t)]}
+\deqn{h_{i}(t)= \exp [\eta_{\lambda i}(t)+
+\eta_{\gamma i}+\eta_{\alpha i}(\eta_{\mu i}(t), t) ]}
 with predictor \eqn{\eta_{\lambda}} for all survival covariates that are time-varying or have a
 time-varying coefficient (including the log baseline hazard), predictor \eqn{\eta_{\gamma}} for
 baseline survival covariates, predictor \eqn{\eta_{\alpha}} representing the potentially
-time-varying association between the longitudinal marker \eqn{\eta_{\mu}} and the hazard. The
+time-varying or nonlinear association between the longitudinal marker \eqn{\eta_{\mu}} and the hazard. The
 longitudinal response \eqn{y_{ij}} at time points \eqn{t_{ij}} is modeled as
 \deqn{y_{ij}=\eta_{\mu i}(t_{ij})+e_{ij}} with independent normal errors \eqn{N(0, \exp[\eta_{\sigma i}(t_{ij})]^2)}. 
 
@@ -158,7 +166,7 @@ include smooth time-varying, random or spatial effects. For the Bayesian estimat
 we specify corresponding priors: For linear or parametric terms we use vague normal priors, smooth
 and random effect terms are regularized by placing generic multivariate normal priors on the
 coefficients and for anisotropic smooths, when multiple smoothing variance parameters are involved,
-more complex prior are in place (cf. Koehler et al., 2016). We use inverse Gamma
+more complex prior are in place (cf. Koehler et al., 2017a). We use inverse Gamma
 hyper-priors, i.e. IG(0.001, 0.001) to obtain an inverse Gamma full conditional for the variance
 parameters. We estimate the posterior mode by maximizing the log-posterior of the model using a
 Newton-Raphson procedure, the posterior mean is obtained via derivative-based Metropolis-Hastings
@@ -166,17 +174,24 @@ sampling. We recommend to use posterior mode estimates for a quick model assessm
 draw correct inferences from the model, posterior mean estimates should be computed. 
 We approximate integration in the survival part of the likelihood using trapezoidal rule. For
 posterior mode estimation.
-}
 
-\note{
-Please note that in order to make use of the sparse setup in fitting random slopes (cf. first example), no observation time should be exactly 0. 
+A variety specifications of the association \eqn{\eta_{\alpha i}(\eta_{\mu i}(t), t)} are possible with an 
+important distinction between associations which are nonlinear in \eqn{\eta_{\mu}}  for \code{interaction = TRUE} (Koehler et al. 2017b) or linear where \eqn{\eta_{\alpha i}(\eta_{\mu i}(t), t) = \eta_{\alpha i}(t)\eta_{\mu i}(t)} for \code{interaction = FALSE} (Koehler et al. 2017a).
+
+
 }
 
 \references{
-  Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2016). Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research. arXiv:1611.01485 [stat], http://arxiv.org/abs/1611.01485.
+  Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017a). Flexible Bayesian Additive Joint
+  Models with an Application to Type 1 Diabetes Research. Biometrical Journal, 59, 6, http://dx.doi.org/10.1002/bimj.201600224.
   
-  Umlauf N, Klein N, Zeileis A (2016). Bayesian Additive Models for Location
-    Scale and Shape (and Beyond). \emph{(to appear)}
+  Koehler M, Umlauf N, Greven S (2017b). Nonlinear association structures in flexible Bayesian additive 
+  joint models. arXiv:1708.06337 [stat], http://arxiv.org/abs/1708.06337.
+  
+  Umlauf, N., Klein, N., and Zeileis, A. (2017). BAMLSS: Bayesian Additive Models for Location,
+  Scale and Shape (and beyond). Working Paper, Faculty of Economics and Statistics, University of
+  Innsbruck, http://EconPapers.repec.org/RePEc:inn:wpaper:2017-05.
+
 }
 
 \seealso{
@@ -184,17 +199,15 @@ Please note that in order to make use of the sparse setup in fitting random slop
 }
 
 \examples{
-\dontrun{set.seed(123)
+\dontrun{
 
+set.seed(123)
 ## Simulate survival data
 ## with random intercepts/slopes and a linear effect of time,
 ## constant association alpha and no effect of the derivative
 d <- simJM(nsub = 200, long_setting = "linear", 
   alpha_setting = "constant",
   dalpha_setting = "zero", full = FALSE)
-  
-# remove 0s from the longitudinal time variable to allow sparse calculations
-d$obstime <- d$obstime - sqrt(.Machine$double.eps)
 
 ## Formula of the according joint model
 f <- list(
@@ -231,6 +244,7 @@ print(p)
 jm.survplot(b, id = 3)
 jm.survplot(b, id = 30)
 
+
 ## Simulate survival data
 ## with functional random intercepts and a nonlinear effect 
 ## of time, time-varying association alpha and no effect 
@@ -266,6 +280,39 @@ b_mean <- bamlss(f, data = d, family = "jm",
 
 ## Plot effects.
 plot(b_mean, model = "alpha")
+
+
+
+## Simulate survival data
+## with functional random intercepts and an association nonlinear in mu
+set.seed(123)
+d <- simJM(nsub = 300, long_setting = "functional", alpha_setting = "nonlinear", 
+           interaction = TRUE, full = FALSE)
+
+## Calculate longitudinal model to obtain starting values for mu
+long_df <- 7
+f_start <- y ~ ti(id, bs = "re") + ti(obstime, bs = "ps", k = long_df) + 
+               ti(id, obstime, bs = c("re", "ps"), k = c(nlevels(d$id), long_df)) + 
+               s(x2, bs = "ps")
+b_start <- bamlss(f_start, data = d, sampler = FALSE)
+mu <- predict(b_start)$mu
+
+## Fit joint model with nonlinear association (interaction = TRUE)
+f <- list(
+  Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
+  gamma ~ x1,
+  mu ~ ti(id, bs = "re") + ti(obstime, bs = "ps", k = long_df) + 
+       ti(id, obstime, bs = c("re", "ps"), k = c(nlevels(d$id), long_df)) + 
+       s(x2, bs = "ps"),
+  sigma ~ 1,
+  alpha ~ 1,
+  dalpha ~ -1
+)
+b <- bamlss(f, data = d, family = "jm", timevar = "obstime", idvar = "id", 
+            interaction = TRUE, start_mu = mu, 
+            n.iter = 6000, burnin = 2000, thin = 2)
+plot(b)
+samplestats(b$samples)
 }
 }
 

@@ -1553,6 +1553,18 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       bf$model.stats <- list("optimizer" = bf$model.stats)
   }
 
+  #!# adjust model.frame for joint model with interaction
+  args <- list(...)
+  if(args$interaction){
+    if(!is.null(bf$fitted.values$mu)){
+      ## use estimated trajectories for setting up plot results
+      bf$model.frame$mu <- bf$fitted.values$mu
+    } else {
+      ## use observed trajectories for setting up plot results
+      bf$model.frame$mu <- bf$y[[1]][, "obs"]
+    }
+  }
+  
   ## Compute results.
   if(is.function(functions$results))
     bf$results <- try(functions$results(bf, bamlss = TRUE,  ...))
@@ -3378,11 +3390,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           }
           sn <- sn[!grepl(":", sn, fixed = TRUE)]
         }
+        # to be checked if collision with other models
         if(!length(sn)) {
           sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
+          if(!length(sn)) {
+            sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+          }
         }
         if(ncol(X) > length(sn)) {
           sn2 <- gsub(paste(id, "p.", sep = "."), "", sn, fixed = TRUE)
+          if(grepl("model.matrix.", sn2)) sn2 <- gsub("model.matrix.", "", sn2, fixed = TRUE)
           X <- X[, sn2, drop = FALSE]
         }
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
