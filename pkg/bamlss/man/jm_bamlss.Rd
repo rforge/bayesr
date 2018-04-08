@@ -26,7 +26,7 @@ jm_bamlss(...)
 jm.transform(x, y, data, terms, knots, formula, family, subdivisions = 25,
   timedependent = c("lambda", "mu", "alpha", "dalpha"), timevar = NULL, 
   idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL, 
-  sparse = TRUE, interaction = FALSE, edf_alt = FALSE, start_mu = NULL, 
+  sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, 
   k_mu = 6, ...)
                     
 ## Posterior mode optimizing engine.     
@@ -81,7 +81,7 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
   \item{sigma}{Numeric, a starting value for the intercept of the sigma parameter.}
   \item{sparse}{Logical, indicating if sparse matrix structures are used for updating and sampling
     of mu parameter model terms.}
-  \item{interaction}{Logical, indicating if association is nonlinear in mu. See Details on the different
+  \item{nonlinear}{Logical, indicating if association is nonlinear in mu. See Details on the different
     model specifications.}
   \item{edf_alt}{Logical, indicating if an alternative computation of estimated degrees of freedom 
     for penalized model terms should be used.}
@@ -176,10 +176,10 @@ We approximate integration in the survival part of the likelihood using trapezoi
 posterior mode estimation.
 
 A variety specifications of the association \eqn{\eta_{\alpha i}(\eta_{\mu i}(t), t)} are possible with an 
-important distinction between associations which are nonlinear in \eqn{\eta_{\mu}}  for \code{interaction = TRUE} (Koehler et al. 2017b) or linear where \eqn{\eta_{\alpha i}(\eta_{\mu i}(t), t) = \eta_{\alpha i}(t)\eta_{\mu i}(t)} for \code{interaction = FALSE} (Koehler et al. 2017a).
-
-
+important distinction between associations which are nonlinear in \eqn{\eta_{\mu}}  for \code{nonlinear = TRUE} (Koehler et al. 2017b) or linear where \eqn{\eta_{\alpha i}(\eta_{\mu i}(t), t) = \eta_{\alpha i}(t)\eta_{\mu i}(t)} for \code{nonlinear = FALSE} (Koehler et al. 2017a).
 }
+
+\note{The indicator \code{nonlinear} for associations with are linear or nonlinear in \eqn{\eta_{\mu}} was named \code{interaction]} in earlier versions stages of the development.}
 
 \references{
   Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017a). Flexible Bayesian Additive Joint
@@ -225,7 +225,8 @@ f <- list(
 ## First, posterior mode estimates are computed using function
 ## jm.mode(), afterwards the sampler jm.mcmc() is started.
 b <- bamlss(f, data = d, family = "jm",
-  timevar = "obstime", idvar = "id")
+           timevar = "obstime", idvar = "id",
+           nonlinear = FALSE)
 
 ## Plot estimated effects.
 plot(b)
@@ -234,8 +235,7 @@ plot(b)
 ## at 12 time units after their last longitudinal measurement.
 ## The event probability is conditional on their survival
 ## up to their last observed measurement.
-nd <- subset(d, id \%in\% c(192, 127))
-p <- predict(b, type = "probabilities", dt = 12, FUN = c95)
+p <- predict(b, type = "probabilities", id = c(1, 2), dt = 12, FUN = c95)
 print(p)
 
 ## Plot of survival probabilities and
@@ -270,13 +270,15 @@ f <- list(
 
 ## Estimating posterior mode only using jm.mode()
 b_mode <- bamlss(f, data = d, family = "jm",
-  timevar = "obstime", idvar = "id", sampler = FALSE)
+                 timevar = "obstime", idvar = "id", 
+                 sampler = FALSE, nonlinear = FALSE)
 
 ## Estimating posterior means using jm.mcmc() 
 ##  with starting values generated from posterior mode 
 b_mean <- bamlss(f, data = d, family = "jm",
-  timevar = "obstime", idvar = "id", optimizer = FALSE,
-  start = parameters(b_mode), results = FALSE)
+                 timevar = "obstime", idvar = "id", optimizer = FALSE,
+                 start = parameters(b_mode), results = FALSE,
+                 nonlinear = FALSE)
 
 ## Plot effects.
 plot(b_mean, model = "alpha")
@@ -285,19 +287,19 @@ plot(b_mean, model = "alpha")
 
 ## Simulate survival data
 ## with functional random intercepts and an association nonlinear in mu
-set.seed(123)
+set.seed(234)
 d <- simJM(nsub = 300, long_setting = "functional", alpha_setting = "nonlinear", 
-           interaction = TRUE, full = FALSE)
+           nonlinear = TRUE, full = FALSE, probmiss = 0.9)
 
 ## Calculate longitudinal model to obtain starting values for mu
 long_df <- 7
 f_start <- y ~ ti(id, bs = "re") + ti(obstime, bs = "ps", k = long_df) + 
                ti(id, obstime, bs = c("re", "ps"), k = c(nlevels(d$id), long_df)) + 
                s(x2, bs = "ps")
-b_start <- bamlss(f_start, data = d, sampler = FALSE)
+b_start <- bamlss(f_start, data = d, sampler = FALSE, nonlinear = FALSE)
 mu <- predict(b_start)$mu
 
-## Fit joint model with nonlinear association (interaction = TRUE)
+## Fit joint model with nonlinear association (nonlinear = TRUE)
 f <- list(
   Surv2(survtime, event, obs = y) ~ s(survtime, bs = "ps"),
   gamma ~ x1,
@@ -309,7 +311,7 @@ f <- list(
   dalpha ~ -1
 )
 b <- bamlss(f, data = d, family = "jm", timevar = "obstime", idvar = "id", 
-            interaction = TRUE, start_mu = mu, 
+            nonlinear = TRUE, start_mu = mu, 
             n.iter = 6000, burnin = 2000, thin = 2)
 plot(b)
 samplestats(b$samples)

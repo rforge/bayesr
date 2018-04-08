@@ -12,11 +12,11 @@ jm_bamlss <- function(...)
     "names" = c("lambda", "gamma", "mu", "sigma", "alpha", "dalpha"),
     "links" = links,
     "transform" = function(x, jm.start = NULL, timevar = NULL, idvar = NULL, init.models = FALSE, 
-                           plot = FALSE, interaction = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...) {
+                           plot = FALSE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...) {
       rval <- jm.transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
                            formula = x$formula, family = x$family, data = x$model.frame,
                            jm.start = jm.start, timevar = timevar, idvar = idvar, 
-                           interaction = interaction, edf_alt = edf_alt, start_mu = start_mu, k_mu = k_mu, ...)
+                           nonlinear = nonlinear, edf_alt = edf_alt, start_mu = start_mu, k_mu = k_mu, ...)
       if(init.models) {
         x2 <- rval$x[c("mu", "sigma")]
         for(i in names(x2)) {
@@ -64,7 +64,7 @@ jm_bamlss <- function(...)
 jm.transform <- function(x, y, data, terms, knots, formula, family,
                          subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
                          timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
-                         sparse = TRUE, interaction = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...)
+                         sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...)
 {
   rn <- names(y)
   y0 <- y
@@ -115,7 +115,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   timevar <- yname
   attr(y, "timevar") <- c("lambda" = timevar, "mu" = timevar_mu)
   attr(y, "idvar") <- idvar
-  attr(y, "interaction") <- interaction
+  attr(y, "nonlinear") <- nonlinear
   attr(y, "edf_alt") <- edf_alt
   attr(y, "tp") <- tp <-  FALSE
   attr(y, "fac") <- fac <-  FALSE
@@ -123,8 +123,8 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   attr(y, "ids") <- data[[idvar]]
   dalpha <- has_pterms(x$dalpha$terms) | (length(x$dalpha$smooth.construct) > 0)
   
-  ## update alpha for interaction term
-  if(interaction){
+  ## update alpha for nonlinear term
+  if(nonlinear){
     if(is.null(start_mu)){
       yobs <- y[, "obs"]
       center <- median(yobs)
@@ -134,7 +134,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
       data$mu <- start_mu
     }
 
-    ## set up knots for spline in interaction
+    ## set up knots for spline in nonlinear
     nk <- k_mu - 2   # 2 : second order P-spline basis (cubic spline)
     bs_mu <- "ps"
     xu <- max(data$mu)
@@ -148,14 +148,14 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     ## constraint matrix for sum-to-zero constraint on a fixed grid
     C <- matrix(apply(modSplineDesign(k, ygrid, derivs = 0), 2, mean), nrow = 1)
 
-    interaction_vars <- all.vars(x$alpha$formula)[!all.vars(x$alpha$formula) %in% "alpha"]
+    nonlinear_vars <- all.vars(x$alpha$formula)[!all.vars(x$alpha$formula) %in% "alpha"]
     if(!is.null(x$alpha$smooth.construct)) {
       attr(y, "tp") <- tp <- TRUE
     } else {
-      if(length(interaction_vars) > 0){
-        if(length(interaction_vars) > 1) 
-           stop("Only one interaction covariate is allowed in alpha.\n Please adjust your model specification.")
-        if(!is.factor(data[[interaction_vars]])) 
+      if(length(nonlinear_vars) > 0){
+        if(length(nonlinear_vars) > 1) 
+           stop("Only one covariate is allowed in alpha for associations nonlinear in mu.\n Please adjust your model specification.")
+        if(!is.factor(data[[nonlinear_vars]])) 
           stop("Please provide the covariate in alpha as a factor or as a smooth term.")
         attr(y, "fac") <- fac <- TRUE
       }
@@ -172,13 +172,13 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     }
     if(fac){
       ## smooth function of mu per factor
-      f_alpha_mu <- paste0("s(mu, bs = \"ps\", by = ", interaction_vars, ", k = ", k_mu,  ")")
+      f_alpha_mu <- paste0("s(mu, bs = \"ps\", by = ", nonlinear_vars, ", k = ", k_mu,  ")")
       alpha_mu <- eval(parse(text = f_alpha_mu))
       alpha_mu$C <- C
       x$alpha$smooth.construct <- smoothCon(alpha_mu, data = data, knots = list(mu = k), 
                                             absorb.cons = TRUE, n = nrow(data), scale.penalty=FALSE) 
       # insert factor again
-      f_alpha_mu <- paste0(interaction_vars, " + s(mu, bs = \"ps\", by = ", interaction_vars, ", k = ", k_mu, ")")
+      f_alpha_mu <- paste0(nonlinear_vars, " + s(mu, bs = \"ps\", by = ", nonlinear_vars, ", k = ", k_mu, ")")
     }
     if(tp){
       ## tensor spline over mu and covariate: under construction, not tested yet
@@ -199,7 +199,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
 
   ## Recompute design matrixes for lambda, gamma, alpha.
   for(j in c("lambda", "gamma", "alpha", if(dalpha) "dalpha" else NULL)) {
-    if(interaction & (j =="alpha")){
+    if(nonlinear & (j =="alpha")){
       x[[j]]<- design.construct(terms, data = data[take_last, , drop = FALSE], knots = list(mu = k),
                                 model.matrix = TRUE, smooth.construct = TRUE, model = j,
                                 scale.x = FALSE, absorb.cons = TRUE, C = C)[[j]]
@@ -257,7 +257,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     x <- bamlss.engine.setup(x, ...)
 
   ## Remove intercept from lambda and alpha.
-  for (j in c("lambda", if(interaction) "alpha" else NULL)){
+  for (j in c("lambda", if(nonlinear) "alpha" else NULL)){
     if(!is.null(x[[j]]$smooth.construct$model.matrix)) {
       attr(terms[[j]], "intercept") <- 0
       cn <- colnames(x[[j]]$smooth.construct$model.matrix$X)
@@ -290,7 +290,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
 
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
-      if(ntd[i] %in% c("lambda", if(interaction) "alpha")) {
+      if(ntd[i] %in% c("lambda", if(nonlinear) "alpha")) {
         x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform2(x[[ntd[i]]]$smooth.construct$model.matrix,
                                                                            drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname,
                                                                            timevar_mu, take, timevar2 = timevar_mu, idvar = idvar, delete.intercept = TRUE)
@@ -365,7 +365,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
   ## Sparse matrix setup for mu/dmu.
   for(j in c("mu", if(dalpha) "dmu" else NULL)) {
     for(sj in seq_along(x[[j]]$smooth.construct)) {
-      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take, interaction = interaction)
+      x[[j]]$smooth.construct[[sj]] <- sparse_Matrix_setup(x[[j]]$smooth.construct[[sj]], sparse = sparse, take = take, nonlinear = nonlinear)
     }
   }
   
@@ -430,7 +430,7 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
     eta_timegrid <- if(dalpha) {
       eta_timegrid$lambda + eta_timegrid$alpha * eta_timegrid$mu + eta_timegrid$dalpha * eta_timegrid$dmu
     } else {
-      if(interaction){
+      if(nonlinear){
         eta_timegrid$lambda + eta_timegrid$alpha
       } else {
       eta_timegrid$lambda + eta_timegrid$alpha * eta_timegrid$mu
@@ -449,24 +449,24 @@ jm.transform <- function(x, y, data, terms, knots, formula, family,
 }
 
 
-sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take, interaction)
+sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take, nonlinear)
 {
   if(sparse & ((ncol(x$sparse.setup$crossprod) < (ncol(x$X) * 0.5)) | force)) {
       x$X <- Matrix(x$X, sparse = TRUE)
       x$XT <- Matrix(x$XT, sparse = TRUE)
       for(j in seq_along(x$S))
         x$S[[j]] <- Matrix(x$S[[j]], sparse = TRUE)
-    if(interaction){
-      x$update <- update_jm_mu_inter_Matrix
-      x$propose <- propose_jm_mu_inter_Matrix
+    if(nonlinear){
+      x$update <- update_jm_mu_nonlin_Matrix
+      x$propose <- propose_jm_mu_nonlin_Matrix
     } else{
       x$update <- update_jm_mu_Matrix
       x$propose <- propose_jm_mu_Matrix
     }
   } else {
-    if(interaction){
-      x$update <- update_jm_mu_inter
-      x$propose <- propose_jm_mu_inter
+    if(nonlinear){
+      x$update <- update_jm_mu_nonlin
+      x$propose <- propose_jm_mu_nonlin
     } else{
     x$update <- update_jm_mu
     x$propose <- propose_jm_mu_simple
@@ -539,8 +539,8 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
   ## Extract the status for individual i.
   status <- y[take, "status"]
   
-  ## Interaction setup
-  interaction <- attr(y, "interaction")
+  ## nonlinear setup
+  nonlinear <- attr(y, "nonlinear")
   tp <- attr(y, "tp") 
   fac <- attr(y, "fac")
   edf_alt <- attr(y, "edf_alt")
@@ -606,7 +606,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
     for(j in names(x$alpha$smooth.construct)) {
       b <- get.par(x$alpha$smooth.construct[[j]]$state$parameters, "b")
       # update alpha according to mu
-      if(interaction & !("model.matrix" %in% attr(x$alpha$smooth.construct[[j]], "class"))){
+      if(nonlinear & !("model.matrix" %in% attr(x$alpha$smooth.construct[[j]], "class"))){
         Xmu <- as.vector(t(eta_timegrid_mu))
         if(!tp) {
           X <- x$alpha$smooth.construct[[j]]$update(Xmu, "mu")    
@@ -629,13 +629,13 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
     eta$alpha <- eta_timegrid_alpha[, ncol(eta_timegrid_alpha)]
   } 
 
-  # for interaction effect eta_mu is within eta_alpha
-  if(interaction){
+  # for nonlinear effect eta_mu is within eta_alpha
+  if(nonlinear){
     eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
   } else{
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
   }
-  knots <- if(interaction){
+  knots <- if(nonlinear){
               if(tp){x$alpha$smooth.construct[[1]]$margin[[1]]$knots} 
               else {x$alpha$smooth.construct[[1]]$knots}} 
            else {NULL}
@@ -706,8 +706,8 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
         for(sj in seq_along(x$alpha$smooth.construct)) {
           # #checks#
           # cat("\n iteration: ", iter, ", predictor: alpha", ", term: ", sj)
-          if(interaction){
-            state <- update_jm_alpha_inter(x$alpha$smooth.construct[[sj]], eta, eta_timegrid,
+          if(nonlinear){
+            state <- update_jm_alpha_nonlin(x$alpha$smooth.construct[[sj]], eta, eta_timegrid,
                                            eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
                                            status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, edf_alt, 
                                            tp = tp, ...)
@@ -717,7 +717,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
                                    status, update.nu, width, criterion, get_LogPost, nobs, eps0_alpha < edf.eps, edf = edf, ...)
           }
           eta_timegrid_alpha <- eta_timegrid_alpha - x$alpha$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
-          if(interaction){
+          if(nonlinear){
             eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
           } else {
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -787,11 +787,11 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
                                                       eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
                                                       status, update.nu, width, criterion, get_LogPost, nobs, eps0_long < edf.eps, edf = edf,
                                                       dx = if(dalpha) x$dmu$smooth.construct[[sj]] else NULL, 
-                                                      xsmalpha = if(interaction) x$alpha$smooth.construct else NULL, 
-                                                      knots = knots, tp = if(interaction) tp else FALSE, fac = if(interaction) fac else FALSE, ...)
+                                                      xsmalpha = if(nonlinear) x$alpha$smooth.construct else NULL, 
+                                                      knots = knots, tp = if(nonlinear) tp else FALSE, fac = if(nonlinear) fac else FALSE, ...)
           eta_timegrid_mu <- eta_timegrid_mu - x$mu$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
 
-          if(interaction){
+          if(nonlinear){
             for (i in names(x$alpha$smooth.construct)){
               if(i != "model.matrix"){   # only smooth.constructs need to be updated
                 g_a <- get.par(x$alpha$smooth.construct[[i]]$state$parameters, "b")
@@ -831,7 +831,7 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
             if(min(eta_timegrid_mu) < -10 | max(eta_timegrid_alpha) > 20) browser()
           }
           
-          #!# Danger: dalpha and interaction not properly set up
+          #!# Danger: dalpha and nonlinear not properly set up
           if(dalpha & (sj %in% names(x$dmu$smooth.construct))) {
             state <- update_jm_dmu(x$dmu$smooth.construct[[sj]], x$mu$smooth.construct[[sj]])
             eta_timegrid_dmu <- eta_timegrid_dmu - x$dmu$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
@@ -875,9 +875,9 @@ jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
           # cat("\n iteration: ", iter, ", predictor: lambda", ", term: ", sj)
           state <- update_jm_lambda(x$lambda$smooth.construct[[sj]], eta, eta_timegrid,
                                     eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-                                    status, update.nu, width, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, interaction, ...)
+                                    status, update.nu, width, criterion, get_LogPost, nobs, eps0_surv < edf.eps, edf = edf, nonlinear, ...)
           eta_timegrid_lambda <- eta_timegrid_lambda - x$lambda$smooth.construct[[sj]]$state$fitted_timegrid + state$fitted_timegrid
-          if(interaction){
+          if(nonlinear){
             eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
           } else {
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -1104,7 +1104,7 @@ update_jm_gamma <- function(x, eta, eta_timegrid, int,
 
 update_jm_lambda <- function(x, eta, eta_timegrid,
                              eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
-                             status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, interaction, ...)
+                             status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, nonlinear, ...)
 {
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
@@ -1147,7 +1147,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
           ## Update additive predictors.
           fit_timegrid <- x$fit.fun_timegrid(g2)
           eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
-          if(interaction){
+          if(nonlinear){
             eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
           } else {
           eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -1165,7 +1165,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta$lambda <- eta$lambda - fitted(x$state) + fit
       eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
-      if(interaction){
+      if(nonlinear){
         eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
       } else {
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -1216,7 +1216,7 @@ update_jm_lambda <- function(x, eta, eta_timegrid,
       ## Update additive predictors.
       fit_timegrid <- x$fit.fun_timegrid(g2)
       eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
-      if(interaction){
+      if(nonlinear){
         eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
       } else {
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -1886,7 +1886,8 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 ## (5) Joint model MCMC.
 jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-                    n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, step = 20, ...)
+                    n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, 
+                    digits = 4, step = 20, ...)
 {
   ## Hard coded.
   fixed <- NULL
@@ -1934,8 +1935,8 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   ## Extract the status for individual i.
   status <- y[take, "status"]
   
-  ## Interaction setup
-  interaction <- attr(y, "interaction")
+  ## nonlinear setup
+  nonlinear <- attr(y, "nonlinear")
   tp <- attr(y, "tp") 
   fac <- attr(y, "fac")
   
@@ -1969,7 +1970,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     for(j in names(x$alpha$smooth.construct)) {
       b <- get.par(x$alpha$smooth.construct[[j]]$state$parameters, "b")
       # update alpha according to mu
-      if(interaction & !("model.matrix" %in% attr(x$alpha$smooth.construct[[j]], "class"))){
+      if(nonlinear & !("model.matrix" %in% attr(x$alpha$smooth.construct[[j]], "class"))){
         Xmu <- as.vector(t(eta_timegrid_mu))
         if(!tp) {
           X <- x$alpha$smooth.construct[[j]]$update(Xmu, "mu")    
@@ -2020,13 +2021,13 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
   }
   
-  # for interaction effect eta_mu is within eta_alpha
-  if(interaction){
+  # for nonlinear effect eta_mu is within eta_alpha
+  if(nonlinear){
     eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
   } else{
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
   }
-  knots <- if(interaction){
+  knots <- if(nonlinear){
     if(tp){x$alpha$smooth.construct[[1]]$margin[[1]]$knots} 
     else {x$alpha$smooth.construct[[1]]$knots}} 
   else {NULL}
@@ -2125,7 +2126,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         int0 <- width * (0.5 * (eeta[, 1] + eeta[, sub]) + apply(eeta[, 2:(sub - 1)], 1, sum))
       }
       
-      prop_fun <- get_jm_prop_fun(i, slice[i], interaction)
+      prop_fun <- get_jm_prop_fun(i, slice[i], nonlinear)
       # 3jump
       for(sj in names(x[[i]]$smooth.construct)) {
         
@@ -2134,8 +2135,8 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                             eta_timegrid_dmu, eta_timegrid_dalpha,
                             width, sub, nu, status, id = i, int0, nobs,
                             dx = if(dalpha & (i == "mu")) x[["dmu"]]$smooth.construct[[sj]] else NULL,
-                            xsmalpha = if(interaction & (i == "mu")) x$alpha$smooth.construct else NULL, 
-                            knots = if(interaction & (i == "mu")) knots else NULL, tp = tp, fac = fac, ...)
+                            xsmalpha = if(nonlinear & (i == "mu")) x$alpha$smooth.construct else NULL, 
+                            knots = if(nonlinear & (i == "mu")) knots else NULL, tp = tp, fac = fac, ...)
         ## If accepted, set current state to proposed state.
         accepted <- if(is.na(p.state$alpha)) FALSE else log(runif(1)) <= p.state$alpha
         
@@ -2150,7 +2151,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             if(i == "mu") {
               # cat("\n iteration: ", iter, ", predictor: ", i, ", term: ", sj)
               eta_timegrid_mu <- eta_timegrid_mu - x[[i]]$smooth.construct[[sj]]$state$fitted_timegrid + p.state$fitted_timegrid
-              if(interaction){
+              if(nonlinear){
                 for (j in names(x$alpha$smooth.construct)){
                   if(j != "model.matrix"){   # only smooth.constructs need to be updated
                     g_a <- get.par(x$alpha$smooth.construct[[j]]$state$parameters, "b")
@@ -2180,7 +2181,7 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             }
             if(i == "dalpha")
               eta_timegrid_dalpha <- eta_timegrid_dalpha - x[[i]]$smooth.construct[[sj]]$state$fitted_timegrid + p.state$fitted_timegrid
-            if(interaction){
+            if(nonlinear){
               eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
             } else {
             eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -2274,13 +2275,13 @@ jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
 
 ## Get proposal function.
-get_jm_prop_fun <- function(i, slice = FALSE, interaction = FALSE) {
+get_jm_prop_fun <- function(i, slice = FALSE, nonlinear = FALSE) {
   function(...) {
     prop_fun <- if(slice) {
       propose_jm_slice
     } else {
-      if(interaction & (i == "alpha")){
-        get("propose_jm_alpha_inter")
+      if(nonlinear & (i == "alpha")){
+        get("propose_jm_alpha_nonlin")
       } else {
       get(paste("propose_jm", i, sep = "_"))
     }
@@ -2300,7 +2301,7 @@ get_jm_prop_fun <- function(i, slice = FALSE, interaction = FALSE) {
 uni.slice_beta_logPost <- function(g, x, family, y = NULL, eta = NULL, id,
                                    eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
                                    eta_timegrid_dmu, eta_timegrid_dalpha,
-                                   width, sub, status, dx = NULL, interaction = FALSE, ...)
+                                   width, sub, status, dx = NULL, nonlinear = FALSE, ...)
 {
   if(id %in% c("lambda", "mu", "alpha", "dalpha")) {
     if(id == "lambda")
@@ -2315,7 +2316,7 @@ uni.slice_beta_logPost <- function(g, x, family, y = NULL, eta = NULL, id,
       eta_timegrid_alpha <- eta_timegrid_alpha - x$state$fitted_timegrid + x$fit.fun_timegrid(g)
     if(id == "dalpha")
       eta_timegrid_dalpha <- eta_timegrid_dalpha - x$state$fitted_timegrid + x$fit.fun_timegrid(g)
-    if(interaction){
+    if(nonlinear){
       eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
     } else {
     eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -2345,7 +2346,7 @@ uni.slice_tau2_logPost <- function(g, x, family, y = NULL, eta = NULL, id, ll = 
 propose_jm_slice <- function(x, y,
                              eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
                              eta_timegrid_dmu, eta_timegrid_dalpha,
-                             width, sub, nu, status, id, dx = NULL, interaction = FALSE, ...)
+                             width, sub, nu, status, id, dx = NULL, nonlinear = FALSE, ...)
 {
   for(j in seq_along(get.par(x$state$parameters, "b"))) {
     x$state$parameters <- uni.slice(x$state$parameters, x, family, y,
@@ -2353,7 +2354,7 @@ propose_jm_slice <- function(x, y,
                                     eta_timegrid_lambda = eta_timegrid_lambda, eta_timegrid_mu = eta_timegrid_mu,
                                     eta_timegrid_alpha = eta_timegrid_alpha, eta_timegrid_dmu = eta_timegrid_dmu,
                                     eta_timegrid_dalpha = eta_timegrid_dalpha, width = width, sub = sub, status = status,
-                                    dx = dx, interaction = interaction)
+                                    dx = dx, nonlinear = nonlinear)
   }
   
   g <- get.par(x$state$parameters, "b")
@@ -2393,7 +2394,7 @@ propose_jm_lambda <- function(x, y,
                               eta_timegrid_dmu, eta_timegrid_dalpha,
                               width, sub, nu, status, id, ...)
 {
-  interaction <- attr(y, "interaction")
+  nonlinear <- attr(y, "nonlinear")
   ## The time-dependent design matrix for the grid.
   X <- x$fit.fun_timegrid(NULL)
   
@@ -2433,7 +2434,7 @@ propose_jm_lambda <- function(x, y,
   ## Update additive predictors.
   fit_timegrid <- x$fit.fun_timegrid(g)
   eta_timegrid_lambda <- eta_timegrid_lambda - x$state$fitted_timegrid + fit_timegrid
-  if(interaction){
+  if(nonlinear){
     eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha + eta_timegrid_dalpha * eta_timegrid_dmu
   } else {
   eta_timegrid <- eta_timegrid_lambda + eta_timegrid_alpha * eta_timegrid_mu + eta_timegrid_dalpha * eta_timegrid_dmu
@@ -3388,16 +3389,16 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
 # simulate data
 ################################################################################
 simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
-                  long_setting = "functional", alpha_setting = if(interaction) "linear" else "constant", 
+                  long_setting = "functional", alpha_setting = if(nonlinear) "linear" else "constant", 
                   dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax=NULL,    
-                  seed=NULL, full=FALSE, file = NULL, interaction = FALSE, fac = FALSE){
+                  seed = NULL, full = FALSE, file = NULL, nonlinear = FALSE, fac = FALSE){
   
   if(is.null(tmax)){
     tmax <- max(times)
   }
   
-  if(interaction & alpha_setting == "nonlinear2") fac <- TRUE
-  if(interaction & fac & alpha_setting == "nonlinear") alpha_setting <- "nonlinear2"
+  if(nonlinear & alpha_setting == "nonlinear2") fac <- TRUE
+  if(nonlinear & fac & alpha_setting == "nonlinear") alpha_setting <- "nonlinear2"
   
   
   ## specify censoring function (aus CoxFlexBoost) changed into uniformly (as too much censoring)
@@ -3537,7 +3538,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
            "nonlinear2" = cos((time-33)/33))
   }
   
-  alpha_inter <- function(time, alpha_setting, x2, x3, r, long_df, b_set, long_setting){
+  alpha_nonlin <- function(time, alpha_setting, x2, x3, r, long_df, b_set, long_setting){
     switch(alpha_setting,
            "zero" = 0*time,
            "constant" = 0*time + 1,
@@ -3551,7 +3552,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   }
   
   # used only for setting up final data
-  alpha_inter_simple <- function(alpha_setting, x3, mu){
+  alpha_nonlin_simple <- function(alpha_setting, x3, mu){
     switch(alpha_setting,
            "zero" = 0,
            "constant" = 1,
@@ -3577,22 +3578,20 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   }
   
   ## baseline covariate
-  gamma <-  function(x1, interaction = TRUE){
-    if(!interaction){
-      sin(x1)
-    }
-    if(interaction){
+  gamma <-  function(x1, nonlinear = TRUE){
+    if(nonlinear){
       # 0.3*x1 + 0.1*(1 - x3) 
       0.3*x1 
+    } else {
+      sin(x1)
+    }
   }
   
-  }
-  
-  ## full hazard (including interaction effect)
+  ## full hazard (including nonlinear effect)
   hazard <-  function(time, x, r, ...){
-    if(interaction){
-      exp(lambda(time) + gamma(x[1], interaction) + 
-            alpha_inter(time, alpha_setting, x[2], x[3], r, long_df, b_set, long_setting) +
+    if(nonlinear){
+      exp(lambda(time) + gamma(x[1], nonlinear) + 
+            alpha_nonlin(time, alpha_setting, x[2], x[3], r, long_df, b_set, long_setting) +
             dalpha(time, dalpha_setting)*dmu(time, r, long_df, b_set, long_setting))
     } else{
     exp(lambda(time) + gamma(x[1]) + 
@@ -3630,26 +3629,26 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   # gamma and lambda have only joint intercept which is estimated in predictor gamma
   data_long$mu <- mu(data_long$obstime, data_long$x2, r[id,], long_df, b_set, long_setting)
   f_lambda <- lambda(data_long$survtime)[i]   
-  f_gamma <- gamma(data_long$x1, interaction)[i]
+  f_gamma <- gamma(data_long$x1, nonlinear)[i]
   data_long$lambda <- lambda(data_long$survtime) - mean(f_lambda)
   data_grid$lambda <- lambda(data_grid$survtime) - mean(f_lambda)
-  if(interaction){
-    data_long$gamma <- gamma(data_long$x1, interaction) + mean(f_lambda)
+  if(nonlinear){
+    data_long$gamma <- gamma(data_long$x1, nonlinear) + mean(f_lambda)
     data_long$surv_mu <- mu(data_long$survtime, data_long$x2, r[id,], long_df, b_set, long_setting)
-    data_long$alpha <- alpha_inter_simple(alpha_setting, data_long$x3, data_long$surv_mu)
-    data_long$alpha_l <- alpha_inter_simple(alpha_setting, data_long$x3, data_long$mu)
+    data_long$alpha <- alpha_nonlin_simple(alpha_setting, data_long$x3, data_long$surv_mu)
+    data_long$alpha_l <- alpha_nonlin_simple(alpha_setting, data_long$x3, data_long$mu)
     data_grid$mu <- seq(-0.5, 2.5, length.out = nrow(data_grid))
     if(fac){
-      data_grid$alpha1 <- alpha_inter_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
-      data_grid$alpha0 <- alpha_inter_simple(alpha_setting, rep(0, nrow(data_grid)), data_grid$mu)
+      data_grid$alpha1 <- alpha_nonlin_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
+      data_grid$alpha0 <- alpha_nonlin_simple(alpha_setting, rep(0, nrow(data_grid)), data_grid$mu)
     } else {
-      data_grid$alpha <- alpha_inter_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
+      data_grid$alpha <- alpha_nonlin_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
     }
 
   } else {
     data_long$alpha <- alpha(data_long$survtime, alpha_setting)
     data_grid$alpha <- alpha(data_grid$survtime, alpha_setting)
-    data_long$gamma <- gamma(data_long$x1, interaction) + mean(f_lambda)
+    data_long$gamma <- gamma(data_long$x1, nonlinear) + mean(f_lambda)
     data_long$alpha <- sin(data_long$mu - 2) + 1
   }
   
@@ -3672,9 +3671,9 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   
   ygrid <- quantile(data_long$y, probs = seq(0.025, 0.975, 0.025))
   # adjust predictions with constraint median(y)
-  if(interaction){
+  if(nonlinear){
    # constraint acts on group 0. to be checked
-    alpha_constraint <- mean(alpha_inter_simple(alpha_setting, 0, ygrid))
+    alpha_constraint <- mean(alpha_nonlin_simple(alpha_setting, 0, ygrid))
     data_long$alpha <- data_long$alpha - alpha_constraint
     data_long$alpha_l <- data_long$alpha_l - alpha_constraint
     if(fac){
@@ -3756,6 +3755,10 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
                        dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
                        chunks = 1, verbose = FALSE,  ...)
 {
+  if(attr(object$y[[1]], "nonlinear") & (type %in% c("probabilities", "cumhaz"))){
+    stop("Computation of cumulative hazard and survival probabilities are currently 
+          under construction for associations which are nonlinear in mu.")
+  }
   if(missing(dt)) dt <- 0
   if(missing(steps)) steps <- 1
   if(missing(id)) i <- NULL else i <- id
@@ -3786,7 +3789,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   }
   
   calculate_mu <- FALSE
-  if(attr(object$y[[1]], "interaction") &                            # only if interaction effect
+  if(attr(object$y[[1]], "nonlinear") &                            # only if nonlinear effect
      (("alpha" %in% list(...)$model) | is.null(list(...)$model)) & # only if alpha amongst predicted effects
      (is.null(newdata)|is.null(newdata$mu))                        # only if mu is not explicitely specified in newdata
   ){
@@ -3873,7 +3876,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
                                                             nsamps, dsurv, env, timevar["lambda"], timegrid,
                                                             drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
                                                             type = 2))
-    #!# Todo: Fix prediction for interaction
+    #!# Todo: Fix prediction for nonlinear
     pred_mu <- with(pred.setup, .predict.bamlss.surv.td("mu",
                                                         object$x$mu$smooth.construct, samps, enames$mu, intercept,
                                                         nsamps, dsurv, env, timevar["mu"], timegrid,
@@ -3896,7 +3899,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
                                                            drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
                                                            derivMat = TRUE))
     }
-    if(attr(object$y[[1]], "interaction")){
+    if(attr(object$y[[1]], "nonlinear")){
       eta_timegrid <- if(dalpha) {
         pred_lambda + pred_alpha + pred_dalpha * pred_dmu
       } else {
@@ -3907,6 +3910,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
       pred_lambda + pred_alpha * pred_mu + pred_dalpha * pred_dmu
     } else {
       pred_lambda + pred_alpha * pred_mu
+      }
     }
 
     if(loglik) {
@@ -4042,7 +4046,6 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
   }
   
   return(probs)
-  }
 }
 
 
@@ -4063,9 +4066,15 @@ jm.survplot <- function(object, id = 1, dt = NULL, steps = 10,
   ii <- mf[[idvar]] == i
   
   tmax <- max(mf[[timevar["mu"]]][ii])
+  tmax_model <- max(mf[[timevar["lambda"]]])
   if(is.null(dt))
     dt <- 0.4 * tmax
   maxtime <- tmax + dt
+  if(maxtime > tmax_model){
+    maxtime <- tmax_model
+    dt <- maxtime - tmax
+  }
+    
   time <- seq(tmax, maxtime, length.out = steps)
   
   if(all(time == time[1])) {
@@ -4291,7 +4300,7 @@ sm_time_transform2 <- function(x, data, grid, yname, timevar, take, derivMat = F
 }
 
 
-update_jm_alpha_inter <- function(x, eta, eta_timegrid,
+update_jm_alpha_nonlin <- function(x, eta, eta_timegrid,
                                   eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
                                   status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, edf_alt = FALSE, tp = FALSE, ...)
 {
@@ -4443,7 +4452,7 @@ update_jm_alpha_inter <- function(x, eta, eta_timegrid,
   return(x$state)
 }
 
-propose_jm_alpha_inter <- function(x, y,
+propose_jm_alpha_nonlin <- function(x, y,
                                    eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
                                    eta_timegrid_dmu, eta_timegrid_dalpha,
                                    width, sub, nu, status, id, tp = FALSE, fac = FALSE, ...)
@@ -4616,7 +4625,7 @@ constrain <- function(sm, X) {
   X
 }
 
-update_jm_mu_inter <- function(x, y, eta, eta_timegrid,
+update_jm_mu_nonlin <- function(x, y, eta, eta_timegrid,
                                eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
                                status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf,
                                dx = NULL, xsmalpha = NULL, knots = NULL, tp = FALSE, fac = FALSE, ...)
@@ -4845,7 +4854,7 @@ update_jm_mu_inter <- function(x, y, eta, eta_timegrid,
   return(x$state)
 }
 
-update_jm_mu_inter_Matrix <- function(x, y, eta, eta_timegrid,
+update_jm_mu_nonlin_Matrix <- function(x, y, eta, eta_timegrid,
                                       eta_timegrid_lambda, eta_timegrid_alpha, eta_timegrid_mu, eta_timegrid_dalpha, eta_timegrid_dmu,
                                       status, update.nu, width, criterion, get_LogPost, nobs, do.optim2, edf, 
                                       dx = NULL, xsmalpha = NULL, knots = NULL, tp = FALSE, fac = FALSE, ...)
@@ -5084,7 +5093,7 @@ rowTensorProduct <- function(X1,X2)
   ))
 }
 
-propose_jm_mu_inter <- function(x, y,
+propose_jm_mu_nonlin <- function(x, y,
                                 eta, eta_timegrid, eta_timegrid_lambda, eta_timegrid_mu, eta_timegrid_alpha,
                                 eta_timegrid_dmu, eta_timegrid_dalpha,
                                 width, sub, nu, status, id, dx = NULL, 
@@ -5293,7 +5302,7 @@ propose_jm_mu_inter <- function(x, y,
 }
 
 
-propose_jm_mu_inter_Matrix <- function(x, y,
+propose_jm_mu_nonlin_Matrix <- function(x, y,
                                        eta, eta_timegrid, eta_timegrid_lambda, 
                                        eta_timegrid_mu, eta_timegrid_alpha,
                                        eta_timegrid_dmu, eta_timegrid_dalpha,
@@ -5597,7 +5606,7 @@ propose_jm_mu_inter_Matrix <- function(x, y,
   return(x$state)
 }
 
-propose_jm_mu_inter_Matrix_block <- function(x, y,
+propose_jm_mu_nonlin_Matrix_block <- function(x, y,
                                        eta, eta_timegrid, eta_timegrid_lambda, 
                                        eta_timegrid_mu, eta_timegrid_alpha,
                                        eta_timegrid_dmu, eta_timegrid_dalpha,

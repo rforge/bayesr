@@ -1553,9 +1553,9 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       bf$model.stats <- list("optimizer" = bf$model.stats)
   }
 
-  #!# adjust model.frame for joint model with interaction
+  #!# adjust model.frame for joint model with nonlinear
   args <- list(...)
-  if(args$interaction){
+  if(args$nonlinear){
     if(!is.null(bf$fitted.values$mu)){
       ## use estimated trajectories for setting up plot results
       bf$model.frame$mu <- bf$fitted.values$mu
