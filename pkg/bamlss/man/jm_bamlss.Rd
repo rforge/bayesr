@@ -225,8 +225,7 @@ f <- list(
 ## First, posterior mode estimates are computed using function
 ## jm.mode(), afterwards the sampler jm.mcmc() is started.
 b <- bamlss(f, data = d, family = "jm",
-           timevar = "obstime", idvar = "id",
-           nonlinear = FALSE)
+           timevar = "obstime", idvar = "id")
 
 ## Plot estimated effects.
 plot(b)
@@ -271,14 +270,13 @@ f <- list(
 ## Estimating posterior mode only using jm.mode()
 b_mode <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", 
-                 sampler = FALSE, nonlinear = FALSE)
+                 sampler = FALSE)
 
 ## Estimating posterior means using jm.mcmc() 
 ##  with starting values generated from posterior mode 
 b_mean <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", optimizer = FALSE,
-                 start = parameters(b_mode), results = FALSE,
-                 nonlinear = FALSE)
+                 start = parameters(b_mode), results = FALSE)
 
 ## Plot effects.
 plot(b_mean, model = "alpha")
@@ -296,7 +294,7 @@ long_df <- 7
 f_start <- y ~ ti(id, bs = "re") + ti(obstime, bs = "ps", k = long_df) + 
                ti(id, obstime, bs = c("re", "ps"), k = c(nlevels(d$id), long_df)) + 
                s(x2, bs = "ps")
-b_start <- bamlss(f_start, data = d, sampler = FALSE, nonlinear = FALSE)
+b_start <- bamlss(f_start, data = d, sampler = FALSE)
 mu <- predict(b_start)$mu
 
 ## Fit joint model with nonlinear association (nonlinear = TRUE)

@@ -3389,7 +3389,7 @@ param_time_transform2 <- function (x, formula, data, grid, yname, timevar, take,
 # simulate data
 ################################################################################
 simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
-                  long_setting = "functional", alpha_setting = if(nonlinear) "linear" else "constant", 
+                  long_setting = "functional", alpha_setting = if(nonlinear) "linear" else "nonlinear", 
                   dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax=NULL,    
                   seed = NULL, full = FALSE, file = NULL, nonlinear = FALSE, fac = FALSE){
   
@@ -3649,7 +3649,6 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     data_long$alpha <- alpha(data_long$survtime, alpha_setting)
     data_grid$alpha <- alpha(data_grid$survtime, alpha_setting)
     data_long$gamma <- gamma(data_long$x1, nonlinear) + mean(f_lambda)
-    data_long$alpha <- sin(data_long$mu - 2) + 1
   }
   
   data_long$dmu <- dmu(data_long$obstime, r[id,], long_df, b_set, long_setting)
@@ -3686,7 +3685,7 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     data_long$alpha_constraint <- alpha_constraint
   } 
   
-  if(full==TRUE){
+  if(full){
     d <- list(data=data_long, data_grid = data_grid, data_full = data_full)
   } else {
     d <- data_long
@@ -3755,7 +3754,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
                        dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
                        chunks = 1, verbose = FALSE,  ...)
 {
-  if(attr(object$y[[1]], "nonlinear") & (type %in% c("probabilities", "cumhaz"))){
+  if(attr(object$y[[1]], "nonlinear") & any(type %in% c("probabilities", "cumhaz"))){
     stop("Computation of cumulative hazard and survival probabilities are currently 
           under construction for associations which are nonlinear in mu.")
   }
@@ -3869,33 +3868,33 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
     
     pred_gamma <- with(pred.setup, .predict.bamlss("gamma",
                                                    object$x$gamma, samps, enames$gamma, intercept,
-                                                   nsamps, dsurv, env))
+                                                   nsamps, dsurv))
     
     pred_lambda <- with(pred.setup, .predict.bamlss.surv.td("lambda",
                                                             object$x$lambda$smooth.construct, samps, enames$lambda, intercept,
-                                                            nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                            nsamps, dsurv, timevar["lambda"], timegrid,
                                                             drop.terms.bamlss(object$x$lambda$terms, sterms = FALSE, keep.response = FALSE),
                                                             type = 2))
     #!# Todo: Fix prediction for nonlinear
     pred_mu <- with(pred.setup, .predict.bamlss.surv.td("mu",
                                                         object$x$mu$smooth.construct, samps, enames$mu, intercept,
-                                                        nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                        nsamps, dsurv, timevar["mu"], timegrid,
                                                         drop.terms.bamlss(object$x$mu$terms, sterms = FALSE, keep.response = FALSE)))
     
     pred_alpha <- with(pred.setup, .predict.bamlss.surv.td("alpha",
                                                            object$x$alpha$smooth.construct, samps, enames$alpha, intercept,
-                                                           nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                           nsamps, dsurv, timevar["lambda"], timegrid,
                                                            drop.terms.bamlss(object$x$alpha$terms, sterms = FALSE, keep.response = FALSE)))
     
     if(dalpha) {
       pred_dalpha <- with(pred.setup, .predict.bamlss.surv.td("dalpha",
                                                               object$x$dalpha$smooth.construct, samps, enames$dalpha, intercept,
-                                                              nsamps, dsurv, env, timevar["lambda"], timegrid,
+                                                              nsamps, dsurv, timevar["lambda"], timegrid,
                                                               drop.terms.bamlss(object$x$dalpha$terms, sterms = FALSE, keep.response = FALSE)))
       
       pred_dmu <- with(pred.setup, .predict.bamlss.surv.td("dmu",
                                                            object$x$dmu$smooth.construct, samps, enames$dmu, intercept,
-                                                           nsamps, dsurv, env, timevar["mu"], timegrid,
+                                                           nsamps, dsurv, timevar["mu"], timegrid,
                                                            drop.terms.bamlss(object$x$dmu$terms, sterms = FALSE, keep.response = FALSE),
                                                            derivMat = TRUE))
     }
