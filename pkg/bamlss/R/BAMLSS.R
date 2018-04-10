@@ -1555,13 +1555,15 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
 
   #!# adjust model.frame for joint model with nonlinear
   args <- list(...)
-  if(args$nonlinear){
-    if(!is.null(bf$fitted.values$mu)){
-      ## use estimated trajectories for setting up plot results
-      bf$model.frame$mu <- bf$fitted.values$mu
-    } else {
-      ## use observed trajectories for setting up plot results
-      bf$model.frame$mu <- bf$y[[1]][, "obs"]
+  if(!is.null(args$nonlinear)) {
+    if(args$nonlinear) {
+      if(!is.null(bf$fitted.values$mu)){
+        ## use estimated trajectories for setting up plot results
+        bf$model.frame$mu <- bf$fitted.values$mu
+      } else {
+        ## use observed trajectories for setting up plot results
+        bf$model.frame$mu <- bf$y[[1]][, "obs"]
+      }
     }
   }
   
