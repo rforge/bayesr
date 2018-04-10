@@ -995,6 +995,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     fcall <- formula$call
     fcall[[1L]] <- quote(bamlss.model.frame)
     fcall[names(nargs)] <- nargs
+    formula$formula <- as.formula(formula$formula)
     env <- environment(formula$formula)
     if(is.null(env))
       env <- parent.frame()
@@ -1309,7 +1310,10 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
             tpar <- c(tpar1, tpar2)
           } else {
             nfill <- if(is.null(x[[i]]$smooth.construct[[k]]$special.npar)) {
-              ncol(x[[i]]$smooth.construct[[k]]$X)
+              if(is.null(dim(x[[i]]$smooth.construct[[k]]$X)))
+                x[[i]]$smooth.construct[[k]]$X.dim
+              else
+                ncol(x[[i]]$smooth.construct[[k]]$X)
             } else x[[i]]$smooth.construct[[k]]$special.npar
             tpar <- rep(fill[1], nfill)
             cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
@@ -1597,8 +1601,8 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     }
     bf$y <- NULL
     bf$fitted.values <- NULL
-    attr(bf$formula, ".Environment") <- NULL
-    attr(bf$terms, ".Environment") <- NULL
+    bf$formula <- as.character(bf$formula)
+    bf$terms <- as.character(bf$terms)
   }
 
   bf$call <- match.call()
@@ -1608,6 +1612,53 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   bf
 }
 
+as.character.bamlss.formula <- as.character.bamlss.terms <- function(x, ...)
+{
+  if(inherits(x, "bamlss.formula.character"))
+    return(x)
+  for(i in seq_along(x)) {
+    if(!is.null(names(x[[i]]))) {
+      if(all(c("formula", "fake.formula") %in% names(x[[i]]))) {
+        x[[i]]$formula <- deparse(x[[i]]$formula)
+        x[[i]]$fake.formula <- deparse(x[[i]]$fake.formula)
+      } else {
+        x[[i]] <- as.character.bamlss.formula(x[[i]])
+      }
+    }
+  }
+  attr(x, ".Environment") <- capture.output(attr(x, ".Environment"))
+  class(x) <- c("bamlss.formula.character", "list")
+  return(x)
+}
+
+formula.bamlss.formula.character <- function(x, ...)
+{
+  if(inherits(x, "bamlss.formula"))
+    return(x)
+  env <- attr(x, ".Environment")
+  env <- if(grepl("globalenv", env, ignore.case = TRUE)) .GlobalEnv else NULL
+  for(i in seq_along(x)) {
+    if(!is.null(names(x[[i]]))) {
+      if(all(c("formula", "fake.formula") %in% names(x[[i]]))) {
+        x[[i]]$formula <- as.formula(x[[i]]$formula, env = env)
+        x[[i]]$fake.formula <- as.formula(x[[i]]$fake.formula)
+      } else {
+        x[[i]] <- formula.bamlss.formula.character(x[[i]], ...)
+      }
+    }
+  }
+  class(x) <- c("bamlss.formula", "list")
+  attr(x, ".Environment") <- env
+  return(x)
+}
+
+formula.bamlss.formula <- function(x, ...)
+{
+  if(inherits(x, "bamlss.formula"))
+    return(x)
+  if(inherits(x, "bamlss.formula.character"))
+    return(formula(x))
+}
 
 ## Basic engine setup transformer.
 bamlss.setup <- function(x, ...)
@@ -1636,6 +1687,11 @@ get.all.parnames <- function(x, rename.p = TRUE)
 samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FALSE, ...)
 {
   if(inherits(samples, "bamlss")) {
+    if(inherits(samples$formula, "bamlss.formula.character")) {
+      samples$x <- design.construct(samples)
+      samples$formula <- as.formula(samples$formula)
+      samples$y <- model.frame(samples)[, attr(samples$formula, "response.name")]
+    }
     if(is.null(samples$samples))
       stop("no samples in 'bamlss' object!")
     x <- if(is.null(samples$x)) smooth.construct(samples) else samples$x
@@ -1804,6 +1860,7 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
       return(formula$model.frame)
     fcall <- formula$call
     fcall[[1L]] <- quote(bamlss.model.frame)
+    formula$formula <- as.formula(formula$formula)
     env <- environment(formula$formula)
     if(is.null(env))
       env <- parent.frame()
@@ -2524,6 +2581,7 @@ response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE, 
 {
   rn <- NA
   if(inherits(formula, "bamlss.frame")) {
+    formula$formula <- as.formula(formula$formula)
     if(!is.null(formula$formula)) {
       if(!is.null(attr(formula$formula, "response.name")))
         return(attr(formula$formula, "response.name"))
@@ -3084,6 +3142,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE,
   cores = NULL, chunks = 1, ...)
 {
+  object$formula <- as.formula(object$formula)
+
   ## If data have been scaled (scale.d=TRUE)
   if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
     sc <- attr(object$model.frame, 'scale')
@@ -5337,6 +5397,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ok <- any(c("hist-resid", "qq-resid") %in% which)
 
+  x$formula <- as.formula(x$formula)
+
   if(length(which) > 1 | ok) {
     which <- which[which %in% c("hist-resid", "qq-resid")]
     res <- residuals.bamlss(x, ...)
@@ -5902,6 +5964,7 @@ delete.NULLs <- function(x.list)
 ## Model summary functions.
 summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, ...)
 {
+  object$formula <- as.formula(object$formula)
   if(!is.null(object$results)) {
     sfun <- try(get(paste("summary", class(object$results), sep = ".")), silent = TRUE)
     if(!inherits(sfun, "try-error"))
@@ -6206,7 +6269,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
 ## Extract model formulas.
 formula.bamlss.frame <- formula.bamlss <- function(x, model = NULL, ...)
 {
-  f <- model.terms(x$formula, model)
+  f <- model.terms(as.formula(x$formula), model)
   class(f) <- "bamlss.formula"
   return(f)
 }
@@ -6276,13 +6339,20 @@ print.bamlss.formula <- function(x, ...) {
           cat("h", j, ": ", sep = "")
           attr(x[[i]][[j]], "name") <- NULL
           attr(x[[i]][[j]]$formula, ".Environment") <- NULL
-          print(x[[i]][[j]]$formula, showEnv = FALSE)
+          if(is.character(x[[i]][[j]]$formula)) {
+            cat(x[[i]][[j]]$formula, "\n")
+          } else print(x[[i]][[j]]$formula, showEnv = FALSE)
         }
       } else {
         attr(x[[i]], "name") <- NULL
         attr(x[[i]]$formula, "name") <- NULL
         attr(x[[i]]$formula, ".Environment") <- NULL
-        if("formula" %in% names(x[[i]])) print(x[[i]]$formula, showEnv = FALSE) else print(x[[i]])
+        if("formula" %in% names(x[[i]])) {
+          if(is.character(x[[i]]$formula))
+            cat(x[[i]]$formula, "\n")
+          else
+            print(x[[i]]$formula, showEnv = FALSE)
+        } else print(x[[i]])
       }
       if(i < length(x))
       cat("\n")
@@ -6553,6 +6623,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
   if(is.null(x$x))
     stop("cannot compute results, 'x' object is missing, see design.construct()!")
+
+  x$formula <- as.formula(x$formula)
 
   what <- match.arg(what)
   if(!is.null(x$samples) & what == "samples") {
