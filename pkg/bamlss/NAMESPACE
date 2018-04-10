@@ -39,7 +39,7 @@ importFrom("stats", "acf", "as.formula", "coef", "complete.cases",
   "qgamma", "qlnorm", "qweibull", "prcomp", "deviance")
 importFrom("utils", "download.file", "flush.console", "getS3method",
   "head", "read.csv2", "read.table", "tail", "unzip",
-  "write.table", "combn")
+  "write.table", "combn", "capture.output")
 
 import("Matrix")
 
@@ -227,6 +227,10 @@ S3method("model.frame", "bamlss.frame")
 S3method("predict", "dl.bamlss")
 S3method("fitted", "dl.bamlss")
 S3method("residuals", "dl.bamlss")
+S3method("formula", "bamlss.formula.character")
+S3method("formula", "bamlss.formula")
+S3method("as.character", "bamlss.formula")
+S3method("as.character", "bamlss.terms")
 
 useDynLib(bamlss, .registration = TRUE)
 

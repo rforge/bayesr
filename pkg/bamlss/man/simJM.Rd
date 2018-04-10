@@ -17,13 +17,14 @@
 \usage{
 simJM(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   long_setting = "functional",
-  alpha_setting = if(interaction) "linear" else "constant", 
-  dalpha_setting = "zero", sigma = 0.3, long_df = 6,
-  tmax = NULL, seed = NULL, full = FALSE, file = NULL,
-  interaction = FALSE, fac = FALSE)
+  alpha_setting = if(nonlinear) "linear" else "nonlinear",
+  dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax = NULL,
+  seed = NULL, full = FALSE, file = NULL, nonlinear = FALSE,
+  fac = FALSE)
   
 rJM(hazard, censoring, x, r, 
-  subdivisions=1000, tmin=0, tmax, file=NULL, ...)
+  subdivisions = 1000, tmin = 0, tmax,
+  file = NULL, ...)
 }
 
 \arguments{
@@ -50,8 +51,8 @@ rJM(hazard, censoring, x, r,
     longitudinal data set without longitudinal missings (\code{TRUE}). }
   \item{file}{name of the data file the generated data set should be stored into
     (e.g., "simdata.RData") or NULL if the dataset should directly be returned in \R.}
-  \item{interaction}{If set to \code{TRUE}, an interaction between \code{alpha} and \code{mu}
-    is simulated.}
+  \item{nonlinear}{If set to \code{TRUE}, a nonlinear interaction between \code{alpha} and
+    \code{mu} is simulated.}
   \item{fac}{If set to \code{TRUE}, a smooth interaction that varies by a factor is simulated.}
   \item{hazard}{complete hazard function to specify the joint model. Time must be the
     first argument.}
