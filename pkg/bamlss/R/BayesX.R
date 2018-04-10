@@ -1394,12 +1394,12 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
         omegaseq <- seq(from = minaniso, to = 1 - minaniso, length = nraniso)
         omegaseq[5] <- 0.4099
         omegaprob <- rep(1 / nraniso, nraniso)
-        object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+        object$xt$theta <- try(hyperpar_mod2(object$X, object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000,
           type = toupper(object$xt$prior), lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
           k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
       } else {
-        object$xt$theta <- try(sdPrior::hyperpar_mod(object$X, object$S[[1]], NULL, A = object$C, c = 3,
+        object$xt$theta <- try(hyperpar_mod2(object$X, object$S[[1]], NULL, A = object$C, c = 3,
           alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
           lowrank=if(ncol(object$X) > 100) TRUE else FALSE,
           k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
@@ -1587,11 +1587,11 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         omegaseq[5] <- 0.4099
         omegaprob <- rep(1 / nraniso, nraniso)
 
-        object$xt$theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
+        object$xt$theta <- try(hyperpar_mod2(unique(object$X), object$margin[[1]]$S[[1]], object$margin[[2]]$S[[1]], A = object$C, c = 3,
           alpha = 0.1, omegaseq = omegaseq, omegaprob = omegaprob, R = 1000, type = toupper(object$xt$prior),
           lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
       } else {
-        object$xt$theta <- try(sdPrior::hyperpar_mod(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
+        object$xt$theta <- try(hyperpar_mod2(unique(object$X), object$S[[1]], NULL, A = object$C, c = 3,
           alpha = 0.1, omegaseq = 1, omegaprob = 1, R = 1000, type = toupper(object$xt$prior),
           lowrank=if(ncol(object$X) > 100) TRUE else FALSE, k = min(c(50, ceiling(0.5 * ncol(object$X))))), silent = TRUE)
       }
@@ -1673,3 +1673,11 @@ get_BayesXsrc <- function(dir = NULL, install = TRUE) {
 }
 
 
+hyperpar_mod2 <- function(...)
+{
+  requireNamespace("sdPrior")
+  if("hyperpar_mod" %in% ls(getNamespace("sdPrior"))) {
+    hpf <- eval(parse(text = paste0("sdPrior", ":", ":", "hyperpar_mod")))
+    return(hpf(...))
+  } else stop("cannot find hyperpar_mod() in sdPrior!")
+}
