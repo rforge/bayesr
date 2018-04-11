@@ -13,5 +13,6 @@ if ( file.exists(binary) ) {
   dest <- file.path(R_PACKAGE_DIR, libarch)
   dir.create(dest, recursive = TRUE, showWarnings = FALSE)
   file.copy(binary, dest, overwrite = TRUE)
+  file.remove(binary)
 }
 
