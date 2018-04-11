@@ -155,7 +155,7 @@ OBJS = \
 # LDFLAGS  += -lreadline -lcurses
 LDFLAGS  += -static-libgcc
 CPPFLAGS +=  -Ibayesxsrc/. -I"bayesxsrc/bib"  -I"bayesxsrc/alex"  -I"bayesxsrc/adaptiv"  -I"bayesxsrc/andrea"  -I"bayesxsrc/dag"  -I"bayesxsrc/graph"  -I"bayesxsrc/mcmc"  -I"bayesxsrc/psplines"  -I"bayesxsrc/samson"  -I"bayesxsrc/leyre"  -I"bayesxsrc/structadd"
-CPPFLAGS += -D__BUILDING_GNU -DTEMPL_INCL_DEF -DNO_TEMPLATE_FRIENDS -DINCLUDE_REML -DINCLUDE_MCMC -D_MSC_VER2
+CPPFLAGS += -D__BUILDING_GNU -DTEMPL_INCL_DEF -DNO_TEMPLATE_FRIENDS -DINCLUDE_REML -DINCLUDE_MCMC -D_MSC_VER2 -DBUILD_FOR_BAYESXSRC
 # CXXFLAGS += -O3 -ansi
 
 BayesX: ${OBJS}
