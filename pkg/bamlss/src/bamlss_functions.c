@@ -3912,7 +3912,7 @@ SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind)
 /* Helper function for bamlss_glogis_quantile */
 double bamlss_glogis_qfun( double p, double mu, double sigma, double alpha )
 {
-   double res, x;
+   double res;
    p   = pow(p,1. / alpha);
    res = mu - sigma * log( 1. / p - 1 );
    return res;
