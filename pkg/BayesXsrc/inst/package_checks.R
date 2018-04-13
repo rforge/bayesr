@@ -591,7 +591,7 @@ build_R <- function(...)
     'export F77="gfortran -fsanitize=address"',
     'export FC="gfortran -fsanitize=address"',
     './configure --prefix /var/tmp/BayesR/R-gcc/install --enable-R-shlib> /var/tmp/BayesR/R-gcc/log/build.out 2> /var/tmp/BayesR/R-gcc/log/build.err',
-    'make -j50 >> /var/tmp/BayesR/R-gcc/log/build.out 2>> /var/tmp/BayesR/R-gcc/log/build.err',
+    'make >> /var/tmp/BayesR/R-gcc/log/build.out 2>> /var/tmp/BayesR/R-gcc/log/build.err',
     'make install >> /var/tmp/BayesR/R-gcc/log/build.out 2>> /var/tmp/BayesR/R-gcc/log/build.err'
   )
   writeLines(script, "build.R-gcc.sh")
@@ -610,7 +610,7 @@ build_R <- function(...)
     'export CXX="clang++ -fsanitize=undefined,address -fno-sanitize=float-divide-by-zero -fno-omit-frame-pointer"',
     'export ASAN_SYMBOLIZER_PATH="/usr/lib/llvm-5.0/bin/llvm-symbolizer"',
     './configure --prefix /var/tmp/BayesR/R-clang/install --enable-R-shlib> /var/tmp/BayesR/R-clang/log/build.out 2> /var/tmp/BayesR/R-clang/log/build.err',
-    'make -j50 >> /var/tmp/BayesR/R-clang/log/build.out 2>> /var/tmp/BayesR/R-clang/log/build.err',
+    'make >> /var/tmp/BayesR/R-clang/log/build.out 2>> /var/tmp/BayesR/R-clang/log/build.err',
     'make install >> /var/tmp/BayesR/R-clang/log/build.out 2>> /var/tmp/BayesR/R-clang/log/build.err'
   )
   writeLines(script, "build.R-clang.sh")
