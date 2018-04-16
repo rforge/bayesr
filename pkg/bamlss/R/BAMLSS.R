@@ -506,8 +506,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             clj <- strsplit(clj, ".", fixed = TRUE)[[1]][1]
             if(clj == "random")
               clj <- "re"
+            if(clj == "nnet")
+              clj <- ""
             sl[jj] <- paste(sl[jj], clj, sep = ":")
             sl[jj] <- gsub(paste0("):", clj), paste0(",id='", clj, k, "')"), sl[jj], fixed = TRUE)
+            obj$smooth.construct[[jj]]$label <- sl[jj]
             k <- k + 1
           }
         }
@@ -1432,7 +1435,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
       foo[[nf[j]]] <- if(default_fun[j] != "no.transform") {
-        get(default_fun[j]) #, envir = asNamespace("bamlss"))
+        get(default_fun[j], envir = asNamespace("bamlss"))
       } else FALSE
     }
     if(is.list(foo[[nf[j]]])) {
@@ -4598,9 +4601,9 @@ n <- function(..., k = 10)
 {
   ret <- la(..., k = k)
   ret$label <- gsub("la(", "n(", ret$label, fixed = TRUE)
-  if(!is.null(node <- ret$xt$node)) {
+  if(!is.null(ret$xt$id)) {
     lab <- strsplit(ret$label, "")[[1]]
-    lab <- paste(c(lab[-length(lab)], paste(',node="', node, '")', sep = '')), collapse = "", sep = "")
+    lab <- paste(c(lab[-length(lab)], paste(",id='", ret$xt$id, "')", sep = "")), collapse = "", sep = "")
     ret$label <- lab
   }
   if(is.null(ret$xt$tp))
@@ -4772,8 +4775,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     if(!is.null(take)) {
       dotake <- TRUE
       object$X <- object$X[, take, drop = FALSE]
-      object$S[[1]] <- object$S[[1]][take, take, drop = FALSE]
+      nobs <- nrow(object$X)
+      object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+      object$S[[1]] <- diag(1, ncol(object$X)) ## crossprod(object$X) ##object$S[[1]][take, take, drop = FALSE]
       object$xt$take <- take
+    } else {
+      nobs <- nrow(object$X)
+      object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
     }
     object$dim <- dim
     object$tp <- tp
