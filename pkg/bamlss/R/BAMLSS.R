@@ -4771,6 +4771,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     lab <- object$label
     take <- object$xt$take
     update <- object$xt$update
+    nu <- apply(object$X, 2, function(x) { length(unique(x)) })
+    if(any(i <- nu < 3)) {
+      for(j in which(i)) {
+        object$X[, j] <- jitter(object$X[, j], amount = 1e-04)
+      }
+    }
     object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
     if(!is.null(take)) {
       dotake <- TRUE
@@ -4941,6 +4947,12 @@ Predict.matrix.nnet.smooth <- function(object, data)
     object$term <- object$nnterm
     class(object) <- "tprs.smooth"
     object$dim <- ncol(data)
+    nu <- apply(data, 2, function(x) { length(unique(x)) })
+    if(any(i <- nu < 3)) {
+      for(j in which(i)) {
+        data[, j] <- jitter(data[, j], amount = 1e-04)
+      }
+    }
     X <- Predict.matrix.tprs.smooth(object, data)
   } else {
     object$standardize01 <- TRUE
