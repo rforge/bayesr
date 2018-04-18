@@ -2902,7 +2902,8 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
 
   for(j in seq_along(data)) {
     if(is.matrix(data[[j]])) {
-      data[[j]] <- if(is.numeric(data[[j]])) as.numeric(data[[j]]) else drop(data[[j]])
+      if(ncol(data[[j]]) < 2)
+        data[[j]] <- if(is.numeric(data[[j]])) as.numeric(data[[j]]) else drop(data[[j]])
     }
   }
   if(is.list(data))
@@ -3024,10 +3025,14 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
   for(l in 1:nt) {
-    if(is.matrix(data[[tterms[l]]]))
-      smf <- cbind(as.numeric(data[[tterms[l]]]), smf)
-    else
+    if(is.matrix(data[[tterms[l]]])) {
+      if(ncol(data[[tterms[l]]]) < 2)
+        smf <- cbind(as.numeric(data[[tterms[l]]]), smf)
+      else
+        smf <- cbind(data[[tterms[l]]], smf)
+    } else {
       smf <- cbind(drop(data[[tterms[l]]]), smf)
+    }
   }
   names(smf) <- c(x$term, cnames)
 
