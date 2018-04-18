@@ -2,7 +2,7 @@
 # Hybrid GNU/BSD makefile for R package 'bayesxsrc'
 # author: Daniel Adler <dadler@uni-goettingen.de>
 
-# include $(R_HOME)/etc${R_ARCH}/Makeconf
+include $(R_HOME)/etc${R_ARCH}/Makeconf
 
 all: BayesX
 
@@ -151,7 +151,7 @@ CPPFLAGS +=  -Ibayesxsrc/. -I"bayesxsrc/bib"  -I"bayesxsrc/alex"  -I"bayesxsrc/a
 CPPFLAGS += -D__BUILDING_GNU -DTEMPL_INCL_DEF -DNO_TEMPLATE_FRIENDS -DINCLUDE_REML -DINCLUDE_MCMC -D_MSC_VER2 -DBUILD_FOR_BAYESXSRC
 # CXXFLAGS += -O3 -ansi
 
-BayesX: ${OBJS}
+BayesX: ${OBJS} 
 	${CXX} ${OBJS} ${LDFLAGS} ${TARGET_ARCH} -o BayesX
 
 clean:
