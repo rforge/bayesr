@@ -2,7 +2,7 @@
 # Hybrid GNU/BSD makefile for R package 'bayesxsrc'
 # author: Daniel Adler <dadler@uni-goettingen.de>
 
-include $(R_HOME)/etc${R_ARCH}/Makeconf
+# include $(R_HOME)/etc${R_ARCH}/Makeconf
 
 all: BayesX
 
