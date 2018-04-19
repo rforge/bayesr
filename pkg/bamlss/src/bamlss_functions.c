@@ -1928,6 +1928,8 @@ SEXP cnorm_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP check)
 
   double ll = 0.0;
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ll += pnorm5((-1.0 * muptr[i]) / sigmaptr[i], 0.0, 1.0, 1, 1);
     } else {
@@ -1956,6 +1958,8 @@ SEXP cnorm_score_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   double ddist, pdist, mills;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ddist = dnorm(-muptr[i] / sigmaptr[i], 0.0, 1.0, 0) / sigmaptr[i];
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
@@ -1986,6 +1990,8 @@ SEXP cnorm_score_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   double ddist, pdist, mills;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ddist = dnorm(-muptr[i] / sigmaptr[i], 0.0, 1.0, 0) / sigmaptr[i];
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
@@ -2015,6 +2021,8 @@ SEXP cnorm_hess_mu(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   double ddist, pdist, mills, d1;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ddist = dnorm(-muptr[i] / sigmaptr[i], 0.0, 1.0, 0) / sigmaptr[i];
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
@@ -2046,6 +2054,8 @@ SEXP cnorm_hess_sigma(SEXP y, SEXP mu, SEXP sigma, SEXP check)
   double ddist, pdist, mills, d1, d2;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ddist = dnorm(-muptr[i] / sigmaptr[i], 0.0, 1.0, 0) / sigmaptr[i];
       pdist = pnorm5(-muptr[i] / sigmaptr[i], 0.0, 1.0, 1, 0);
@@ -2077,6 +2087,8 @@ SEXP cnorm_power_loglik(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP check)
   double onediv = 0.0;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       ll += pnorm5(0.0 , muptr[i], sigmaptr[i], 1, 1);
     } else {
@@ -2112,6 +2124,8 @@ SEXP cnorm_power_score_lambda(SEXP y, SEXP mu, SEXP sigma, SEXP lambda, SEXP che
   double tmp, tmp2, tmp3;
 
   for(i = 0; i < n; i++) {
+    if(sigmaptr[i] < 1e-10)
+      sigmaptr[i] = 1e-10;
     if(checkptr[i]) {
       rvalptr[i] = 0.0;
     } else {
