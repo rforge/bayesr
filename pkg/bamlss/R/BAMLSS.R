@@ -4618,7 +4618,7 @@ n <- function(..., k = 10)
 }
 
 
-n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
+n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), ...)
 {
   if(inherits(nodes, "bamlss")) {
     if(!is.null(nodes$parameters)) {
@@ -4646,6 +4646,8 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
       return(rval)
     } else return(NULL)
   }
+  if(type == "relu")
+    type <- "softplus"
   k <- k + 1
   if(is.null(r) & is.null(s)) {
     rint <- list(...)$rint
@@ -4654,13 +4656,25 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
       if(is.null(rint))
         rint <- c(0.01, 0.495)
       if(is.null(sint))
-        sint <- c(1.01, 1000)
+        sint <- c(1.01, 20)
     }
     if(type == "gauss") {
       if(is.null(rint))
         rint <- c(0.01, 0.99)
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.01, 20)
+    }
+    if(type == "softplus") {
+      if(is.null(rint))
+        rint <- c(0.01, log(2) - 0.001)
+      if(is.null(sint))
+        sint <- c(1.01, 20)
+    }
+    if(type == "cos" | type == "sin") {
+      if(is.null(rint))
+        rint <- c(-1, 1)
+      if(is.null(sint))
+        sint <- c(1.01, 20)
     }
     sint <- sort(sint)
     rint <- sort(rint)
@@ -4675,10 +4689,21 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     if(any(r >= 1))
       r[r >= 1] <- 0.99
   }
-  if(any(r < 0))
-    r[r < 0] <- 0.01
+  if(type == "softplus") {
+    if(any(r >= log(2)))
+      r[r >= 1] <- log(2) - 0.001
+  }
+  if(type == "cos" | type == "sin") {
+    if(any(r > 1))
+      r[r > 1] <- 1
+    if(any(r < -1))
+      r[r < -1] <- -1
+  } else {
+    if(any(r < 0))
+      r[r < 0] <- 0.01
+  }
   if(any(s <= 1))
-    s[s <= 1] <- 1.01
+      s[s <= 1] <- 1.01
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   type <- match.arg(type)
@@ -4686,7 +4711,10 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss")
     weights <- lapply(1:nodes, function(i) {
       sw <- switch(type,
         "sigmoid" = runif(1, log((1 - r[i])/r[i]), s[i] * log((1 - r[i])/r[i])),
-        "gauss" = runif(1, sqrt(-log(r[i])), s[i] * sqrt(-log(r[i])))
+        "gauss" = runif(1, sqrt(-log(r[i])), s[i] * sqrt(-log(r[i]))),
+        "softplus" = runif(1, -log(exp(r[i]) - 1), s[i] * -log(exp(r[i]) - 1)),
+        "cos" = runif(1, acos(r[i]), s[i] * acos(r[i])),
+        "sin" = runif(1, acos(r[i]), s[i] * acos(r[i]))
       )
       w <- runif(k - 1, -1, 1)
       w <- w * sw / sum(w)
@@ -4825,7 +4853,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
         },
         "tanh" = tanh,
         "sin" = sin,
-        "gauss" = function(x) { exp(-x^2) }
+        "cos" = sin,
+        "gauss" = function(x) { exp(-x^2) },
+        "identity" = function(x) { x },
+        "softplus" = function(x) { log(1 + exp(x)) }
       )
     }
 
@@ -4917,9 +4948,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #  Sys.sleep(0.3)
 #}
 #stop()
-##plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
+#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
 ##Sys.sleep(2)
-##stop()
+#stop()
 ##print(dim(object$X))
 
   if(is.null(object$xt$alpha))
@@ -4939,12 +4970,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
-  class(object) <- c("nnet.smooth", "mgcv.smooth")
+  if(is.null(object$xt$nnet2))
+    class(object) <- c("nnet.smooth", "mgcv.smooth")
+  else
+    class(object) <- c("nnet2.smooth", "mgcv.smooth")
 
   object
 }
 
-Predict.matrix.nnet.smooth <- function(object, data)
+Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, data)
 {
   tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
   if(tp) {
@@ -4982,8 +5016,9 @@ Predict.matrix.nnet.smooth <- function(object, data)
     X <- X[, object[["prcomp_id"]], drop = FALSE]
   }
 
-  if(!is.null(object$xt$take))
+  if(!is.null(object$xt$take)) {
     X <- X[, object$xt$take, drop = FALSE]
+  }
 
   nobs <- nrow(X)
   X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
