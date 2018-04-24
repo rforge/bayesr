@@ -4656,7 +4656,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.495)
       if(is.null(sint))
-        sint <- c(1.01, 20)
+        sint <- c(1.01, 1000)
     }
     if(type == "gauss") {
       if(is.null(rint))
@@ -4943,6 +4943,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$fx <- object$xt$fx <- FALSE
   object$xt$df <- 4
 
+#  object$Rinv <- solve(chol(crossprod(object$X) + diag(1e-10, ncol(object$X))))
+#  object$Q <- svd(crossprod(object$Rinv, diag(ncol(object$Rinv))) %*% object$Rinv)$u
+#  object$X <- object$X %*% object$Rinv %*% object$Q
+
 #for(j in 1:ncol(object$X)) {
 #  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
 #  Sys.sleep(0.3)
@@ -5022,6 +5026,8 @@ Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, da
 
   nobs <- nrow(X)
   X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
+
+#  X <- X %*% object$Rinv %*% object$Q
 
   X
 }
