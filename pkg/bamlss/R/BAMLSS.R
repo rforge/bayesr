@@ -4612,8 +4612,8 @@ lin <- function(...)
 
 smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
 {
-  
   object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+  colnames(object$X) <- paste0("b.", colnames(object$X))
 
   center <- scale <- rep(NA, ncol(object$X))
   for(j in 1:ncol(object$X)) {
@@ -4671,6 +4671,7 @@ smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
 Predict.matrix.linear.smooth <- function(object, data)
 {
   X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+  colnames(X) <- paste0("b.", colnames(X))
   for(j in 1:ncol(X)) {
     if(!is.na(object$scale$center[j]))
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
