@@ -23,8 +23,7 @@ n.weights(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
 
 \arguments{
   \item{\dots}{For function \code{n()} a formula of the type \code{~x1+x2+x3} that specifies
-    the covariates that should be modeled by the neural network. For function
-    \code{boost.nnet.predict()} arguments passed to function \code{\link{predict.bamlss}}.}
+    the covariates that should be modeled by the neural network.}
   \item{k}{For function \code{n()}, the number of hidden nodes of the network. Note that one can set
     an argument \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5}
     parts with \code{k} nodes each. For function \code{nnet.weights()}, argument \code{k}

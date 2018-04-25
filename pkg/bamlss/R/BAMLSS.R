@@ -2173,7 +2173,7 @@ as.list.Formula <- function(x)
 bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, ...)
 {
   if(is.null(specials))
-    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc")
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -2402,7 +2402,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2494,7 +2494,7 @@ terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", specials))
   tf <- terms.formula2(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -4601,6 +4601,84 @@ Predict.matrix.lasso.smooth <- function(object, data)
 }
 
 
+## Linear effects constructor.
+lin <- function(...)
+{
+  ret <- la(...)
+  ret$label <- gsub("la(", "lin(", ret$label, fixed = TRUE)
+  class(ret) <- "linear.smooth.spec"
+  ret
+}
+
+smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
+{
+  
+  object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+
+  center <- scale <- rep(NA, ncol(object$X))
+  for(j in 1:ncol(object$X)) {
+    if(length(unique(object$X[, j])) > 3) {
+      center[j] <- mean(object$X[, j])
+      scale[j] <- sd(object$X[, j])
+      object$X[, j] <- (object$X[, j] - center[j]) / scale[j]
+    }
+  }
+
+  object$scale <- list("center" = center, "scale" = scale)
+
+  ridge <- if(is.null(object$xt$ridge)) FALSE else object$xt$ridge
+  if(ridge) {
+    object$S <- list(diag(ncol(object$X)))
+    object$xt$df <- if(is.null(object$xt$df)) min(c(floor(length(object$scale$center) / 2), 2)) else object$xt$df
+  } else {
+    object$fixed <- TRUE
+    object$fxsp <- TRUE
+  }
+
+  object$N <- apply(object$X, 2, function(x) {
+    return((1/crossprod(x)) %*% t(x))
+  })
+
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+    ## process weights.
+    if(!is.null(weights))
+      stop("weights is not supported!")
+
+    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+
+    j <- which.min(bf$rss)
+    g2 <- rep(0, length(bf$g))
+    g2[j] <- bf$g[j]
+  
+    ## Finalize.
+    x$state$parameters <- set.par(x$state$parameters, g2, "b")
+    x$state$fitted.values <- bf$fit[, j]
+
+    x$state$rss <- bf$rss[j]
+
+    if(hatmatrix) {
+      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+    }
+  
+    return(x$state)
+  }
+
+  class(object) <- c("linear.smooth", "mgcv.smooth")
+
+  return(object)
+}
+
+Predict.matrix.linear.smooth <- function(object, data)
+{
+  X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+  for(j in 1:ncol(X)) {
+    if(!is.na(object$scale$center[j]))
+      X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
+  }
+  return(X)
+}
+
+
 ## Neural networks.
 n <- function(..., k = 10)
 {
@@ -4662,19 +4740,19 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.99)
       if(is.null(sint))
-        sint <- c(1.01, 20)
+        sint <- c(1.01, 50)
     }
     if(type == "softplus") {
       if(is.null(rint))
         rint <- c(0.01, log(2) - 0.001)
       if(is.null(sint))
-        sint <- c(1.01, 20)
+        sint <- c(1.01, 50)
     }
     if(type == "cos" | type == "sin") {
       if(is.null(rint))
         rint <- c(-1, 1)
       if(is.null(sint))
-        sint <- c(1.01, 20)
+        sint <- c(1.01, 50)
     }
     sint <- sort(sint)
     rint <- sort(rint)
@@ -6432,7 +6510,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -6505,7 +6583,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -6631,7 +6709,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6641,7 +6719,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6654,7 +6732,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -6666,7 +6744,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)
