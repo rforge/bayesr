@@ -393,7 +393,6 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
       x$hess <- priors$hess
     }
   }
-  
   if(ntau2 > 0) {
     tau2 <- NULL
     if(length(x$margin)) {
@@ -404,8 +403,10 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
     } else {
       if(!is.null(x$xt$tau2))
         tau2 <- x$xt$tau2
-      if(!is.null(x$xt$lambda))
+      if(!is.null(x$xt$lambda)) {
         tau2 <- 1 / x$xt$lambda
+        x$fxsp <- TRUE
+      }
     }
     if(!is.null(tau2)) {
       tau2 <- rep(tau2, length.out = ntau2)

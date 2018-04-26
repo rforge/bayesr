@@ -1435,7 +1435,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
       foo[[nf[j]]] <- if(default_fun[j] != "no.transform") {
-        get(default_fun[j], envir = asNamespace("bamlss"))
+        get(default_fun[j]) ##, envir = asNamespace("bamlss"))
       } else FALSE
     }
     if(is.list(foo[[nf[j]]])) {
@@ -4336,18 +4336,24 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     }
     if(!fuse | standardize) {
       if(!is_f) {
-        if(standardize01) {
-          xmin <- apply(object$X[[j]], 2, min, na.rm = TRUE)
-          xmax <- apply(object$X[[j]], 2, max, na.rm = TRUE)
-          for(jj in 1:ncol(object$X[[j]]))
-            object$X[[j]][, jj] <- (object$X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
-          object$lasso$trans[[j]] <- list("xmin" = xmin, "xmax" = xmax)
-        } else {
-          object$X[[j]] <- scale(object$X[[j]])
-          object$lasso$trans[[j]] <- list(
-            "center" = attr(object$X[[j]], "scaled:center"),
-            "scale" = attr(object$X[[j]], "scaled:scale")
-          )
+        if(standardize) {
+          if(standardize01) {
+            xmin <- apply(object$X[[j]], 2, min, na.rm = TRUE)
+            xmax <- apply(object$X[[j]], 2, max, na.rm = TRUE)
+            if((xmax - xmin) < sqrt(.Machine$double.eps)) {
+              xmin <- 0
+              xmax <- 1
+            }
+            for(jj in 1:ncol(object$X[[j]]))
+              object$X[[j]][, jj] <- (object$X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
+            object$lasso$trans[[j]] <- list("xmin" = xmin, "xmax" = xmax)
+          } else {
+            object$X[[j]] <- scale(object$X[[j]])
+            object$lasso$trans[[j]] <- list(
+              "center" = attr(object$X[[j]], "scaled:center"),
+              "scale" = attr(object$X[[j]], "scaled:scale")
+            )
+          }
         }
       } else {
         object$X[[j]] <- blockstand(object$X[[j]], n = nobs)
@@ -4585,13 +4591,15 @@ Predict.matrix.lasso.smooth <- function(object, data)
     if(is_f & is.null(object$lasso$trans[[j]]$blockscale))
       is_f <- FALSE
     if(!is_f) {
-      if(object$standardize01) {
-        xmin <- object$lasso$trans[[j]]$xmin
-        xmax <- object$lasso$trans[[j]]$xmax
-        for(jj in 1:ncol(X[[j]]))
-          X[[j]][, jj] <- (X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
-      } else {
-        X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
+      if(object$standardize) {
+        if(object$standardize01) {
+          xmin <- object$lasso$trans[[j]]$xmin
+          xmax <- object$lasso$trans[[j]]$xmax
+          for(jj in 1:ncol(X[[j]]))
+            X[[j]][, jj] <- (X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
+        } else {
+          X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
+        }
       }
     } else {
       X[[j]] <- X[[j]] %*% object$lasso$trans[[j]]$blockscale
@@ -4864,6 +4872,13 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
   tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
   object$standardize01 <- object$xt$standardize01 <- if(tp) FALSE else TRUE
+  if(is.null(object$xt$standardize))
+    object$xt$standardize <- TRUE
+  if(!is.null(object$xt$standardize)) {
+    if(!object$xt$standardize) {
+      object$xt$standardize01 <- FALSE
+    }
+  }
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- object$xt$k
@@ -5077,7 +5092,8 @@ Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, da
     }
     X <- Predict.matrix.tprs.smooth(object, data)
   } else {
-    object$standardize01 <- TRUE
+    object$standardize <- standardize <- if(is.null(object$xt$standardize)) TRUE else object$xt$standardize
+    object$standardize01 <- if(standardize) TRUE else FALSE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
     X <- X[, object$Xkeep, drop = FALSE]
     if(!is.null(object$xt$lowrank)) {

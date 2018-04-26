@@ -684,12 +684,14 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     Xn <- paste(id, by, "X", sep = "_")
     Cn <- paste(id, by, "C", sep = "_")
     Pn <- paste(id, by, "P", sep = "_")
+    Pm <- paste(id, by, "Pm", sep = "_")
   } else {
     Sn <- paste(id, "S", sep = "_")
     Sn <- paste(Sn, "", 1:length(object$S), sep = "")
     Xn <- paste(id, "X", sep = "_")
     Cn <- paste(id, "C", sep = "_")
     Pn <- paste(id, "P", sep = "_")
+    Pm <- paste(id, "Pm", sep = "_")
   }
   if(is.null(object$rank))
     object$rank <- sapply(object$S, function(x) { qr(x)$rank })
@@ -718,10 +720,12 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     term <- paste(term, "constrmatdata=", Cn, sep = "")
   if(!is.null(object$state$parameters))
     term <- paste(term, ",betastart=", Pn, sep = "")
+  if(!is.null(object$xt[["pmean"]]))
+    term <- paste(term, ",priormeandata=", Pm, sep = "")
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -757,6 +761,13 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
         write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
       } else exists <- c(exists, file.path(dir, paste(Pn, ".raw", sep = "")))
+    }
+    if(!is.null(object$xt[["pmean"]])) {
+      spar <- as.data.frame(matrix(object$xt[["pmean"]], nrow = 1))
+      if(!file.exists(file.path(dir, paste(Pm, ".raw", sep = "")))) {
+        write.table(spar, file = file.path(dir, paste(Pm, ".raw", sep = "")),
+          quote = FALSE, row.names = FALSE)
+      } else exists <- c(exists, file.path(dir, paste(Pm, ".raw", sep = "")))
     }
     cmd <- NULL
     if(is.tx) {
@@ -801,6 +812,14 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
         cmd <- c(cmd,
           paste("dataset", Pn),
           paste(Pn, ".infile using ", file.path(dir, paste(Pn, ".raw", sep = "")), sep = "")
+        )
+      }
+    }
+    if(!is.null(object$xt[["pmean"]])) {
+      if(!(file.path(dir, paste(Pm, ".raw", sep = "")) %in% exists)) {
+        cmd <- c(cmd,
+          paste("dataset", Pm),
+          paste(Pm, ".infile using ", file.path(dir, paste(Pm, ".raw", sep = "")), sep = "")
         )
       }
     }
