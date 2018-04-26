@@ -4741,19 +4741,19 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.99)
       if(is.null(sint))
-        sint <- c(1.01, 50)
+        sint <- c(1.01, 100)
     }
     if(type == "softplus") {
       if(is.null(rint))
         rint <- c(0.01, log(2) - 0.001)
       if(is.null(sint))
-        sint <- c(1.01, 50)
+        sint <- c(1.01, 100)
     }
     if(type == "cos" | type == "sin") {
       if(is.null(rint))
         rint <- c(-1, 1)
       if(is.null(sint))
-        sint <- c(1.01, 50)
+        sint <- c(1.01, 100)
     }
     sint <- sort(sint)
     rint <- sort(rint)
