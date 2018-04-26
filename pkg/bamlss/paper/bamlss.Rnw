@@ -353,7 +353,7 @@ updates for the $k$-th parameter are computed while holding all other parameters
 fixed. Furthermore, this strategy can be applied for all terms within a parameter
 \begin{equation} \label{eqn:blockblockupdate}
 (\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
-  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}, \, \cdot \,) \qquad
+  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}; \, \cdot \,) \qquad
     j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
 \end{equation}
 and $U_{jk}( \cdot )$ is an updating function for a single model term.
@@ -391,7 +391,7 @@ first computing estimates for \ref{E1} and then using these as starting values f
   \FOR{$k = 1$ to $K$}
     \FOR{$j = 1$ to $J_k$}
       \STATE Obtain new state $(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) \leftarrow
-        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}, \, \cdot \,)$ using Algorithm~\ref{fig:umode} or \ref{fig:mcmc}.
+        U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}; \, \cdot \,)$ using Algorithm~\ref{fig:umode} or \ref{fig:mcmc}.
       \STATE Compute $\mathbf{f}_{jk}^{(t + 1)} \leftarrow f_{jk}(\mathbf{X}_{jk}, \boldsymbol{\beta}_{jk}^{(t + 1)})$.
       \STATE Update $\boldsymbol{\eta}_k^{(t + 1)} \leftarrow \boldsymbol{\eta}_k^{(t)} - \mathbf{f}_{jk}^{(t)} + \mathbf{f}_{jk}^{(t + 1)}$.
     \ENDFOR
@@ -419,9 +419,9 @@ first computing estimates for \ref{E1} and then using these as starting values f
 \FOR{$l = 1$ to $L_{jk}$}
   \STATE Set search interval for $\tau_{ljk}^{(t + 1)}$, e.g., $\mathcal{I}_{ljk} = [\tau_{ljk}^{(t)} \cdot 10^{-1}, \tau_{ljk}^{(t)} \cdot 10]$.
   \STATE Find $\tau_{ljk}^{(t + 1)} \leftarrow
-    \underset{\tau_{ljk}^\star \in \mathcal{I}_{ljk}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star, \, \cdot))$.
+    \underset{\tau_{ljk}^\star \in \mathcal{I}_{ljk}}{\text{arg min }} C(U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \tau_{ljk}^\star; \, \cdot))$.
 \ENDFOR
-\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)}, \, \cdot \,)$.
+\STATE Update $\boldsymbol{\beta}_{jk}^{(t + 1)} \leftarrow U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t + 1)}; \, \cdot \,)$.
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \ENSURE{Updates $\boldsymbol{\beta}_{jk}^{(t + 1)}$, $\boldsymbol{\tau}_{jk}^{(t + 1)}$.}
 \end{algorithmic}
@@ -708,7 +708,7 @@ $\partial (\log \, \pi(\boldsymbol{\beta}, \boldsymbol{\tau} ; \mathbf{y}, \math
 A particularly convenient updating function (\ref{eqn:updating}) for maximization of (\ref{eqn:logpost})
 is a Newton-Raphson type updating 
 \begin{equation} \label{eqn:newton}
-\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}, \, \cdot \,) = \boldsymbol{\beta}^{(t)} -
+\boldsymbol{\beta}^{(t + 1)} = U(\boldsymbol{\beta}^{(t)}; \, \cdot \,) = \boldsymbol{\beta}^{(t)} -
   \mathbf{H}\left( \boldsymbol{\beta}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}^{(t)} \right)
 \end{equation}
 with score vector
@@ -769,7 +769,7 @@ involving the second derivatives of the link functions.
 Using a $k$-partitioned updating scheme as presented in (\ref{eqn:blockupdate}) updating functions
 $U_k( \cdot )$ are given by
 \begin{equation} \label{eqn:blocknewton}
-\boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)}, \, \cdot \,) = \boldsymbol{\beta}_k^{(t)} -
+\boldsymbol{\beta}_k^{(t + 1)} = U_k(\boldsymbol{\beta}_k^{(t)}; \, \cdot \,) = \boldsymbol{\beta}_k^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_k^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_k^{(t)} \right).
 \end{equation}
 Assuming model terms (\ref{eqn:functions}) that can be written as a matrix product of a design
@@ -816,7 +816,7 @@ model term updating functions $U_{jk}( \cdot )$ as presented in algorithm (\ref{
 The updates are based on an iteratively weighted least squares scheme given by
 \begin{equation} \label{eqn:blockbackfit}
   \boldsymbol{\beta}_{jk}^{(t+1)}
-  = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,) =
+  = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}; \, \cdot \,) =
     (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} +
       \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
       \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)})
@@ -834,13 +834,13 @@ Note that this yields the ingredients of the \emph{RS}-algorithm developed in
 can be further generalized to
 \begin{equation*} \label{eqn:gbackfit}
 \boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
-  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}, \, \cdot \,\right)
+  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}; \, \cdot \,\right)
 \end{equation*}
 i.e., theoretically any updating function applied on the ``partial residuals''
 $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. Note also that this result
 is equivalent to updating function
 \begin{eqnarray} \label{eqn:blockblocknewton}
-\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \, \cdot \,) \nonumber \\
+\boldsymbol{\beta}_{jk}^{(t + 1)} &=& U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}; \, \cdot \,) \nonumber \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
   \mathbf{H}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right)^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) \\
  &=& \boldsymbol{\beta}_{jk}^{(t)} -
