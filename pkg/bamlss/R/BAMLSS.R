@@ -4741,7 +4741,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     sint <- list(...)$sint
     if(type == "sigmoid") {
       if(is.null(rint))
-        rint <- c(0.01, 0.495)
+        rint <- c(0.01, 0.499)
       if(is.null(sint))
         sint <- c(1.01, 1000)
     }
