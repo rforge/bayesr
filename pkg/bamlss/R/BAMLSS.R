@@ -4294,7 +4294,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   }
   object$fuse <- fuse
   object$fuse_type <- fuse_type
-  object$standardize <- standardize
+  object$standardize <- if(!fuse) TRUE else standardize
   object$standardize01 <- standardize01
   
   contr <- object$xt$contrast.arg
@@ -4591,8 +4591,8 @@ Predict.matrix.lasso.smooth <- function(object, data)
     if(is_f & is.null(object$lasso$trans[[j]]$blockscale))
       is_f <- FALSE
     if(!is_f) {
-      if(object$standardize) {
-        if(object$standardize01) {
+      if(object[["standardize"]]) {
+        if(object[["standardize01"]]) {
           xmin <- object$lasso$trans[[j]]$xmin
           xmax <- object$lasso$trans[[j]]$xmax
           for(jj in 1:ncol(X[[j]]))
@@ -4871,12 +4871,12 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$xt$fx <- FALSE
   }
   tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
-  object$standardize01 <- object$xt$standardize01 <- if(tp) FALSE else TRUE
-  if(is.null(object$xt$standardize))
-    object$xt$standardize <- TRUE
-  if(!is.null(object$xt$standardize)) {
-    if(!object$xt$standardize) {
-      object$xt$standardize01 <- FALSE
+  object[["standardize01"]] <- object$xt[["standardize01"]] <- if(tp) FALSE else TRUE
+  if(is.null(object$xt[["standardize"]]))
+    object$xt[["standardize"]] <- TRUE
+  if(!is.null(object$xt[["standardize"]])) {
+    if(!object$xt[["standardize"]]) {
+      object$xt[["standardize01"]] <- FALSE
     }
   }
   object <- smooth.construct.la.smooth.spec(object, data, knots)
@@ -4924,7 +4924,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$label <- lab
     object$split <- split
     object$xt$update <- update
-    object$standardize01 <- object$xt$standardize01 <- FALSE
+    object[["standardize01"]] <- object$xt[["standardize01"]] <- FALSE
   } else {
     if(length(nodes) < 2) {
       if(nodes < 0)
@@ -5092,8 +5092,8 @@ Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, da
     }
     X <- Predict.matrix.tprs.smooth(object, data)
   } else {
-    object$standardize <- standardize <- if(is.null(object$xt$standardize)) TRUE else object$xt$standardize
-    object$standardize01 <- if(standardize) TRUE else FALSE
+    object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
+    object[["standardize01"]] <- if(standardize) TRUE else FALSE
     X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
     X <- X[, object$Xkeep, drop = FALSE]
     if(!is.null(object$xt$lowrank)) {
