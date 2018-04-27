@@ -1435,7 +1435,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
       foo[[nf[j]]] <- if(default_fun[j] != "no.transform") {
-        get(default_fun[j]) ##, envir = asNamespace("bamlss"))
+        get(default_fun[j], envir = .GlobalEnv)
       } else FALSE
     }
     if(is.list(foo[[nf[j]]])) {
@@ -1453,10 +1453,10 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
         stop(paste("argument", nf[j], "is not a function!"))
       } else {
         if(is.null(functions[[nf[j]]])) {
-          functions[[nf[j]]] <- get(default_fun[j])
+          functions[[nf[j]]] <- get(default_fun[j], envir = .GlobalEnv)
         } else {
           if(functions[[nf[j]]]) {
-            functions[[nf[j]]] <- get(default_fun[j])
+            functions[[nf[j]]] <- get(default_fun[j], envir = .GlobalEnv)
           }
         }
       }
