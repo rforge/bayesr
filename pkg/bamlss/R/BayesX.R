@@ -652,6 +652,10 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     "hc" = "hcauchy",
     "u" = "aunif"
   )
+  if(!is.null(object$xt[["pSigma"]])) {
+    cat("yes!\n")
+    object$S <- object$sx.S <- object$xt[["pSigma"]]
+  }
   object$state <- NULL
   if(!is.null(object$sx.S))
     object$S <- object$sx.S
@@ -725,7 +729,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -756,14 +760,14 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
       } else exists <- c(exists, file.path(dir, paste(Cn, ".raw", sep = "")))
     }
     if(!is.null(object$state$parameters)) {
-      spar <- as.data.frame(matrix(get.par(object$state$parameters, "b"), nrow = 1))
+      spar <- as.matrix(matrix(get.par(object$state$parameters, "b"), ncol = 1))
       if(!file.exists(file.path(dir, paste(Pn, ".raw", sep = "")))) {
         write.table(spar, file = file.path(dir, paste(Pn, ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
       } else exists <- c(exists, file.path(dir, paste(Pn, ".raw", sep = "")))
     }
     if(!is.null(object$xt[["pmean"]])) {
-      spar <- as.data.frame(matrix(object$xt[["pmean"]], nrow = 1))
+      spar <- as.matrix(matrix(object$xt[["pmean"]], ncol = 1))
       if(!file.exists(file.path(dir, paste(Pm, ".raw", sep = "")))) {
         write.table(spar, file = file.path(dir, paste(Pm, ".raw", sep = "")),
           quote = FALSE, row.names = FALSE)
