@@ -4755,7 +4755,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, log(2) - 0.001)
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.01, 1000)
     }
     if(type == "cos" | type == "sin") {
       if(is.null(rint))
@@ -5110,6 +5110,9 @@ Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, da
     }
   }
 
+  nobs <- nrow(X)
+  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
+
   if(!is.null(object[["prcomp"]])) {
     X <- predict(object[["prcomp"]], newdata = X)
     X <- X[, object[["prcomp_id"]], drop = FALSE]
@@ -5118,9 +5121,6 @@ Predict.matrix.nnet.smooth <- Predict.matrix.nnet2.smooth <- function(object, da
   if(!is.null(object$xt$take)) {
     X <- X[, object$xt$take, drop = FALSE]
   }
-
-  nobs <- nrow(X)
-  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
 
 #  X <- X %*% object$Rinv %*% object$Q
 
