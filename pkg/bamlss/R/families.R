@@ -222,6 +222,18 @@ beta_bamlss <- function(...)
        a <- mu * (1 - sigma2) / (sigma2)
        b <- a * (1 - mu) / mu
        rbeta(n, shape1 = a, shape2 = b)
+    },
+    "mean" = function(par) {
+      a <- par$mu * (1 - par$sigma2) / (par$sigma2)
+      b <- a * (1 - par$mu) / par$mu
+      ex <- (1) / (1 + (b / a))
+      return(ex)
+    },
+    "variance" = function(par) {
+      a <- par$mu * (1 - par$sigma2) / (par$sigma2)
+      b <- a * (1 - par$mu) / par$mu
+      vx <- (a * b) / (((a + b)^2) * (a + b + 1))
+      return(vx)
     }
   )
   class(rval) <- "family.bamlss"
@@ -448,7 +460,9 @@ binomial_bamlss <- function(link = "logit", ...)
     "initialize" = list("pi" = function(y, ...) {
       y <- process_factor_response(y)
       (y + 0.5) / 2
-    })
+    }),
+    "mean" = function(par) par$pi,
+    "variance" = function(par) par$pi * (1 - par$pi)
   )
 
   class(rval) <- "family.bamlss"
@@ -615,7 +629,7 @@ if(FALSE) {
   col1 <- colon[colon$etype==1, ]
   col1$differ <- as.factor(col1$differ)
   col1$sex <- as.factor(col1$sex)
-     
+
   b1 <- bamlss(Surv(time, status) ~ s(nodes), family = "coxph", data = col1, sampler = FALSE)
 
   b2 <- gam(time ~ perfor + rx + obstruct + adhere + sex + s(age,by=sex) + s(nodes), family = cox.ph, data = col1)
@@ -669,27 +683,14 @@ gaussian_bamlss <- function(...)
     "r" = function(n, par) {
       rnorm(n, mean = par$mu, sd = par$sigma)
     },
-	# Inputs 'par' have to be on the parameter scale!
-    # ..$moments(fitted(bamlssmodel, type = "parameter"))
-    "moments" = function(par, which=NULL) {
-        mom <- list(
-          "mean"      = function(par) par[[1]],
-          "variance"  = function(par) par[[2]]^2
-        )
-        # If input which is not set: return all moments.
-        if ( is.null(which) ) { which <- 1:length(mom) }
-        else if ( is.character(which) ) { which <- match(which, names(mom)) }
-        # Compute moments
-        res <- list()
-        for ( w in which ) res[[names(mom)[w]]] <- mom[[w]](par)
-        if ( length(res) == 1 ) return( res[[1]]) else return( as.data.frame(res) )
-    },
     "initialize" = list(
-      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "mu"    = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
-    )
+    ),
+    "mean"      = function(par) par$mu,
+    "variance"  = function(par) par$sigma^2
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -717,7 +718,7 @@ Gaussian_bamlss <- function(...)
       "mu" = function(y, ...) { (y + mean(y)) / 2 }
     )
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -762,7 +763,9 @@ gpareto_bamlss <- function(...)
       if(n < 2)
         samps <- as.vector(samps)
       samps
-    }
+    },
+    "mean" = function(par) par$sigma / (1 - par$xi),
+    "variance" = function(par) (par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi)
   )
 
   rval$score <- list(
@@ -801,7 +804,7 @@ gpareto_bamlss <- function(...)
 #  )
 
 #  rval$hess <- list(
-#    "xi" = function(y, par, ...) {      
+#    "xi" = function(y, par, ...) {
 #      ys <- y / par$sigma
 #      xi1 <- 1 / par$xi
 #      xi2 <- par$xi^2
@@ -820,12 +823,12 @@ gpareto_bamlss <- function(...)
 #      -1 * (1/par$xi + 1) * ((xiys1 - par$xi * y * par$sigma * 2 * s1^2)/xi1ys + xiys1 * xiys1/xi1ys^2)
 #    }
 #  )
-  
+
   rval$initialize <- list(
     "xi" = function(y, ...) { rep(mean(y) + 0.5, length(y)) },
     "sigma" = function(y, ...) { rep(sd(y), length(y)) }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -902,7 +905,7 @@ gaussian1_bamlss <- function(...)
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
     )
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -944,16 +947,18 @@ gaussian2_bamlss <- function(...)
       sum(dnorm(y, par$mu, sqrt(par$sigma2), log = TRUE))
     },
     "mu" = function(par, ...) {
-      par$mu 
+      par$mu
     },
     "d" = function(y, par, log = FALSE) {
       dnorm(y, mean = par$mu, sd = sqrt(par$sigma2), log = log)
     },
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = sqrt(par$sigma2), ...)
-    }
+    },
+    "mean"     = function(par) par$mu,
+    "variance" = function(par) par$sigma2
   )
- 
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -990,7 +995,7 @@ truncgaussian2_bamlss <- function(...)
       2 * (pnorm(y / sigma + arg) - pnorm(arg))
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1044,7 +1049,7 @@ truncgaussian_bamlss <- function(...)
         return(drop(rval))
       },
       "sigma" = function(y, par, ...) {
-        rval <- with(par, 2 - (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)) * 
+        rval <- with(par, 2 - (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma)) *
           (1 + (mu / sigma)^2 + (mu / sigma)*(dnorm(mu / sigma) / pnorm(mu / sigma))))
         return(drop(rval))
       }
@@ -1054,7 +1059,7 @@ truncgaussian_bamlss <- function(...)
       return(rval)
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1118,7 +1123,7 @@ truncgaussian_bamlss <- function(...)
 #      }
 #    )
 #  )
-#  
+#
 #  class(rval) <- "family.bamlss"
 #  rval
 #}
@@ -1187,6 +1192,21 @@ cnorm_bamlss <- function(...)
     "mu" = function(y, ...) { (y + mean(y)) / 2 },
     "sigma" = function(y, ...) { rep(sd(y), length(y)) }
   )
+  f$mean <- function(par) {
+    mu <- par$mu
+    sigma <- par$sigma
+    ex <- pnorm(mu / sigma) * (mu + sigma * ((dnorm(mu / sigma) / pnorm(mu / sigma))))
+    return(ex)
+  }
+  f$variance <- function(par) {
+    mu <- par$mu
+    sigma <- par$sigma
+    X <- pnorm(-mu / sigma)
+    Y <- dnorm(mu / sigma) / (1 - X)
+    Z <- Y^2 - Y * (-mu / sigma)
+    vx <- (sigma^2) * (1 - X) * ((1 - Z) + (((-mu/sigma) - Y)^2)* X)
+    return(vx)
+  }
   class(f) <- "family.bamlss"
   f
 }
@@ -1231,13 +1251,13 @@ pcnorm_bamlss <- function(start = 2, update = FALSE, ...)
         as.integer(attr(y, "check")), PACKAGE = "bamlss")
     },
     "lambda" = function(y, par, ...) {
-      hess <- 1/2 * (2 * ((y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2 - 
-        par$lambda * (2 * (par$lambda * par$lambda))/(par$lambda^2)^2)) - 
-        y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
-          (log(y) * (par$lambda/par$lambda^2))) * (y^(1/par$lambda) - 
-        par$mu) - y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) * 
-        (y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)))))/par$sigma^2 - 
-        (par$lambda/par$lambda^2 - par$lambda * (2 * (par$lambda * 
+      hess <- 1/2 * (2 * ((y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2 -
+        par$lambda * (2 * (par$lambda * par$lambda))/(par$lambda^2)^2)) -
+        y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) *
+          (log(y) * (par$lambda/par$lambda^2))) * (y^(1/par$lambda) -
+        par$mu) - y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)) *
+        (y^(1/par$lambda) * (log(y) * (par$lambda/par$lambda^2)))))/par$sigma^2 -
+        (par$lambda/par$lambda^2 - par$lambda * (2 * (par$lambda *
           par$lambda))/(par$lambda^2)^2) * log(y)
       ifelse(y <= 0, 0, -hess)
     }
@@ -1282,25 +1302,25 @@ cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
   dist <- match.arg(dist, c("student", "gaussian", "logistic"))
 
   ddist <- switch(dist,
-    "student"  = function(x, location, scale, df, log = TRUE) 
-      dt((x - location)/scale, df = df, log = log)/(scale^(1-log)) - 
+    "student"  = function(x, location, scale, df, log = TRUE)
+      dt((x - location)/scale, df = df, log = log)/(scale^(1-log)) -
       log*log(scale),
-    "gaussian" = function(x, location, scale, df, log = TRUE) 
-      dnorm((x - location)/scale, log = log)/(scale^(1-log)) - 
+    "gaussian" = function(x, location, scale, df, log = TRUE)
+      dnorm((x - location)/scale, log = log)/(scale^(1-log)) -
       log*log(scale),
-    "logistic" = function(x, location, scale, df, log = TRUE) 
-      dlogis((x - location)/scale, log = log)/(scale^(1-log)) - 
+    "logistic" = function(x, location, scale, df, log = TRUE)
+      dlogis((x - location)/scale, log = log)/(scale^(1-log)) -
       log*log(scale)
   )
   pdist <- switch(dist,
-    "student"  = function(x, location, scale, df, lower.tail = TRUE, 
+    "student"  = function(x, location, scale, df, lower.tail = TRUE,
       log.p = TRUE) pt((x - location)/scale, df = df, lower.tail = lower.tail,
       log.p = log.p),
-    "gaussian" = function(x, location, scale, df, lower.tail = TRUE, 
-      log.p = TRUE) pnorm((x - location)/scale, lower.tail = lower.tail, 
+    "gaussian" = function(x, location, scale, df, lower.tail = TRUE,
+      log.p = TRUE) pnorm((x - location)/scale, lower.tail = lower.tail,
       log.p = log.p),
-    "logistic" = function(x, location, scale, df, lower.tail = TRUE, 
-      log.p = TRUE) plogis((x - location)/scale, lower.tail = lower.tail, 
+    "logistic" = function(x, location, scale, df, lower.tail = TRUE,
+      log.p = TRUE) plogis((x - location)/scale, lower.tail = lower.tail,
       log.p = log.p)
   )
 
@@ -1313,60 +1333,60 @@ cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
 
     ## ddensity/dmu
     d1 <- with(par, switch(dist,
-      "student"  = function(x)  
+      "student"  = function(x)
         (x - mu)/sigma^2 * (df + 1) / (df + (x - mu)^2/sigma^2),
-      "gaussian" = function(x) 
+      "gaussian" = function(x)
         (x - mu)/sigma^2,
-      "logistic" = function(x)  
+      "logistic" = function(x)
         (1 - 2 * pdist(-x, - mu, sigma, log.p = FALSE))/sigma)
     )
-    
+
     ## ddensity/dsigma
     d2 <- function(x) with(par, d1(x) * (x-mu))
 
     ## d^2density/dmu^2
     d3 <- with(par, switch(dist,
-      "student"  = function(x)  
+      "student"  = function(x)
         (df + 1)*((x - mu)^2 - df*sigma^2) / (df*sigma^2 + (x - mu)^2)^2,
-      "gaussian" = function(x) 
+      "gaussian" = function(x)
         - 1/sigma^2,
-      "logistic" = function(x)  
+      "logistic" = function(x)
         - 2/sigma * ddist(x, mu, sigma, log = FALSE))
-    )    
-    
+    )
+
     ## d^2density/dsigma^2
     d5 <- with(par, switch(dist,
-      "student"  = function(x)  
+      "student"  = function(x)
         - (x - mu)^2 * (df + 1) / (df*sigma^2 + (x - mu)^2)^2*2*df*sigma^2,
-      "gaussian" = function(x) 
+      "gaussian" = function(x)
         2 * d3(x) * (x-mu)^2,
-      "logistic" = function(x)  
+      "logistic" = function(x)
         - d2(x) - 2*(x-mu)^2/sigma*ddist(x,mu,sigma, log = FALSE)
     ))
-      
+
     ## d^2density/dmudsigma
     d4 <- with(par, switch(dist,
-      "student"  = function(x)  
+      "student"  = function(x)
           d5(x) / (x - mu),
-      "gaussian" = function(x) 
+      "gaussian" = function(x)
         2 * d3(x) * (x-mu),
-      "logistic" = function(x)  
+      "logistic" = function(x)
         - d1(x) + (x-mu)*d3(x)
     ))
 
     ## compute gradient
     if(type == "gradient") {
       if(name == "mu") {
-        rval <- with(par, ifelse(y <= left, 
+        rval <- with(par, ifelse(y <= left,
           - mills(left)/sigma,
-          ifelse(y >= right, 
+          ifelse(y >= right,
             mills(right, lower.tail = FALSE)/sigma,
             d1(y)
           )))
       } else {
-        rval <- with(par, ifelse(y <= left, 
+        rval <- with(par, ifelse(y <= left,
           - mills(left) * (left - mu)/sigma,
-          ifelse(y >= right, 
+          ifelse(y >= right,
             mills(right, lower.tail = FALSE) * (right - mu)/sigma,
             d2(y) - 1
           )))
@@ -1375,20 +1395,20 @@ cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     ## compute hessian
     } else {
       if(name == "mu") {
-        rval <- with(par, ifelse(y <= left, 
+        rval <- with(par, ifelse(y <= left,
           -d1(left)/sigma * mills(left) - mills(left)^2/sigma^2,
-          ifelse(y >= right, 
-            d1(right)/sigma * mills(right, lower.tail = FALSE) - 
+          ifelse(y >= right,
+            d1(right)/sigma * mills(right, lower.tail = FALSE) -
               mills(right, lower.tail = FALSE)^2/sigma^2,
             d3(y)
           )))
       } else {
-        rval <- with(par, ifelse(y <= left, 
-          ((left-mu)/sigma - (left-mu)*d2(left))*mills(left) - 
+        rval <- with(par, ifelse(y <= left,
+          ((left-mu)/sigma - (left-mu)*d2(left))*mills(left) -
             (left - mu)^2/sigma^2 * mills(left)^2,
-          ifelse(y >= right, 
+          ifelse(y >= right,
             (-(right-mu)/sigma + (right-mu)*d2(right))*
-              mills(right, lower.tail = FALSE) 
+              mills(right, lower.tail = FALSE)
               - (right - mu)^2/sigma^2 * mills(right, lower.tail = FALSE)^2,
             d5(y)
           )))
@@ -1424,7 +1444,7 @@ cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     "gaussian" = c("mu", "sigma"),
     "logistic" = c("mu", "sigma")
   )
-  
+
   i <- 1:length(names)
 
   rval <- list(
@@ -1446,7 +1466,7 @@ cens_bamlss <- function(links = c(mu = "identity", sigma = "log", df = "log"),
     "score" = score,
     "hess" = hess
   )
- 
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1514,7 +1534,7 @@ trunc2_bamlss <- function(links = c(mu = "identity", sigma = "log"),
       return(q)
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1552,7 +1572,7 @@ t_bamlss <- function(...)
       pt(arg, df = par$df, ...)
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1698,7 +1718,7 @@ weibull_bamlss <- function(...)
       }
     )
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -1773,7 +1793,19 @@ gamma_bamlss <- function(...)
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(1, length(y)) }
-    )
+    ),
+    "mean" = function(par) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      ex <- a * s
+      return(ex)
+    },
+    "variance" = function(par) {
+      a <- par$sigma
+      s <- par$mu / par$sigma
+      vx <- a * s^2
+      return(vx)
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1982,7 +2014,7 @@ BCCG2_bamlss <- function(...)
       (FYy1 - FYy2)/FYy3
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -2076,7 +2108,17 @@ bivnorm_bamlss <- function(...)
       "rho" = function(y, ...) {
         rep(0, length(y[, 1]))
       }
-    )
+    ),
+    "mean" = function(par) {
+      means_in_par <- grepl("mu", names(par))
+      return(unlist(par[means_in_par]))
+    },
+    "variance" = function(par) {
+      sigmas_in_par <- grepl("sigma", names(par))
+      sigmas <- par[sigmas_in_par]
+      vars <- sapply(sigmas, FUN = "^", e2 = 2)
+      return(vars)
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -2091,7 +2133,7 @@ mvnorm_bamlss <- function(k = 2, ...)
 
   mu <- paste("mu", 1:k, sep = "")
   sigma <- paste("sigma", 1:k, sep = "")
-  
+
   rho <- NULL
   for(i in 1:k) {
     for(j in 1:k) {
@@ -2134,7 +2176,7 @@ mvnorm_bamlss <- function(k = 2, ...)
     sigma_score_calls <- c(sigma_score_calls, paste("function(y, par, ...) {sigma_score_mvnorm(y, par, j=",j,")}", sep=""))
   for(i in 1:k) {
     for(j in 1:k) {
-      if(i < j)  
+      if(i < j)
         rho_score_calls <- c(rho_score_calls, paste("function(y, par, ...) {rho_score_mvnorm(y, par, i=",i,", j=",j,")}", sep=""))
     }
   }
@@ -2170,9 +2212,9 @@ mvnorm_bamlss <- function(k = 2, ...)
 
 log_dmvnorm <- function(y, par)
 {
-  cn <- names(par)
-  par <- do.call("cbind", par)	
+  par <- do.call("cbind", par)
   y <- as.matrix(y)
+  cn <- colnames(par)
   sj <- grep("sigma", cn)
   mj <- grep("mu", cn)
   rj <- as.integer(min(grep("rho", cn)))
@@ -2181,9 +2223,9 @@ log_dmvnorm <- function(y, par)
 
 mu_score_mvnorm <- function(y, par, j)
 {
-  cn <- names(par)
   par <- do.call("cbind", par)
   y <- as.matrix(y)
+  cn <- colnames(par)
   mj <- grep("mu", cn)
   sj <- grep("sigma", cn)
   rj <- as.integer(min(grep("rho", cn)))
@@ -2195,9 +2237,9 @@ mu_score_mvnormR <- function(y, par, j)
 {
   n <- nrow(y)
   k <- ncol(y)
-  cn <- names(par)
   par <- do.call("cbind", par)
   y <- as.matrix(y)
+  cn <- colnames(par)
   sj <- grep("sigma", cn)
   mj <- grep("mu", cn)
   rj <- as.integer(min(grep("rho", cn)))
@@ -2209,7 +2251,7 @@ mu_score_mvnormR <- function(y, par, j)
     l <- 0
     for ( ii in seq(k) ) {
       Sigma[ii,ii] <- par[kk,k+ii]^2
-      for ( jj in seq(k) ) {  
+      for ( jj in seq(k) ) {
         if ( ii<jj ) {
           Sigma[ii,jj] <- par[kk,k+ii] * par[kk,k+jj] * par[kk,rj+l]
           Sigma[jj,ii] <- Sigma[ii,jj]
@@ -2229,9 +2271,9 @@ mu_score_mvnormR <- function(y, par, j)
 
 sigma_score_mvnorm <- function(y, par, j)
 {
-  cn <- names(par)
   par <- do.call("cbind", par)
   y <- as.matrix(y)
+  cn <- colnames(par)
   sj <- grep("sigma", cn)
   mj <- grep("mu", cn)
   rj <- as.integer(min(grep("rho", cn)))
@@ -2243,9 +2285,9 @@ sigma_score_mvnormR <- function(y, par, j)
 {
  n <- nrow(y)
  k <- ncol(y)
- cn <- names(par)
  par <- do.call("cbind", par)
  y <- as.matrix(y)
+ cn <- colnames(par)
  sj <- grep("sigma", cn)
  mj <- grep("mu", cn)
  rj <- as.integer(min(grep("rho", cn)))
@@ -2257,7 +2299,7 @@ sigma_score_mvnormR <- function(y, par, j)
    l <- 0
    for ( ii in seq(k) ) {
      Rho[ii,ii] <- 1
-     for ( jj in seq(k) ) {  
+     for ( jj in seq(k) ) {
        if ( ii<jj ) {
          Rho[ii,jj] <- par[kk,rj+l]
          Rho[jj,ii] <- Rho[ii,jj]
@@ -2267,18 +2309,18 @@ sigma_score_mvnormR <- function(y, par, j)
    }
    ## invert Rho
    InvRho <- chol2inv(chol(Rho))
-   
+
    m <- drop((y[kk,] - par[kk,mj])/par[kk,sj])
-   rval[kk] <- -1 + m[j]*sum(m*InvRho[j,])    
+   rval[kk] <- -1 + m[j]*sum(m*InvRho[j,])
  }
  return(rval)
 }
 
 rho_score_mvnorm <- function(y, par, i, j)
 {
-  cn <- names(par)
   par <- do.call("cbind", par)
   y <- as.matrix(y)
+  cn <- colnames(par)
   sj <- grep("sigma", cn)
   mj <- grep("mu", cn)
   rj <- as.integer(min(grep("rho", cn)))
@@ -2292,9 +2334,9 @@ rho_score_mvnormR <- function(y, par, i, j)
 {
  n <- nrow(y)
  k <- ncol(y)
- cn <- names(par)
  par <- do.call("cbind", par)
  y <- as.matrix(y)
+ cn <- colnames(par)
  sj <- grep("sigma", cn)
  mj <- grep("mu", cn)
  rj <- as.integer(min(grep("rho", cn)))
@@ -2306,7 +2348,7 @@ rho_score_mvnormR <- function(y, par, i, j)
    l <- 0
    for ( ii in seq(k) ) {
      Rho[ii,ii] <- 1
-     for ( jj in seq(k) ) {  
+     for ( jj in seq(k) ) {
        if ( ii<jj ) {
          Rho[ii,jj] <- par[kk,rj+l]
          Rho[jj,ii] <- Rho[ii,jj]
@@ -2521,7 +2563,9 @@ poisson_bamlss <- function(...)
       "lambda" = function(y, ...) {
         (y + mean(y)) / 2
       }
-    )
+    ),
+    "mean" = function(par) par$lambda,
+    "variance" = function(par) par$lambda
   )
 
   class(rval) <- "family.bamlss"
@@ -2542,13 +2586,13 @@ zip_bamlss <- function(...)
       "pi" = switch(links["pi"],
         "logit" = c("zip", "pi"),
         "cloglog2" = c("zip", "pi")
-      ) 
+      )
     ),
 	  "mu" = function(par, ...) {
       par$lambda * (1 - par$pi)
     },
     "d" = function(y, par, log = FALSE) {
-      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dpois(y, lambda = par$lambda), 
+      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dpois(y, lambda = par$lambda),
 				(1 - par$pi) * dpois(y, lambda = par$lambda))
       if(log) d <- log(d)
       d
@@ -2584,7 +2628,7 @@ hurdleP_bamlss <- function(...)
       (1 - par$pi) * par$lambda / (1 - exp(-par$lambda))
     },
     "d" = function(y, par, log = FALSE) {
-      d <- ifelse(y == 0, par$pi, 
+      d <- ifelse(y == 0, par$pi,
         (1 - par$pi) * dpois(y, lambda = par$lambda) / (1 - exp(-par$lambda)))
       if(log) d <- log(d)
       d
@@ -2597,7 +2641,7 @@ hurdleP_bamlss <- function(...)
       cdf
     }
   )
- 
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -2647,7 +2691,7 @@ zinb_bamlss <- function(...)
       par$mu * (1 - par$pi)
     },
     "d" = function(y, par, log = FALSE) {
-      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta), 
+      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta),
 				(1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
       if(log) d <- log(d)
       d
@@ -2682,7 +2726,7 @@ hurdleNB_bamlss <- function(...)
       (1 - par$pi) * par$mu / (1 - (par$delta) / (par$delta + par$mu)^par$delta)
     },
     "d" = function(y, par, log = FALSE) {
-      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta), 
+      d <- ifelse(y == 0, par$pi + (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta),
         (1 - par$pi) * dnbinom(y, mu = par$mu, size = par$delta))
       if(log) d <- log(d)
       d
@@ -3204,7 +3248,7 @@ gaussian5_bamlss <- function(links = c(mu = "identity", sigma = "log"), ...)
       pnorm(y, mean = par$mu, sd = par$sigma, ...)
     }
   )
-  
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -3218,7 +3262,7 @@ mvnormAR1_bamlss <- function(k = 2, ...)
   mu <- paste("mu", 1:k, sep = "")
   sigma <- paste("sigma", 1:k, sep = "")
   rho <- "rho"
-  
+
   links <- c(rep("identity", length(mu)), rep("log", length(sigma)), rep("rhogit", length(rho)))
   names(links) <- c(mu, sigma, rho)
 
@@ -3279,7 +3323,7 @@ mvnormAR1_bamlss <- function(k = 2, ...)
 
 log_dmvnormAR1 <- function(y, par)
 {
-  par <- do.call("cbind", par)	
+  par <- do.call("cbind", par)
   y <- as.matrix(y)
   cn <- colnames(par)
   mj <- grep("mu", cn)
@@ -3290,7 +3334,7 @@ log_dmvnormAR1 <- function(y, par)
 
 log_dmvnormAR1_R <- function(y, par)
 {
-  par <- do.call("cbind", par)	
+  par <- do.call("cbind", par)
   y <- as.matrix(y)
   cn <- colnames(par)
   mj <- grep("mu", cn)
@@ -3361,7 +3405,7 @@ glogis_bamlss <- function(...) {
    links <- c(mu="identity",sigma="log",alpha="log")
 
    rval <- list(
-      "family" = "Gernalized Logistic Distribution Type I (a.k.a. skewed logistic distribution)",
+      "family" = "Generalized Logistic Distribution Type I (a.k.a. skewed logistic distribution)",
       "names"  = c("mu","sigma","alpha"),
       "score" = list(
          "mu" = function(y,par,...) {
@@ -3417,22 +3461,10 @@ glogis_bamlss <- function(...) {
          "sigma" = function(y, ...) { rep(sd(y), length(y)) },
          "alpha" = function(y, ...) { rep(1,length(y)) }
       ),
-      # Inputs 'par' have to be on the parameter scale!
-      # ..$moments(fitted(bamlssmodel, type = "parameter"))
-      "moments" = function(par, which=NULL) {
-         mom <- list(
-           "mean"      = function(par) as.vector(par[[1]] + (digamma(par[[3]]) - digamma(1)) * par[[2]]),
-           "variance"  = function(par) as.vector((psigamma(par[[3]], deriv = 1) + psigamma(1, deriv = 1)) * par[[2]]),
-           "skewness"  = function(par) as.vector((psigamma(par[[3]], deriv = 2) - psigamma(1, deriv = 2)) /
-                         (psigamma(par[[3]], deriv = 1) + psigamma(1, deriv = 1))^(3/2))
-         )
-         # If input which is not set: return all moments.
-         if ( is.null(which) ) { which <- 1:length(mom) }
-         else if ( is.character(which) ) { which <- match(which, names(mom)) }
-         res <- list()
-         for ( w in which ) res[[names(mom)[w]]] <- mom[[w]](par)
-         if ( length(res) == 1 ) return( res[[1]]) else return( as.data.frame(res) )
-      }
+      "mean"      = function(par) as.vector(par$mu + (digamma(par$alpha) - digamma(1)) * par$sigma),
+      "variance"  = function(par) as.vector((psigamma(par$alpha, deriv = 1) + psigamma(1, deriv = 1)) * par$sigma),
+      "skewness"  = function(par) as.vector((psigamma(par$alpha, deriv = 2) - psigamma(1, deriv = 2)) /
+                                              (psigamma(par$alpha, deriv = 1) + psigamma(1, deriv = 1))^(3/2))
    )
 
    # Return family object
@@ -3457,10 +3489,10 @@ mlt_bamlss <- function(todistr = "Normal")
 }
 
 mlt_Normal <- function() {
-    list(p = pnorm, d = dnorm, q = qnorm, 
+    list(p = pnorm, d = dnorm, q = qnorm,
          ### see also MiscTools::ddnorm
          dd = function(x) -dnorm(x = x) * x,
-         ddd = function(x) dnorm(x = x) * (x^2 - 1), 
+         ddd = function(x) dnorm(x = x) * (x^2 - 1),
          name = "normal")
 }
 
