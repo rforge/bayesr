@@ -2904,13 +2904,19 @@ tF <- function(x, ...)
     mu.cs <- make_call(x$dldm)
     mu.hs <- make_call(x$d2ldm2)
     score$mu  <- function(y, par, ...) {
-      eval(mu.cs) * mu.link$mu.eta(mu.link$linkfun(par$mu))
+      res <- eval(mu.cs) * mu.link$mu.eta(mu.link$linkfun(par$mu))
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     hess$mu <- function(y, par, ...) {
       score <- eval(mu.cs)
       hess <- -1 * eval(mu.hs)
       eta <- mu.link$linkfun(par$mu)
-      drop(score * mu.link$mu.eta2(eta) + hess * mu.link$mu.eta(eta)^2)
+      res <- drop(score * mu.link$mu.eta2(eta) + hess * mu.link$mu.eta(eta)^2)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     if(!is.null(x$mu.initial)) {
       initialize$mu <- function(y, ...) {
@@ -2919,8 +2925,11 @@ tF <- function(x, ...)
             y <- y[, ncol(y)]
         }
         if(!is.null(bd))
-          bd <- rep(1, length.out = length(y))
-        eval(x$mu.initial)
+          bd <- rep(bd, length.out = if(!is.null(dim(y))) nrow(y) else length(y))
+        res <- eval(x$mu.initial)
+        if(!is.null(dim(res)))
+          res <- res[, 1]
+        res
       }
     }
   }
@@ -2930,19 +2939,28 @@ tF <- function(x, ...)
     sigma.cs <- make_call(x$dldd)
     sigma.hs <- make_call(x$d2ldd2)
     score$sigma  <- function(y, par, ...) {
-      eval(sigma.cs) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
+      res <- eval(sigma.cs) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     hess$sigma <- function(y, par, ...) {
       score <- eval(sigma.cs)
       hess <- -1 * eval(sigma.hs)
       eta <- sigma.link$linkfun(par$sigma)
-      drop(score * sigma.link$mu.eta2(eta) + hess * sigma.link$mu.eta(eta)^2)
+      res <- drop(score * sigma.link$mu.eta2(eta) + hess * sigma.link$mu.eta(eta)^2)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     if(!is.null(x$sigma.initial)) {
       initialize$sigma <- function(y, ...) {
         if(!is.null(bd))
-          bd <- rep(1, length.out = length(y))
-        eval(x$sigma.initial)
+          bd <- rep(bd, length.out = if(!is.null(dim(y))) nrow(y) else length(y))
+        res <- eval(x$sigma.initial)
+        if(!is.null(dim(res)))
+          res <- res[, 1]
+        res
       }
     }
   }
@@ -2952,19 +2970,28 @@ tF <- function(x, ...)
     nu.cs <- make_call(x$dldv)
     nu.hs <- make_call(x$d2ldv2)
     score$nu  <- function(y, par, ...) {
-      eval(nu.cs) * nu.link$mu.eta(nu.link$linkfun(par$nu))
+      res <- eval(nu.cs) * nu.link$mu.eta(nu.link$linkfun(par$nu))
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     hess$nu <- function(y, par, ...) {
       score <- eval(nu.cs)
       hess <- -1 * eval(nu.hs)
       eta <- nu.link$linkfun(par$nu)
-      drop(score * nu.link$mu.eta2(eta) + hess * nu.link$mu.eta(eta)^2)
+      res <- drop(score * nu.link$mu.eta2(eta) + hess * nu.link$mu.eta(eta)^2)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     if(!is.null(x$nu.initial)) {
       initialize$nu <- function(y, ...) {
         if(!is.null(bd))
-          bd <- rep(1, length.out = length(y))
-        eval(x$nu.initial)
+          bd <- rep(bd, length.out = if(!is.null(dim(y))) nrow(y) else length(y))
+        res <- eval(x$nu.initial)
+        if(!is.null(dim(res)))
+          res <- res[, 1]
+        res
       }
     }
   }
@@ -2974,19 +3001,28 @@ tF <- function(x, ...)
     tau.cs <- make_call(x$dldt)
     tau.hs <- make_call(x$d2ldt2)
     score$tau  <- function(y, par, ...) {
-      eval(tau.cs) * tau.link$mu.eta(tau.link$linkfun(par$tau))
+      res <- eval(tau.cs) * tau.link$mu.eta(tau.link$linkfun(par$tau))
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     hess$tau <- function(y, par, ...) {
       score <- eval(tau.cs)
       hess <- -1 * eval(tau.hs)
       eta <- tau.link$linkfun(par$tau)
-      drop(score * tau.link$mu.eta2(eta) + hess * tau.link$mu.eta(eta)^2)
+      res <- drop(score * tau.link$mu.eta2(eta) + hess * tau.link$mu.eta(eta)^2)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
     }
     if(!is.null(x$tau.initial)) {
       initialize$tau <- function(y, ...) {
         if(!is.null(bd))
-          bd <- rep(1, length.out = length(y))
-        eval(x$tau.initial)
+          bd <- rep(bd, length.out = if(!is.null(dim(y))) nrow(y) else length(y))
+        res <- eval(x$tau.initial)
+        if(!is.null(dim(res)))
+          res <- res[, 1]
+        res
       }
     }
   }

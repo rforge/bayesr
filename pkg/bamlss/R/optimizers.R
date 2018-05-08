@@ -2013,7 +2013,7 @@ boostm <- function(x, y, family, offset = NULL,
   
   ## Save criterion in list().
   crit <- ll.contrib <- make.state.list(x, type = 2)
-  
+
   ## Extract actual predictor.
   eta <- get.eta(x)
 
