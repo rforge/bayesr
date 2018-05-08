@@ -3491,7 +3491,7 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
       asssel[[m]] <- 0
 
     for(j in names(x[[i]]$smooth.construct)) {
-      if(inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth") | inherits(x[[i]]$smooth.construct[[j]], "linear.smooth")) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth") | inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth")) {
         rval <- rval + sum(abs(get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")) > 1e-10)
         next
       }

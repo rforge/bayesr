@@ -169,6 +169,10 @@ export(
   "lin",
   "smooth.construct.linear.smooth.spec",
 
+  ## random bits
+  "rb",
+  "smooth.construct.rb.smooth.spec",
+
   ## stability selection
   "stabsel",
 
@@ -214,6 +218,7 @@ S3method("smooth.construct", "la.smooth.spec")
 S3method("smooth.construct", "nnet.smooth.spec")
 S3method("smooth.construct", "nn.smooth.spec")
 S3method("smooth.construct", "linear.smooth.spec")
+S3method("smooth.construct", "randombits.smooth.spec")
 S3method("Predict.matrix", "kriging.smooth")
 S3method("Predict.matrix", "deriv.smooth")
 S3method("Predict.matrix", "tensorX.smooth")
@@ -221,6 +226,7 @@ S3method("Predict.matrix", "tensorX3.smooth")
 S3method("Predict.matrix", "lasso.smooth")
 S3method("Predict.matrix", "nnet.smooth")
 S3method("Predict.matrix", "linear.smooth")
+S3method("Predict.matrix", "randombits.smooth")
 S3method("bamlss.engine.setup.smooth", "default")
 S3method("sx.construct", "tensorX.smooth")
 S3method("terms", "bamlss")

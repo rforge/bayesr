@@ -2173,7 +2173,7 @@ as.list.Formula <- function(x)
 bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, ...)
 {
   if(is.null(specials))
-    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin")
+    specials <- c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb")
   if(inherits(formula, "bamlss.formula"))
     return(formula)
   if(!is.list(formula)) {
@@ -2402,7 +2402,7 @@ make_fFormula <- function(formula)
 all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, intercept = FALSE, type = 1)
 {
   env <- environment(formula)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   tf <- terms(formula, specials = specials, keep.order = TRUE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -2494,7 +2494,7 @@ terms.formula2 <- function(formula, specials, keep.order = TRUE, ...)
 all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
 {
   env <- environment(formula)
-  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", specials))
+  specials <- unique(c("s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb", specials))
   tf <- terms.formula2(formula, specials = specials, keep.order = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
@@ -5146,6 +5146,118 @@ smooth.construct.nn.smooth.spec <- function(object, data, knots, ...)
 }
 
 
+## Random bits.
+rb <- function(..., k = 50)
+{
+  ret <- la(..., k = k)
+  ret$label <- gsub("la(", "rb(", ret$label, fixed = TRUE)
+  if(!is.null(ret$xt$id)) {
+    lab <- strsplit(ret$label, "")[[1]]
+    lab <- paste(c(lab[-length(lab)], paste(",id='", ret$xt$id, "')", sep = "")), collapse = "", sep = "")
+    ret$label <- lab
+  }
+  if(is.null(ret$xt$tp))
+    ret$xt$tp <- FALSE
+  class(ret) <- "randombits.smooth.spec"
+  ret
+}
+
+smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
+{
+  object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]
+  colnames(object$X) <- paste0("b.", colnames(object$X))
+  center <- scale <- rep(NA, ncol(object$X))
+  for(j in 1:ncol(object$X)) {
+    if(length(unique(object$X[, j])) > 3) {
+      center[j] <- mean(object$X[, j])
+      scale[j] <- sd(object$X[, j])
+      object$X[, j] <- (object$X[, j] - center[j]) / scale[j]
+    }
+  }
+  object$scale <- list("center" = center, "scale" = scale)
+  k <- object$xt$k
+  if(!is.null(object$xt$weights))
+    k <- length(object$xt$weights)
+  object$xt$ntake <- if(is.null(object$xt$ntake)) {
+    if(ncol(object$X) < 5)
+      ncol(object$X)
+    else
+      ceiling(ncol(object$X) / 3)
+  } else object$xt$ntake
+  if(is.null(object$xt$weights)) {
+    object$xt$weights <- vector(mode = "list", length = k)
+    for(i in 1:k) {
+      object$xt$weights[[i]] <- rnorm(object$xt$ntake)
+      attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
+      attr(object$xt$weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
+    }
+  }
+  object$BitsMat <- function(X, w) {
+    B <- matrix(0, nrow = nrow(X), ncol = length(w))
+    for(i in 1:length(w)) {
+      z <- X[, attr(w[[i]], "id"), drop = FALSE] %*% w[[i]]
+      z <- 1 * (z >= z[attr(w[[i]], "thres")])
+      z[z > 0] <- -1
+      z[z > -1] <- 1
+      B[, i] <- z
+    }
+    return(B)
+  }
+  object$X <- object$BitsMat(object$X, object$xt$weights)
+  object$S <- list(diag(ncol(object$X)))
+  object$xt$prior <- "ig"
+  object$fx <- object$xt$fx <- FALSE
+  object$xt$df <- 4
+  object$by <- "NA"
+  object$null.space.dim <- 0
+  object$bs.dim <- ncol(object$X)
+  object$rank <- sapply(object$S, sum)
+
+  object$N <- apply(object$X, 2, function(x) {
+    return((1/crossprod(x)) %*% t(x))
+  })
+
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+    ## process weights.
+    if(!is.null(weights))
+      stop("weights is not supported!")
+
+    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+
+    j <- which.min(bf$rss)
+    g2 <- rep(0, length(bf$g))
+    g2[j] <- bf$g[j]
+  
+    ## Finalize.
+    x$state$parameters <- set.par(x$state$parameters, g2, "b")
+    x$state$fitted.values <- bf$fit[, j]
+
+    x$state$rss <- bf$rss[j]
+
+    if(hatmatrix) {
+      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+    }
+  
+    return(x$state)
+  }
+
+  class(object) <- "randombits.smooth"
+  object
+}
+
+Predict.matrix.randombits.smooth <- function(object, data)
+{
+  X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]
+  colnames(X) <- paste0("b.", colnames(X))
+  for(j in 1:ncol(X)) {
+    if(!is.na(object$scale$center[j]))
+      X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
+  }
+  X <- object$BitsMat(X, object$xt$weights)
+  X
+}
+
+
 if(FALSE) {
   set.seed(123)
 
@@ -6527,7 +6639,7 @@ print.bamlss.formula <- function(x, ...) {
 drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials = NULL, keep.response = TRUE, keep.intercept = TRUE, data = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   if(!inherits(f, "formula")) {
     if(!is.null(f$terms)) {
       f <- f$terms
@@ -6600,7 +6712,7 @@ terms.bamlss <- terms.bamlss.frame <- terms.bamlss.formula <- function(x, specia
   if(!inherits(x, "bamlss.formula"))
     x <- bamlss.formula(x, ...)
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   elmts <- c("formula", "fake.formula")
   if(!any(names(x) %in% elmts) & !inherits(x, "formula")) {
     if(!is.null(model)) {
@@ -6726,7 +6838,7 @@ has_response <- function(x)
 
 has_sterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6736,7 +6848,7 @@ has_sterms <- function(x, specials = NULL)
 
 has_pterms <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   if(inherits(x, "formula"))
     x <- terms(x, specials = specials)
   if(!inherits(x, "terms"))
@@ -6749,7 +6861,7 @@ has_pterms <- function(x, specials = NULL)
 
 get_pterms_labels <- function(x, specials = NULL)
 {
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   tl <- if(has_pterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = TRUE, sterms = FALSE,
       keep.response = FALSE, specials = specials)
@@ -6761,7 +6873,7 @@ get_pterms_labels <- function(x, specials = NULL)
 get_sterms_labels <- function(x, specials = NULL)
 {
   env <- environment(x)
-  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin"))
+  specials <- unique(c(specials, "s", "te", "t2", "sx", "s2", "rs", "ti", "tx", "tx2", "tx3", "la", "n", "h", "lf", "af", "lf.vd", "re", "peer", "fpc", "lin", "rb"))
   if(has_sterms(x, specials)) {
     x <- drop.terms.bamlss(x, pterms = FALSE, sterms = TRUE,
       keep.response = FALSE, specials = specials)

@@ -944,7 +944,6 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute mean and precision.
   XWX <- do.XWX(data$X, 1 / data$weights, data$sparse.setup$matrix)
-
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
