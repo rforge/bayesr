@@ -171,7 +171,7 @@ export(
 
   ## random bits
   "rb",
-  "smooth.construct.rb.smooth.spec",
+  "smooth.construct.randombits.smooth.spec",
 
   ## stability selection
   "stabsel",
