@@ -2910,7 +2910,7 @@ boost.transform <- function(x, y, df = NULL, family,
     nid <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
       if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
-        if(!is.null(df)) {
+        if(!is.null(df) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "randombits.smooth")) {
           if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "lasso.smooth"))
             x[[nx[j]]]$smooth.construct[[sj]]$xt$df <- df
           x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
