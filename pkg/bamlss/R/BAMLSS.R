@@ -5203,7 +5203,10 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       z[z > -1] <- 1
       B[, i] <- z
     }
-    return(list("X" = B, "weights" = w))
+    if(thres)
+      return(list("X" = B, "weights" = w))
+    else
+      return(B)
   }
   tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
   object$X <- tXw$X
