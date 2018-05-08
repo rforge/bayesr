@@ -5192,18 +5192,23 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       attr(object$xt$weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
     }
   }
-  object$BitsMat <- function(X, w) {
+  object$BitsMat <- function(X, w, thres = TRUE) {
     B <- matrix(0, nrow = nrow(X), ncol = length(w))
     for(i in 1:length(w)) {
       z <- X[, attr(w[[i]], "id"), drop = FALSE] %*% w[[i]]
-      z <- 1 * (z >= z[attr(w[[i]], "thres")])
+      if(thres)
+        attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
+      z <- 1 * (z >= attr(w[[i]], "thres"))
       z[z > 0] <- -1
       z[z > -1] <- 1
       B[, i] <- z
     }
-    return(B)
+    return(list("X" = B, "weights" = w))
   }
-  object$X <- object$BitsMat(object$X, object$xt$weights)
+  tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
+  object$X <- tXw$X
+  object$xt$weights <- tXw$weights
+  rm(tXw)
   object$S <- list(diag(ncol(object$X)))
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- FALSE
@@ -5253,7 +5258,7 @@ Predict.matrix.randombits.smooth <- function(object, data)
     if(!is.na(object$scale$center[j]))
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
-  X <- object$BitsMat(X, object$xt$weights)
+  X <- object$BitsMat(X, object$xt$weights, thres = FALSE)
   X
 }
 
