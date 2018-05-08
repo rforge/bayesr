@@ -5198,10 +5198,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       z <- X[, attr(w[[i]], "id"), drop = FALSE] %*% w[[i]]
       if(thres)
         attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
-      z <- 1 * (z >= attr(w[[i]], "thres"))
-      z[z > 0] <- -1
-      z[z > -1] <- 1
-      B[, i] <- z
+      ##B[, i] <- c(1, -1)[(z >= attr(w[[i]], "thres")) + 1L]
+      B[, i] <- 1 * (z >= attr(w[[i]], "thres"))
     }
     if(thres)
       return(list("X" = B, "weights" = w))
@@ -5210,6 +5208,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   }
   tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
   object$X <- tXw$X
+  nobs <- nrow(object$X)
+  object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
   object$xt$weights <- tXw$weights
   rm(tXw)
   object$S <- list(diag(ncol(object$X)))
@@ -5220,11 +5220,9 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
   object$rank <- sapply(object$S, sum)
-
   object$N <- apply(object$X, 2, function(x) {
     return((1/crossprod(x)) %*% t(x))
   })
-
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     ## process weights.
     if(!is.null(weights))
@@ -5248,7 +5246,6 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   
     return(x$state)
   }
-
   class(object) <- "randombits.smooth"
   object
 }
@@ -5262,6 +5259,8 @@ Predict.matrix.randombits.smooth <- function(object, data)
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
   X <- object$BitsMat(X, object$xt$weights, thres = FALSE)
+  nobs <- nrow(X)
+  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
   X
 }
 
