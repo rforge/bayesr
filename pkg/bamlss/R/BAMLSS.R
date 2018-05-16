@@ -5186,9 +5186,18 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   } else object$xt$ntake
   if(is.null(object$xt$weights)) {
     object$xt$weights <- vector(mode = "list", length = k)
+    smp <- if(object$xt$ntake < 5) FALSE else TRUE
     for(i in 1:k) {
       object$xt$weights[[i]] <- rnorm(object$xt$ntake)
-      attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
+      if(!smp) {
+        object$xt$weights[[i]] <- rnorm(object$xt$ntake)
+        attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
+      } else {
+        nid <- sample(3:object$xt$ntake, size = 1)
+print(nid)
+        object$xt$weights[[i]] <- rnorm(nid)
+        attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = nid, replace = FALSE)
+      }
       attr(object$xt$weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
     }
   }
