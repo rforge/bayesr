@@ -5194,7 +5194,6 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
         attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
       } else {
         nid <- sample(3:object$xt$ntake, size = 1)
-print(nid)
         object$xt$weights[[i]] <- rnorm(nid)
         attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = nid, replace = FALSE)
       }
