@@ -1,6 +1,6 @@
 Package: bamlss
-Version: 1.0-0
-Date: 2018-04-13
+Version: 1.0-1
+Date: 2018-05-17
 Title: Bayesian Additive Models for Location Scale and Shape (and Beyond)
 Authors@R: c(person(given = "Nikolaus", family = "Umlauf", role = c("aut", "cre"), email = "Nikolaus.Umlauf@uibk.ac.at"),
   person(given = "Nadja", family = "Klein", role = "aut", email = "nklein@uni-goettingen.de"),
