@@ -1,0 +1,182 @@
+\documentclass[a4paper, 12pt]{article}
+
+\usepackage{graphicx}
+\parindent0em
+
+\begin{document}
+\begin{center}
+\LARGE{\bf BAYESREG OBJECT bayesregObject: regression procedure}
+\end{center} 
+\vspace{1cm}
+
+\noindent {\bf \large Response:}
+\begin{tabbing}
+Number of observations: \= 300\\
+Response Variable: \> y\\
+Family: \> Gaussian\\
+\end{tabbing}
+
+\noindent {\bf \large Predictor:}\\
+
+
+\begin{tabular}{ccp{12cm}}
+$\eta$ & $=$ & $\gamma_{const}const + \gamma_{x3}x3 + \gamma_{x4}x4 + f_{x2}(x2) + f_{x1}(x1) + f_{district}(district)$
+\end{tabular}
+\\ 
+\\
+
+\noindent {\bf \large Priors:}\\
+\\
+Fixed effects:\\
+diffuse priors\\
+\\\\
+$f_{x2}(x2)$\\
+first order random walk\\
+Inverse gamma prior for variance component with hyperparameters a=0.001 and b=0.001\\
+\\\\
+$f_{x1}(x1)$:\\
+P-spline with second order random walk penalty\\
+Number of knots: 20\\
+Knot choice: equidistant\\
+Degree of Splines: 3\\
+Inverse gamma prior for variance component with hyperparameters a=0.001 and b=0.001\\
+\\\\
+$f_{district}(district)$\\
+Markov random field\\
+Inverse gamma prior for variance component with hyperparameters a=0.001 and b=0.001\\
+\\\\
+
+\noindent {\bf \large MCMC Options:}
+\begin{tabbing}
+Levels for credible intervals: \= \\
+Level 1: \> 95\\
+Level 2: \> 80\\
+Number of Iterations: \> 10000\\
+Burn in: \> 1000\\
+Thinning Parameter: \> 10
+\end{tabbing}
+\vspace{0.5cm}
+
+ {\bf \large Estimation results for the deviance: }\\ 
+
+{\bf Unstandardized deviance } 
+
+\vspace{-0.4cm}
+\begin{tabbing}
+\hspace{3cm} \= \\
+  Mean:           \> 852.43761 \\
+  Std. Dev:       \> 11.672088 \\
+  2.5\% Quantile:  \> 830.5647 \\
+  10\% Quantile:  \> 838.17916 \\
+  50\% Quantile:  \> 851.73653 \\
+  90\% Quantile:  \> 868.14604 \\
+  97.5\% Quantile:  \> 877.28426 \\
+\end{tabbing}
+
+{\bf Saturated deviance } 
+
+\vspace{-0.4cm}
+\begin{tabbing}
+\hspace{3cm} \= \\
+  Mean:           \> 298.9705 \\
+  Std. Dev:       \> 24.014304 \\
+  2.5\% Quantile:  \> 251.86875 \\
+  10\% Quantile:  \> 267.60752 \\
+  50\% Quantile:  \> 299.39717 \\
+  90\% Quantile:  \> 329.67489 \\
+  97.5\% Quantile:  \> 345.77093 \\
+\end{tabbing}
+
+
+ {\bf \large Estimation results for the DIC: }\\ 
+
+{\bf DIC based on the unstandardized deviance } 
+
+\vspace{-0.4cm}
+\begin{tabbing}
+\hspace{3cm} \= \\
+deviance($\bar{\mu}$) \> 809.22168 \\
+pD  \> 43.215938 \\
+DIC  \> 895.65355 \\
+\end{tabbing}
+
+{\bf DIC based on the saturated deviance } 
+
+\vspace{-0.4cm}
+\begin{tabbing}
+\hspace{3cm} \= \\
+deviance($\bar{\mu}$) \> 254.50275 \\
+pD \> 44.467745 \\
+DIC \> 343.43824 \\
+\end{tabbing}
+
+
+ {\bf \large Estimation results for the scale parameter: }\\ 
+
+\vspace{-0.4cm}
+\begin{tabbing}
+\hspace{3cm} \= \\
+Mean  \> 1.01125 \\
+Std. dev.:  \> 0.0928975 \\
+  2.5\% Quantile:  \>0.851668 \\
+  10\% Quantile:  \>0.901505 \\
+  50\% Quantile:  \>1.00383 \\
+  90\% Quantile:  \>1.13521 \\
+  97.5\% Quantile:  \>1.21288 \\
+\end{tabbing}
+
+
+\newpage 
+
+
+\noindent {\bf \large Fixed Effects:}\\
+\\
+\begin{tabular}{|r|rrrrr|}
+\hline
+Variable & Mean & STD & 2.5\%-Quant. & Median & 97.5\%-Quant.\\
+\hline
+const & -0.0581932 & 0.0850521 & -0.239331 & -0.0573167 & 0.109595\\
+x3 & 9.12927 & 0.0663724 & 8.99702 & 9.12844 & 9.26354\\
+x4 & 5.2045 & 0.0554732 & 5.09313 & 5.20607 & 5.31853\\
+\hline 
+\end{tabular}
+
+\newpage
+\noindent {\bf \large Plots:}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.6]{res_f_x2_rw.ps}
+\caption{Non--linear Effect of 'x2'.
+Shown are the posterior means together with 95\% and 80\% pointwise credible intervals.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.6]{res_f_x1_pspline.ps}
+\caption{Non--linear Effect of 'x1'.
+Shown are the posterior means together with 95\% and 80\% pointwise credible intervals.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.6]{res_f_district_spatial_pmean.ps}
+\caption{Non--linear Effect of 'district'. Shown are the posterior means.}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[scale=0.6]{res_f_district_spatial_pcat95.ps}
+\caption{Non--linear Effect of 'district'. Posterior probabilities for a nominal level of 95\%.
+Black denotes regions with strictly negative credible intervals,
+white denotes regions with strictly positive credible intervals.}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[scale=0.6]{res_f_district_spatial_pcat80.ps}
+\caption{Non--linear Effect of 'district'. Posterior probabilities for a nominal level of 80\%.
+Black denotes regions with strictly negative credible intervals,
+white denotes regions with strictly positive credible intervals.}
+\end{figure}
+\end{document}

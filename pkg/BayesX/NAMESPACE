@@ -1,0 +1,86 @@
+## BayesX package exports
+export(
+  "add.neighbor",                    ## neighbors handling
+  "delete.neighbor",
+  "get.neighbor",
+  "fuse",
+  "drawmap",                         ## plotting
+  "get.centroids",
+  "smooth.bnd",
+  "plotautocor",
+  "plotnonp",
+  "plotsample",
+  "plotsample.coda",
+  "plotsurf",
+  "hpd",			     ## intervals
+  "hpd.coda",
+  "nb2gra",                          ## conversions
+  "gra2nb",
+  "sp2bnd",
+  "shp2bnd",
+  "bnd2sp",
+  "bnd2gra",
+  "createxymap",
+  "read.bnd",                        ## file handling
+  "write.bnd",
+  "read.gra",
+  "write.gra",
+  "extractSamples",                  ## results handling
+  "akimaPermit",                     ## allow usage of akima despite its licence
+  "akimaPermitStatus"
+)
+
+## imports
+importFrom(
+  "sp",
+  "Polygon",
+  "Polygons",
+  "coordinates",
+  "SpatialPolygons",
+  "bbox",
+  "polygons"
+)
+
+importFrom(
+  "maptools",
+  "unionSpatialPolygons",
+  "readShapePoly",
+  "gpclibPermit"
+)
+
+importFrom(
+  "shapefiles",
+  "read.shapefile",
+  "read.dbf"
+)
+
+importFrom(
+  "colorspace",
+  "diverge_hcl"
+)
+
+importFrom(
+  "coda",
+  "mcmc",
+  "as.mcmc",
+  "autocorr.plot",
+  "HPDinterval"
+)
+
+importFrom(
+  "splines",
+  "spline.des"
+)
+
+importFrom("grDevices", "grey", "hsv")
+
+importFrom("graphics", "axis", "box", "contour", "image", "lines",
+  "par", "persp", "plot", "polygon", "text")
+
+importFrom("stats", "complete.cases", "density", "integrate",
+  "na.omit", "optim", "quantile", "splinefun")
+
+importFrom("utils", "head", "read.table", "write.table")
+
+importFrom("methods", "is", "slot")
+

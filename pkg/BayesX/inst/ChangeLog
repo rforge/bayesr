@@ -1,0 +1,35 @@
+2010-03-26 Thomas Kneib <thomas.kneib@uni-oldenburg.de>
+
+  * Changed defaults in the hcl color scheme for drawmap
+
+
+2009-10-30  Felix Heinzl <felix.heinzl@stat.uni-muenchen.de>, 
+            Thomas Kneib <thomas.kneib@uni-oldenburg.de>
+
+  * Bug fixes and additions in drawmap: 
+    - Allow for multiple maps in one plotting window
+    - Allow for user-specified width for striped regions
+  
+  
+2009-07-13  Daniel Sabanés Bové  <daniel.sabanesbove@gmx.net>
+
+	* Start version 0.2-4 development with:
+	  - better extractSamples (bug fixes, extraction of random
+	  effects and scale parameter) which now uses a separate ...
+	  - ... external getNumbers helper function (which is not
+	  exported) 
+
+2009-06-30  Thomas Kneib  <thomas.kneib@uni-oldenburg.de>
+	
+  * Changes in version 0.2-3:
+  
+    - bug fixes in bnd2gra (adjustments for regions contained in other regions 
+      and for regions consisting of multiple polygons).
+    - Attributes is.in and contains of map objects in bnd format have been 
+      replaced by the attribute surrounding
+    - minor bug fixed in write.gra
+
+2009-06-30  Daniel Sabanés Bové  <daniel.sabanesbove@gmx.net>
+
+	* Start changelog.
+
