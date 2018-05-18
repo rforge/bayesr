@@ -5210,7 +5210,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       if(thres)
         attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
       ##B[, i] <- c(1, -1)[(z >= attr(w[[i]], "thres")) + 1L]
-      B[, i] <- 1 * (z >= attr(w[[i]], "thres")) - 0.5
+      B[, i] <- 1 * (z >= attr(w[[i]], "thres"))
     }
     if(thres)
       return(list("X" = B, "weights" = w))
