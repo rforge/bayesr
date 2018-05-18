@@ -5219,12 +5219,12 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   }
   tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
   object$X <- tXw$X - 0.5
-  ##nobs <- nrow(object$X)
-  ##object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+  nobs <- nrow(object$X)
+  object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
 
-  ##d <- apply(apply(object$X, 2, range), 2, diff)
-  ##object$Xkeep <- which(d > 0.01)
-  ##object$X <- object$X[, object$Xkeep, drop = FALSE]
+  d <- apply(apply(object$X, 2, range), 2, diff)
+  object$Xkeep <- which((d > 0.00001) & !duplicated(t(object$X)))
+  object$X <- object$X[, object$Xkeep, drop = FALSE]
 
   if(ncol(object$X) < 1)
     stop("please check your rb() specifications, no columns in the design matrix!")
@@ -5278,9 +5278,9 @@ Predict.matrix.randombits.smooth <- function(object, data)
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
   X <- object$BitsMat(X, object$xt$weights, thres = FALSE)
-#  nobs <- nrow(X)
-#  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
-#  X <- X[, object$Xkeep, drop = FALSE]
+  nobs <- nrow(X)
+  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
+  X <- X[, object$Xkeep, drop = FALSE]
   X
 }
 
