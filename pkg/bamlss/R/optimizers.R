@@ -745,7 +745,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     if(ncol(y) < 2)
       y <- y[[1]]
   }
-  
+
   if(!is.null(start))
     x <- set.starting.values(x, start)
   eta <- get.eta(x)
