@@ -3483,6 +3483,8 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
   rval <- 0
   for(i in names(x)) {
     assign  <- as.character(attr(x[[i]], "assign"))
+    if(!length(assign))
+      return(1)
     uassign <- unique(assign)
     facID   <- sapply(uassign, function(x) { sum(assign == x) > 1 })
     assign  <- uassign[facID]
