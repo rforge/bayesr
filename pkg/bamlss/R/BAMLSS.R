@@ -4751,7 +4751,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.1)
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.01, 50)
     }
     if(type == "gauss") {
       if(is.null(rint))
@@ -4798,7 +4798,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       r[r < 0] <- 0.01
   }
   if(any(s <= 1))
-      s[s <= 1] <- 1.01
+    s[s <= 1] <- 1.01
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
   type <- match.arg(type)
@@ -4839,36 +4839,6 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
   return(weights)
 }
 
-n.stabsel <- function(x, model = NULL, thr = 0.9, plot = TRUE)
-{
-  if(is.null(model))
-    model <- x$family$names
-  if(!all(model %in% x$family$names))
-    stop("model names not in family!")
-  if(plot) {
-    hold <- par(no.readonly = TRUE)
-    on.exit(par(hold))
-    par(mar = c(5, 12, 4, 2) + .1)
-  }
-  ntab0 <- names(x$table)
-  B <- x$parameter$B
-  rval <- list()
-  for(j in model) {
-    i <- grepl("n(", ntab0, fixed = TRUE) & grepl(paste0(".", j), ntab0, fixed = TRUE)
-    if(any(i)) {
-      ntab <- ntab0[i]
-      tab <- x$table[i] / B
-      rval[[j]] <- sapply(strsplit(ntab[tab >= thr], ".", fixed = TRUE), function(x) { as.integer(gsub("b", "", x[2])) })
-      if(plot) {
-        col <- rep("lightgray", length(tab))
-        col[tab >= thr] <- "yellow"
-        barplot(tab, horiz = TRUE, las = 1, col = col)
-        abline(v = thr, lty = 2)
-      }
-    }
-  }
-  rval
-}
 
 smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 {
@@ -5186,35 +5156,10 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(is.character(object$xt$afun)) {
     object$afun <- switch(object$xt$afun,
       "sigmoid" = function(x) {
-        1 / (1 + exp(-x)) - 0.5
+        f <- 1 / (1 + exp(-x))
+        return(f - 0.5)
       }
     )
-  }
-
-  if(length(nodes) < 2) {
-    object$Zmat <- function(X, weights) {
-      nc <- length(weights)
-      Z <- matrix(0, nrow = nrow(X), ncol = nc)
-      for(j in 1:nc)
-        Z[, j] <- object$afun(X %*% weights[[j]])
-      return(Z)
-    }
-  } else {
-    object$Zmat <- function(X, weights) {
-      Z <- list()
-      n <- nrow(X)
-      for(i in 1:length(weights)) {
-        Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
-        for(j in 1:length(weights[[i]])) {
-          if(i < 2) {
-            Z[[i]][, j] <- object$afun(X %*% weights[[i]][[j]])
-          } else {
-            Z[[i]][, j] <- object$afun(cbind(1, Z[[i - 1]]) %*% weights[[i]][[j]])
-          }
-        }
-      }
-      return(Z[[length(Z)]])
-    }
   }
 
   if(is.null(object$xt$weights)) {
@@ -5244,23 +5189,34 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     bw <- b[grep("bw", nb, fixed = TRUE)]
     Z <- matrix(0, nrow = nrow(X), ncol = nodes)
     nw <- names(bw)
-    for(j in 1:nodes) {
+    for(j in 1:nodes)
       Z[, j] <- object$afun(X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
-    }
     fit <- drop(Z %*% bb)
-    ##fit <- fit - mean(fit)
     return(fit)
+  }
+
+  object$Jmat <- function(X, b, ...) {
+    nb <- names(b)
+    bb <- b[grep("bb", nb, fixed = TRUE)]
+    bw <- b[grep("bw", nb, fixed = TRUE)]
+    J <- matrix(0, nrow = nrow(X), ncol = length(bw) + 1L)
+    f <- object$afun(X %*% bw)
+    J[, 1] <- f
+    J[, 2] <- bb * exp(-f)/(1 + exp(-f))^2
+    for(j in 2:length(bw))
+      J[, j + 1L] <- bb * (exp(-f) * X[, j])/(1 + exp(-f))^2
+    return(J)
   }
 
   object$special.npar <- length(grep("b", names(object$state$parameters)))
   object$binning <- list("match.index" = 1:nrow(object$X))
 
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
-    ## process weights.
     if(!is.null(weights))
       stop("weights is not supported!")
 
     bw <- x$state$parameters[grep("bw", names(x$state$parameters), fixed = TRUE)]
+
     nw <- names(bw)
     nc <- ncol(x$X)
 
@@ -5272,41 +5228,51 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
     bf <- boost_fit_nnet(nu, Z, N, y, x$binning$match.index)
 
-    j <- which.min(bf$rss)
-    g <- bf$g[j]
-    ##bf$fit[, j] <- bf$fit[, j] - mean(bf$fit[, j]
-    e <- y - bf$fit[, j]
+    j <- jj <- which.min(bf$rss)
 
-    rss <- wi <- rep(0, nc)
-    fj <- x$X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)]
+    g <- bf$g[j]
+
+    e <- y #- bf$fit[, j]
+
+    rss <- wi0 <- rep(0, nc)
+    wi1 <- bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)]
+    fj <- x$X %*% wi0
     x0 <- exp(-fj)/(1 + exp(-fj))^2
-    wi[1] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
-    rss[1] <- sum((e - x0 %*% wi[1])^2)
-    
+
+    wi0[1] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
+    wi1[1] <- wi1[1] + wi0[1]
+    rss[1] <- sum((e - x0 * wi1[1])^2)
     for(i in 2:nc) {
       x0 <- exp(-fj) * x$X[, i]/(1 + exp(-fj))^2
-      wi[i] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
-      rss[i] <- sum((e - x0 %*% wi[i])^2)
+      wi0[i] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
+      wi1[i] <- wi1[i] + wi0[i]
+      rss[i] <- sum((e - x0 * wi1[i])^2)
     }
 
     i <- which.min(rss) - 1L
     wj <- bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)]
-    wj[paste0("bw", j, "_w", i)] <- wj[paste0("bw", j, "_w", i)] + wi[i + 1]
+    wj[paste0("bw", j, "_w", i)] <- wj[paste0("bw", j, "_w", i)] + wi0[i + 1L]
 
     Z <- drop(object$afun(x$X %*% wj))
-    g <- drop(nu * ((1 / crossprod(Z)) %*% t(Z) %*% y))
+
+    g3 <- drop(nu * ((1 / crossprod(Z)) %*% t(Z) %*% y))
+
+    fit3 <- Z * g3
+    rss3 <- sum((y - fit3)^2)
 
     g2 <- rep(0, length = length(x$state$parameters))
     names(g2) <- names(x$state$parameters)
+    if(rss3 < bf$rss[jj]) {
+      g <- g3
+      g2[paste0("bw", j, "_w", i)] <- wi0[i + 1L]
+      x$state$rss <- rss3
+      x$state$fitted.values <- fit3
+    } else {
+      x$state$rss <- bf$rss[jj]
+      x$state$fitted.values <- bf$fit[, jj]
+    }
     g2[paste0("bb", j)] <- g
-    g2[paste0("bw", j, "_w", i)] <- wi[i + 1]
-  
-    ## Finalize.
     x$state$parameters <- g2
-    x$state$fitted.values <- Z * g
-print(round(sum(x$state$fitted.values), 10))
-    ##x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
-    x$state$rss <- sum((y - x$state$fitted.values)^2)
 
     if(hatmatrix) {
       stop("hatmatrix is not supported yet!")
@@ -5315,13 +5281,13 @@ print(round(sum(x$state$fitted.values), 10))
     return(x$state)
   }
 
-  class(object) <- c("nnet3.smooth", "no.mgcv", "special")
+  class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
   object
 }
 
 
-Predict.matrix.nnet3.smooth <- function(object, data)
+Predict.matrix.nnet.smooth <- function(object, data)
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE

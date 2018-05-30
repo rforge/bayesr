@@ -2909,116 +2909,16 @@ boost.transform <- function(x, y, df = NULL, family,
   for(j in 1:np) {
     nid <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth")) {
-        if(!is.null(df) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "randombits.smooth")) {
-          if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "lasso.smooth"))
-            x[[nx[j]]]$smooth.construct[[sj]]$xt$df <- df
-          x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
-        }
-        if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
-          if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
-            x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
-            x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
-            x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
-          }
-        }
-      } else {
-        nid <- c(nid, sj)
+      if(!is.null(df) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "randombits.smooth")) {
+        if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "lasso.smooth"))
+          x[[nx[j]]]$smooth.construct[[sj]]$xt$df <- df
+        x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
       }
-    }
-    if(!is.null(nid)) {
-      NNETS <- list(); nosplit <- NULL
-      for(sj in nid) {
-        if(!x[[nx[j]]]$smooth.construct[[sj]]$split) {
-          nosplit <- c(nosplit, sj)
-        } else {
-          nnets <- list()
-          g0 <- get.par(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters, "b")
-          for(k in 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)) {
-            nnets[[k]] <- list()
-            nnets[[k]]$label <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".", k)
-            nnets[[k]]$term <- paste0("n.", sj, ".", k)
-            nnets[[k]]$X <- x[[nx[j]]]$smooth.construct[[sj]]$X[, k, drop = FALSE]
-            colnames(nnets[[k]]$X) <- NULL
-            nnets[[k]]$binning <- x[[nx[j]]]$smooth.construct[[sj]]$binning
-            nnets[[k]]$nobs <- x[[nx[j]]]$smooth.construct[[sj]]$nobs
-            nnets[[k]]$fixed <- TRUE
-            nnets[[k]]$fxsp <- FALSE
-            nnets[[k]]$weights <- x[[nx[j]]]$smooth.construct[[sj]]$weights
-            nnets[[k]]$rres <- x[[nx[j]]]$smooth.construct[[sj]]$rres
-            nnets[[k]]$fit.reduced <- x[[nx[j]]]$smooth.construct[[sj]]$fit.reduced
-            nnets[[k]]$fit.fun <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun
-            nnets[[k]]$state <- list("parameters" = g0[k])
-            nnets[[k]]$state$fitted.values <- nnets[[k]]$fit.fun(nnets[[k]]$X, g0[k])
-            nnets[[k]]$state$edf <- 0
-            nnets[[k]]$state$rss <- 0
-            nnets[[k]]$state$do.optim <- FALSE
-            nnets[[k]]$is.nnet <- TRUE
-            nnets[[k]]$selected <- rep(0, length = maxit)
-            nnets[[k]]$sparse.setup <- sparse.setup(nnets[[k]]$X, S = NULL)
-            nnets[[k]]$upper <- Inf
-            nnets[[k]]$lower <- -Inf
-            nnets[[k]]$init.edf <- 0
-            class(nnets[[k]]) <- "nnet.boost"
-          }
-          names(nnets) <- paste0(x[[nx[j]]]$smooth.construct[[sj]]$label, ".[].", 1:ncol(x[[nx[j]]]$smooth.construct[[sj]]$X))
-          NNETS <- c(NNETS, nnets)
-        }
-      }
-      if(!is.null(nosplit))
-        nid <- nid[!(nid %in% nosplit)]
-      if(length(nid) > 0) {
-        x[[nx[j]]]$smooth.construct[nid] <- NULL
-        x[[nx[j]]]$smooth.construct <- c(x[[nx[j]]]$smooth.construct, NNETS)
-        rm(NNETS, nnets)
-      }
-      if(!is.null(nosplit)) {
-        for(sj in nosplit) {
-          x[[nx[j]]]$smooth.construct[[sj]]$N <- apply(x[[nx[j]]]$smooth.construct[[sj]]$X, 2,
-            function(x) {
-              return((1/crossprod(x)) %*% t(x))
-            })
-          x[[nx[j]]]$smooth.construct[[sj]]$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
-            ## process weights.
-            if(!is.null(weights))
-              stop("weights is not supported!")
-
-            bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
-
-            j <- which.min(bf$rss)
-            g2 <- rep(0, length(bf$g))
-            g2[j] <- bf$g[j]
-
-#if(g2[j] > 100) {
-
-#apply(x$X, 2, range)
-
-#  Y <<- y
-#  BF <<- bf
-#  NU <<- nu
-#  X <<- x$X
-#  N <<- x$N
-#  id <<- x$binning$match.index
-
-#            G2 <<- g <- nu * apply(x$N[x$binning$match.index, , drop = FALSE] * y, 2, sum)
-#            fit <- t(t(x$X) * g)
-#            rss2 <<- apply((fit[x$binning$match.index, , drop = FALSE] - y)^2, 2, sum)
-
-#  stop()
-#}
-  
-            ## Finalize.
-            x$state$parameters <- set.par(x$state$parameters, g2, "b")
-            x$state$fitted.values <- bf$fit[, j]
-
-            x$state$rss <- bf$rss[j]
-
-            if(hatmatrix) {
-              x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
-            }
-  
-            return(x$state)
-          } 
+      if(!is.null(x[[nx[j]]]$smooth.construct[[sj]]$fxsp)) {
+        if(!x[[nx[j]]]$smooth.construct[[sj]]$fxsp & !x[[nx[j]]]$smooth.construct[[sj]]$fixed) {
+          x[[nx[j]]]$smooth.construct[[sj]]$old.optimize <- x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim
+          x[[nx[j]]]$smooth.construct[[sj]]$state$do.optim <- FALSE
+          x[[nx[j]]]$smooth.construct[[sj]]$do.optim <- FALSE
         }
       }
     }
@@ -3199,8 +3099,8 @@ make.par.list <- function(x, iter)
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
         if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
           attr(rval[[j]], "is.model.matrix") <- TRUE
-        if(inherits(x$smooth.construct[[j]], "nnet.boost"))
-          class(rval[[j]]) <- "nnet.boost"
+        if(inherits(x$smooth.construct[[j]], "nnet.smooth"))
+          class(rval[[j]]) <- c(class(rval[[j]]), "nnet.smooth")
       }
     }
   } else {
@@ -3216,14 +3116,17 @@ parm2mat <- function(x, mstop, fixed = NULL)
 {
   nx <- names(x)
   for(i in seq_along(x)) {
-    is.mm <- is.nnet <- NULL
+    is.mm <- NULL
     for(j in names(x[[i]])) {
       if(!is.null(attr(x[[i]][[j]], "is.model.matrix")))
         is.mm <- c(is.mm, j)
-      if(inherits(x[[i]][[j]], "nnet.boost"))
-        is.nnet <- c(is.nnet, j)
       cn <- colnames(x[[i]][[j]])
-      x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
+      if(!inherits(x[[i]][[j]], "nnet.smooth")) {
+        x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
+      } else {
+        nj <- grep("bw", colnames(x[[i]][[j]]), fixed = TRUE)
+        x[[i]][[j]][, nj] <- apply(x[[i]][[j]][1:mstop, nj, drop = FALSE], 2, cumsum)
+      }
       if(!is.matrix(x[[i]][[j]]))
         x[[i]][[j]] <- matrix(x[[i]][[j]], ncol = length(cn))
       colnames(x[[i]][[j]]) <- cn
@@ -3232,14 +3135,6 @@ parm2mat <- function(x, mstop, fixed = NULL)
       x[[i]][["p"]] <- do.call("cbind", x[[i]][is.mm])
       colnames(x[[i]][["p"]]) <- is.mm
       x[[i]][is.mm[is.mm != "p"]] <- NULL
-    }
-    if(!is.null(is.nnet)) {
-      if(length(is.nnet) > 1) {
-        is.nnet2 <- unique(sapply(strsplit(is.nnet, ".[]", fixed = TRUE), function(x) { x[1] }))
-        for(j in is.nnet2) {
-          x[[i]][[j]] <- do.call("cbind", x[[i]][grep(j, is.nnet, fixed = TRUE)])
-        }
-      }
     }
     sm <- names(x[[i]])
     sm <- sm[sm != "p"]
@@ -3265,39 +3160,6 @@ parm2mat <- function(x, mstop, fixed = NULL)
     x <- x[fixed, ]
   return(x)
 }
-
-
-#	for(i in seq_along(coefs))
-#	{
-#		curname<-names(coefs)[i]
-#		cpos<-match(curname, colnames(dfr))
-#		usedScale<-attr(dfr[[cpos]], "scaled:scale")
-#		usedCenter<-attr(dfr[[cpos]], "scaled:center")
-#		if(! is.null(usedScale))
-#		{
-#			catwif(verbosity > 0, "Scaling back for variable", curname)
-#			catwif(verbosity >1, "usedScale structure")
-#			if(verbosity > 1) str(usedScale)
-#			catwif(verbosity >1, "usedCenter structure")
-#			if(verbosity > 1) str(usedCenter)
-#			oldcoef<-coefs[i]
-#			itc<-itc - ((oldcoef * usedCenter)/usedScale)
-#			coefs[i]<-oldcoef / usedScale
-#		}
-#	}
-#	coefs<-c(itc, coefs)
-#	names(coefs)[1]<-itcname
-#	return(coefs)
-
-
-#          if(!is.null(x[[i]]$smooth.construct[[j]]$boost.scale)) {
-#            mx <- x[[i]]$smooth.construct[[j]]$boost.scale$mean
-#            sdx <- x[[i]]$smooth.construct[[j]]$boost.scale$sd
-#            x[[i]]$smooth.construct[[j]]$X <- x[[i]]$smooth.construct[[j]]$X * sdx + mx
-#            if(!is.null(intercept))
-#              intercept <- intercept - ((b * mx) / sdx)
-#            b <- b / sdx
-#          }
 
 
 ## Retransform 'x' to 'bamlss.frame' structure.
@@ -3494,7 +3356,8 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
 
     for(j in names(x[[i]]$smooth.construct)) {
       if(inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth") | inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth")) {
-        rval <- rval + sum(abs(get.par(x[[i]]$smooth.construct[[j]]$state$parameters, "b")) > 1e-10)
+        np <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
+        rval <- rval + sum(abs(x[[i]]$smooth.construct[[j]]$state$parameters[grep("bb", np)]) > 1e-10)
         next
       }
       rval <- rval + 1 * (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
