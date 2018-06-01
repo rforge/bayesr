@@ -4876,7 +4876,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     term <- colnames(object$X)
     lab <- object$label
     take <- object$xt$take
-    update <- object$xt$update
+    update <- object$xt$update ##
     nu <- apply(object$X, 2, function(x) { length(unique(x)) })
     if(any(i <- nu < 3)) {
       for(j in which(i)) {
