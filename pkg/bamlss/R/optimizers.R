@@ -1435,7 +1435,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup)
     }
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    if(is.null(x$xt[["pmean"]]))
+      x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    else
+      x$state$parameters <- set.par(x$state$parameters, drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]])), "b")
   } else {
     args <- list(...)
     edf0 <- args$edf - x$state$edf
@@ -1449,7 +1452,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
-      g <- drop(P %*% crossprod(x$X, x$rres))
+      if(is.null(x$xt[["pmean"]]))
+        g <- drop(P %*% crossprod(x$X, x$rres))
+      else
+        g <- drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]]))
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
       edf <- sum_diag(XWX %*% P)
@@ -1485,7 +1491,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
-    x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    if(is.null(x$xt[["pmean"]]))
+      x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+    else
+      x$state$parameters <- set.par(x$state$parameters, drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]])), "b")
   }
   
   ## Compute fitted values.

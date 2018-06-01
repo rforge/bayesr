@@ -883,7 +883,10 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     matrix_inv(XWX + S, data$sparse.setup)
   }
   P[P == Inf] <- 0
-  M <- P %*% crossprod(data$X, data$rres)
+  if(is.null(data$xt[["pmean"]]))
+    M <- P %*% crossprod(data$X, data$rres)
+  else
+    M <- P %*% (crossprod(data$X, data$rres) + P %*% data$xt[["pmean"]])
 
   ## Degrees of freedom.
   edf <- sum_diag(XWX %*% P)
@@ -952,7 +955,10 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     matrix_inv(XWX + S, data$sparse.setup)
   }
   P2[P2 == Inf] <- 0
-  M2 <- P2 %*% crossprod(data$X, data$rres)
+  if(is.null(data$xt[["pmean"]]))
+    M2 <- P2 %*% crossprod(data$X, data$rres)
+  else
+    M2 <- P2 %*% (crossprod(data$X, data$rres) + P2 %*% data$xt[["pmean"]])
 
   ## Get the log prior.
   qbeta <- try(dmvnorm(g0, mean = M2, sigma = P2, log = TRUE), silent = TRUE)
