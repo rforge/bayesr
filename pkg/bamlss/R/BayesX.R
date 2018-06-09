@@ -1326,7 +1326,7 @@ tx3 <- function(..., bs = "ps", k = c(10, 5), ctr = c("main", "center"), xt = NU
   object$label <- paste("tx3(", paste(vars, collapse = ","), ")", sep = "")
   object$dim <- 3
   object$special <- special
-  object$constraint <- match.arg(ctr)
+  object$constraint <- ctr[1]
   object$xt <- xt
   class(object) <- "tensorX3.smooth.spec"
   object
