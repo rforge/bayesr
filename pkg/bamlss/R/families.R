@@ -2784,6 +2784,32 @@ quant2_bamlss <- function(prob = 0.5, ...)
   rval
 }
 
+kde_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "kde",
+    "names" = "mu",
+    "links" = c("mu" = "identity"),
+    "d" = function(y, par, log = FALSE) {
+      n <- length(y)
+      K <- function(x) { (1/sqrt(2 * pi) * exp(-0.5 * (x)^2)) }
+      r <- function(x) { exp(x) / (1 + exp(x)) }
+      d <- rep(0, n)
+      e <- y - par$mu
+      h <- 1.06 * sd(y) * n^(-1/5)
+      for(i in 1:n) {
+        z <- r(e[i]) - r(e[-i])
+        d[i] <- log( 1/((n - 1) * h) * sum(K(z/h)) )
+      }
+      if(!log)
+        d <- exp(d)
+      d
+    }
+  )
+  class(rval) <- "family.bamlss"
+  rval
+}
+
 
 ## Zero adjusted families.
 #zero_bamlss <- function(g = invgaussian)
