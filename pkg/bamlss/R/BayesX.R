@@ -1349,31 +1349,39 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
   p1 <- ncol(object$margin[[1]]$X)
   p2 <- ncol(object$margin[[2]]$X)
 
-  if(object$constraint == "main") {
-    A1 <- matrix(rep(1, p1), ncol = 1)
-    A2 <- matrix(rep(1, p2), ncol = 1)
-    I1 <- diag(p1); I2 <- diag(p2)
-
-    A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
-
-    i <- match.index(t(A))
-    A <- A[, i$nodups, drop = FALSE]
-
-    k <- 0
-    while((qr(A)$rank < ncol(A)) & (k < 100)) {
-      i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
-      j <- which(i == qr(A)$rank)
-      if(length(j))
-        A <- A[, -j[1], drop = FALSE]
-      k <- k + 1
-    }
-    if(k == 100)
-      stop("rank problems with constraint matrix!")
-
-    object$C <- t(A)
+  if(object$constraint %in% c("meanf", "meanfd", "meansimple", "none", "nullspace")) {
+    if(object$constraint == "none")
+      object$xt$nocenter <- TRUE
+    else
+      object$xt$centermethod <- object$constraint
   } else {
-    object$C <- matrix(1, ncol = p1 * p2)
-  }
+    if(object$constraint == "main") {
+      A1 <- matrix(rep(1, p1), ncol = 1)
+      A2 <- matrix(rep(1, p2), ncol = 1)
+      I1 <- diag(p1); I2 <- diag(p2)
+
+      A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
+
+      i <- match.index(t(A))
+      A <- A[, i$nodups, drop = FALSE]
+
+      k <- 0
+      while((qr(A)$rank < ncol(A)) & (k < 100)) {
+        i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
+        j <- which(i == qr(A)$rank)
+        if(length(j))
+          A <- A[, -j[1], drop = FALSE]
+        k <- k + 1
+      }
+      if(k == 100)
+        stop("rank problems with constraint matrix!")
+
+      object$C <- t(A)
+    } else {
+      object$C <- matrix(1, ncol = p1 * p2)
+    }
+    attr(object$C, "always.apply") <- TRUE
+ }
 
   if(is.null(object$xt$hyperprior)) {
     if(is.null(object$xt$prior))
@@ -1435,8 +1443,6 @@ smooth.construct.tensorX3.smooth.spec <- function(object, data, knots, ...)
       object$xt$scaletau2 <- object$xt$theta
     }
   }
-
-  attr(object$C, "always.apply") <- TRUE
 
   object$tx.term <- paste(object$term, collapse = "")
   object$sx.S <- lapply(object$margin, function(x) { x$S[[1]] })
