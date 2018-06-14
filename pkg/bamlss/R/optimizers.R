@@ -3134,6 +3134,7 @@ parm2mat <- function(x, mstop, fixed = NULL)
         x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
       } else {
         nj <- grep("bw", colnames(x[[i]][[j]]), fixed = TRUE)
+        nj <- colnames(x[[i]][[j]])
         x[[i]][[j]][, nj] <- apply(x[[i]][[j]][1:mstop, nj, drop = FALSE], 2, cumsum)
       }
       if(!is.matrix(x[[i]][[j]]))
