@@ -14,7 +14,9 @@
 n(..., k = 10)
 
 ## Initialize weights.
-n.weights(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
+n.weights(nodes, k, r = NULL, s = NULL,
+  type = c("sigmoid", "gauss", "softplus", "cos", "sin"),
+  x = NULL, ...)
 
 ## For mgcv.
 \method{smooth.construct}{nn.smooth.spec}(object, data, knots, ...)
@@ -30,6 +32,7 @@ n.weights(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss"), ...)
   \item{nodes}{Number of nodes for each layer, i.e., can also be a vector.}
   \item{r, s}{Parameters controlling the shape of the activation functions.}
   \item{type}{The type of activation function that should be used.}
+  \item{x}{A scaled covariate matrix, the data will be used to identify the range of the weights.}
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
 }
 

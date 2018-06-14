@@ -1,6 +1,6 @@
 \name{rb}
 \alias{rb}
-\alias{smooth.construct.rb.smooth.spec}
+\alias{smooth.construct.randombits.smooth.spec}
 
 \title{Random Bits for BAMLSS}
 

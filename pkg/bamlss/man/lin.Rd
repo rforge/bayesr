@@ -13,7 +13,7 @@
 
 \usage{
 ## Linear smooth constructor.
-lin(..., k = 10)
+lin(...)
 
 ## For mgcv.
 \method{smooth.construct}{linear.smooth.spec}(object, data, knots, ...)
