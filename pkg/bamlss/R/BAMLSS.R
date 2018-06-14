@@ -5332,48 +5332,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
-  object$propose <- function(family, theta, id, eta, y, data, ...) {
-    theta <- theta[[id[1]]][[id[2]]]
-
-    if(is.null(attr(theta, "fitted.values")))
-      attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
-
-    ## Remove fitted values.
-    eta[[id[1]]] <- eta[[id[1]]] - attr(theta, "fitted.values")
-
-    attr(theta, "fitted.values") <- NULL
-
-    ## Sample coefficients.
-    i <- 1:length(theta)
-    if(!data$fixed)
-      i <- i[-grep("tau2", names(theta))]
-    for(j in i) {
-      theta <- uni.slice(theta, data, family, y,
-        eta, id[1], j, logPost = gmcmc_logPost)
-    }
-
-    ## New fitted values.
-    fit <- data$fit.fun(data$X, theta)
-
-plot2d(fit ~ d$x2)
-
-    ## Sample variance parameter.
-    if(!data$fixed & !data$fxsp & length(data$S)) {
-      ## New logLik.
-      eta[[id[1]]] <- eta[[id[1]]] + fit
-      ll <- family$loglik(y, family$map2par(eta))
-      i <- grep("tau2", names(theta))
-      for(j in i) {
-        theta <- uni.slice(theta, data, family, NULL,
-          NULL, id[1], j, logPost = gmcmc_logPost, lower = 0, ll = ll)
-      }
-    }
-
-    ## New theta.
-    attr(theta, "fitted.values") <- fit
-
-    return(list("parameters" = theta, "alpha" = log(1)))
-  }
+  object$propose <- function(...) { stop("no nnet proposal function implemented yet!") }
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
