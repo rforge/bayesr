@@ -2232,7 +2232,7 @@ boostm <- function(x, y, family, offset = NULL,
 
 ## Gradient boosting.
 boost <- function(x, y, family, weights = NULL, offset = NULL,
-  nu = 0.1, df = 4, maxit = 400, mstop = NULL,
+  nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400, mstop = NULL,
   maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, nback = NULL, plot = TRUE,
@@ -2684,7 +2684,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       if(.Platform$OS.type != "unix" & ia) flush.console()
     }
 
-    if((iter > 2) & all(loglik2 == loglik)) {
+    if((iter > 2) & all(loglik2 == loglik) & nu.adapt) {
       warning("no more improvements in the log-likelihood, setting nu = nu * 0.5!")
       nu <- nu * 0.5
       iter_ll2 <- iter_ll2 + 1
