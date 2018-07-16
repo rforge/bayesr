@@ -177,7 +177,11 @@ export(
   "stabsel",
 
   ## neural networks
-  "smooth.construct.nn.smooth.spec"
+  "smooth.construct.nn.smooth.spec",
+
+  ## kriging
+  "smooth.construct.kr.smooth.spec",
+  "Predict.matrix.kriging.smooth"
 )
 
 S3method("plot", "bamlss")
