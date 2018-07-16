@@ -76,6 +76,14 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
           bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
         }
       }
+      if(family$family == "dirichlet") {
+        names(formula) <- colnames(bf$y)
+        family$bayesx <- rep(list(c("dirichlet", "alpha")), length(formula))
+        family$names <- names(family$bayesx) <- names(formula)
+        family$links <- rep(family$links, length(formula))
+        names(family$links) <- family$names
+        attr(family$bayesx, "nrcat") <- length(formula)
+      }
     }
   } else {
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
@@ -6335,7 +6343,7 @@ plot.bamlss.effect.default <- function(x, ...) {
           args$id <- if(!is.null(idvar)) idvar else as.character(x[, 1])
           args$xlim <- args$ylim <- NULL
           do.call("plotmap", delete.args("plotmap", args,
-            not = c("border", "lwd", "lty", names(formals("colorlegend")), "main", "names", "names_id")))
+            not = c("border", "lwd", "lty", names(formals("colorlegend")), "main", "names", "names_id", "shift")))
         } else {
           if(is.null(args$ylab))
             args$ylab <- attr(x, "specs")$label
@@ -8104,6 +8112,9 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
    
     class(res) <- c("bamlss.residuals", class(res))
   }
+
+  if(any(j <- !is.finite(res)))
+    res[j] <- NA
 
   return(res)
 }

@@ -184,11 +184,13 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
     rn <- response.name(as.formula(x$formula), hierarchical = FALSE)
 
-    if(is.null(family$cat)) {
-      if(rn %in% family$names)
-        rn <- NA
-      if(is.na(rn))
-        rn <- yname
+    if(!family$family == "dirichlet") {
+      if(is.null(family$cat)) {
+        if(rn %in% family$names)
+          rn <- NA
+        if(is.na(rn))
+          rn <- yname
+      }
     }
 
     eqn <- paste(rn, "=", paste(rhs, collapse = " + "))
@@ -227,6 +229,8 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(modeonly)
     control$prg <- control$prg[!(names(control$prg) %in% c("iterations", "burnin", "step"))]
 
+  nrcat <- attr(family$bayesx, "nrcat")
+
   for(i in names(x)) {
     if(!all(c("fake.formula", "formula") %in% names(x[[i]]))) {
       stop("hierarchical models not supported yet!")
@@ -252,6 +256,7 @@ BayesX <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     } else {
       msp <- single_eqn(x[[i]], y, id = i)
       teqn <- paste(model.name, ".hregress ", msp$eqn, ", family=", fbx[[i]][1],
+        if(!is.null(nrcat)) paste0(if(n == 1) " hlevel=1 " else NULL, " nrcat=", nrcat) else NULL,
         " equationtype=", if(!main[n]) fbx[[i]][length(fbx[[i]])] else fbx[[i]][2],
         if(n == length(x)) {
           paste(paste(" ", paste(names(control$prg), "=", control$prg, sep = "", collapse = " ")),

@@ -2456,9 +2456,9 @@ dirichlet_bamlss <- function(...)
   rval <- list(
     "family" = "dirichlet",
     "names" = "alpha",
-    "links" = parse.links(link, c(pi = "logit"), ...),
+    "links" = parse.links(link, c(alpha = "logit"), ...),
     "bayesx" = list(
-      "alpha" = c("dirichlet", "mu", "alpha")
+      "alpha" = c("dirichlet", "alpha")
     )
   )
 
