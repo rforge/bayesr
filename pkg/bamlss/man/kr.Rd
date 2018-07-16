@@ -15,6 +15,7 @@
 
 \arguments{
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
+  \item{\dots}{Currently not  used.}
 }
 
 \details{
