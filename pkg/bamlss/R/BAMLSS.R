@@ -5673,10 +5673,10 @@ krDesign2D <- function(z1, z2, knots = 10, rho = NULL,
       method = "L-BFGS-B", lower = 1e-10)$par
   } else c
   z <- cbind(z1, z2)
-  if(class(knots) == "spatial.design")
+  if(inherits(knots, c("spatial.design", "spatialDesign")))
     knots <- knots[, 1:2]
-  if(!is.matrix(knots))
-    knots <- matrix(knots, ncol = 2)
+  if(is.null(dim(knots)))
+    knots <- matrix(as.numeric(knots), ncol = 2)
   nk <- nrow(knots)
   phi <- if(is.null(phi)) {
     max(abs(diff(range(knots)))) / c
