@@ -19,6 +19,7 @@ rb(..., k = 50)
 \arguments{
   \item{\dots}{For function \code{rb()} a formula of the type \code{~x1+x2+x3} that specifies
     the covariates that should be modeled.}
+  \item{k}{Integer, number of radnom bit columns in the design matrix.}
   \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
 }
 

@@ -10,7 +10,7 @@
 
 \usage{
 \method{smooth.construct}{kr.smooth.spec}(object, data, knots, ...)
-\method{Predict.matrix}{kriging.smooth.spec}(object, data)
+\method{Predict.matrix}{kriging.smooth}(object, data)
 }
 
 \arguments{
