@@ -3133,9 +3133,7 @@ parm2mat <- function(x, mstop, fixed = NULL)
       if(!inherits(x[[i]][[j]], "nnet.smooth")) {
         x[[i]][[j]] <- apply(x[[i]][[j]][1:mstop, , drop = FALSE], 2, cumsum)
       } else {
-        nj <- grep("bw", colnames(x[[i]][[j]]), fixed = TRUE)
-        nj <- colnames(x[[i]][[j]])
-        x[[i]][[j]][, nj] <- apply(x[[i]][[j]][1:mstop, nj, drop = FALSE], 2, cumsum)
+        x[[i]][[j]] <- x[[i]][[j]][1:mstop, , drop = FALSE]
       }
       if(!is.matrix(x[[i]][[j]]))
         x[[i]][[j]] <- matrix(x[[i]][[j]], ncol = length(cn))
@@ -3365,7 +3363,7 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
       asssel[[m]] <- 0
 
     for(j in names(x[[i]]$smooth.construct)) {
-      if(inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth") | inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth")) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth")) {
         np <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
         rval <- rval + sum(abs(x[[i]]$smooth.construct[[j]]$state$parameters[grep("bb", np)]) > 1e-10)
         next

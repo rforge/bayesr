@@ -4770,7 +4770,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.1)
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.01, 10)
     }
     if(type == "gauss") {
       if(is.null(rint))
@@ -4836,7 +4836,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
         w <- w * sample(c(-1, 1), size = 1)
       b <- -1 * (t(w) %*% (if(is.null(x)) runif(k - 1, 0, 1) else x[i, ]))
       w <- c(b, w)
-      names(w) <- paste0("w", 0:(k - 1))
+      names(w) <- paste0("bw", i, "_w", 0:(k - 1))
       attr(w, "sw") <- sw
       w
     })
@@ -4850,7 +4850,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
           w <- runif(nodes[i - 1] + 1, -1, 1)
         }
         w[1] <- runif(1, 0, 1)
-        names(w) <- paste0("w", 0:(length(w) - 1))
+        names(w) <- paste0("bw", i, "_w", 0:(length(w) - 1))
         w
       })
     }
@@ -5196,9 +5196,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
-  for(i in seq_along(object$n.weights))
-    names(object$n.weights[[i]]) <- paste0("bw", i, "_", names(object$n.weights[[i]]))
-
   object$state <- list()
   object$state$parameters <- rep(0, nodes)
   names(object$state$parameters) <- paste0("bb", 1:nodes)
@@ -5216,118 +5213,39 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes)
       Z[, j] <- object$afun(X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
     fit <- drop(Z %*% bb)
+    fit <- fit - mean(fit)
     return(fit)
-  }
-
-  object$Jmat <- function(X, b, ...) {
-    nb <- names(b)
-    bb <- b[grep("bb", nb, fixed = TRUE)]
-    bw <- b[grep("bw", nb, fixed = TRUE)]
-    J <- matrix(0, nrow = nrow(X), ncol = length(bw) + 1L)
-    f <- object$afun(X %*% bw)
-    J[, 1] <- f
-    J[, 2] <- bb * exp(-f)/(1 + exp(-f))^2
-    for(j in 2:length(bw))
-      J[, j + 1L] <- bb * (exp(-f) * X[, j])/(1 + exp(-f))^2
-    return(J)
   }
 
   object$special.npar <- length(grep("b", names(object$state$parameters)))
   object$binning <- list("match.index" = 1:nrow(object$X))
 
-#  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
-#    if(!is.null(weights))
-#      stop("weights is not supported!")
-
-#    bw <- x$state$parameters[grep("bw", names(x$state$parameters), fixed = TRUE)]
-
-#    nw <- names(bw)
-#    nc <- ncol(x$X)
-
-#    Z <- matrix(0, nrow = length(y), ncol = nodes)
-#    for(j in 1:nodes)
-#      Z[, j] <- object$afun(x$X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
-
-#    N <- apply(Z, 2, function(x) { (1 / crossprod(x)) %*% t(x) })
-
-#    bf <- boost_fit_nnet(nu, Z, N, y, x$binning$match.index)
-
-#    j <- jj <- which.min(bf$rss)
-
-#    g <- bf$g[j]
-
-#    e <- y #- bf$fit[, j]
-
-#    rss <- wi0 <- rep(0, nc)
-#    wi1 <- bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)]
-#    fj <- x$X %*% wi0
-#    x0 <- exp(-fj)/(1 + exp(-fj))^2
-
-#    wi0[1] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
-#    wi1[1] <- wi1[1] + wi0[1]
-#    rss[1] <- sum((e - x0 * wi1[1])^2)
-#    for(i in 2:nc) {
-#      x0 <- exp(-fj) * x$X[, i]/(1 + exp(-fj))^2
-#      wi0[i] <- nu * (1 / crossprod(x0)) %*% t(x0) %*% e
-#      wi1[i] <- wi1[i] + wi0[i]
-#      rss[i] <- sum((e - x0 * wi1[i])^2)
-#    }
-
-#    i <- which.min(rss) - 1L
-#    wj <- bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)]
-#    wj[paste0("bw", j, "_w", i)] <- wj[paste0("bw", j, "_w", i)] + wi0[i + 1L]
-
-#    Z <- drop(object$afun(x$X %*% wj))
-
-#    g3 <- drop(nu * ((1 / crossprod(Z)) %*% t(Z) %*% y))
-
-#    fit3 <- Z * g3
-#    rss3 <- sum((y - fit3)^2)
-
-#    g2 <- rep(0, length = length(x$state$parameters))
-#    names(g2) <- names(x$state$parameters)
-#    if(rss3 < bf$rss[jj] & FALSE) {
-#      g <- g3
-#      g2[paste0("bw", j, "_w", i)] <- wi0[i + 1L]
-#      x$state$rss <- rss3
-#      x$state$fitted.values <- fit3
-#    } else {
-#      x$state$rss <- bf$rss[jj]
-#      x$state$fitted.values <- bf$fit[, jj]
-#    }
-#    g2[paste0("bb", j)] <- g
-#    x$state$parameters <- g2
-
-#    if(hatmatrix) {
-#      stop("hatmatrix is not supported yet!")
-#    }
-#  
-#    return(x$state)
-#  }
-
-  bw <- object$state$parameters[grep("bw", names(object$state$parameters), fixed = TRUE)]
-  nw <- names(bw)
-  object$Zmat <- matrix(0, nrow = nrow(object$X), ncol = nodes)
-  for(j in 1:nodes)
-    object$Zmat[, j] <- object$afun(object$X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
-  object$Nmat <- apply(object$Zmat, 2, function(x) { (1 / crossprod(x)) %*% t(x) })
+  ncX <- ncol(object$X) - 1L
+  nrX <- nrow(object$X)
+  orint <- object$xt$rint
+  osint <- object$xt$sint
 
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
       stop("weights is not supported!")
 
-    bf <- boost_fit_nnet(nu, object$Zmat, object$Nmat, y, x$binning$match.index)
+    w <- n.weights(nodes, ncX, rint = orint, sint = osint, type = type,
+      x = x$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE])
 
-    j <- jj <- which.min(bf$rss)
+    Z <- matrix(0, nrow = nrX, ncol = nodes)
+    for(j in 1:nodes)
+      Z[, j] <- object$afun(x$X %*% w[[j]])
 
-    g <- bf$g[j]
+    P <- matrix_inv(crossprod(Z) + 1 * diag(nodes))
+    g <- as.numeric(nu * drop(P %*% crossprod(Z, y)))
 
-    x$state$rss <- bf$rss[jj]
-    x$state$fitted.values <- bf$fit[, jj]
-    g2 <- rep(0, length = length(x$state$parameters))
-    names(g2) <- names(x$state$parameters)
-    g2[paste0("bb", j)] <- g
-    x$state$parameters <- g2
+    names(g) <- paste0("bb", 1:length(g))
+    w <- unlist(w)
+
+    x$state$parameters <- set.par(x$state$parameters, c(g, w), "b")
+    x$state$fitted.values <- as.numeric(Z %*% g)
+    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
+    x$state$rss <- sum((y - x$state$fitted.values)^2)
 
     if(hatmatrix) {
       stop("hatmatrix is not supported yet!")
@@ -5337,8 +5255,6 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$propose <- function(...) { stop("no nnet proposal function implemented yet!") }
-
-plot2d(object$Zmat ~ d$x2)
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
