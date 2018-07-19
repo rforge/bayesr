@@ -5236,7 +5236,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes)
       Z[, j] <- object$afun(x$X %*% w[[j]])
 
-    P <- matrix_inv(crossprod(Z) + 1 * diag(nodes))
+    P <- matrix_inv(crossprod(Z) +  diag(nodes*10, nodes))
     g <- as.numeric(nu * drop(P %*% crossprod(Z, y)))
 
     names(g) <- paste0("bb", 1:length(g))
@@ -5246,6 +5246,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$fitted.values <- as.numeric(Z %*% g)
     x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
     x$state$rss <- sum((y - x$state$fitted.values)^2)
+
+#    edf <- sum_diag(crossprod(Z) %*% P)
+#    print(edf)
 
     if(hatmatrix) {
       stop("hatmatrix is not supported yet!")
