@@ -2185,16 +2185,16 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
 {
   int i, j, ii;
   int iter, nr, nc, nProtected = 0;
-  SEXP out, TMP, q1, q2, q3, names;
+  SEXP out, TMP, q1, q2, q3, names, PM;
     
   nr = nrows(X);
   nc = ncols(X);
   iter = nrows(samples);
     
-  PROTECT(names = allocVector(STRSXP, 3));
+  PROTECT(names = allocVector(STRSXP, 4));
   ++nProtected;
         
-  PROTECT(out = allocVector(VECSXP, 3));
+  PROTECT(out = allocVector(VECSXP, 4));
   ++nProtected;
 
   PROTECT(TMP = allocVector(REALSXP, iter));
@@ -2208,7 +2208,10 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
     
   PROTECT(q3 = allocVector(REALSXP, nr));
   ++nProtected;
-    
+
+  PROTECT(PM = allocVector(REALSXP, nr));
+  ++nProtected;
+
   double np11 = iter * 0.025;
   double np12 = iter * 0.5;
   double np13 = iter * 0.975;
@@ -2217,24 +2220,28 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
   int np2 = iter - np12;
   int np3 = iter - np13;
     
-  double *Xptr, *sptr, *tptr, *q1ptr,*q2ptr, *q3ptr;
+  double *Xptr, *sptr, *tptr, *q1ptr,*q2ptr, *q3ptr, *pmptr;
   Xptr = REAL(X);
   sptr = REAL(samples);
   tptr = REAL(TMP);
   q1ptr = REAL(q1);
   q2ptr = REAL(q2);
   q3ptr = REAL(q3);
+  pmptr = REAL(PM);
 
   double tmp = 0.0;
     
   for(i = 0; i < nr; i++) {
+    pmptr[i] = 0.0;
     for(ii = 0; ii < iter; ii++) {
       tmp = 0.0;
       for(j = 0; j < nc; j++) {
         tmp += Xptr[i + j * nr] * sptr[ii + j * iter];
       }
       tptr[ii] = tmp;
+      pmptr[i] += tmp;
     }
+    pmptr[i] = pmptr[i] / iter;
 
     quicksort(iter, tptr);
               
@@ -2258,10 +2265,12 @@ SEXP quick_quantiles(SEXP X, SEXP samples)
   SET_VECTOR_ELT(out, 0, q1);
   SET_VECTOR_ELT(out, 1, q2);
   SET_VECTOR_ELT(out, 2, q3);
+  SET_VECTOR_ELT(out, 3, PM);
     
-  SET_STRING_ELT(names, 0, mkChar("lo"));
-  SET_STRING_ELT(names, 1, mkChar("med"));
-  SET_STRING_ELT(names, 2, mkChar("up"));
+  SET_STRING_ELT(names, 0, mkChar("lower"));
+  SET_STRING_ELT(names, 1, mkChar("median"));
+  SET_STRING_ELT(names, 2, mkChar("upper"));
+  SET_STRING_ELT(names, 3, mkChar("mean"));
     
   setAttrib(out, R_NamesSymbol, names);
     

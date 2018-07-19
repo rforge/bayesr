@@ -2898,7 +2898,7 @@ quick_quantiles <- function(X, samples)
 {
   rval <- .Call("quick_quantiles", X, samples, PACKAGE = "bamlss")
   rval <- as.data.frame(rval)
-  names(rval) <- c("2.5%", "50%", "97.5%")
+  names(rval) <- c("2.5%", "50%", "97.5%", "Mean")
   rval
 }
 
@@ -3011,7 +3011,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
 
   ## Compute samples of fitted values.
   if((inherits(x, "mgcv.smooth") | inherits(x, "deriv.smooth")) & (nrow(psamples) > 39L) & is.null(FUN)) {
-    smf <- quick_quantiles(X, psamples)
+    smf <- quick_quantiles(X, psamples)[, c("2.5%", "Mean", "97.5%")]
   } else {
     if(is.null(FUN)) {
       FUN <- c95
@@ -4770,7 +4770,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(rint))
         rint <- c(0.01, 0.1)
       if(is.null(sint))
-        sint <- c(1.01, 50)
+        sint <- c(1.01, 100)
     }
     if(type == "gauss") {
       if(is.null(rint))
@@ -5305,22 +5305,18 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #    return(x$state)
 #  }
 
+  bw <- object$state$parameters[grep("bw", names(object$state$parameters), fixed = TRUE)]
+  nw <- names(bw)
+  object$Zmat <- matrix(0, nrow = nrow(object$X), ncol = nodes)
+  for(j in 1:nodes)
+    object$Zmat[, j] <- object$afun(object$X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
+  object$Nmat <- apply(object$Zmat, 2, function(x) { (1 / crossprod(x)) %*% t(x) })
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
       stop("weights is not supported!")
 
-    bw <- x$state$parameters[grep("bw", names(x$state$parameters), fixed = TRUE)]
-
-    nw <- names(bw)
-    nc <- ncol(x$X)
-
-    Z <- matrix(0, nrow = length(y), ncol = nodes)
-    for(j in 1:nodes)
-      Z[, j] <- object$afun(x$X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
-
-    N <- apply(Z, 2, function(x) { (1 / crossprod(x)) %*% t(x) })
-
-    bf <- boost_fit_nnet(nu, Z, N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu, object$Zmat, object$Nmat, y, x$binning$match.index)
 
     j <- jj <- which.min(bf$rss)
 
@@ -5341,6 +5337,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$propose <- function(...) { stop("no nnet proposal function implemented yet!") }
+
+plot2d(object$Zmat ~ d$x2)
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
