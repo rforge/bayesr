@@ -5254,7 +5254,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     return(x$state)
   }
 
-  object$propose <- function(...) { stop("no nnet proposal function implemented yet!") }
+  object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
+  object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
