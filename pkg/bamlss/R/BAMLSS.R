@@ -8768,3 +8768,17 @@ Predict.matrix.srand.smooth <- function(object, data)
   X
 }
 
+
+## Model fitting shortcuts.
+boost2 <- function(...) {
+  bamlss(..., sampler = FALSE, optimizer = bamlss::boost)
+}
+
+lasso2 <- function(...) {
+  bamlss(..., sampler = FALSE, optimizer = bamlss::lasso)
+}
+
+bayesx2 <- function(...) {
+  bamlss(..., sampler = bamlss::BayesX, optimizer = FALSE)
+}
+

@@ -47,45 +47,7 @@ n.weights(nodes, k, r = NULL, s = NULL,
 }
 
 \examples{
-\dontrun{## Simulate data.
-set.seed(123)
-d <- GAMart()
-
-## Estimate model.
-f <- num ~ n(x1,k=50) + n(x2,k=50) + n(x3,k=50) + n(~lon+lat,k=50,split=TRUE)
-
-## Set the seed, weights are initialized randomly.
-set.seed(111)
-b <- bamlss(f, data = d, sampler = FALSE)
-
-## Plot estimated effects.
-plot(b)
-
-## Boosted version.
-set.seed(111)
-b <- bamlss(f, data = d, sampler = FALSE, optimizer = boost,
-  nu = 0.05, maxit = 4000)
-
-plot(b)
-
-## Second example with MCMC.
-set.seed(222)
-n <- 2000
-d <- data.frame("x1" = runif(n, 0, pi), "x2" = runif(n, 0, pi))
-d$y <- sin(d$x1) * sin(d$x2) + rnorm(n, sd = exp(-2 + sin(2 * d$x2)))
-
-f <- list(
-  y ~ n(~x1+x2,k=50),
-  sigma ~ n(x2)
-)
-
-b <- bamlss(f, data = d)
-plot(b, ask = FALSE)
-
-## Initialize some weights.
-set.seed(111)
-n.weights(10, 3)
-}
+## ... coming soon ...!
 }
 
 \keyword{regression}

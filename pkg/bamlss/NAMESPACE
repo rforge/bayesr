@@ -181,7 +181,12 @@ export(
 
   ## kriging
   "smooth.construct.kr.smooth.spec",
-  "Predict.matrix.kriging.smooth"
+  "Predict.matrix.kriging.smooth",
+
+  ## shortcuts
+  "boost2",
+  "lasso2",
+  "bayesx2"
 )
 
 S3method("plot", "bamlss")
