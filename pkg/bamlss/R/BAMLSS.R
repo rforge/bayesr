@@ -6620,11 +6620,11 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
       colnames(msamps) <- colnames(samps[[1]])
       msamps <- as.mcmc.list(list(mcmc(msamps, start = 1, end = 1, thin = 1)))
       object[[i]]$samples <- msamps
-      mpar <- predict.bamlss(object[[i]], type = "parameter", FUN = mean, nsamps = nsamps)
+      mpar <- predict.bamlss(object[[i]], type = "parameter", FUN = mean, nsamps = nsamps, drop = FALSE)
       mdev <- -2 * sum(family$d(y, mpar, log = TRUE), na.rm = TRUE)
       object[[i]]$samples <- samps
       rm("samps")
-      par <- predict.bamlss(object[[i]], type = "parameter", FUN = function(x) { x }, nsamps = nsamps)
+      par <- predict.bamlss(object[[i]], type = "parameter", FUN = function(x) { x }, nsamps = nsamps, drop = FALSE)
       iter <- if(is.list(par)) ncol(par[[1]]) else ncol(par)
       dev <- rep(NA, iter)
       tpar <- mpar
