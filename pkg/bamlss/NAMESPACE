@@ -162,6 +162,7 @@ export(
   ## neural nets
   "n",
   "n.weights",
+  "predictn",
   "dl.bamlss",
   "predict.dl.bamlss",
 
@@ -175,9 +176,6 @@ export(
 
   ## stability selection
   "stabsel",
-
-  ## neural networks
-  "smooth.construct.nn.smooth.spec",
 
   ## kriging
   "smooth.construct.kr.smooth.spec",
@@ -225,7 +223,6 @@ S3method("smooth.construct", "tensorX.smooth.spec")
 S3method("smooth.construct", "tensorX3.smooth.spec")
 S3method("smooth.construct", "la.smooth.spec")
 S3method("smooth.construct", "nnet.smooth.spec")
-S3method("smooth.construct", "nn.smooth.spec")
 S3method("smooth.construct", "linear.smooth.spec")
 S3method("smooth.construct", "randombits.smooth.spec")
 S3method("smooth.construct", "sr.smooth.spec")

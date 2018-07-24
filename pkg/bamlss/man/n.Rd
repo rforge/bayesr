@@ -1,7 +1,7 @@
 \name{n}
 \alias{n}
-\alias{smooth.construct.nn.smooth.spec}
 \alias{n.weights}
+\alias{predictn}
 
 \title{Neural Networks for BAMLSS}
 
@@ -18,13 +18,14 @@ n.weights(nodes, k, r = NULL, s = NULL,
   type = c("sigmoid", "gauss", "softplus", "cos", "sin"),
   x = NULL, ...)
 
-## For mgcv.
-\method{smooth.construct}{nn.smooth.spec}(object, data, knots, ...)
+## Boosted neural net predictions.
+predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
 }
 
 \arguments{
   \item{\dots}{For function \code{n()} a formula of the type \code{~x1+x2+x3} that specifies
-    the covariates that should be modeled by the neural network.}
+    the covariates that should be modeled by the neural network. For function \code{predictn()},
+    arguments to be passed to \code{\link{predict.bamlss}}.}
   \item{k}{For function \code{n()}, the number of hidden nodes of the network. Note that one can set
     an argument \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5}
     parts with \code{k} nodes each. For function \code{n.weights()}, argument \code{k}
@@ -33,7 +34,11 @@ n.weights(nodes, k, r = NULL, s = NULL,
   \item{r, s}{Parameters controlling the shape of the activation functions.}
   \item{type}{The type of activation function that should be used.}
   \item{x}{A scaled covariate matrix, the data will be used to identify the range of the weights.}
-  \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}.}
+  \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}. For function \code{predictn()},
+    a boosted \code{"bamlss"} object.}
+  \item{mstop}{The stopping iteration for which predictions should be computed. The default
+    is to return a matrix of predictions, each column represents the prediction of one
+    boosting iteration.}
 }
 
 \value{

@@ -4768,9 +4768,9 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     sint <- list(...)$sint
     if(type == "sigmoid") {
       if(is.null(rint))
-        rint <- c(0.01, 0.01)
+        rint <- c(0.005, 0.1)
       if(is.null(sint))
-        sint <- c(1.01, 1000.1)
+        sint <- c(10, 1000)
     }
     if(type == "gauss") {
       if(is.null(rint))
@@ -4790,8 +4790,8 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       if(is.null(sint))
         sint <- c(1.01, 100)
     }
-    sint <- sort(sint)
-    rint <- sort(rint)
+    sint <- sort(rep(sint, length.out = 2))
+    rint <- sort(rep(rint, length.out = 2))
     r <- runif(nodes, rint[1], rint[2])
     s <- runif(nodes, sint[1], sint[2])
   }
@@ -5236,8 +5236,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes)
       Z[, j] <- object$afun(x$X %*% w[[j]])
 
-    P <- matrix_inv(crossprod(Z) +  diag(nodes*10, nodes))
-    g <- as.numeric(nu * drop(P %*% crossprod(Z, y)))
+    ZtZ <- crossprod(Z)
+    P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
+    g <- as.numeric(nu/2 * drop(P %*% crossprod(Z, y)))
 
     names(g) <- paste0("bb", 1:length(g))
     w <- unlist(w)
@@ -5246,9 +5247,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$fitted.values <- as.numeric(Z %*% g)
     x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
     x$state$rss <- sum((y - x$state$fitted.values)^2)
-
-#    edf <- sum_diag(crossprod(Z) %*% P)
-#    print(edf)
+    x$state$edf <- sum_diag(ZtZ %*% P)
 
     if(hatmatrix) {
       stop("hatmatrix is not supported yet!")
@@ -5274,23 +5273,59 @@ Predict.matrix.nnet.smooth <- function(object, data)
   X
 }
 
-
-smooth.construct.nn.smooth.spec <- function(object, data, knots, ...)
+predictn <- function(object, ..., mstop = NULL, type = c("link", "parameter"))
 {
-  form <- as.formula(paste("~", paste(object$term, collapse = "+")))
-  term <- object$term
-  if(is.null(object$xt$tp))
-    object$xt$tp <- TRUE
-  object <- n(form, k = object$bs.dim, tp = object$xt$tp)
-  object$label <- paste0("s(",  paste(term, collapse = ","), ")")
-  object$formula <- form
-  object <- smooth.construct.nnet.smooth.spec(object, data, knots, ...)
-  object$plot.me <- TRUE
-  object$dim <- length(term)
-  object$fixed <- FALSE
-  object$term <- term
-  object
+  type <- match.arg(type)
+  family <- object$family
+  tl <- term.labels2(object, intercept = TRUE, type = 2)
+  p <- vector(mode = "list", length = length(tl))
+  names(p) <- names(tl)
+  for(i in names(tl)) {
+    fit <- 0
+    if(any(j <- (grepl("n(", tl[[i]], fixed = TRUE)) & !grepl("lin(", tl[[i]], fixed = TRUE))) {
+      for(tj in tl[[i]][j]) {
+        pt <- predict(object, ..., model = i,
+          term = tj, FUN = function(x) { x }, intercept = FALSE)
+        fit <- fit + t(apply(pt, 1, cumsum))
+      }
+    }
+    tj <- if(length(tl[[i]][!j])) tl[[i]][!j] else NULL
+print(tj)
+    fit <- fit + predict(object, ..., model = i, term = tj, intercept = TRUE)
+    p[[i]] <- if(is.null(mstop)) fit else fit[, mstop]
+    if(type != "link") {
+      link <- family$links[i]
+      if(length(link) > 0) {
+        if(link != "identity") {
+          linkinv <- make.link2(link)$linkinv
+          p[[i]] <- linkinv(p[[i]])
+        }
+      } else {
+        warning(paste("could not compute predictions on the scale of parameter",
+          ", predictions on the scale of the linear predictor are returned!", sep = ""))
+      }
+    }
+  }
+  return(p)
 }
+
+
+#smooth.construct.nn.smooth.spec <- function(object, data, knots, ...)
+#{
+#  form <- as.formula(paste("~", paste(object$term, collapse = "+")))
+#  term <- object$term
+#  if(is.null(object$xt$tp))
+#    object$xt$tp <- TRUE
+#  object <- n(form, k = object$bs.dim, tp = object$xt$tp)
+#  object$label <- paste0("s(",  paste(term, collapse = ","), ")")
+#  object$formula <- form
+#  object <- smooth.construct.nnet.smooth.spec(object, data, knots, ...)
+#  object$plot.me <- TRUE
+#  object$dim <- length(term)
+#  object$fixed <- FALSE
+#  object$term <- term
+#  object
+#}
 
 
 ## Random bits.
