@@ -5290,7 +5290,6 @@ predictn <- function(object, ..., mstop = NULL, type = c("link", "parameter"))
       }
     }
     tj <- if(length(tl[[i]][!j])) tl[[i]][!j] else NULL
-print(tj)
     fit <- fit + predict(object, ..., model = i, term = tj, intercept = TRUE)
     p[[i]] <- if(is.null(mstop)) fit else fit[, mstop]
     if(type != "link") {
