@@ -3089,6 +3089,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   ## Assign class and attributes.
   smf <- unique(smf)
   class(smf) <- c(class(x), "data.frame")
+
   x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
   attr(x, "qrc") <- NULL
   attr(smf, "specs") <- x
@@ -4705,7 +4706,7 @@ Predict.matrix.linear.smooth <- function(object, data)
 
 
 ## Neural networks.
-n <- function(..., k = 10)
+n <- function(..., k = 10, type = 1)
 {
   ret <- la(..., k = k)
   ret$label <- gsub("la(", "n(", ret$label, fixed = TRUE)
@@ -4716,7 +4717,10 @@ n <- function(..., k = 10)
   }
   if(is.null(ret$xt$tp))
     ret$xt$tp <- FALSE
-  class(ret) <- "nnet.smooth.spec"
+  if(type != 1)
+    class(ret) <- "nnet2.smooth.spec"
+  else
+    class(ret) <- "nnet.smooth.spec"
   ret
 }
 
@@ -4730,29 +4734,29 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
         cb <- coef.bamlss(nodes, model = j, pterms = FALSE, hyper.parameters = FALSE, ...)
         if(any(i <- grepl(paste0(j, ".s.n("), names(cb), fixed = TRUE) | grepl(paste0(j, ".s.rb("), names(cb), fixed = TRUE))) {
           cb <- cb[i]
-          cb1 <- cb[grep(".bb", names(cb), fixed = TRUE)]
-          terms <- unique(paste0(sapply(strsplit(names(cb1), ").bb", fixed = TRUE), function(x) { x[1] }), ")"))
+          cb1 <- cb[grep(".b", names(cb), fixed = TRUE)]
+          terms <- unique(paste0(sapply(strsplit(names(cb1), ").b", fixed = TRUE), function(x) { x[1] }), ")"))
           if(length(terms) > 1) {
             rval[[j]] <- list()
             for(tj in terms) {
               cb2 <- cb1[grep(tj, names(cb1), fixed = TRUE)]
-              id <- as.integer(sapply(strsplit(names(cb2), ").bb", fixed = TRUE), function(x) { x[2] }))
+              id <- as.integer(sapply(strsplit(names(cb2), ").b", fixed = TRUE), function(x) { x[2] }))
               id <- id[abs(cb2) > 1e-10]
               rval[[j]][[tj]] <- id
-              weights <- vector(mode = "list", length = length(id))
-              for(i in seq_along(id))
-                weights[[i]] <- as.numeric(cb[grep(paste0(tj, ".bw", id[i], "_w"), names(cb), fixed = TRUE)])
-              attr(rval[[j]][[tj]], "weights") <- weights
+#              weights <- vector(mode = "list", length = length(id))
+#              for(i in seq_along(id))
+#                weights[[i]] <- as.numeric(cb[grep(paste0(tj, ".bw", id[i], "_w"), names(cb), fixed = TRUE)])
+#              attr(rval[[j]][[tj]], "weights") <- weights
             }
           } else {
-            id <- as.integer(sapply(strsplit(names(cb1), ").bb", fixed = TRUE), function(x) { x[2] }))
+            id <- as.integer(sapply(strsplit(names(cb1), ").b", fixed = TRUE), function(x) { x[2] }))
             id <- id[abs(cb1) > 1e-10]
             rval[[j]] <- id
-            weights <- vector(mode = "list", length = length(id))
-            for(i in seq_along(id))
-              weights[[i]] <- as.numeric(cb[grep(paste0(terms, ".bw", id[i], "_w"), names(cb), fixed = TRUE)])
-              
-            attr(rval[[j]], "weights") <- weights
+#            weights <- vector(mode = "list", length = length(id))
+#            for(i in seq_along(id))
+#              weights[[i]] <- as.numeric(cb[grep(paste0(terms, ".bw", id[i], "_w"), names(cb), fixed = TRUE)])
+#              
+#            attr(rval[[j]], "weights") <- weights
           }
         }
       }
@@ -4792,9 +4796,12 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     }
     sint <- sort(rep(sint, length.out = 2))
     rint <- sort(rep(rint, length.out = 2))
-    r <- runif(nodes, rint[1], rint[2])
-    s <- runif(nodes, sint[1], sint[2])
+  } else {
+    sint <- sort(rep(s, length.out = 2))
+    rint <- sort(rep(r, length.out = 2))
   }
+  r <- runif(nodes, rint[1], rint[2])
+  s <- runif(nodes, sint[1], sint[2])
   if(type == "sigmoid") {
     if(any(r >= 0.5))
       r[r >= 0.5] <- 0.495
@@ -4859,7 +4866,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
 }
 
 
-smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
+smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 {
   if(is.null(object$formula)) {
     object$formula <- as.formula(paste("~", paste(object$term, collapse = "+")))
@@ -5073,16 +5080,40 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
-  if(is.null(object$xt$nnet2))
-    class(object) <- c("nnet.smooth", "mgcv.smooth")
-  else
-    class(object) <- c("nnet2.smooth", "mgcv.smooth")
+  object$N <- apply(object$X, 2, function(x) {
+    return((1/crossprod(x)) %*% t(x))
+  })
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+    ## process weights.
+    if(!is.null(weights))
+      stop("weights is not supported!")
+
+    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+
+    j <- which.min(bf$rss)
+    g2 <- rep(0, length(bf$g))
+    g2[j] <- bf$g[j]
+  
+    ## Finalize.
+    x$state$parameters <- set.par(x$state$parameters, g2, "b")
+    x$state$fitted.values <- bf$fit[, j]
+
+    x$state$rss <- bf$rss[j]
+
+    if(hatmatrix) {
+      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+    }
+  
+    return(x$state)
+  }
+
+  class(object) <- c("nnet2.smooth", "mgcv.smooth")
 
   object
 }
 
 
-Predict.matrix.nnet0.smooth <- Predict.matrix.nnet2.smooth <- function(object, data)
+Predict.matrix.nnet2.smooth <- function(object, data)
 {
   tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
   if(tp) {
@@ -5127,7 +5158,6 @@ Predict.matrix.nnet0.smooth <- Predict.matrix.nnet2.smooth <- function(object, d
   if(!is.null(object$xt$take)) {
     X <- X[, object$xt$take, drop = FALSE]
   }
-
 #  X <- X %*% object$Rinv %*% object$Q
 
   X
@@ -5277,7 +5307,7 @@ predictn <- function(object, ..., mstop = NULL, type = c("link", "parameter"))
 {
   type <- match.arg(type)
   family <- object$family
-  tl <- term.labels2(object, intercept = TRUE, type = 2)
+  tl <- term.labels2(object, type = 2, intercept = FALSE)
   p <- vector(mode = "list", length = length(tl))
   names(p) <- names(tl)
   for(i in names(tl)) {

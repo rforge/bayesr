@@ -3363,9 +3363,9 @@ get.qsel <- function(x, iter, qsel.splitfactor = FALSE)
       asssel[[m]] <- 0
 
     for(j in names(x[[i]]$smooth.construct)) {
-      if(inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth")) {
+      if(inherits(x[[i]]$smooth.construct[[j]], "linear.smooth") | inherits(x[[i]]$smooth.construct[[j]], "randombits.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet2.smooth")) {
         np <- names(x[[i]]$smooth.construct[[j]]$state$parameters)
-        rval <- rval + sum(abs(x[[i]]$smooth.construct[[j]]$state$parameters[grep("bb", np)]) > 1e-10)
+        rval <- rval + sum(abs(x[[i]]$smooth.construct[[j]]$state$parameters[grep("b", np)]) > 1e-10)
         next
       }
       rval <- rval + 1 * (any(x[[i]]$smooth.construct[[j]]$selected[1:iter] > 0) &
