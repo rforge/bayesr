@@ -4717,10 +4717,12 @@ n <- function(..., k = 10, type = 1)
   }
   if(is.null(ret$xt$tp))
     ret$xt$tp <- FALSE
-  if(type != 1)
+  if(type != 1) {
+    # ret$special <- FALSE
     class(ret) <- "nnet2.smooth.spec"
-  else
+  } else {
     class(ret) <- "nnet.smooth.spec"
+  }
   ret
 }
 
@@ -4874,191 +4876,101 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$type <- "single"
     object$xt$fx <- FALSE
   }
-  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
-  object[["standardize01"]] <- object$xt[["standardize01"]] <- if(tp) FALSE else TRUE
-  if(is.null(object$xt[["standardize"]]))
-    object$xt[["standardize"]] <- TRUE
-  if(!is.null(object$xt[["standardize"]])) {
-    if(!object$xt[["standardize"]]) {
-      object$xt[["standardize01"]] <- FALSE
-    }
-  }
+  object$xt[["standardize"]] <- object[["standardize01"]] <- object$xt[["standardize01"]] <-  TRUE
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- object$xt$k
   if(!is.null(object$xt$weights))
     nodes <- length(object$xt$weights)
   npen <- if(is.null(object$xt$npen)) 1 else object$xt$npen
-  object$split <- if(is.null(object$xt$split)) FALSE else object$xt$split
   dotake <- FALSE
 
-  if(tp) {
-    tpcall <- eval(parse(text = paste0("s(", paste0(colnames(object$X), collapse = ","), ",bs='tp',k=", nodes, ")")))
-    form <- object$formula
-    split <- object$split
-    lasso <- object$lasso
-    dim <- ncol(object$X)
-    term <- colnames(object$X)
-    lab <- object$label
-    take <- object$xt$take
-    update <- object$xt$update ##
-    nu <- apply(object$X, 2, function(x) { length(unique(x)) })
-    if(any(i <- nu < 3)) {
-      for(j in which(i)) {
-        object$X[, j] <- jitter(object$X[, j], amount = 1e-04)
-      }
+  if(length(nodes) < 2) {
+    if(nodes < 0)
+      nodes <- 10
+  }
+
+  object$X <- cbind(1, object$X)
+
+  object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
+  type <- object$xt$afun
+
+  if(is.character(object$xt$afun)) {
+    object$afun <- switch(object$xt$afun,
+      "relu" = function(x) {
+        x[x < 0] <- 0
+        x
+      },
+      "sigmoid" = function(x) {
+        1 / (1 + exp(-x)) - 0.5
+      },
+      "tanh" = tanh,
+      "sin" = sin,
+      "cos" = sin,
+      "gauss" = function(x) { exp(-x^2) },
+      "identity" = function(x) { x },
+      "softplus" = function(x) { log(1 + exp(x)) }
+    )
+  }
+
+  if(length(nodes) < 2) {
+    object$Zmat <- function(X, weights) {
+      nc <- length(weights)
+      Z <- matrix(0, nrow = nrow(X), ncol = nc)
+      for(j in 1:nc)
+        Z[, j] <- object$afun(X %*% weights[[j]])
+      return(Z)
     }
-    object <- smooth.construct.tp.smooth.spec(tpcall, as.data.frame(object$X), knots)
-    if(!is.null(take)) {
-      dotake <- TRUE
-      object$X <- object$X[, take, drop = FALSE]
-      nobs <- nrow(object$X)
-      object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
-      object$S[[1]] <- diag(1, ncol(object$X)) ## crossprod(object$X) ##object$S[[1]][take, take, drop = FALSE]
-      object$xt$take <- take
-    } else {
-      nobs <- nrow(object$X)
-      object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
-    }
-    object$dim <- dim
-    object$tp <- tp
-    object$formula <- form
-    object$lasso <- lasso
-    object$nnterm <- term
-    object$label <- lab
-    object$split <- split
-    object$xt$update <- update
-    object[["standardize01"]] <- object$xt[["standardize01"]] <- FALSE
   } else {
-    if(length(nodes) < 2) {
-      if(nodes < 0)
-        nodes <- 10
-    }
-
-    object$X <- cbind(1, object$X)
-
-    object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
-    type <- object$xt$afun
-
-    if(is.character(object$xt$afun)) {
-      object$afun <- switch(object$xt$afun,
-        "relu" = function(x) {
-          x[x < 0] <- 0
-          x
-        },
-        "sigmoid" = function(x) {
-          1 / (1 + exp(-x))
-        },
-        "tanh" = tanh,
-        "sin" = sin,
-        "cos" = sin,
-        "gauss" = function(x) { exp(-x^2) },
-        "identity" = function(x) { x },
-        "softplus" = function(x) { log(1 + exp(x)) }
-      )
-    }
-
-    if(length(nodes) < 2) {
-      object$Zmat <- function(X, weights) {
-        nc <- length(weights)
-        Z <- matrix(0, nrow = nrow(X), ncol = nc)
-        for(j in 1:nc)
-          Z[, j] <- object$afun(X %*% weights[[j]])
-        return(Z)
-      }
-    } else {
-      object$Zmat <- function(X, weights) {
-        Z <- list()
-        n <- nrow(X)
-        for(i in 1:length(weights)) {
-          Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
-          for(j in 1:length(weights[[i]])) {
-            if(i < 2) {
-              Z[[i]][, j] <- object$afun(X %*% weights[[i]][[j]])
-            } else {
-              Z[[i]][, j] <- object$afun(cbind(1, Z[[i - 1]]) %*% weights[[i]][[j]])
-            }
+    object$Zmat <- function(X, weights) {
+      Z <- list()
+      n <- nrow(X)
+      for(i in 1:length(weights)) {
+        Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
+        for(j in 1:length(weights[[i]])) {
+          if(i < 2) {
+            Z[[i]][, j] <- object$afun(X %*% weights[[i]][[j]])
+          } else {
+            Z[[i]][, j] <- object$afun(cbind(1, Z[[i - 1]]) %*% weights[[i]][[j]])
           }
         }
-        return(Z[[length(Z)]])
       }
+      return(Z[[length(Z)]])
     }
-
-    if(is.null(object$xt$weights)) {
-      nobs <- nrow(object$X)
-      object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
-      object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type,
-        x = object$xt[["tx"]])
-    } else {
-      if(length(object$xt$weights) != nodes)
-        stop("not enough weights supplied!")
-      object$n.weights <- object$xt$weights
-    }
-
-    object$Xn <- object$X
-    object$X <- object$Zmat(object$X, object$n.weights)
-#    nobs <- nrow(object$X)
-#    object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
-    d <- apply(apply(object$X, 2, range), 2, diff)
-    object$Xkeep <- which(d > 1e-5)
-
-    if(ncol(object$X) < 1)
-      stop("please check your n() specifications, no columns in the design matrix!")
-
-    if(!is.null(object$xt$lowrank)) {
-      if(object$xt$lowrank) {
-        if(is.null(object$xt$K))
-          object$xt$K <- 20
-      }
-    }
-
-    if(!is.null(object$xt$prc)) {
-      if(object$xt$prc) {
-        prX <- prcomp(object$X)
-        prXs <- summary(prX)
-        i <- which(prXs$importance[3, ] <= 0.995)
-        object$X <- prX$x[, i, drop = FALSE]
-        colnames(object$X) <- NULL
-        object$prcomp <- prX
-        object$prcomp_id <- i
-      }
-    }
-
-    if(!is.null(object$xt$take)) {
-      dotake <- TRUE
-      object$X <- object$X[, object$xt$take, drop = FALSE]
-    }
-
-    pid <- sort(rep(1:npen, length.out = ncol(object$X)))
-    object$S <- list()
-    for(j in 1:npen) {
-      object$S[[j]] <- rep(1, ncol(object$X))
-      object$S[[j]][pid != j] <- 0
-      object$S[[j]] <- diag(object$S[[j]])
-    }
-    object$xt$center <- FALSE
-    object$by <- "NA"
-    object$null.space.dim <- 0
-    object$bs.dim <- ncol(object$X)
-    object$rank <- sapply(object$S, sum)
   }
+
+  if(is.null(object$xt$weights)) {
+    nobs <- nrow(object$X)
+    object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
+    object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type,
+      x = object$xt[["tx"]])
+  } else {
+    if(length(object$xt$weights) != nodes)
+      stop("not enough weights supplied!")
+    object$n.weights <- object$xt$weights
+  }
+
+  object$X <- object$Zmat(object$X, object$n.weights)
+
+  if(ncol(object$X) < 1)
+    stop("please check your n() specifications, no columns in the design matrix!")
+
+  pid <- sort(rep(1:npen, length.out = ncol(object$X)))
+  object$S <- list()
+  for(j in 1:npen) {
+    object$S[[j]] <- rep(1, ncol(object$X))
+    object$S[[j]][pid != j] <- 0
+    object$S[[j]] <- diag(object$S[[j]])
+  }
+  object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
+  object$by <- "NA"
+  object$null.space.dim <- 0
+  object$bs.dim <- ncol(object$X)
+  object$rank <- sapply(object$S, sum)
+
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- FALSE
   object$xt$df <- 4
-
-#  object$Rinv <- solve(chol(crossprod(object$X) + diag(1e-10, ncol(object$X))))
-#  object$Q <- svd(crossprod(object$Rinv, diag(ncol(object$Rinv))) %*% object$Rinv)$u
-#  object$X <- object$X %*% object$Rinv %*% object$Q
-
-#for(j in 1:ncol(object$X)) {
-#  plot3d(cbind(dtrain$x1, dtrain$x2, object$X[, j]))
-#  Sys.sleep(0.3)
-#}
-#stop()
-#plot2d(object$X ~ dtrain$x, col.lines = rainbow_hcl(ncol(object$X)), main = ncol(object$X))
-##Sys.sleep(2)
-#stop()
-##print(dim(object$X))
 
   if(is.null(object$xt$alpha))
     object$xt$alpha <- 1
@@ -5093,7 +5005,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   
     ## Finalize.
     x$state$parameters <- set.par(x$state$parameters, g2, "b")
-    x$state$fitted.values <- bf$fit[, j] - mean(bf$fit[, j])
+    x$state$fitted.values <- bf$fit[, j]
 
     x$state$rss <- bf$rss[j]
 
@@ -5117,54 +5029,10 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.nnet2.smooth <- function(object, data)
 {
-  tp <- if(is.null(object$xt$tp)) TRUE else object$xt$tp
-  if(tp) {
-    data <- as.data.frame(Predict.matrix.lasso.smooth(object, data))
-    object$term <- object$nnterm
-    class(object) <- "tprs.smooth"
-    object$dim <- ncol(data)
-    nu <- apply(data, 2, function(x) { length(unique(x)) })
-    if(any(i <- nu < 3)) {
-      for(j in which(i)) {
-        data[, j] <- jitter(data[, j], amount = 1e-04)
-      }
-    }
-    X <- Predict.matrix.tprs.smooth(object, data)
-  } else {
-    object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
-    object[["standardize01"]] <- if(standardize) TRUE else FALSE
-    X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
-    X <- X[, object$Xkeep, drop = FALSE]
-    if(!is.null(object$xt$lowrank)) {
-      if(object$xt$lowrank) {
-        E <- eigen(object$X)
-        Omega <- Re(E$values)
-        i <- order(abs(Omega), decreasing = TRUE)
-        Omega <- Omega[i]
-        V <- Re(E$vectors[, i])
-        Vk <- V[, 1:object$xt$K]
-        Omegak <- Omega[1:object$xt$K]
-        object$X <- Vk %*% diag(Omegak)
-      }
-    }
-  }
-
-#  nobs <- nrow(X)
-#  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
-
-  if(!is.null(object[["prcomp"]])) {
-    X <- predict(object[["prcomp"]], newdata = X)
-    X <- X[, object[["prcomp_id"]], drop = FALSE]
-  }
-
-  if(!is.null(object$xt$take)) {
-    X <- X[, object$xt$take, drop = FALSE]
-  }
-#  X <- X %*% object$Rinv %*% object$Q
-
-  X
+  object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
+  object[["standardize01"]] <- if(standardize) TRUE else FALSE
+  return(object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights))
 }
-
 
 
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
