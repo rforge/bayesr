@@ -4844,7 +4844,6 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       b <- -1 * (t(w) %*% (if(is.null(x)) runif(k - 1, 0, 1) else x[i, ]))
       w <- c(b, w)
       names(w) <- paste0("bw", i, "_w", 0:(k - 1))
-      attr(w, "sw") <- sw
       w
     })
   } else {
@@ -4990,7 +4989,6 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
       object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type,
         x = object$xt[["tx"]])
-      object$xt[["sw"]] <- sapply(object$n.weights, function(x) { attr(x, "sw") })
     } else {
       if(length(object$xt$weights) != nodes)
         stop("not enough weights supplied!")
@@ -4999,11 +4997,10 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
     object$Xn <- object$X
     object$X <- object$Zmat(object$X, object$n.weights)
-    nobs <- nrow(object$X)
-    object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+#    nobs <- nrow(object$X)
+#    object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
     d <- apply(apply(object$X, 2, range), 2, diff)
     object$Xkeep <- which(d > 1e-5)
-    object$X <- object$X[, object$Xkeep, drop = FALSE]
 
     if(ncol(object$X) < 1)
       stop("please check your n() specifications, no columns in the design matrix!")
@@ -5096,7 +5093,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   
     ## Finalize.
     x$state$parameters <- set.par(x$state$parameters, g2, "b")
-    x$state$fitted.values <- bf$fit[, j]
+    x$state$fitted.values <- bf$fit[, j] - mean(bf$fit[, j])
 
     x$state$rss <- bf$rss[j]
 
@@ -5105,6 +5102,11 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     }
   
     return(x$state)
+  }
+
+  object$fit.fun <- function(X, b, ...) {
+    fit <- drop(Z %*% b)
+    return(fit - mean(fit))
   }
 
   class(object) <- c("nnet2.smooth", "mgcv.smooth")
@@ -5147,8 +5149,8 @@ Predict.matrix.nnet2.smooth <- function(object, data)
     }
   }
 
-  nobs <- nrow(X)
-  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
+#  nobs <- nrow(X)
+#  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
 
   if(!is.null(object[["prcomp"]])) {
     X <- predict(object[["prcomp"]], newdata = X)
