@@ -5017,7 +5017,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$fit.fun <- function(X, b, ...) {
-    fit <- drop(Z %*% b)
+    fit <- drop(X %*% b)
     return(fit - mean(fit))
   }
 
