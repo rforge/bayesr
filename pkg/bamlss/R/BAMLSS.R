@@ -4718,7 +4718,7 @@ n <- function(..., k = 10, type = 1)
   if(is.null(ret$xt$tp))
     ret$xt$tp <- FALSE
   if(type != 1) {
-    # ret$special <- FALSE
+    ## ret$special <- FALSE
     class(ret) <- "nnet2.smooth.spec"
   } else {
     class(ret) <- "nnet.smooth.spec"
@@ -4729,6 +4729,7 @@ n <- function(..., k = 10, type = 1)
 
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
+  type <- match.arg(type)
   if(inherits(nodes, "bamlss")) {
     if(!is.null(nodes$parameters)) {
       rval <- list()
@@ -4829,7 +4830,6 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     s[s <= 1] <- 1.01
   r <- rep(r, length.out = nodes)
   s <- rep(s, length.out = nodes)
-  type <- match.arg(type)
   if(length(nodes) < 2) {
     weights <- lapply(1:nodes, function(i) {
       sw <- switch(type,
@@ -4863,6 +4863,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       })
     }
   }
+  attr(weights, "type") <- type
   return(weights)
 }
 
@@ -4892,8 +4893,13 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   object$X <- cbind(1, object$X)
 
-  object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
-  type <- object$xt$afun
+  if(is.null(object$xt$weights)) {
+    object$xt$afun <- if(is.null(object$xt$afun)) "sigmoid" else object$xt$afun
+    type <- object$xt$afun
+  } else {
+    type <- attr(object$xt$weights, "type")
+    object$xt$afun <- type
+  }
 
   if(is.character(object$xt$afun)) {
     object$afun <- switch(object$xt$afun,
@@ -4902,7 +4908,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         x
       },
       "sigmoid" = function(x) {
-        1 / (1 + exp(-x)) - 0.5
+        1 / (1 + exp(-x))
       },
       "tanh" = tanh,
       "sin" = sin,
@@ -4951,6 +4957,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$X <- object$Zmat(object$X, object$n.weights)
+  object$xt$cmeans <- colMeans(object$X)
+  object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
 
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
@@ -4995,7 +5003,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     ## process weights.
     if(!is.null(weights))
-      stop("weights is not supported!")
+      stop("weights are not supported!")
 
     bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
 
@@ -5017,9 +5025,14 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$fit.fun <- function(X, b, ...) {
-    fit <- drop(X %*% b)
-    return(fit - mean(fit))
+    # fit <- drop(X %*% b)
+    # return(fit - mean(fit))
+    drop(X %*% b)
   }
+
+#plot2d(object$X ~ data$x, main = type)
+#Sys.sleep(5)
+##stop()
 
   class(object) <- c("nnet2.smooth", "mgcv.smooth")
 
@@ -5031,7 +5044,9 @@ Predict.matrix.nnet2.smooth <- function(object, data)
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
-  return(object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights))
+  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
+  X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
+  return(X)
 }
 
 
@@ -5075,10 +5090,19 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   if(is.character(object$xt$afun)) {
     object$afun <- switch(object$xt$afun,
+      "relu" = function(x) {
+        x[x < 0] <- 0
+        x
+      },
       "sigmoid" = function(x) {
-        f <- 1 / (1 + exp(-x))
-        return(f - 0.5)
-      }
+        1 / (1 + exp(-x))
+      },
+      "tanh" = tanh,
+      "sin" = sin,
+      "cos" = sin,
+      "gauss" = function(x) { exp(-x^2) },
+      "identity" = function(x) { x },
+      "softplus" = function(x) { log(1 + exp(x)) }
     )
   }
 

@@ -2918,7 +2918,7 @@ boost.transform <- function(x, y, df = NULL, family,
   for(j in 1:np) {
     nid <- NULL
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
-      if(!is.null(df) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "randombits.smooth")) {
+      if(!is.null(df) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "randombits.smooth") & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth") & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet2.smooth")) {
         if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "lasso.smooth"))
           x[[nx[j]]]$smooth.construct[[sj]]$xt$df <- df
         x[[nx[j]]]$smooth.construct[[sj]] <- assign.df(x[[nx[j]]]$smooth.construct[[sj]], df, do.part = TRUE)
@@ -2993,7 +2993,7 @@ boost.transform <- function(x, y, df = NULL, family,
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- as.integer(sapply(x[[nx[j]]]$smooth.construct[[sj]]$S, is.function))
       else
         x[[nx[j]]]$smooth.construct[[sj]]$penaltyFunction <- 0L
-      if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth"))
+      if(inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet.smooth") | inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet2.smooth"))
         x[[nx[j]]]$smooth.construct[[sj]]$fuse <- FALSE
     }
   }
