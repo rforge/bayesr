@@ -4957,6 +4957,10 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   object$X <- object$Zmat(object$X, object$n.weights)
+
+  object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
+  object$X <- object$X[, object$Xkeep, drop = FALSE]
+
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
 
@@ -5045,6 +5049,7 @@ Predict.matrix.nnet2.smooth <- function(object, data)
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
   X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
+  X <- X[, object$Xkeep, drop = FALSE]
   X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
   return(X)
 }
