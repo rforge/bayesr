@@ -5381,7 +5381,11 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
 }
 
 make_weights <- function(object, data) {
-  smooth.construct(object, data, NULL)$xt$weights
+  rval <- smooth.construct(object, data, NULL)
+  if(length(i <- grep("weights", names(rval))))
+    return(rval[[i]])
+  else
+    return(rval$xt[[grep("weights", names(rval$xt))]])
 }
 
 Predict.matrix.randombits.smooth <- function(object, data)
