@@ -134,6 +134,7 @@ export(
   "tx",
   "tx2",
   "tx3",
+  "tx4",
   "rmf",
   "smooth.construct",
   "smooth.construct.tensorX.smooth.spec",

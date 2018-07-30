@@ -1469,6 +1469,17 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 }
 
 
+tx4 <- function(...)
+{
+  rval <- te(...)
+  rval$special <- TRUE
+  rval$mp <- TRUE
+  rval$constraint <- "main"
+  class(rval) <- "tensorX.smooth.spec"
+  rval
+}
+
+
 smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 {
   if(length(object$margin) > 2)
