@@ -5380,6 +5380,10 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   object
 }
 
+make_weights <- function(object, data) {
+  smooth.construct(object, data, NULL)$xt$weights
+}
+
 Predict.matrix.randombits.smooth <- function(object, data)
 {
   X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]

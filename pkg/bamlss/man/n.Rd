@@ -1,6 +1,7 @@
 \name{n}
 \alias{n}
 \alias{n.weights}
+\alias{make_weights}
 \alias{predictn}
 
 \title{Neural Networks for BAMLSS}
@@ -18,6 +19,9 @@ n.weights(nodes, k, r = NULL, s = NULL,
   type = c("sigmoid", "gauss", "softplus", "cos", "sin"),
   x = NULL, ...)
 
+## Second weights initializer, internally calls n.weights.
+make_weights(object, data)
+
 ## Boosted neural net predictions.
 predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
 }
@@ -34,7 +38,7 @@ predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
   \item{r, s}{Parameters controlling the shape of the activation functions.}
   \item{type}{The type of activation function that should be used.}
   \item{x}{A scaled covariate matrix, the data will be used to identify the range of the weights.}
-  \item{object, data, knots}{See \code{\link[mgcv]{smooth.construct}}. For function \code{predictn()},
+  \item{object, data}{See \code{\link[mgcv]{smooth.construct}}. For function \code{predictn()},
     a boosted \code{"bamlss"} object.}
   \item{mstop}{The stopping iteration for which predictions should be computed. The default
     is to return a matrix of predictions, each column represents the prediction of one
