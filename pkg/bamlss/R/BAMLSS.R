@@ -5329,7 +5329,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       return(B)
   }
   tXw <- object$BitsMat(object$X, object$xt$weights, thres = is.null(object$xt$weights))
-  object$X <- tXw$X
+  object$X <- if(is.null(object$xt$weights)) tXw$X else tXw
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
 
@@ -5340,7 +5340,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your rb() specifications, no columns in the design matrix!")
 
-  object$xt$weights <- tXw$weights
+  if(is.null(object$xt$weights))
+    object$xt$weights <- tXw$weights
   rm(tXw)
   object$S <- list(diag(ncol(object$X)))
   object$xt$prior <- "ig"
