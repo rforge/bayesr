@@ -5321,7 +5321,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       if(thres)
         attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
       ##B[, i] <- c(1, -1)[(z >= attr(w[[i]], "thres")) + 1L]
-      B[, i] <- 1 * (z >= attr(w[[i]], "thres")) - 0.5
+      B[, i] <- 1 * (z >= attr(w[[i]], "thres"))
     }
     if(thres)
       return(list("X" = B, "weights" = w))
@@ -5330,8 +5330,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   }
   tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
   object$X <- tXw$X
-  nobs <- nrow(object$X)
-  object$X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% object$X
+  object$xt$cmeans <- colMeans(object$X)
+  object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
 
   d <- apply(apply(object$X, 2, range), 2, diff)
   object$Xkeep <- which((d > 0.00001) & !duplicated(t(object$X)))
@@ -5389,8 +5389,7 @@ Predict.matrix.randombits.smooth <- function(object, data)
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
   X <- object$BitsMat(X, object$xt$weights, thres = FALSE)
-  nobs <- nrow(X)
-  X <- (diag(nobs) - 1/nobs * rep(1, nobs) %*% t(rep(1, nobs))) %*% X
+  X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
   X <- X[, object$Xkeep, drop = FALSE]
   X
 }
