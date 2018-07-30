@@ -673,6 +673,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
       S <- S + object$S[[j]]
     object$S <- list(S)
   }
+  object$C <- matrix(1, nrow = 1, ncol = ncol(object$X))
   if(!is.null(object$C)) {
     if(nrow(object$C) < 1)
       object$C <- NULL
