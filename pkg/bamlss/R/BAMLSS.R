@@ -5328,7 +5328,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     else
       return(B)
   }
-  tXw <- object$BitsMat(object$X, object$xt$weights, thres = TRUE)
+  tXw <- object$BitsMat(object$X, object$xt$weights, thres = is.null(object$xt$weights))
   object$X <- tXw$X
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
