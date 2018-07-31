@@ -674,7 +674,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     object$S <- list(S)
   }
   if(!is.null(object$xt$doC))
-    object$C <- Cmat(object)
+    object$C <- matrix(1, nrow = 1, ncol = ncol(object$X))
   if(!is.null(object$C)) {
     if(nrow(object$C) < 1)
       object$C <- NULL
@@ -736,7 +736,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC", "constraint")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -1471,13 +1471,12 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 }
 
 
-tx4 <- function(..., ctr = c("center", "main", "both", "both1", "both2"))
+tx4 <- function(...)
 {
   rval <- ti(...)
   rval$special <- TRUE
   rval$mp <- TRUE
   rval$xt$doC <- TRUE
-  rval$xt$constraint <- ctr
   rval
 }
 
@@ -1534,6 +1533,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       if(object$constraint == "center") {
         object$C <- matrix(1, ncol = p1 * p2)
       } else {
+        if(object$constraint == "main") {
           ## Remove main effects only.
           A1 <- matrix(rep(1, p1), ncol = 1)
           A2 <- matrix(rep(1, p2), ncol = 1)
@@ -1578,7 +1578,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         object$C <- t(A)
       }
     }
-  }
 
   if(length(object$margin) > 1) {
     object$tx.term <- paste(unlist(lapply(object$margin, function(x) {
@@ -1740,6 +1739,7 @@ Cmat <- function(x)
   }
   return(C)
 }
+
 
 
 ## Download the newest version of BayesXsrc.
