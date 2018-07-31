@@ -736,7 +736,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC", "constraint")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -1473,7 +1473,7 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 
 tx4 <- function(...)
 {
-  rval <- ti(...)
+  rval <- te(...)
   rval$special <- TRUE
   rval$mp <- TRUE
   rval$xt$doC <- TRUE
@@ -1678,12 +1678,14 @@ Cmat <- function(x)
   if(is.null(x$xt$constraint))
     x$xt$constraint <- "center"
   ref <- sapply(x$margin, function(z) { inherits(z, "random.effect") })
-  if(length(ref) < 2) {
-    if(ref)
-      x$xt$constraint <- "center"
+  if(length(ref)) {
+    if(length(ref) < 2) {
+      if(ref)
+        x$xt$constraint <- "center"
+    }
   }
   if(length(x$margin) < 2) {
-    p <- ncol(x$margin[[1]]$X)
+    p <- if(is.null(x$margin)) ncol(x$X) else ncol(x$margin[[1]]$X)
     C <- matrix(1, ncol = p)
     if(x$xt$constraint == "main")
       C <- t(cbind(1, 1:p))
