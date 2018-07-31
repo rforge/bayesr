@@ -1473,11 +1473,10 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 
 tx4 <- function(...)
 {
-  rval <- te(...)
+  rval <- ti(...)
   rval$special <- TRUE
   rval$mp <- TRUE
-  rval$constraint <- "main"
-  class(rval) <- "tensorX.smooth.spec"
+  rval$xt$doC <- TRUE
   rval
 }
 
