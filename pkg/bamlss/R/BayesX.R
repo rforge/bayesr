@@ -1578,6 +1578,7 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
         object$C <- t(A)
       }
     }
+  }
 
   if(length(object$margin) > 1) {
     object$tx.term <- paste(unlist(lapply(object$margin, function(x) {
@@ -1674,12 +1675,12 @@ Predict.matrix.tensorX.smooth <- function(object, data)
 ## Constraint matrices.
 Cmat <- function(x)
 {
-  if(is.null(object$xt$constraint))
-    object$xt$constraint <- "center"
+  if(is.null(x$xt$constraint))
+    x$xt$constraint <- "center"
   ref <- sapply(x$margin, function(z) { inherits(z, "random.effect") })
   if(length(ref) < 2) {
     if(ref)
-      object$xt$constraint <- "center"
+      x$xt$constraint <- "center"
   }
   if(length(x$margin) < 2) {
     p <- ncol(x$margin[[1]]$X)
@@ -1741,7 +1742,6 @@ Cmat <- function(x)
 }
 
 
-
 ## Download the newest version of BayesXsrc.
 get_BayesXsrc <- function(dir = NULL, install = TRUE) {
   owd <- getwd()
@@ -1797,3 +1797,4 @@ hyperpar_mod2 <- function(...)
     return(hpf(...))
   } else stop("cannot find hyperpar_mod() in sdPrior!")
 }
+
