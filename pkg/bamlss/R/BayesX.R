@@ -1471,12 +1471,14 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 }
 
 
-tx4 <- function(...)
+tx4 <- function(..., ctr = c("center", "main", "both", "both1", "both2"))
 {
   rval <- te(...)
   rval$special <- TRUE
   rval$mp <- TRUE
   rval$xt$doC <- TRUE
+  rval$xt$constraint <- match.arg(ctr)
+  rval$label <- gsub("te(", "tx4(", rval$label, fixed = TRUE)
   rval
 }
 
