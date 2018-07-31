@@ -5298,7 +5298,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     else
       ceiling(ncol(object$X) / 3)
   } else object$xt$ntake
-  if(is.null(object$xt$weights)) {
+  thres <- is.null(object$xt$weights)
+  if(thres) {
     object$xt$weights <- vector(mode = "list", length = k)
     smp <- if(object$xt$ntake < 5) FALSE else TRUE
     for(i in 1:k) {
@@ -5328,11 +5329,15 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     else
       return(B)
   }
-  tXw <- object$BitsMat(object$X, object$xt$weights, thres = is.null(object$xt$weights))
-  object$X <- if(is.null(object$xt$weights)) tXw$X else tXw
+  tXw <- object$BitsMat(object$X, object$xt$weights, thres = thres)
+  if(thres) {
+    object$X <- tXw$X
+    object$xt$weights <- tXw$weights
+  } else {
+    object$X <- tXw
+  }
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
-
   d <- apply(apply(object$X, 2, range), 2, diff)
   object$Xkeep <- which((d > 0.00001) & !duplicated(t(object$X)))
   object$X <- object$X[, object$Xkeep, drop = FALSE]
