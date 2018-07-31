@@ -674,7 +674,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     object$S <- list(S)
   }
   if(!is.null(object$xt$doC))
-    object$C <- matrix(1, nrow = 1, ncol = ncol(object$X))
+    object$C <- Cmat(object)
   if(!is.null(object$C)) {
     if(nrow(object$C) < 1)
       object$C <- NULL
@@ -736,7 +736,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
   if(is.null(object$xt$nocenter) & is.null(object$xt$centermethod) & !is.null(object$rank))
     term <- paste(term, ",rankK=", sum(object$rank), sep = "")
   term <- paste(do.xt(term, object,
-    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC")), ")", sep = "")
+    c("center", "before", "penalty", "polys", "map", "map.name", "nb", "gra", "ft", "prior", "theta", "pmean", "pSigma", "doC", "constraint")), ")", sep = "")
 
   write <- function(dir) {
     exists <- NULL
@@ -1471,12 +1471,13 @@ Predict.matrix.tensorX3.smooth <- function(object, data)
 }
 
 
-tx4 <- function(...)
+tx4 <- function(..., ctr = c("center", "main", "both", "both1", "both2"))
 {
   rval <- ti(...)
   rval$special <- TRUE
   rval$mp <- TRUE
   rval$xt$doC <- TRUE
+  rval$xt$constraint <- ctr
   rval
 }
 
@@ -1533,7 +1534,6 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
       if(object$constraint == "center") {
         object$C <- matrix(1, ncol = p1 * p2)
       } else {
-        if(object$constraint == "main") {
           ## Remove main effects only.
           A1 <- matrix(rep(1, p1), ncol = 1)
           A2 <- matrix(rep(1, p2), ncol = 1)
@@ -1669,6 +1669,76 @@ smooth.construct.tensorX.smooth.spec <- function(object, data, knots, ...)
 Predict.matrix.tensorX.smooth <- function(object, data) 
 {
   Predict.matrix.tensor.smooth(object, data)
+}
+
+
+## Constraint matrices.
+Cmat <- function(x)
+{
+  if(is.null(object$xt$constraint))
+    object$xt$constraint <- "center"
+  ref <- sapply(x$margin, function(z) { inherits(z, "random.effect") })
+  if(length(ref) < 2) {
+    if(ref)
+      object$xt$constraint <- "center"
+  }
+  if(length(x$margin) < 2) {
+    p <- ncol(x$margin[[1]]$X)
+    C <- matrix(1, ncol = p)
+    if(x$xt$constraint == "main")
+      C <- t(cbind(1, 1:p))
+  } else {
+    p1 <- ncol(x$margin[[2]]$X); p2 <- ncol(x$margin[[1]]$X)
+    if(x$xt$constraint == "center") {
+      C <- matrix(1, ncol = p1 * p2)
+    } else {
+      I1 <- diag(p1); I2 <- diag(p2)
+      if(x$xt$constraint == "main") {
+        ## Remove main effects only.
+        A1 <- matrix(rep(1, p1), ncol = 1)
+        A2 <- matrix(rep(1, p2), ncol = 1)
+      }
+      if(x$xt$constraint == "both") {
+        ## Remove main effects and varying coefficients.
+        A1 <- if(ref[1]) rep(0, p1) else cbind(rep(1, p1), 1:p1)
+        A2 <- if(ref[2]) rep(0, p2) else cbind(rep(1, p2), 1:p2)
+      }
+      if(x$xt$constraint == "both1") {
+        ## Remove main effects and varying coefficients.
+        A1 <- matrix(rep(1, p1), ncol = 1)
+        A2 <- cbind(rep(1, p2), 1:p2)
+      }
+      if(x$xt$constraint == "both2") {
+        ## Remove main effects and varying coefficients.
+        A1 <- cbind(rep(1, p1), 1:p1)
+        A2 <- matrix(rep(1, p2), ncol = 1)
+      }
+
+      if(ref[1])
+        A1 <- matrix(rep(1, p1), ncol = 1)
+      if(ref[2])
+        A2 <- matrix(rep(1, p2), ncol = 1)
+
+      A <- cbind(kronecker(A1, I2), kronecker(I1,A2))
+
+      i <- match.index(t(A))
+      A <- A[, i$nodups, drop = FALSE]
+
+      k <- 0
+      while((qr(A)$rank < ncol(A)) & (k < 100)) {
+        i <- sapply(1:ncol(A), function(d) { qr(A[, -d])$rank })
+        j <- which(i == qr(A)$rank)
+        if(length(j))
+        A <- A[, -j[1], drop = FALSE]
+        k <- k + 1
+      }
+      if(k == 100)
+        stop("rank problems with constraint matrix!")
+
+      C <- t(A)
+    }
+  }
+  return(C)
 }
 
 

@@ -45,7 +45,7 @@ tx2(...)
 tx3(..., bs = "ps", k = c(10, 5),
   ctr = c("main", "center"),
   xt = NULL, special = TRUE)
-tx4(...)
+tx4(..., ctr = c("center", "main", "both", "both1", "both2"))
 
 ## Smooth constructors and predict matrix.
 \method{smooth.construct}{tensorX.smooth.spec}(object, data, knots, ...)
