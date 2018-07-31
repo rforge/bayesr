@@ -674,7 +674,7 @@ sx.construct.userdefined.smooth.spec <- sx.construct.tensorX.smooth <- function(
     object$S <- list(S)
   }
   if(!is.null(object$xt$doC))
-    object$C <- matrix(1, nrow = 1, ncol = ncol(object$X))
+    object$C <- Cmat(object)
   if(!is.null(object$C)) {
     if(nrow(object$C) < 1)
       object$C <- NULL
