@@ -12,7 +12,7 @@
 
 \usage{
 ## The neural network smooth constructor.
-n(..., k = 10)
+n(..., k = 10, type = 2)
 
 ## Initialize weights.
 n.weights(nodes, k, r = NULL, s = NULL,
@@ -34,6 +34,8 @@ predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
     an argument \code{split = TRUE} to split up the neural network into, e.g., \code{nsplit = 5}
     parts with \code{k} nodes each. For function \code{n.weights()}, argument \code{k}
     is the number of input variables of the network (number of covariates).}
+  \item{type}{Integer. Type \code{1} fits a complete network in each boosting iteration, \code{type = 2} selects
+    the best fitting node in each boosting iteration.}
   \item{nodes}{Number of nodes for each layer, i.e., can also be a vector.}
   \item{r, s}{Parameters controlling the shape of the activation functions.}
   \item{type}{The type of activation function that should be used.}

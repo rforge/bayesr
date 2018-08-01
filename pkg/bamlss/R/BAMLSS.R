@@ -4706,7 +4706,7 @@ Predict.matrix.linear.smooth <- function(object, data)
 
 
 ## Neural networks.
-n <- function(..., k = 10, type = 1)
+n <- function(..., k = 10, type = 2)
 {
   ret <- la(..., k = k)
   ret$label <- gsub("la(", "n(", ret$label, fixed = TRUE)
@@ -5001,6 +5001,9 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
+  if(is.null(object$xt$K))
+    object$xt$K <- 1
+
   object$N <- apply(object$X, 2, function(x) {
     return((1/crossprod(x)) %*% t(x))
   })
@@ -5009,7 +5012,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     if(!is.null(weights))
       stop("weights are not supported!")
 
-    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index)
 
     j <- which.min(bf$rss)
     g2 <- rep(0, length(bf$g))
@@ -5022,7 +5025,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     x$state$rss <- bf$rss[j]
 
     if(hatmatrix) {
-      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+      x$state$hat <- nu/x$xt$nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
     }
   
     return(x$state)
@@ -5360,12 +5363,14 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   object$N <- apply(object$X, 2, function(x) {
     return((1/crossprod(x)) %*% t(x))
   })
+  if(is.null(object$xt$K))
+    object$xt$K <- 1
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     ## process weights.
     if(!is.null(weights))
       stop("weights is not supported!")
 
-    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index)
 
     j <- which.min(bf$rss)
     g2 <- rep(0, length(bf$g))
@@ -5378,7 +5383,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     x$state$rss <- bf$rss[j]
 
     if(hatmatrix) {
-      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+      x$state$hat <- nu/x$xt$K * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
     }
   
     return(x$state)
