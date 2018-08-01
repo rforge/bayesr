@@ -5034,7 +5034,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     drop(X %*% b)
   }
 
-#plot2d(object$X ~ data$x, main = type)
+##plot2d(object$X ~ data$x2, main = type)
+##stop()
 #Sys.sleep(5)
 ##stop()
 
