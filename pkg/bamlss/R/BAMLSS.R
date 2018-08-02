@@ -4923,8 +4923,9 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$Zmat <- function(X, weights) {
       nc <- length(weights)
       Z <- matrix(0, nrow = nrow(X), ncol = nc)
-      for(j in 1:nc)
+      for(j in 1:nc) {
         Z[, j] <- object$afun(X %*% weights[[j]])
+      }
       return(Z)
     }
   } else {
@@ -8738,6 +8739,7 @@ smooth.construct.sr.smooth.spec <- function(object, data, knots, ...)
   object$xt$p.rank <- p.rank
   object$xt$df <- 1
   object$PredictMat <- Predict.matrix.srand.smooth
+  object$X.dim <- ncol(object$X)
 
   class(object) <- c("srand.smooth", "no.mgcv")
 

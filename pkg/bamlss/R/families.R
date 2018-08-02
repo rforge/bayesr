@@ -683,6 +683,9 @@ gaussian_bamlss <- function(...)
     "r" = function(n, par) {
       rnorm(n, mean = par$mu, sd = par$sigma)
     },
+    "crps" = function(y, par, ...) {
+      sum(scoringRules::crps_norm(y, mean = par$mu, sd = par$sigma), na.rm = TRUE)
+    },
     "initialize" = list(
       "mu"    = function(y, ...) { (y + mean(y)) / 2 },
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }

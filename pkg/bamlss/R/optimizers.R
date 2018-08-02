@@ -2276,6 +2276,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   np <- length(nx)
   nobs <- nrow(y)
 
+  CRPS <- !is.null(list(...)$crps) | !is.null(list(...)$CRPS)
+
   yname <- names(y)
 
   if(is.data.frame(y)) {
@@ -2499,7 +2501,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       ## Compute likelihood contribution.
       eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
       llf <- if(is.null(W)) {
-        family$loglik(y, family$map2par(eta))
+        if(CRPS & !is.null(family$crps)) {
+          -1 * family$crps(y, family$map2par(eta))
+        } else {
+          family$loglik(y, family$map2par(eta))
+        }
       } else {
         sum(family$d(y, family$map2par(eta), log = TRUE) * W)
       }
@@ -2582,7 +2588,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     
     peta <- family$map2par(eta)
     ll <- if(is.null(W)) {
-      family$loglik(y, peta)
+      if(CRPS & !is.null(family$crps)) {
+        -1 * family$crps(y, peta)
+      } else {
+        family$loglik(y, peta)
+      }
     } else {
       sum(family$d(y, peta, log = TRUE) * W)
     }
@@ -2674,7 +2684,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       cat(if(ia) "\r" else "\n")
       vtxt <- paste(
         if(!is.null(stop.criterion)) paste(stop.criterion, " ", fmt(save.ic[iter], width = 8, digits = digits), " ", sep = "") else NULL,
-        "logLik ", fmt(ll, width = 8, digits = digits),
+        if(CRPS & !is.null(family$crps)) "CRPS" else "logLik ", fmt(ll, width = 8, digits = digits),
         if(hatmatrix | reverse.edf | approx.edf) paste(" edf ", fmt(edf[iter], width = 4, digits = digits), " ", sep = "") else NULL,
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter, width = nchar(maxit)),
