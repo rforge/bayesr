@@ -3222,8 +3222,15 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
               enames[[i]] <- c(enames[[i]], "(Intercept)")
           } else {
             k <- if(match.names) grep(j, tl[[i]], fixed = TRUE) else which(tl[[i]] == j)
-            if(length(k))
-              enames[[i]] <- c(enames[[i]], tl[[i]][k])
+            if(length(k)) {
+              if(length(k) > 1) {
+                js <- paste0(strsplit(j, "(", fixed = TRUE)[[1]][1], "(")
+                tls <- sapply(strsplit(tl[[i]], "(", fixed = TRUE), function(x) paste0(x[1], "("))
+                enames[[i]] <- c(enames[[i]], tl[[i]][tls == js])
+              } else {
+                enames[[i]] <- c(enames[[i]], tl[[i]][k])
+              }
+            }
           }
         }
       }
@@ -3499,9 +3506,20 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       }
     }
   }
+
+  grep3 <- function(x, y) {
+    m <- grep(x, y, fixed = TRUE, value = TRUE)
+    if(length(m) > 1) {
+      x <- paste0(strsplit(x, "(", fixed = TRUE)[[1]][1], "(")
+      y2 <- sapply(strsplit(y, "(", fixed = TRUE), function(x) { paste0(x[1], "(") })
+      m <- y[y2 %in% x]
+    }
+    m
+  }
+
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
-      for(jj in grep(j, names(x), fixed = TRUE, value = TRUE)) {
+      for(jj in grep3(j, names(x))) {
         sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
         if(!inherits(x[[jj]], "no.mgcv") & !inherits(x[[jj]], "special")) {
           if(is.null(x[[jj]]$mono))
@@ -5159,6 +5177,18 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   orint <- object$xt$rint
   osint <- object$xt$sint
 
+#  Jmat <- function(X, w, b) {
+#    J <- list()
+#    for(j in 1:nodes) {
+#      J[[j]] <- matrix(0, nrX, ncX + 1L)
+#      f <- X %*% w[[j]]
+#      J[[j]][, 1] <- b[j] * exp(-(f))/(1 + exp(-(f)))^2
+#      for(i in 2:(ncX + 1L))
+#        J[[j]][, i] <- b[j] * (exp(-(f)) * X[, i])/(1 + exp(-(f)))^2
+#    }
+#    return(do.call("cbind", J))
+#  }
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
       stop("weights is not supported!")
@@ -5167,8 +5197,9 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       x = x$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE])
 
     Z <- matrix(0, nrow = nrX, ncol = nodes)
-    for(j in 1:nodes)
+    for(j in 1:nodes) {
       Z[, j] <- object$afun(x$X %*% w[[j]])
+    }
 
     ZtZ <- crossprod(Z)
     P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
@@ -5219,16 +5250,17 @@ predictn <- function(object, ..., mstop = NULL, type = c("link", "parameter"))
     if(any(j <- (grepl("n(", tl[[i]], fixed = TRUE)) & !grepl("lin(", tl[[i]], fixed = TRUE))) {
       for(tj in tl[[i]][j]) {
         if(!inherits(object$x[[i]]$smooth.construct[[tj]], "nnet2.smooth")) {
-          pt <- predict(object, ..., model = i,
+          pt <- predict(object, model = i,
             term = tj, FUN = function(x) { x }, intercept = FALSE)
+          ## pt <- .predict_nn1(object$x[[i]]$smooth.construct[[tj]], object$parameters)
           fit <- fit + t(apply(pt, 1, cumsum))
         } else {
-          fit <- fit + predict(object, ..., model = i, term = tj, intercept = FALSE)
+          fit <- fit + predict(object, model = i, term = tj, intercept = FALSE)
         }
       }
     }
     tj <- if(length(tl[[i]][!j])) tl[[i]][!j] else NULL
-    fit <- fit + predict(object, ..., model = i, term = tj, intercept = TRUE)
+    fit <- fit + predict(object, model = i, term = tj, intercept = TRUE)
     p[[i]] <- if(is.null(mstop)) fit else fit[, mstop]
     if(type != "link") {
       link <- family$links[i]
