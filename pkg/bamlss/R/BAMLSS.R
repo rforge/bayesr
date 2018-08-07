@@ -4938,13 +4938,17 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(length(nodes) < 2) {
-    object$Zmat <- function(X, weights) {
+    object$Zmat <- function(X, weights, knots = NULL) {
       nc <- length(weights)
-      Z <- matrix(0, nrow = nrow(X), ncol = nc)
+      Z <- vector(mode = "list", length = nc)
       for(j in 1:nc) {
-        Z[, j] <- object$afun(X %*% weights[[j]])
+        if(!is.null(knots)) {
+          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 2 + 2)$design
+        } else {
+          Z[[j]] <- object$afun(X %*% weights[[j]])
+        }
       }
-      return(Z)
+      return(do.call("cbind", Z))
     }
   } else {
     object$Zmat <- function(X, weights) {
@@ -4975,7 +4979,27 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$n.weights <- object$xt$weights
   }
 
-  object$X <- object$Zmat(object$X, object$n.weights)
+  if(is.null(object$xt$bs))
+    object$xt$bs <- TRUE
+  if(!is.null(object$xt$bs)) {
+    if(object$xt$bs) {
+      object$knots <- vector(mode = "list", length = nodes)
+      if(is.null(object$xt$nk))
+        object$xt$nk <- 5
+      for(j in 1:nodes) {
+        xr <- range(drop(object$X %*% object$n.weights[[j]]))
+        xl <- xr[1]
+        xu <- xr[2]
+        xr <- xu - xl
+        xl <- xl - xr * 0.001
+        xu <- xu + xr * 0.001
+        dx <- (xu - xl)/(object$xt$nk - 1)
+        object$knots[[j]] <- seq(xl - dx * (2 + 1), xu + dx * (2 + 1), length = object$xt$nk + 2 * 2 + 2)
+      }
+    }
+  } else object$knots <- NULL
+
+  object$X <- object$Zmat(object$X, object$n.weights, object$knots)
 
   object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
   object$X <- object$X[, object$Xkeep, drop = FALSE]
@@ -5061,17 +5085,34 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #Sys.sleep(5)
 ##stop()
 
+  object$xt$binning <- FALSE
+
   class(object) <- c("nnet2.smooth", "mgcv.smooth")
 
   object
 }
 
 
+#tanh2 <- function(x) {
+#  y <- rep(0, length(x))
+#  y[x > 1.92033] <- 0.96016
+#  i <- x > 0 & x <= 1.92033
+#  y[i] <- 0.96016 - 0.26037 * (x[i] - 1.92033)^2
+#  i <- x > -1.92033 & x < 0
+#  y[i] <- 0.26037 * (x[i] + 1.92033)^2 - 0.96016
+#  y[x <= -1.92033] <- -0.96016
+#  y
+#}
+
+#curve(tanh2, -3, 3)
+#curve(tanh, -3, 3, col = 2, add = TRUE)
+
+
 Predict.matrix.nnet2.smooth <- function(object, data)
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
-  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights)
+  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$knots)
   X <- X[, object$Xkeep, drop = FALSE]
   X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
   return(X)
