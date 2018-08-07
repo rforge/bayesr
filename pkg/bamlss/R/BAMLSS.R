@@ -4995,7 +4995,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     if(object$xt$bs) {
       object$knots <- vector(mode = "list", length = nodes)
       if(is.null(object$xt$nk))
-        object$xt$nk <- 5
+        object$xt$nk <- 3
       for(j in 1:nodes) {
         xr <- range(drop(object$X %*% object$n.weights[[j]]))
         xl <- xr[1]
