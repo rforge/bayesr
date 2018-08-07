@@ -730,7 +730,7 @@ Gaussian_bamlss <- function(...)
 gpareto_bamlss <- function(...)
 {
   rval <- list(
-    "family" = "Generalized Pareto",
+    "family" = "gpareto",
     "names" = c("xi", "sigma"),
     "links" = c(xi = "log", sigma = "log"),
     "valid.response" = function(x) {
@@ -2148,7 +2148,7 @@ mvnorm_bamlss <- function(k = 2, ...)
   names(links) <- c(mu, sigma, rho)
 
   rval <- list(
-    "family" = ".mvnorm",
+    "family" = "mvnorm",
     "names" = c(mu, sigma, rho),
     "links" = links,
     "d" = function(y, par, log = FALSE) {
@@ -3332,7 +3332,7 @@ mvnormAR1_bamlss <- function(k = 2, ...)
   names(links) <- c(mu, sigma, rho)
 
   rval <- list(
-    "family" = ".mvnormAR1",
+    "family" = "mvnormAR1",
     "names" = c(mu, sigma, rho),
     "links" = links,
     "d" = function(y, par, log = FALSE) {
