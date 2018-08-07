@@ -4748,6 +4748,14 @@ n <- function(..., k = 10, type = 2)
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
   type <- match.arg(type)
+  dropout <- list(...)$dropout
+  if(!is.null(dropout)) {
+    if(is.logical(dropout)) {
+      dropout <- if(dropout) 0.1 else NULL
+    } else {
+      dropout <- as.numeric(dropout)
+    }
+  }
   if(inherits(nodes, "bamlss")) {
     if(!is.null(nodes$parameters)) {
       rval <- list()
@@ -4858,6 +4866,8 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
         "sin" = runif(1, acos(r[i]), s[i] * acos(r[i]))
       )
       w <- runif(k - 1, -1, 1)
+      if(!is.null(dropout))
+        w[sample(c(TRUE, FALSE), size = length(w), replace = TRUE, prob = c(dropout, 1 - dropout))] <- 0
       w <- w * sw / sum(w)
       if(length(w) < 2)
         w <- w * sample(c(-1, 1), size = 1)
@@ -4943,7 +4953,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       Z <- vector(mode = "list", length = nc)
       for(j in 1:nc) {
         if(!is.null(knots)) {
-          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 2 + 2)$design
+          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 2 + 2, outer.ok = TRUE)$design
         } else {
           Z[[j]] <- object$afun(X %*% weights[[j]])
         }
@@ -4972,7 +4982,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     nobs <- nrow(object$X)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
     object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type,
-      x = object$xt[["tx"]])
+      x = object$xt[["tx"]], dropout = object$xt[["dropout"]])
   } else {
     if(length(object$xt$weights) != nodes)
       stop("not enough weights supplied!")
@@ -5466,7 +5476,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   object
 }
 
-make_weights <- function(object, data) {
+make_weights <- function(object, data, dropout = 0.8) {
+  object$xt$dropout <- dropout
   rval <- smooth.construct(object, data, NULL)
   if(length(i <- grep("weights", names(rval))))
     return(rval[[i]])
