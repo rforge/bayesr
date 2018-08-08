@@ -4656,7 +4656,7 @@ lin <- function(...)
 
 smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
 {
-  object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+  object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]
   colnames(object$X) <- paste0("b.", colnames(object$X))
 
   center <- scale <- rep(NA, ncol(object$X))
@@ -4714,7 +4714,7 @@ smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
 
 Predict.matrix.linear.smooth <- function(object, data)
 {
-  X <- model.matrix(object$formula, data = as.data.frame(data))[, -1]
+  X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]
   colnames(X) <- paste0("b.", colnames(X))
   for(j in 1:ncol(X)) {
     if(!is.na(object$scale$center[j]))
@@ -4989,7 +4989,6 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       stop("not enough weights supplied!")
     object$n.weights <- object$xt$weights
   }
-
   if(is.null(object$xt$bs))
     object$xt$bs <- FALSE
   if(!is.null(object$xt$bs)) {
@@ -5091,8 +5090,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     drop(X %*% b)
   }
 
-##plot2d(object$X ~ data$x2, main = type)
-##stop()
+#plot2d(object$X ~ data$times, main = type)
+#stop()
 #Sys.sleep(5)
 ##stop()
 
