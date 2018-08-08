@@ -4991,7 +4991,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(is.null(object$xt$bs))
-    object$xt$bs <- TRUE
+    object$xt$bs <- FALSE
   if(!is.null(object$xt$bs)) {
     if(object$xt$bs) {
       object$knots <- vector(mode = "list", length = nodes)
