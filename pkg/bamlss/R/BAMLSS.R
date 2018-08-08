@@ -4633,7 +4633,8 @@ Predict.matrix.lasso.smooth <- function(object, data)
           for(jj in 1:ncol(X[[j]]))
             X[[j]][, jj] <- (X[[j]][, jj] - xmin[jj]) / (xmax[jj] - xmin[jj])
         } else {
-          X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
+          if(!is.null(object$lasso$trans[[j]]$center))
+            X[[j]] <- (X[[j]] - object$lasso$trans[[j]]$center) / object$lasso$trans[[j]]$scale
         }
       }
     } else {
