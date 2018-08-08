@@ -4954,7 +4954,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       Z <- vector(mode = "list", length = nc)
       for(j in 1:nc) {
         if(!is.null(knots)) {
-          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 2 + 2, outer.ok = TRUE)$design
+          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 0 + 1, outer.ok = TRUE)$design
         } else {
           Z[[j]] <- object$afun(X %*% weights[[j]])
         }
@@ -4996,7 +4996,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     if(object$xt$bs) {
       object$knots <- vector(mode = "list", length = nodes)
       if(is.null(object$xt$nk))
-        object$xt$nk <- 3
+        object$xt$nk <- 5
       for(j in 1:nodes) {
         xr <- range(drop(object$X %*% object$n.weights[[j]]))
         xl <- xr[1]
