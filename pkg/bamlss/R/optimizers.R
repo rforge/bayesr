@@ -2353,6 +2353,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   }
   selectfun <- list(...)$selectfun
   selectmodel <- list(...)$selectmodel
+  nthreads <- list(...)$nthreads
   if(is.null(selectmodel))
     selectmodel <- TRUE
   if(!is.null(selectfun))
@@ -2407,7 +2408,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
             boost_fit(x[[i]]$smooth.construct[[j]], grad, nu2,
-              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL)
+              hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL,
+              nthreads = nthreads)
           } else {
             .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu2,
               if(!is.null(weights)) as.numeric(weights[, i]) else numeric(0), rho, PACKAGE = "bamlss")
@@ -2416,7 +2418,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
             y = grad, nu = nu2, hatmatrix = hatmatrix,
             weights = if(!is.null(weights)) weights[, i] else NULL,
-            rho = rho)
+            rho = rho, nthreads = nthreads)
         }
         
         ## Get rss.
@@ -3067,9 +3069,11 @@ boost.transform <- function(x, y, df = NULL, family,
 }
 
 
-boost_fit_nnet <- function(nu, X, N, y, ind)
+boost_fit_nnet <- function(nu, X, N, y, ind, nthreads = NULL)
 {
-  .Call("boost_fit_nnet", nu, X, N, y, ind)
+  if(is.null(nthreads))
+    nthreads <- 1L
+  .Call("boost_fit_nnet", nu, X, N, y, ind, as.integer(nthreads))
 }
 
 

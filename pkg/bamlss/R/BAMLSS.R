@@ -4683,12 +4683,12 @@ smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
     return((1/crossprod(x)) %*% t(x))
   })
 
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
     ## process weights.
     if(!is.null(weights))
       stop("weights is not supported!")
 
-    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
 
     j <- which.min(bf$rss)
     g2 <- rep(0, length(bf$g))
@@ -5060,12 +5060,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$N <- apply(object$X, 2, function(x) {
     return((1/crossprod(x)) %*% t(x))
   })
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
     ## process weights.
     if(!is.null(weights))
       stop("weights are not supported!")
 
-    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
 
     j <- which.min(bf$rss)
     g2 <- rep(0, length(bf$g))
@@ -5449,12 +5449,12 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   })
   if(is.null(object$xt$K))
     object$xt$K <- 1
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
     ## process weights.
     if(!is.null(weights))
       stop("weights is not supported!")
 
-    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index)
+    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
 
     j <- which.min(bf$rss)
     g2 <- rep(0, length(bf$g))

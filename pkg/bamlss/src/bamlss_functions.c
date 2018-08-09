@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <time.h>
+#include <omp.h>
 
 #include <R.h>
 #include <Rmath.h>
@@ -3870,11 +3871,12 @@ SEXP hatmat_sumdiag(SEXP H)
 }
 
 
-SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind)
+SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind, SEXP nthreads)
 {
   int i, j;
   int n = nrows(X);
   int k = ncols(X);
+  int *nthreadsptr = INTEGER(nthreads);
 
   SEXP g;
   PROTECT(g = allocVector(REALSXP, k));
@@ -3895,18 +3897,24 @@ SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind)
 
   double nu2 = REAL(nu)[0];
 
-  for(j = 0; j < k; j++) {
-    gptr[j] = 0.0;
-    rssptr[j] = 0.0;
-    for(i = 0; i < n; i++) {
-      gptr[j] += Nptr[(indptr[i] - 1) + n * j] * yptr[i];
-    }
-    gptr[j] = nu2 * gptr[j];
-    for(i = 0; i < n; i++) {
-      fitptr[i + n * j] = Xptr[(indptr[i] - 1) + n * j] * gptr[j];
-      rssptr[j] += pow(fitptr[i + n * j] - yptr[i], 2.0);
+  omp_set_num_threads(nthreadsptr[0]);
+  #pragma omp parallel
+  {
+    #pragma omp for
+    for(j = 0; j < k; j++) {
+      gptr[j] = 0.0;
+      rssptr[j] = 0.0;
+      for(i = 0; i < n; i++) {
+        gptr[j] += Nptr[(indptr[i] - 1) + n * j] * yptr[i];
+      }
+      gptr[j] = nu2 * gptr[j];
+      for(i = 0; i < n; i++) {
+        fitptr[i + n * j] = Xptr[(indptr[i] - 1) + n * j] * gptr[j];
+        rssptr[j] += pow(fitptr[i + n * j] - yptr[i], 2.0);
+      }
     }
   }
+  omp_set_num_threads(1);
 
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 3));
