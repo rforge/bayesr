@@ -5301,17 +5301,17 @@ predictn <- function(object, ..., mstop = NULL, type = c("link", "parameter"))
     if(any(j <- (grepl("n(", tl[[i]], fixed = TRUE)) & !grepl("lin(", tl[[i]], fixed = TRUE))) {
       for(tj in tl[[i]][j]) {
         if(!inherits(object$x[[i]]$smooth.construct[[tj]], "nnet2.smooth")) {
-          pt <- predict(object, model = i,
+          pt <- predict(object, ..., model = i,
             term = tj, FUN = function(x) { x }, intercept = FALSE)
           ## pt <- .predict_nn1(object$x[[i]]$smooth.construct[[tj]], object$parameters)
           fit <- fit + t(apply(pt, 1, cumsum))
         } else {
-          fit <- fit + predict(object, model = i, term = tj, intercept = FALSE)
+          fit <- fit + predict(object, ..., model = i, term = tj, intercept = FALSE)
         }
       }
     }
     tj <- if(length(tl[[i]][!j])) tl[[i]][!j] else NULL
-    fit <- fit + predict(object, model = i, term = tj, intercept = TRUE)
+    fit <- fit + predict(object, ..., model = i, term = tj, intercept = TRUE)
     p[[i]] <- if(is.null(mstop)) fit else fit[, mstop]
     if(type != "link") {
       link <- family$links[i]
