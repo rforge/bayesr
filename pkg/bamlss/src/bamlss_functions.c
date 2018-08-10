@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <time.h>
-#include <omp.h>
+// #include <omp.h>
 
 #include <R.h>
 #include <Rmath.h>
@@ -3897,10 +3897,10 @@ SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind, SEXP nthreads)
 
   double nu2 = REAL(nu)[0];
 
-  omp_set_num_threads(nthreadsptr[0]);
-  #pragma omp parallel
-  {
-    #pragma omp for
+//  omp_set_num_threads(nthreadsptr[0]);
+//  #pragma omp parallel
+//  {
+//    #pragma omp for
     for(j = 0; j < k; j++) {
       gptr[j] = 0.0;
       rssptr[j] = 0.0;
@@ -3913,8 +3913,8 @@ SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind, SEXP nthreads)
         rssptr[j] += pow(fitptr[i + n * j] - yptr[i], 2.0);
       }
     }
-  }
-  omp_set_num_threads(1);
+//  }
+//  omp_set_num_threads(1);
 
   SEXP rval;
   PROTECT(rval = allocVector(VECSXP, 3));
