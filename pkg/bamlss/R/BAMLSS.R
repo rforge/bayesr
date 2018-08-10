@@ -5256,6 +5256,15 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$slice))
     object$xt$slice <- FALSE
 
+  if(is.null(object$xt$K))
+    object$xt$K <- 1
+
+  if(is.null(object$xt$pen))
+    object$xt$pen <- 2
+
+  if(is.null(object$xt$print.edf))
+    object$xt$print.edf <- FALSE
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
       stop("weights is not supported!")
@@ -5275,8 +5284,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       Z[, j] <- object$afun(x$X %*% w[paste0("bw", j, "_w", 0:ncX)])
 
     ZtZ <- crossprod(Z)
-    P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
-    g <- as.numeric(nu * drop(P %*% crossprod(Z, y)))
+    P <- matrix_inv(ZtZ + diag(nodes*x$xt$pen, nodes))
+    g <- as.numeric(nu/x$xt$K * drop(P %*% crossprod(Z, y)))
 
     names(g) <- paste0("bb", 1:length(g))
 
@@ -5285,6 +5294,11 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
     x$state$rss <- sum((y - x$state$fitted.values)^2)
     x$state$edf <- sum_diag(ZtZ %*% P)
+
+    if(x$xt$print.edf) {
+      cat("\n---\n")
+      cat(x$label, "edf =", x$state$edf, "\n---\n")
+    }
 
     if(hatmatrix) {
       stop("hatmatrix is not supported yet!")
