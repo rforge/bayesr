@@ -1607,3 +1607,79 @@ uni.slice <- function(g, x, family, response, eta, id, j, ...,
   return(g)
 }
 
+
+uni.slice2 <- function(g, x, y, j, ...,
+  w = 1, m = 30, lower = -Inf, upper = +Inf, logPost)
+{
+  x0 <- g[j]
+  gL <- gR <- g
+
+  gx0 <- logPost(g, x, y, ...)
+
+  ## Determine the slice level, in log terms.
+  logy <- gx0 - rexp(1)
+
+  ## Find the initial interval to sample from.
+  ## w <- w * abs(x0) ## FIXME???
+  u <- runif(1, 0, w)
+  gL[j] <- g[j] - u
+  gR[j] <- g[j] + (w - u)  ## should guarantee that g[j] is in [L, R], even with roundoff
+
+  ## Expand the interval until its ends are outside the slice, or until
+  ## the limit on steps is reached.
+  if(is.infinite(m)) {
+    repeat {
+      if(gL[j] <= lower) break
+      if(logPost(gL, x, y, ...) <= logy) break
+      gL[j] <- gL[j] - w
+    }
+    repeat {
+      if(gR[j] >= upper) break
+      if(logPost(gR, x, y, ...) <= logy) break
+      gR[j] <- gR[j] + w
+    }
+  } else {
+    if(m > 1) {
+      J <- floor(runif(1, 0, m))
+      K <- (m - 1) - J
+      while(J > 0) {
+        if(gL[j] <= lower) break
+        if(logPost(gL, x, y, ...) <= logy) break
+        gL[j] <- gL[j] - w
+        J <- J - 1
+      }
+      while(K > 0) {
+        if(gR[j] >= upper) break
+        if(logPost(gR, x, y, ...) <= logy) break
+        gR[j] <- gR[j] + w
+        K <- K - 1
+      }
+    }
+  }
+
+  ## Shrink interval to lower and upper bounds.
+  if(gL[j] < lower) {
+    gL[j] <- lower
+  }
+  if(gR[j] > upper) {
+    gR[j] <- upper
+  }
+
+  ## Sample from the interval, shrinking it on each rejection.
+  repeat {
+    g[j] <- runif(1, gL[j], gR[j])
+
+    gx1 <- logPost(g, x, y, ...)
+
+    if(gx1 >= logy) break
+
+    if(g[j] > x0) {
+      gR[j] <- g[j]
+    } else {
+      gL[j] <- g[j]
+    }
+  }
+
+  ## Return the point sampled
+  return(g)
+}

@@ -5240,6 +5240,22 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 #    return(do.call("cbind", J))
 #  }
 
+  wLP <- function(w, x, y, ...) {
+    Z <- matrix(0, nrow = nrX, ncol = nodes)
+    for(j in 1:nodes)
+      Z[, j] <- object$afun(x$X %*% w[paste0("bw", j, "_w", 0:ncX)])
+    ZtZ <- crossprod(Z)
+    P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
+    g <- drop(P %*% crossprod(Z, y))
+    fit <- as.numeric(Z %*% g)
+    ll <- sum(dnorm(y, mean = fit, log = TRUE), na.rm = TRUE)
+    lp <- sum(dnorm(w, sd = 1000, log = TRUE))
+    return(ll + lp)
+  }
+
+  if(is.null(object$xt$slice))
+    object$xt$slice <- FALSE
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
       stop("weights is not supported!")
@@ -5247,17 +5263,22 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     w <- n.weights(nodes, ncX, rint = orint, sint = osint, type = type,
       x = x$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE])
 
-    Z <- matrix(0, nrow = nrX, ncol = nodes)
-    for(j in 1:nodes) {
-      Z[, j] <- object$afun(x$X %*% w[[j]])
+    w <- unlist(w)
+
+    if(x$xt$slice) {
+      for(j in seq_along(w))
+        w <- uni.slice2(w, x, y, j, logPost = wLP)
     }
+
+    Z <- matrix(0, nrow = nrX, ncol = nodes)
+    for(j in 1:nodes)
+      Z[, j] <- object$afun(x$X %*% w[paste0("bw", j, "_w", 0:ncX)])
 
     ZtZ <- crossprod(Z)
     P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
-    g <- as.numeric(nu/2 * drop(P %*% crossprod(Z, y)))
+    g <- as.numeric(nu * drop(P %*% crossprod(Z, y)))
 
     names(g) <- paste0("bb", 1:length(g))
-    w <- unlist(w)
 
     x$state$parameters <- set.par(x$state$parameters, c(g, w), "b")
     x$state$fitted.values <- as.numeric(Z %*% g)
