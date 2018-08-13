@@ -314,9 +314,19 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
             accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
 
             if(accepted) {
-              eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+              if (is.null(attr(theta[[i]][[j]], "fitted.values"))) {
+                eta[[i]] <- eta[[i]] - fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+              } else {
+                eta[[i]] <- eta[[i]] - attr(theta[[i]][[j]], "fitted.values")
+              }
+
               theta[[i]][[j]] <- state$parameters
-              eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+
+              if (is.null(attr(theta[[i]][[j]], "fitted.values"))) {
+                eta[[i]] <- eta[[i]] + fitfun[[i]][[j]](data[[i]][[j]], theta[[i]][[j]])
+              } else {
+                eta[[i]] <- eta[[i]] + attr(theta[[i]][[j]], "fitted.values")
+              }
             }
 
             ## Save the samples.
@@ -342,9 +352,19 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
           accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
 
           if(accepted) {
-            eta[[i]] <- eta[[i]] - fitfun[[i]](data[[i]], theta[[i]])
+            if (is.null(attr(theta[[i]], "fitted.values"))) {
+              eta[[i]] <- eta[[i]] - fitfun[[i]](data[[i]], theta[[i]])
+            } else {
+              eta[[i]] <- eta[[i]] - attr(theta[[i]], "fitted.values")
+            }
+
             theta[[i]] <- state$parameters
-            eta[[i]] <- eta[[i]] + fitfun[[i]](data[[i]], theta[[i]])
+
+            if (is.null(attr(theta[[i]], "fitted.values"))) {
+              eta[[i]] <- eta[[i]] + fitfun[[i]](data[[i]], theta[[i]])
+            } else {
+              eta[[i]] <- eta[[i]] + attr(theta[[i]], "fitted.values")
+            }
           }
 
           ## Save the samples.

@@ -3090,7 +3090,14 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   smf <- unique(smf)
   class(smf) <- c(class(x), "data.frame")
 
-  x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
+  # this code does not work with environments/r6 classes:
+  # x[!(names(x) %in% c("term", "label", "bs.dim", "dim"))] <- NULL
+
+  # but this code does:
+  specs <- list(term = x$term, label = x$label, bs.dim = x$bs.dim, dim = x$dim)
+  mostattributes(specs) <- attributes(x)
+  x <- specs
+
   attr(x, "qrc") <- NULL
   attr(smf, "specs") <- x
   class(attr(smf, "specs")) <- class(x)
@@ -5765,12 +5772,12 @@ smooth.construct.kr.smooth.spec <- function(object, data, knots, ...)
     if(is.null(k))
       k <- seq(min(x), max(x), length = object$bs.dim)
     D <- krDesign1D(x, knots = k, rho = object$xt$rho,
-      phi = object$xt$phi, v = object$xt$v, c = object$xt$c)
-  } else {
+      phi = object$xt$phi, v = object$xt[["v"]], c = object$xt[["c"]])
+  } else { # caution: xt$c partially matches xt$center
     knots <- if(is.null(object$xt$knots)) object$bs.dim else object$xt$knots
     D <- krDesign2D(data[[object$term[1]]], data[[object$term[2]]],
       knots = knots,
-      phi = object$xt$phi, v = object$xt$v, c = object$xt$c,
+      phi = object$xt$phi, v = object$xt[["v"]], c = object$xt[["c"]],
       psi = object$xt$psi, delta = object$xt$delta,
       isotropic = object$xt$isotropic)
   }
@@ -5781,7 +5788,9 @@ smooth.construct.kr.smooth.spec <- function(object, data, knots, ...)
   object$rank <- qr(D$K)$rank
   object$knots <- D$knots
   object$null.space.dim <- ncol(D$K)
- 
+
+  object$xt$phi <- D$phi
+
   class(object) <- "kriging.smooth"
   object
 }
