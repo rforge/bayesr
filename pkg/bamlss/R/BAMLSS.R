@@ -5056,32 +5056,36 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   if(is.null(object$xt$K))
     object$xt$K <- 1
+  if(is.null(object$xt$single))
+    object$xt$single <- TRUE
 
-  object$N <- apply(object$X, 2, function(x) {
-    return((1/crossprod(x)) %*% t(x))
-  })
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
-    ## process weights.
-    if(!is.null(weights))
-      stop("weights are not supported!")
+  if(object$xt$single) {
+    object$N <- apply(object$X, 2, function(x) {
+      return((1/crossprod(x)) %*% t(x))
+    })
+    object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
+      ## process weights.
+      if(!is.null(weights))
+        stop("weights are not supported!")
 
-    bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
+      bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
 
-    j <- which.min(bf$rss)
-    g2 <- rep(0, length(bf$g))
-    g2[j] <- bf$g[j]
+      j <- which.min(bf$rss)
+      g2 <- rep(0, length(bf$g))
+      g2[j] <- bf$g[j]
   
-    ## Finalize.
-    x$state$parameters <- set.par(x$state$parameters, g2, "b")
-    x$state$fitted.values <- bf$fit[, j]
+      ## Finalize.
+      x$state$parameters <- set.par(x$state$parameters, g2, "b")
+      x$state$fitted.values <- bf$fit[, j]
 
-    x$state$rss <- bf$rss[j]
+      x$state$rss <- bf$rss[j]
 
-    if(hatmatrix) {
-      x$state$hat <- nu/x$xt$nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+      if(hatmatrix) {
+        x$state$hat <- nu/x$xt$nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+      }
+  
+      return(x$state)
     }
-  
-    return(x$state)
   }
 
   object$fit.fun <- function(X, b, ...) {
