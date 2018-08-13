@@ -901,14 +901,8 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   }
 
   if(!is.null(data$C)) {
-    V <- P %*% t(data$C)
-    W <- data$C %*% V
-    U <- chol2inv(chol(W)) %*% t(V)
-    g <- g - U %*% t(data$C)
-print(dim(V))
-print(dim(W))
-print(dim(U))
-stop()
+    g <- drop(g - P %*% t(data$C) %*% solve(data$C %*% P %*% t(data$C)) %*% data$C %*% g)
+print(g)
   }
 
   ## Compute log priors.
