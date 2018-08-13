@@ -3096,6 +3096,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   # but this code does:
   specs <- list(term = x$term, label = x$label, bs.dim = x$bs.dim, dim = x$dim)
   mostattributes(specs) <- attributes(x)
+  names(specs)[1:4] <- c("term", "label", "bs.dim", "dim")
   x <- specs
 
   attr(x, "qrc") <- NULL
