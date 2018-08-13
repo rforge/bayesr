@@ -899,10 +899,11 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   if(inherits(g, "try-error")) {
     return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
   }
-
-  if(!is.null(data$C)) {
-    g <- drop(g - P %*% t(data$C) %*% solve(data$C %*% P %*% t(data$C)) %*% data$C %*% g)
-print(g)
+  if(!is.null(data$C) & FALSE) {
+    V <- P %*% t(data$C)
+    W <- data$C %*% V
+    U <- chol2inv(chol(W)) %*% t(V)
+    g <- drop(g - t(U) %*% data$C %*% g)
   }
 
   ## Compute log priors.
