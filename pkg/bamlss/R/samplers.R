@@ -900,6 +900,17 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
   }
 
+  if(!is.null(data$C)) {
+    V <- P %*% t(data$C)
+    W <- data$C %*% V
+    U <- chol2inv(chol(W)) %*% t(V)
+    g <- g - U %*% t(data$C)
+print(dim(V))
+print(dim(W))
+print(dim(U))
+stop()
+  }
+
   ## Compute log priors.
   p2 <- data$prior(c("b" = g, get.par(theta, "tau2")))
   qbetaprop <- try(dmvnorm(g, mean = M, sigma = P, log = TRUE), silent = TRUE)

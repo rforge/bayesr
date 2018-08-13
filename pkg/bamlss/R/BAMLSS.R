@@ -5034,7 +5034,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$rank <- sapply(object$S, sum)
 
   object$xt$prior <- "ig"
-  object$fx <- object$xt$fx <- FALSE
+  object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
   object$xt$df <- 4
 
   if(is.null(object$xt$alpha))
@@ -5101,7 +5101,13 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   object$xt$binning <- FALSE
 
-  class(object) <- c("nnet2.smooth", "mgcv.smooth")
+  if(!object$xt$single) {
+    object$xt[["lambda"]] <- object$xt[["sp"]] <- object[["lambda"]] <- object[["sp"]] <- object$xt[["tau2"]] <- NULL
+    object$xt$lambda.min.ratio <- NULL
+    class(object) <- c("nnet3.smooth", "mgcv.smooth")
+  } else {
+    class(object) <- c("nnet2.smooth", "mgcv.smooth")
+  }
 
   object
 }
@@ -5122,7 +5128,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #curve(tanh, -3, 3, col = 2, add = TRUE)
 
 
-Predict.matrix.nnet2.smooth <- function(object, data)
+Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, data)
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
