@@ -3281,9 +3281,18 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       FUN2 <- function(x, ...) FUN(x)
     } else {
       samps <- parameters(object, model = model, list = FALSE, extract = TRUE, ...)
-      cn <- names(samps)
-      samps <- matrix(samps, nrow = 1)
-      colnames(samps) <- cn
+      if(is.null(dim(samps))) {
+        cn <- names(samps)
+        samps <- matrix(samps, nrow = 1)
+        colnames(samps) <- cn
+      }
+      mstop <- list(...)$mstop
+      if(!is.null(mstop)) {
+        if(!is.null(object$model.stats$optimizer$boost.summary) & (length(mstop) > 1)) {
+          FUN <- function(x) { x }
+          FUN2 <- function(x, ...) FUN(x)
+        }
+      }
     }
     samps <- as.mcmc(samps)
   }
