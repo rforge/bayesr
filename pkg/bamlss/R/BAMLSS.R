@@ -2542,7 +2542,8 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
           if(!is.null(tcall$call))
             tcall <- eval(tcall$call)
         }
-        tl[j] <- gsub(" ", "", tcall$label)
+        if(!is.null(tcall$label))
+          tl[j] <- gsub(" ", "", tcall$label)
         if(!is.null(tcall$by)) {
           if(tcall$by != "NA") {
             if(!grepl("by=", tl[j], fixed = TRUE)) {
@@ -5243,7 +5244,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes)
       Z[, j] <- object$afun(X %*% bw[grep(paste0("bw", j, "_"), nw, fixed = TRUE)])
     fit <- drop(Z %*% bb)
-    fit <- fit - mean(fit)
+    #fit <- fit - mean(fit)
     return(fit)
   }
 
@@ -5255,17 +5256,17 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   orint <- object$xt$rint
   osint <- object$xt$sint
 
-#  Jmat <- function(X, w, b) {
-#    J <- list()
-#    for(j in 1:nodes) {
-#      J[[j]] <- matrix(0, nrX, ncX + 1L)
-#      f <- X %*% w[[j]]
-#      J[[j]][, 1] <- b[j] * exp(-(f))/(1 + exp(-(f)))^2
-#      for(i in 2:(ncX + 1L))
-#        J[[j]][, i] <- b[j] * (exp(-(f)) * X[, i])/(1 + exp(-(f)))^2
-#    }
-#    return(do.call("cbind", J))
-#  }
+  Jmat <- function(X, w, b) {
+    J <- list()
+    for(j in 1:nodes) {
+      J[[j]] <- matrix(0, nrX, ncX + 1L)
+      f <- X %*% w[[j]]
+      J[[j]][, 1] <- b[j] * exp(-(f))/(1 + exp(-(f)))^2
+      for(i in 2:(ncX + 1L))
+        J[[j]][, i] <- b[j] * (exp(-(f)) * X[, i])/(1 + exp(-(f)))^2
+    }
+    return(do.call("cbind", J))
+  }
 
   wLP <- function(w, x, y, ...) {
     Z <- matrix(0, nrow = nrX, ncol = nodes)
@@ -5275,6 +5276,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     P <- matrix_inv(ZtZ + diag(nodes*2, nodes))
     g <- drop(P %*% crossprod(Z, y))
     fit <- as.numeric(Z %*% g)
+    fit <- fit - mean(fit)
     ll <- sum(dnorm(y, mean = fit, log = TRUE), na.rm = TRUE)
     lp <- sum(dnorm(w, sd = 1000, log = TRUE))
     return(ll + lp)
@@ -5289,8 +5291,14 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$pen))
     object$xt$pen <- 2
 
+  if(is.null(object$xt$frac))
+    object$xt$frac <- 0.6
+
   if(is.null(object$xt$print.edf))
     object$xt$print.edf <- FALSE
+
+  if(is.null(object$xt$step))
+    object$xt$step <- TRUE
 
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
@@ -5310,17 +5318,35 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes)
       Z[, j] <- object$afun(x$X %*% w[paste0("bw", j, "_w", 0:ncX)])
 
-    ZtZ <- crossprod(Z)
-    P <- matrix_inv(ZtZ + diag(nodes*x$xt$pen, nodes))
-    g <- as.numeric(nu/x$xt$K * drop(P %*% crossprod(Z, y)))
+    i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
+    Z2 <- Z[i, ]
+    y2 <- y[i]
 
-    names(g) <- paste0("bb", 1:length(g))
+    if(x$xt$step) {
+      Z2 <- as.data.frame(Z2)
+      names(Z2) <- paste0("bb", 1:nodes)
+      f <- as.formula(paste0("y2~-1+", paste0(names(Z2), collapse = "+")))
+      Z2$y2 <- y2
+      m <- lm(f, data = Z2)
+      m <- step(m, direction = "forward", k = log(nrX), trace = 0)
+      g <- rep(0, nodes)
+      names(g) <- paste0("bb", 1:length(g))
+      cm <- coef(m)
+      cm[is.na(cm)] <- 0.0
+      g[names(cm)] <- nu/x$xt$K * cm
+    } else {
+      ZtZ <- crossprod(Z2)
+      P <- matrix_inv(ZtZ + diag(nodes*x$xt$pen, nodes))
+      g <- as.numeric(nu/x$xt$K * drop(P %*% crossprod(Z2, y2)))
+      x$state$edf <- sum_diag(ZtZ %*% P)
+      names(g) <- paste0("bb", 1:length(g))
+    }
 
     x$state$parameters <- set.par(x$state$parameters, c(g, w), "b")
     x$state$fitted.values <- as.numeric(Z %*% g)
-    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
+    #x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
+
     x$state$rss <- sum((y - x$state$fitted.values)^2)
-    x$state$edf <- sum_diag(ZtZ %*% P)
 
     if(x$xt$print.edf) {
       cat("\n---\n")
