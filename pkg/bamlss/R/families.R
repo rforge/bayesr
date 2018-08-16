@@ -399,8 +399,12 @@ process_factor_response <- function(x)
      if(!is.null(dim(x)))
        x <- x[, ncol(x)]
    }
-   if(is.factor(x))
+   if(is.factor(x)) {
      x <- as.integer(x) - 1L
+   } else {
+     if(!is.null(dim(x)))
+         x <- x[, ncol(x)]
+   }
    as.integer(x)
 }
 
