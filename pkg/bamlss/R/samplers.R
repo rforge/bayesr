@@ -919,7 +919,7 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   if(inherits(g, "try-error")) {
     return(list("parameters" = theta, "alpha" = -Inf, "extra" = c("edf" = NA)))
   }
-  if(!is.null(data$C)) {
+  if(!is.null(data$doCmat)) {
     V <- P %*% t(data$C)
     W <- data$C %*% V
     U <- chol2inv(chol(W)) %*% t(V)

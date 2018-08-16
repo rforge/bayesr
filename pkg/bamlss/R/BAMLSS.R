@@ -190,6 +190,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   if(!model.matrix & !smooth.construct)
     return(NULL)
 
+  doCmat <- list(...)$Cmat
+  if(is.null(doCmat))
+    doCmat <- FALSE
+
   if(is.null(gam.side))
     gam.side <- if(binning) FALSE else TRUE
 
@@ -362,8 +366,15 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 attr(tsm, "ff") <- TRUE
               }
               if(!inherits(data, "ffdf")) {
-                smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
-                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+                if(!doCmat) {
+                  smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
+                    knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+                } else {
+                  smt <- smooth.construct(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data, knots)
+                  smt$C <- Cmat(smt)
+                  smt$doCmat <- TRUE
+                  smt <- list(smt)
+                }
                 smooth <- c(smooth, smt)
               } else {
                 xdata <- as.data.frame(data[tsm$binning$nodups, term.names, drop = FALSE])
@@ -5328,7 +5339,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
       f <- as.formula(paste0("y2~-1+", paste0(names(Z2), collapse = "+")))
       Z2$y2 <- y2
       m <- lm(f, data = Z2)
-      m <- step(m, direction = "forward", k = log(nrX), trace = 0)
+      m <- step(m, direction = "forward", k = 2, trace = 0)
       g <- rep(0, nodes)
       names(g) <- paste0("bb", 1:length(g))
       cm <- coef(m)

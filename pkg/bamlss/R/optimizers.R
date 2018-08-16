@@ -1456,8 +1456,20 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
         g <- drop(P %*% crossprod(x$X, x$rres))
       else
         g <- drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]]))
+
+      if(!is.null(x$doCmat)) {
+        V <- P %*% t(x$C)
+        W <- x$C %*% V
+        U <- chol2inv(chol(W)) %*% t(V)
+        g <- drop(g - t(U) %*% x$C %*% g)
+      }
+
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
+
+      if(!is.null(x$doCmat))
+        fit <- fit - mean(fit, na.rm = TRUE)
+
       edf <- sum_diag(XWX %*% P)
       eta2[[id]] <- eta2[[id]] + fit
       ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
@@ -1492,9 +1504,16 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
     if(is.null(x$xt[["pmean"]]))
-      x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
+      g <- drop(P %*% crossprod(x$X, x$rres))
     else
-      x$state$parameters <- set.par(x$state$parameters, drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]])), "b")
+      g <- drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]]))
+
+    if(!is.null(x$doCmat)) {
+      V <- P %*% t(x$C)
+      W <- x$C %*% V
+      U <- chol2inv(chol(W)) %*% t(V)
+      g <- drop(g - t(U) %*% x$C %*% g)
+    }
   }
   
   ## Compute fitted values.
@@ -1503,6 +1522,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     x$state$parameters <- set.par(x$state$parameters, rep(0, length(get.state(x, "b"))), "b")
   }
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+
+  if(!is.null(x$doCmat))
+    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values, na.rm = TRUE)
+
   x$state$edf <- sum_diag(XWX %*% P)
 
   if(!is.null(x$prior)) {

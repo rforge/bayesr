@@ -1677,8 +1677,23 @@ Predict.matrix.tensorX.smooth <- function(object, data)
 ## Constraint matrices.
 Cmat <- function(x)
 {
-  if(is.null(x$xt$constraint))
-    x$xt$constraint <- "center"
+  if(!is.null(x$margin)) {
+    x$xt <- list()
+    if(!is.null(x$margin[[1]]$xt$ctr))
+      x$margin[[1]]$xt$constraint <- x$margin[[1]]$xt$ctr
+    if(!is.null(x$margin[[1]]$xt$con))
+      x$margin[[1]]$xt$constraint <- x$margin[[1]]$xt$con
+    if(is.null(x$margin[[1]]$xt$constraint))
+      x$margin[[1]]$xt$constraint <- "center"
+    x$xt$constraint <- x$margin[[1]]$xt$constraint
+  } else {
+    if(!is.null(x$xt$ctr))
+      x$xt$constraint <- x$xt$ctr
+    if(!is.null(x$xt$con))
+      x$xt$constraint <- x$xt$con
+    if(is.null(x$xt$constraint))
+      x$xt$constraint <- "center"
+  }
   ref <- sapply(x$margin, function(z) { inherits(z, "random.effect") })
   if(length(ref)) {
     if(length(ref) < 2) {
