@@ -5309,7 +5309,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
     object$xt$print.edf <- FALSE
 
   if(is.null(object$xt$step))
-    object$xt$step <- TRUE
+    object$xt$step <- FALSE
 
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     if(!is.null(weights))
