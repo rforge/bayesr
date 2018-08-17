@@ -5043,7 +5043,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
   object$X <- object$X[, object$Xkeep, drop = FALSE]
   ## object$Xsubset <- subset_features(object$X)
-  object$X <- object$X[, object$Xsubset, drop = FALSE]
+  ## object$X <- object$X[, object$Xsubset, drop = FALSE]
 
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
