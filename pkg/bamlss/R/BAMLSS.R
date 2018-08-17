@@ -5094,15 +5094,18 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$ndf <- NULL
 
   if(object$xt$single) {
-    object$N <- apply(object$X, 2, function(x) {
-      return((1/crossprod(x)) %*% t(x))
-    })
+    ncX <- ncol(object$X)
+    if(is.null(object$xt$ndf)) {
+      object$N <- apply(object$X, 2, function(x) {
+        return((1/crossprod(x)) %*% t(x))
+      })
+    }
     object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
       ## process weights.
       if(!is.null(weights))
         stop("weights are not supported for n()!")
 
-      g2 <- rep(0, nodes)
+      g2 <- rep(0, ncX)
 
       if(!is.null(x$xt$ndf)) {
         bf <- forward_reg(x$X, y, n = x$xt$ndf)
@@ -5117,7 +5120,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         x$state$rss <- bf$rss[j]
       }
 
-      names(g2) <- paste0("b", 1:nodes)
+      names(g2) <- paste0("b", 1:ncX)
   
       ## Finalize.
       x$state$parameters <- set.par(x$state$parameters, g2, "b")
