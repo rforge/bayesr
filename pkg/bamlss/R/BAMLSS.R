@@ -5095,7 +5095,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(object$xt$ndf < 2)
     object$xt$ndf <- NULL
   if(is.null(object$xt$frac))
-    object$xt$frac <- 0.5
+    object$xt$frac <- 0.99
 
   if(object$xt$single) {
     ncX <- ncol(object$X)
@@ -9034,5 +9034,51 @@ lasso2 <- function(...) {
 
 bayesx2 <- function(...) {
   bamlss(..., sampler = bamlss::BayesX, optimizer = FALSE)
+}
+
+bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
+{
+  if(is.null(fmstop)) {
+    fmstop <- function(model, data) {
+      y <- response.name(model)
+      p <- predict(model, newdata = data, model = "mu")
+      mse <- NULL
+      for(i in 1:nrow(model$parameters))
+        mse <- c(mse, mean((data[[y]] - p[, i])^2))
+      which.min(mse)
+    }
+  }
+
+  nobs <- nrow(data)
+
+  foo <- function(j) {
+    i <- sample(1L:2L, size = nobs, replace = TRUE, prob = c(prob, 1 - prob)) == 1L
+    d0 <- subset(data, i)
+    d1 <- subset(data, !i)
+    b <- boost2(..., data = d0)
+    attr(b, "mstop") <- fmstop(b, d1)
+    return(b)
+  }
+
+  m <- parallel::mclapply(1:n, foo, mc.cores = cores)
+  class(m) <- "bboost"
+  m
+}
+
+predict.bboost <- function(object, newdata, ..., cores = 1)
+{
+  n <- length(object)
+  foo <- function(j) {
+    p <- predict(object[[j]], newdata = newdata, mstop = attr(object[[j]], "mstop"), ...)
+    if(is.list(p))
+      p <- do.call("cbind", p)
+    else
+      p <- as.numeric(p)
+    return(p)
+  }
+  p <- parallel::mclapply(1:n, foo, mc.cores = cores)
+  if(is.null(dim(p[[1]])))
+    p <- do.call("cbind", p)
+  return(p)
 }
 

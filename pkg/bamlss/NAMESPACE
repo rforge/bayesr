@@ -186,7 +186,9 @@ export(
   ## shortcuts
   "boost2",
   "lasso2",
-  "bayesx2"
+  "bayesx2",
+  "bboost",
+  "predict.bboost"
 )
 
 S3method("plot", "bamlss")
@@ -250,6 +252,7 @@ S3method("samples", "bamlss.frame")
 S3method("model.frame", "bamlss")
 S3method("model.frame", "bamlss.frame")
 S3method("predict", "dl.bamlss")
+S3method("predict", "bboost")
 S3method("fitted", "dl.bamlss")
 S3method("residuals", "dl.bamlss")
 S3method("formula", "bamlss.formula.character")
