@@ -5094,9 +5094,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$ndf <- ceiling(object$xt$ndf)
   if(object$xt$ndf < 2)
     object$xt$ndf <- NULL
+  if(is.null(object$xt$frac))
+    object$xt$frac <- 0.5
 
   if(object$xt$single) {
     ncX <- ncol(object$X)
+    nrX <- nrow(object$X)
     if(is.null(object$xt$ndf)) {
       object$N <- apply(object$X, 2, function(x) {
         return((1/crossprod(x)) %*% t(x))
@@ -5110,10 +5113,13 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       g2 <- rep(0, ncX)
 
       if(!is.null(x$xt$ndf)) {
-        bf <- forward_reg(x$X, y, n = x$xt$ndf)
+        i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
+        X2 <- x$X[i, ]
+        y2 <- y[i]
+        bf <- forward_reg(X2, y2, n = x$xt$ndf)
         g2[bf$take] <- nu/x$xt$K * bf$coefficients
-        x$state$fitted.values <- nu/x$xt$K * bf$fitted.values
-        x$state$rss <- sum(bf$residuals^2)
+        x$state$fitted.values <- drop(x$X %*% g2)
+        x$state$rss <- sum((y - x$state$fitted.values)^2)
       } else {
         bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
         j <- which.min(bf$rss)
