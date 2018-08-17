@@ -5042,6 +5042,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
   object$X <- object$X[, object$Xkeep, drop = FALSE]
+  ## object$Xsubset <- subset_features(object$X)
+  object$X <- object$X[, object$Xsubset, drop = FALSE]
 
   object$xt$cmeans <- colMeans(object$X)
   object$X <- object$X - rep(object$xt$cmeans, rep.int(nrow(object$X), ncol(object$X)))
@@ -5167,13 +5169,14 @@ subset_features <- function(x, eps = 0.01)
     rss <- NULL
     for(j in cols) {
       xs <- x[, if(is.null(drop)) -j else c(-drop, -j), drop = FALSE]
-      P <- xs %*% solve(crossprod(xs)) %*% t(xs)
+      P <- xs %*% matrix_inv(crossprod(xs) + diag(0.0001, ncol(xs))) %*% t(xs)
       rss <- c(rss, sum((x - P %*% x)^2))
     }
     drop <- c(drop, cols[which.min(rss)])
     cols <- cols[!(cols %in% drop)]
     err <- min(rss)
   }
+  c(1:ncol(x))[-drop]
 }
 
 
@@ -5215,6 +5218,8 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
   X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$knots)
   X <- X[, object$Xkeep, drop = FALSE]
+  if(!is.null(object$Xsubset))
+    X <- X[, object$Xsubset, drop = FALSE]
   X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
   return(X)
 }
