@@ -9076,9 +9076,10 @@ bboost.plot <- function(object, col = NULL)
   }
   if(is.null(col))
     col <- rainbow_hcl(length(mstops))
+  colnames(crit) <- paste0(ncrit, 1:ncol(crit))
   matplot(crit, type = "l", lty = 1, xlab = "Boosting iteration", ylab = ncrit, col = col)
   abline(v = mstops, col = col, lty = 2)
-  return(invisible(NULL))
+  return(invisible(crit))
 }
 
 predict.bboost <- function(object, newdata, ..., cores = 1)
