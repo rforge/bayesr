@@ -9045,7 +9045,7 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
       mse <- NULL
       for(i in 1:nrow(model$parameters))
         mse <- c(mse, mean((data[[y]] - p[, i])^2))
-      which.min(mse)
+      list("mse" = mse, "mstop" = which.min(mse))
     }
   }
 
@@ -9055,7 +9055,7 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
     i <- sample(1L:2L, size = nobs, replace = TRUE, prob = c(prob, 1 - prob)) == 1L
     d0 <- subset(data, i)
     d1 <- subset(data, !i)
-    b <- boost2(..., data = d0)
+    b <- boost2(..., data = d0, plot = FALSE)
     attr(b, "mstop") <- fmstop(b, d1)
     return(b)
   }
@@ -9065,11 +9065,27 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
   m
 }
 
+bboost.plot <- function(object, col = NULL)
+{
+  ncrit <- names(attr(object[[1]], "mstop"))
+  ncrit <- ncrit[!(ncrit %in% "mstop")]
+  crit <- mstops <- NULL
+  for(j in 1:length(object)) {
+    crit <- cbind(crit, attr(object[[j]], "mstop")[[ncrit]])
+    mstops <- c(mstops, attr(object[[j]], "mstop")$mstop)
+  }
+  if(is.null(col))
+    col <- rainbow_hcl(length(mstops))
+  matplot(crit, type = "l", lty = 1, xlab = "Boosting iteration", ylab = ncrit, col = col)
+  abline(v = mstops, col = col, lty = 2)
+  return(invisible(NULL))
+}
+
 predict.bboost <- function(object, newdata, ..., cores = 1)
 {
   n <- length(object)
   foo <- function(j) {
-    p <- predict(object[[j]], newdata = newdata, mstop = attr(object[[j]], "mstop"), ...)
+    p <- predict(object[[j]], newdata = newdata, mstop = attr(object[[j]], "mstop")$mstop, ...)
     if(is.list(p))
       p <- do.call("cbind", p)
     else
