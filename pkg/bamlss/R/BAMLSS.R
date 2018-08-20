@@ -5116,10 +5116,15 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
         X2 <- x$X[i, ]
         y2 <- y[i]
-        bf <- forward_reg(X2, y2, n = x$xt$ndf)
-        g2[bf$take] <- nu/x$xt$K * bf$coefficients
-        x$state$fitted.values <- drop(x$X %*% g2)
-        x$state$rss <- sum((y - x$state$fitted.values)^2)
+        bf <- forward_reg(X2, y2, n = x$xt$ndf, nu = nu)
+        if(!is.null(bf)) {
+          g2[bf$take] <- nu/x$xt$K * bf$coefficients
+          x$state$fitted.values <- drop(x$X %*% g2)
+          x$state$rss <- sum((y - x$state$fitted.values)^2)
+        } else {
+          x$state$fitted.values <- rep(0, length(y))
+          x$state$rss <- sum(y^2)
+        }
       } else {
         bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
         j <- which.min(bf$rss)
@@ -5186,7 +5191,7 @@ subset_features <- function(x, eps = 0.01)
 }
 
 
-forward_reg <- function(x, y, n = 4, lars = FALSE)
+forward_reg2 <- function(x, y, n = 4, lars = FALSE)
 {
   if(lars) {
     do <- TRUE
@@ -5217,6 +5222,31 @@ forward_reg <- function(x, y, n = 4, lars = FALSE)
     }
     return(c(list("take" = take), lm.fit(x[, take, drop = FALSE], y)))
   }
+}
+
+
+forward_reg <- function(x, y, n = 4, nu, maxit = 100)
+{
+  r <- y - mean(y)
+  k <- 0
+  g <- rep(0, ncol(x))
+  l <- 0
+  while(k < n) {
+    cxr <- drop(cor(x, r))
+    j <- which.max(abs(cxr))
+    delta <- nu * sign(cxr[j])
+    g[j] <- g[j] + delta
+    r <- r - delta * x[, j]
+    k <- sum(g != 0)
+    l <- l + 1
+    if(l > maxit)
+      break
+  }
+  j <- which(g != 0)
+  if(length(j))
+    return(c(list("take" = j), lm.fit(x[, j, drop = FALSE], y)))
+  else
+    return(NULL)
 }
 
 
