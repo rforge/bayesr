@@ -5191,7 +5191,7 @@ subset_features <- function(x, eps = 0.01)
 }
 
 
-forward_reg2 <- function(x, y, n = 4, lars = FALSE)
+forward_reg <- function(x, y, n = 4, lars = FALSE)
 {
   if(lars) {
     do <- TRUE
@@ -5225,7 +5225,7 @@ forward_reg2 <- function(x, y, n = 4, lars = FALSE)
 }
 
 
-forward_reg <- function(x, y, n = 4, nu, maxit = 100)
+forward_reg2 <- function(x, y, n = 4, nu, maxit = 100)
 {
   r <- y - mean(y)
   k <- 0
