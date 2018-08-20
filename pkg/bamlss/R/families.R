@@ -771,8 +771,20 @@ gpareto_bamlss <- function(...)
         samps <- as.vector(samps)
       samps
     },
-    "mean" = function(par) par$sigma / (1 - par$xi),
-    "variance" = function(par) (par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi)
+    "mean" = function(par) {
+      if (par$xi >= 1) {
+        return(NA)
+      } else {
+        return(par$sigma / (1 - par$xi))
+      }
+    },
+    "variance" = function(par) {
+      if (par$xi >= 0.5) {
+        return(NA)
+      } else {
+        return((par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi))
+      }
+    }
   )
 
   rval$score <- list(
