@@ -5186,20 +5186,37 @@ subset_features <- function(x, eps = 0.01)
 }
 
 
-forward_reg <- function(x, y, n = 4)
+forward_reg <- function(x, y, n = 4, lars = FALSE)
 {
-  k <- 0
-  cols <- 1:ncol(x)
-  take <- NULL
-  while(k < n) {
-    rss <- NULL
-    for(j in cols)
-      rss <- c(rss, sum(lm.fit(x[, c(take, j), drop = FALSE], y)$residuals^2) + 2 * length(c(take, j)))
-    take <- c(take, cols[which.min(rss)])
-    cols <- cols[!(cols %in% take)]
-    k <- k + 1
+  if(lars) {
+    do <- TRUE
+    maxs <- 10
+    while(do) {
+      b <- lars(x, y, type = "lasso", normalize = FALSE, intercept = FALSE, max.steps = maxs, use.Gram = FALSE)
+      i <- which(b$df == n)
+      if(length(i)) {
+        i <- max(i)
+        do <- FALSE
+      } else {
+        maxs <- maxs + 10
+      }
+    }
+    take <- which(abs(coef(b)[i, ]) > 1e-20)
+    return(list("take" = take, "coefficients" = coef(b)[i, take]))
+  } else {
+    k <- 0
+    cols <- 1:ncol(x)
+    take <- NULL
+    while(k < n) {
+      rss <- NULL
+      for(j in cols)
+        rss <- c(rss, sum(lm.fit(x[, c(take, j), drop = FALSE], y)$residuals^2) + 2 * length(c(take, j)))
+      take <- c(take, cols[which.min(rss)])
+      cols <- cols[!(cols %in% take)]
+      k <- k + 1
+    }
+    return(c(list("take" = take), lm.fit(x[, take, drop = FALSE], y)))
   }
-  c(list("take" = take), lm.fit(x[, take, drop = FALSE], y))
 }
 
 
@@ -9045,7 +9062,7 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
       mse <- NULL
       for(i in 1:nrow(model$parameters))
         mse <- c(mse, mean((data[[y]] - p[, i])^2))
-      list("mse" = mse, "mstop" = which.min(mse))
+      list("MSE" = mse, "mstop" = which.min(mse))
     }
   }
 
@@ -9057,6 +9074,7 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
     d1 <- subset(data, !i)
     b <- boost2(..., data = d0, plot = FALSE)
     attr(b, "mstop") <- fmstop(b, d1)
+    b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
     return(b)
   }
 
@@ -9086,7 +9104,7 @@ predict.bboost <- function(object, newdata, ..., cores = 1)
 {
   n <- length(object)
   foo <- function(j) {
-    p <- predict(object[[j]], newdata = newdata, mstop = attr(object[[j]], "mstop")$mstop, ...)
+    p <- predict(object[[j]], newdata = newdata, ...)
     if(is.list(p))
       p <- do.call("cbind", p)
     else

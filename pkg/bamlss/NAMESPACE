@@ -188,7 +188,8 @@ export(
   "lasso2",
   "bayesx2",
   "bboost",
-  "predict.bboost"
+  "predict.bboost",
+  "bboost.plot"
 )
 
 S3method("plot", "bamlss")
