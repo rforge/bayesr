@@ -12,7 +12,7 @@
 \usage{
 ## Bootstrap boosting.
 bboost(..., data, cores = 1, n = 2, prob = 0.6,
-  fmstop = NULL, verbose = TRUE)
+  fmstop = NULL, trace = TRUE)
 
 ## Plotting function.
 bboost.plot(object, col = NULL)
@@ -32,7 +32,7 @@ bboost.plot(object, col = NULL)
     a list with two named arguments: (1) \code{"mstop"} the optimum stopping iteration and (2)
     a vector of the objective criterion that should be evaluated by the hold out sample data during
     each bootstrap iteration. See the examples.}
-  \item{verbose}{Prints out the current state of the bootstrap algorithm.}
+  \item{trace}{Prints out the current state of the bootstrap algorithm.}
   \item{object}{The \code{"bboost"} object used for prediction and plotting.}
   \item{newdata}{The data frame predictions should be made for.}
 }
