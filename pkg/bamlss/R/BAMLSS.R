@@ -9053,7 +9053,7 @@ bayesx2 <- function(...) {
   bamlss(..., sampler = bamlss::BayesX, optimizer = FALSE)
 }
 
-bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
+bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, verbose = TRUE)
 {
   if(is.null(fmstop)) {
     fmstop <- function(model, data) {
@@ -9069,12 +9069,16 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL)
   nobs <- nrow(data)
 
   foo <- function(j) {
+    if(verbose)
+      cat("... starting booststrap sample", j, "\n")
     i <- sample(1L:2L, size = nobs, replace = TRUE, prob = c(prob, 1 - prob)) == 1L
     d0 <- subset(data, i)
     d1 <- subset(data, !i)
     b <- boost2(..., data = d0, plot = FALSE)
     attr(b, "mstop") <- fmstop(b, d1)
     b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
+    if(verbose)
+      cat("... finished booststrap sample", j, "\n")
     return(b)
   }
 
