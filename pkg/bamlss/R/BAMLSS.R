@@ -5965,6 +5965,7 @@ smooth.construct.kr.smooth.spec <- function(object, data, knots, ...)
   object$null.space.dim <- ncol(D$K)
 
   object$xt$phi <- D$phi
+  object$xt[["v"]] <- D[["v"]]
 
   class(object) <- "kriging.smooth"
   object
