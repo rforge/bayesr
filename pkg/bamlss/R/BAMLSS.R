@@ -837,6 +837,7 @@ make.fit.fun <- function(x, type = 1)
       f <- f - mean(f, na.rm = TRUE)
     return(as.numeric(f))
   }
+  attr(ff, ".internal") <- TRUE
   return(ff)
 }
 
@@ -1612,34 +1613,51 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   ## Save 'x' master object?
   if(!x)
     bf$x <- NULL
-  if(light) {
-    if(!is.null(bf$x)) {
-      for(j in names(bf$x)) {
-        if(length(bf$x[[j]]$smooth.construct)) {
-          for(i in seq_along(bf$x[[j]]$smooth.construct)) {
-            bf$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess")] <- NULL
-            bf$x[[j]]$smooth.construct[[i]][["xt"]][["binning"]] <- NULL
-            if(!is.null(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
-              for(jj in seq_along(bf$x[[j]]$smooth.construct[[i]][["margin"]])) {
-                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess")] <- NULL
-                bf$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][["xt"]][["binning"]] <- NULL
-              }
-            }
-          }
-        }
-      }
-    }
-    bf$y <- NULL
-    bf$fitted.values <- NULL
-    bf$formula <- as.character(bf$formula)
-    bf$terms <- as.character(bf$terms)
-  }
+  if(light)
+    bf <- light_bamlss(bf)
 
   bf$call <- match.call()
   class(bf) <- c("bamlss", "bamlss.frame", "list")
   attr(bf, "functions") <- functions
 
   bf
+}
+
+light_bamlss <- function(object)
+{
+  if(!is.null(object$x)) {
+    for(j in names(object$x)) {
+      if(length(object$x[[j]]$smooth.construct)) {
+        for(i in seq_along(object$x[[j]]$smooth.construct)) {
+          object$x[[j]]$smooth.construct[[i]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess", "boost.fit", "update", "propose")] <- NULL
+          object$x[[j]]$smooth.construct[[i]][["xt"]][["binning"]] <- NULL
+          environment(object$x[[j]]$formula) <- emptyenv()
+          environment(object$x[[j]]$terms) <- emptyenv()
+          if(!is.null(object$x[[j]]$smooth.construct[[i]][["margin"]])) {
+            for(jj in seq_along(object$x[[j]]$smooth.construct[[i]][["margin"]])) {
+              object$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess", "boost.fit", "update", "propose")] <- NULL
+              object$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][["xt"]][["binning"]] <- NULL
+            }
+          }
+          if(!is.null(object$x[[j]]$smooth.construct[[i]][["fit.fun"]])) {
+            if(!is.null(attr(object$x[[j]]$smooth.construct[[i]][["fit.fun"]], ".internal")))
+              object$x[[j]]$smooth.construct[[i]][["fit.fun"]] <- function(X, b, ...) { drop(X %*% b) }
+          }
+          for(ff in names(object$x[[j]]$smooth.construct[[i]])) {
+            if(ff != "fit.fun") {
+              if(is.function(object$x[[j]]$smooth.construct[[i]][[ff]]))
+                environment(object$x[[j]]$smooth.construct[[i]][[ff]]) <- emptyenv()
+            }
+          }
+        }
+      }
+    }
+  }
+  object$y <- NULL
+  object$fitted.values <- NULL
+  object$formula <- as.character(object$formula)
+  object$terms <- as.character(object$terms)
+  return(object)
 }
 
 as.character.bamlss.formula <- as.character.bamlss.terms <- function(x, ...)
@@ -5151,6 +5169,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     # return(fit - mean(fit))
     drop(X %*% b)
   }
+  attr(object$fit.fun, ".internal") <- TRUE
 
 #plot2d(object$X ~ data$times, main = type)
 #stop()
@@ -9118,6 +9137,62 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, trace
   m
 }
 
+bamlss.sl <- function(object, data, ...) {
+  fam <- object[[1]]$family
+  p <- predict.bboost(object, newdata = data)
+  eta <- beta <- list()
+  for(j in fam$names) {
+    eta[[j]] <- do.call("cbind", lapply(p, function(x) { x[, grep(paste0(".", j), colnames(x))] }))
+    beta[[j]] <- rep(0, ncol(eta[[j]]))
+    colnames(eta[[j]]) <- paste0(j, 1:ncol(eta[[j]]))
+  }
+  k <- length(beta[[1]])
+  beta <- unlist(beta)
+  yname <- response.name(object[[1]])
+  objfun <- function(beta) {
+    par <- list()
+    for(j in fam$names) {
+      beta1 <- beta[paste0(j, 1:k)]
+      if(any(beta1 > 0))
+        beta1 <- beta1 / sum(beta1)
+      par[[j]] <- drop(eta[[j]] %*% beta1)
+    }
+    -1 * fam$loglik(data[[yname]], fam$map2par(par))
+  }
+  opt <- optim(beta, objfun, method = "L-BFGS-B", lower = 0)
+  beta <- opt$par
+  fit <- list()
+  for(j in fam$names) {
+    beta1 <- beta[paste0(j, 1:k)]
+    if(any(beta1 > 0))
+      beta1 <- beta1 / sum(beta1)
+    else
+      warning("All models have zero weight!", call. = FALSE)
+    beta[paste0(j, 1:k)] <- beta1
+    fit[[j]] <- drop(eta[[j]] %*% beta1)
+  }
+  rval <- list("coefficients" = beta, "fitted.values" = fit, "converged" = opt$vonvergence == 0L)
+  class(rval) <- "bamlss.sl"
+  rval
+}
+
+predict.bamlss.sl <- function(object, models, newdata,
+  type = c("link", "parameter"), ...)
+{
+  type <- match.arg(type)
+  fam <- models[[1]]$family
+  p <- predict.bboost(models, newdata = newdata, ...)
+  coefficients <- object$coefficients
+  fit <- list()
+  for(j in fam$names) {
+    eta <- do.call("cbind", lapply(p, function(x) { x[, grep(paste0(".", j), colnames(x))] }))
+    fit[[j]] <- drop(eta %*% coefficients[paste0(j, 1:ncol(eta))])
+    if(type != "link")
+      fit[[j]] <- fam$linkfun(fit[[j]])
+  }
+  return(fit)
+}
+
 bboost.plot <- function(object, col = NULL)
 {
   ncrit <- names(attr(object[[1]], "mstop"))
@@ -9140,15 +9215,16 @@ predict.bboost <- function(object, newdata, ..., cores = 1)
   n <- length(object)
   foo <- function(j) {
     p <- predict(object[[j]], newdata = newdata, ...)
-    if(is.list(p))
+    if(is.list(p)) {
       p <- do.call("cbind", p)
-    else
+      colnames(p) <- paste0(paste0("m", j), ".", colnames(p))
+    } else
       p <- as.numeric(p)
     return(p)
   }
-  p <- parallel::mclapply(1:n, foo, mc.cores = cores)
-  if(is.null(dim(p[[1]])))
-    p <- do.call("cbind", p)
-  return(p)
+  pred <- parallel::mclapply(1:n, foo, mc.cores = cores)
+  if(is.null(dim(pred[[1]])))
+    pred <- do.call("cbind", pred)
+  return(pred)
 }
 
