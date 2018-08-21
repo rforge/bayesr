@@ -1645,8 +1645,9 @@ light_bamlss <- function(object)
           }
           for(ff in names(object$x[[j]]$smooth.construct[[i]])) {
             if(ff != "fit.fun") {
-              if(is.function(object$x[[j]]$smooth.construct[[i]][[ff]]))
+              if(is.function(object$x[[j]]$smooth.construct[[i]][[ff]])) {
                 environment(object$x[[j]]$smooth.construct[[i]][[ff]]) <- emptyenv()
+              }
             }
           }
         }
@@ -4849,27 +4850,27 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     sint <- list(...)$sint
     if(type == "sigmoid") {
       if(is.null(rint))
-        rint <- c(0.005, 0.1)
+        rint <- 0.01
       if(is.null(sint))
-        sint <- c(10, 1000)
+        sint <- c(1.02, 100)
     }
     if(type == "gauss") {
       if(is.null(rint))
-        rint <- c(0.01, 0.99)
+        rint <- 0.01
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.02, 10)
     }
     if(type == "softplus") {
       if(is.null(rint))
-        rint <- c(0.01, log(2) - 0.001)
+        rint <- 0.01
       if(is.null(sint))
-        sint <- c(1.01, 1000)
+        sint <- c(1.02, 100)
     }
     if(type == "cos" | type == "sin") {
       if(is.null(rint))
-        rint <- c(-1, 1)
+        rint <- 0.01
       if(is.null(sint))
-        sint <- c(1.01, 100)
+        sint <- c(1.02, 10)
     }
     sint <- sort(rep(sint, length.out = 2))
     rint <- sort(rep(rint, length.out = 2))
@@ -4943,6 +4944,38 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
   return(weights)
 }
 
+nnet2Zmat <- function(X, weights, knots = NULL, afun)
+{
+  if(is.character(afun)) {
+    afun <- switch(afun,
+      "relu" = function(x) {
+        x[x < 0] <- 0
+        x
+      },
+      "sigmoid" = function(x) {
+        1 / (1 + exp(-x))
+      },
+      "tanh" = tanh,
+      "sin" = sin,
+      "cos" = sin,
+      "gauss" = function(x) { exp(-x^2) },
+      "identity" = function(x) { x },
+      "softplus" = function(x) { log(1 + exp(x)) }
+    )
+  }
+  if(!is.function(afun))
+    stop("afun must be a function!")
+  nc <- length(weights)
+  Z <- vector(mode = "list", length = nc)
+  for(j in 1:nc) {
+    if(!is.null(knots)) {
+      Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 0 + 1, outer.ok = TRUE)$design
+    } else {
+      Z[[j]] <- afun(X %*% weights[[j]])
+    }
+  }
+  return(do.call("cbind", Z))
+}
 
 smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 {
@@ -4977,54 +5010,21 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$afun <- type
   }
 
-  if(is.character(object$xt$afun)) {
-    object$afun <- switch(object$xt$afun,
-      "relu" = function(x) {
-        x[x < 0] <- 0
-        x
-      },
-      "sigmoid" = function(x) {
-        1 / (1 + exp(-x))
-      },
-      "tanh" = tanh,
-      "sin" = sin,
-      "cos" = sin,
-      "gauss" = function(x) { exp(-x^2) },
-      "identity" = function(x) { x },
-      "softplus" = function(x) { log(1 + exp(x)) }
-    )
-  }
-
-  if(length(nodes) < 2) {
-    object$Zmat <- function(X, weights, knots = NULL) {
-      nc <- length(weights)
-      Z <- vector(mode = "list", length = nc)
-      for(j in 1:nc) {
-        if(!is.null(knots)) {
-          Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 0 + 1, outer.ok = TRUE)$design
-        } else {
-          Z[[j]] <- object$afun(X %*% weights[[j]])
-        }
-      }
-      return(do.call("cbind", Z))
-    }
-  } else {
-    object$Zmat <- function(X, weights) {
-      Z <- list()
-      n <- nrow(X)
-      for(i in 1:length(weights)) {
-        Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
-        for(j in 1:length(weights[[i]])) {
-          if(i < 2) {
-            Z[[i]][, j] <- object$afun(X %*% weights[[i]][[j]])
-          } else {
-            Z[[i]][, j] <- object$afun(cbind(1, Z[[i - 1]]) %*% weights[[i]][[j]])
-          }
-        }
-      }
-      return(Z[[length(Z)]])
-    }
-  }
+#    object$Zmat <- function(X, weights, afun) {
+#      Z <- list()
+#      n <- nrow(X)
+#      for(i in 1:length(weights)) {
+#        Z[[i]] <- matrix(0, nrow = n, ncol = length(weights[[i]]))
+#        for(j in 1:length(weights[[i]])) {
+#          if(i < 2) {
+#            Z[[i]][, j] <- afun(X %*% weights[[i]][[j]])
+#          } else {
+#            Z[[i]][, j] <- afun(cbind(1, Z[[i - 1]]) %*% weights[[i]][[j]])
+#          }
+#        }
+#      }
+#      return(Z[[length(Z)]])
+#    }
 
   if(is.null(object$xt$weights)) {
     nobs <- nrow(object$X)
@@ -5056,7 +5056,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     }
   } else object$knots <- NULL
 
-  object$X <- object$Zmat(object$X, object$n.weights, object$knots)
+  object$X <- nnet2Zmat(object$X, object$n.weights, object$knots, object$xt$afun)
 
   object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
   object$X <- object$X[, object$Xkeep, drop = FALSE]
@@ -5210,37 +5210,20 @@ subset_features <- function(x, eps = 0.01)
 }
 
 
-forward_reg <- function(x, y, n = 4, lars = FALSE, ...)
+forward_reg <- function(x, y, n = 4, ...)
 {
-  if(lars) {
-    do <- TRUE
-    maxs <- 10
-    while(do) {
-      b <- lars(x, y, type = "lasso", normalize = FALSE, intercept = FALSE, max.steps = maxs, use.Gram = FALSE)
-      i <- which(b$df == n)
-      if(length(i)) {
-        i <- max(i)
-        do <- FALSE
-      } else {
-        maxs <- maxs + 10
-      }
-    }
-    take <- which(abs(coef(b)[i, ]) > 1e-20)
-    return(list("take" = take, "coefficients" = coef(b)[i, take]))
-  } else {
-    k <- 0
-    cols <- 1:ncol(x)
-    take <- NULL
-    while(k < n) {
-      rss <- NULL
-      for(j in cols)
-        rss <- c(rss, sum(lm.fit(x[, c(take, j), drop = FALSE], y)$residuals^2) + 2 * length(c(take, j)))
-      take <- c(take, cols[which.min(rss)])
-      cols <- cols[!(cols %in% take)]
-      k <- k + 1
-    }
-    return(c(list("take" = take), lm.fit(x[, take, drop = FALSE], y)))
+  k <- 0
+  cols <- 1:ncol(x)
+  take <- NULL
+  while(k < n) {
+    rss <- NULL
+    for(j in cols)
+      rss <- c(rss, sum(lm.fit(x[, c(take, j), drop = FALSE], y)$residuals^2) + 2 * length(c(take, j)))
+    take <- c(take, cols[which.min(rss)])
+    cols <- cols[!(cols %in% take)]
+    k <- k + 1
   }
+  return(c(list("take" = take), lm.fit(x[, take, drop = FALSE], y)))
 }
 
 
@@ -5288,7 +5271,7 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
-  X <- object$Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$knots)
+  X <- nnet2Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$knots, object$xt$afun)
   X <- X[, object$Xkeep, drop = FALSE]
   if(!is.null(object$Xsubset))
     X <- X[, object$Xsubset, drop = FALSE]
@@ -9117,13 +9100,15 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, trace
   }
 
   nobs <- nrow(data)
+  ind <- 1:nobs
+  size <- ceiling(nobs * prob)
 
   foo <- function(j) {
     if(trace)
       cat("... starting booststrap sample", j, "\n")
-    i <- sample(1L:2L, size = nobs, replace = TRUE, prob = c(prob, 1 - prob)) == 1L
-    d0 <- subset(data, i)
-    d1 <- subset(data, !i)
+    i <- sample(ind, size = size, replace = TRUE)
+    d0 <- data[i, , drop = FALSE]
+    d1 <- data[!(ind %in% i), , drop = FALSE]
     b <- boost2(..., data = d0, plot = FALSE)
     attr(b, "mstop") <- fmstop(b, d1)
     b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
@@ -9151,13 +9136,15 @@ bamlss.sl <- function(object, data, ...) {
   yname <- response.name(object[[1]])
   objfun <- function(beta) {
     par <- list()
+    pen <- 0
     for(j in fam$names) {
       beta1 <- beta[paste0(j, 1:k)]
       if(any(beta1 > 0))
         beta1 <- beta1 / sum(beta1)
       par[[j]] <- drop(eta[[j]] %*% beta1)
+      pen <- pen + t(beta1) %*% diag(1e-05, length(beta1)) %*% beta1
     }
-    -1 * fam$loglik(data[[yname]], fam$map2par(par))
+    -1 * fam$loglik(data[[yname]], fam$map2par(par)) + pen
   }
   opt <- optim(beta, objfun, method = "L-BFGS-B", lower = 0)
   beta <- opt$par
@@ -9171,7 +9158,8 @@ bamlss.sl <- function(object, data, ...) {
     beta[paste0(j, 1:k)] <- beta1
     fit[[j]] <- drop(eta[[j]] %*% beta1)
   }
-  rval <- list("coefficients" = beta, "fitted.values" = fit, "converged" = opt$vonvergence == 0L)
+  rval <- list("coefficients" = beta, "fitted.values" = fit,
+    "converged" = opt$convergence == 0L, "logLik" = -1 * opt$value)
   class(rval) <- "bamlss.sl"
   rval
 }
