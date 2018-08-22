@@ -341,23 +341,20 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           if(!is.null(tsm$special))
             special <- tsm$special
           if(!special) {
+            if(inherits(tsm, "tensor.smooth.spec")) {
+              if(!is.null(tsm$margin)) {
+                tsm$xt <- tsm$margin[[1]]$xt
+                if(is.list(tsm$xt[[1]]))
+                  tsm$xt <- tsm$xt[[1]]
+              }
+            }
             if(is.null(tsm$xt))
               tsm$xt <- list()
             if(is.null(tsm$xt$binning))
               tsm$xt$binning <- binning
             acons <- TRUE
-            if(inherits(tsm, "tensor.smooth.spec")) {
-              if(!is.null(tsm$margin)) {
-                if(!is.null(tsm$margin[[1]]$xt$center))
-                  acons <- tsm$margin[[1]]$xt$center
-              } else {
-                if(!is.null(tsm$xt$center))
-                  acons <- tsm$xt$center
-              }
-            } else {
-              if(!is.null(tsm$xt$center))
-                acons <- tsm$xt$center
-            }
+            if(!is.null(tsm$xt$center))
+              acons <- tsm$xt$center
             tsm$xt$center <- acons
             tsm$xt$before <- before
             if(!is.null(tsm$xt$binning)) {
@@ -904,7 +901,6 @@ make.prior <- function(x, sigma = 0.1)
     fixed <- if(is.null(x$fixed)) FALSE else x$fixed
 
     igs <- log((b^a)) - log(gamma(a))
-
     var_prior_fun <- switch(prior,
       "ig" = function(tau2) { igs + (-a - 1) * log(tau2) - b / tau2 },
       "hc" = function(tau2) { -log(1 + tau2 / (theta^2)) - 0.5 * log(tau2) - log(theta^2) },
