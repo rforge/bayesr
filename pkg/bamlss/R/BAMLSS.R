@@ -347,8 +347,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               tsm$xt$binning <- binning
             acons <- TRUE
             if(inherits(tsm, "tensor.smooth.spec")) {
-              if(!is.null(tsm$margin[[1]]$xt$center))
-                acons <- tsm$margin[[1]]$xt$center
+              if(!is.null(tsm$margin)) {
+                if(!is.null(tsm$margin[[1]]$xt$center))
+                  acons <- tsm$margin[[1]]$xt$center
+              } else {
+                if(!is.null(tsm$xt$center))
+                  acons <- tsm$xt$center
+              }
             } else {
               if(!is.null(tsm$xt$center))
                 acons <- tsm$xt$center
@@ -3263,9 +3268,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
             k <- if(match.names) grep(j, tl[[i]], fixed = TRUE) else which(tl[[i]] == j)
             if(length(k)) {
               if(length(k) > 1) {
-                js <- paste0(strsplit(j, "(", fixed = TRUE)[[1]][1], "(")
-                tls <- sapply(strsplit(tl[[i]], "(", fixed = TRUE), function(x) paste0(x[1], "("))
-                enames[[i]] <- c(enames[[i]], tl[[i]][tls == js])
+                enames[[i]] <- c(enames[[i]], tl[[i]][k])
               } else {
                 enames[[i]] <- c(enames[[i]], tl[[i]][k])
               }
