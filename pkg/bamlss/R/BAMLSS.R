@@ -3604,7 +3604,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           } else {
             X <- x[[jj]]$PredictMat(x[[jj]], data)
           }
-print(x[[jj]]$fit.fun)
           fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
             x[[jj]]$fit.fun(X, b)
           })
@@ -5356,6 +5355,42 @@ predict.nnet.fit <- function(object, newX, ...)
 }
 
 
+nnet.fit.fun <- function(X, b, ...) {
+  fit <- 0
+  nc <- ncol(X)
+  X <- cbind(1, X)
+  nodes <- sum(grepl("bb", names(b)))
+  if(any(grepl(".", nb <- names(b), fixed = TRUE))) {
+    nb <- strsplit(nb, ".", fixed = TRUE)
+    nb <- sapply(nb, function(x) { x[length(x)] })
+    names(b) <- nb
+  }
+  for(j in 1:nodes) {
+    z <- drop(X %*% b[paste0("bw", j, "_w", 0:nc)])
+    fit <- fit + b[paste0("bb", j)] * 1 / (1 + exp(-z))
+  }
+  return(fit - mean(fit))
+}
+
+boost.fit.nnet <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+  if(!is.null(weights))
+    stop("weights is not supported!")
+
+  b <- nnet.fit(x$X, y, x$xt$k, rint = x$xt$rint, sint = x$xt$sint)
+  b$coefficients[1:x$xt$k] <- nu * b$coefficients[1:x$xt$k]
+
+  x$state$parameters <- set.par(x$state$parameters, b$coefficients, "b")
+  x$state$fitted.values <- predict(b, newX = x$X)
+  x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
+  x$state$rss <- sum((y - x$state$fitted.values)^2)
+
+  if(hatmatrix) {
+    stop("hatmatrix is not supported yet!")
+  }
+  
+  return(x$state)
+}
+
 smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 {
   if(is.null(object$formula)) {
@@ -5376,53 +5411,23 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   }
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-  
-  nodes <- object$xt$k
 
   object$state <- list()
-  object$state$parameters <- rep(0, nodes)
-  names(object$state$parameters) <- paste0("bb", 1:nodes)
-  wn <- names(unlist(n.weights(nodes, k = ncol(object$X), type = "sigmoid")))
+  object$state$parameters <- rep(0, object$xt$k)
+  names(object$state$parameters) <- paste0("bb", 1:object$xt$k)
+  wn <- names(unlist(n.weights(object$xt$k, k = ncol(object$X), type = "sigmoid")))
   w <- rep(0, length(wn))
   names(w) <- wn
   object$state$parameters <- c(object$state$parameters, w)
   object$state$fitted.values <- rep(0, nrow(object$X))
 
-  object$fit.fun <- function(X, b, ...) {
-    fit <- 0
-    nc <- ncol(X)
-    X <- cbind(1, X)
-    for(j in 1:nodes) {
-      z <- X %*% b[paste0("bw", j, "_w", 0:nc)]
-      fit <- fit + b[paste0("bb", j)] * 1 / (1 + exp(-z))
-    }
-    return(fit - mean(fit))
-  }
-
   object$special.npar <- length(grep("b", names(object$state$parameters)))
   object$binning <- list("match.index" = 1:nrow(object$X))
 
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
-    if(!is.null(weights))
-      stop("weights is not supported!")
-
-    b <- nnet.fit(x$X, y, nodes, rint = x$xt$rint, sint = x$xt$sint)
-    b$coefficients[1:nodes] <- nu * b$coefficients[1:nodes]
-
-    x$state$parameters <- set.par(x$state$parameters, b$coefficients, "b")
-    x$state$fitted.values <- predict(b, newX = x$X)
-    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
-    x$state$rss <- sum((y - x$state$fitted.values)^2)
-
-    if(hatmatrix) {
-      stop("hatmatrix is not supported yet!")
-    }
-  
-    return(x$state)
-  }
-
   object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
   object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
+  object$fit.fun <- nnet.fit.fun
+  object$boost.fit <- boost.fit.nnet
 
   class(object) <- c("nnet.smooth", "no.mgcv", "special")
 
