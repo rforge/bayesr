@@ -5342,6 +5342,7 @@ nnet.fit <- function(X, y, nodes = 100, ...)
   return(rval)
 }
 
+
 predict.nnet.fit <- function(object, newX, ...)
 {
   nc <- ncol(newX)
