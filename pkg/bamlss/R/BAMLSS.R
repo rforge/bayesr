@@ -5283,27 +5283,41 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 }
 
 
-nnet.fit <- function(X, y, nodes = 100, ...)
+nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE)
 {
   nc <- ncol(X)
-  w <- n.weights(nodes, k = nc, type = "sigmoid", x = X)
-  nw <- names(unlist(w))
-  par <- rep(0, nodes)
+  w <- n.weights(nodes, k = nc, type = "sigmoid", x = X, ...)
+  par <- unlist(w)
+  nw <- names(par)
+
+  X <- cbind(1, X)
+
+  Z <- matrix(0, nrow = nrow(X), ncol = nodes)
+  for(j in 1:nodes)
+    Z[, j] <- 1 / (1 + exp(-1 * drop(X %*% par[paste0("bw", j, "_w", 0:nc)])))
+  par <- drop(matrix_inv(crossprod(Z) + diag(1e-05, nodes)) %*% t(Z) %*% y)
+
   names(par) <- paste0("bb", 1:nodes)
   par <- c(par, unlist(w))
-  X <- cbind(1, X)
 
   ff <- function(X, par) {
     fit <- 0
     for(j in 1:nodes) {
-      z <- X %*% par[paste0("bw", j, "_w", 0:nc)]
-      fit <- fit + par[paste0("bb", j)] * 1 / (1 + exp(-z))
+      z <- drop(X %*% par[paste0("bw", j, "_w", 0:nc)])
+      fit <- fit + par[paste0("bb", j)] / (1 + exp(-z))
     }
     return(fit)
   }
 
-  objfun <- function(par, X, y) {
-    return(sum((y - ff(X, par))^2))
+  if(random) {
+    rval <- list(
+      "fitted.values" = ff(X, par),
+      "coefficients" = par,
+      "nodes" = nodes,
+      "converged" = TRUE
+    )
+    class(rval) <- "nnet.fit"
+    return(rval)
   }
 
   gradfun <- function(par, X, y) {
@@ -5314,7 +5328,7 @@ nnet.fit <- function(X, y, nodes = 100, ...)
     k <- 1
     e <- y - ff(X, par)
     for(j in 1:nodes) {
-      z <- X %*% par[paste0("bw", j, "_w", 0:nc)]
+      z <- drop(X %*% par[paste0("bw", j, "_w", 0:nc)])
       b1 <- par[paste0("bb", j)]
       ez <- exp(-z)
       gr[, j] <- -(2 * (1/(1 + ez) * e))
@@ -5328,6 +5342,10 @@ nnet.fit <- function(X, y, nodes = 100, ...)
       }
     }
     return(colSums(cbind(gr, gr2)))
+  }
+
+  objfun <- function(par, X, y) {
+    return(sum((y - ff(X, par))^2))
   }
 
   opt <- optim(par = par, fn = objfun, gr = gradfun, method = "BFGS", X = X, y = y)
@@ -9127,6 +9145,10 @@ bboost.plot <- function(object, col = NULL)
   matplot(crit, type = "l", lty = 1, xlab = "Boosting iteration", ylab = ncrit, col = col)
   abline(v = mstops, col = col, lty = 2)
   return(invisible(crit))
+}
+
+plot.bboost <- function(...) {
+  bboost.plot(...)
 }
 
 predict.bboost <- function(object, newdata, ..., cores = 1)
