@@ -5283,7 +5283,7 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 }
 
 
-nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
+nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE)
 {
   nc <- ncol(X)
   w <- n.weights(nodes, k = nc, type = "sigmoid", x = X, ...)
