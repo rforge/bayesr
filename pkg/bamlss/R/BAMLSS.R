@@ -5400,7 +5400,7 @@ boost.fit.nnet <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
     stop("weights is not supported!")
 
   b <- nnet.fit(x$X, y, x$xt$k, rint = x$xt$rint, sint = x$xt$sint,
-    w = x$state$parameters[grep("bw", names(x$state$parameters))])
+    w = if(x$xt$passw) x$state$parameters[grep("bw", names(x$state$parameters))] else NULL)
   b$coefficients[1:x$xt$k] <- nu * b$coefficients[1:x$xt$k]
 
   x$state$parameters <- set.par(x$state$parameters, b$coefficients, "b")
@@ -5446,6 +5446,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$special.npar <- length(grep("b", names(object$state$parameters)))
   object$binning <- list("match.index" = 1:nrow(object$X))
+  if(is.null(x$xt$passw))
+    object$xt$passw <- TRUE
 
   object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
   object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
