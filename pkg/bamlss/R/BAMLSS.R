@@ -5446,7 +5446,7 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
 
   object$special.npar <- length(grep("b", names(object$state$parameters)))
   object$binning <- list("match.index" = 1:nrow(object$X))
-  if(is.null(x$xt$passw))
+  if(is.null(object$xt$passw))
     object$xt$passw <- TRUE
 
   object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
