@@ -5283,10 +5283,11 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 }
 
 
-nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE)
+nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
 {
   nc <- ncol(X)
-  w <- n.weights(nodes, k = nc, type = "sigmoid", x = X, ...)
+  if(is.null(w))
+    w <- n.weights(nodes, k = nc, type = "sigmoid", x = X, ...)
   par <- unlist(w)
   nw <- names(par)
 
@@ -5320,7 +5321,7 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE)
     return(rval)
   }
 
-  gradfun <- function(par, X, y) {
+  gradfun <- function(par, X, y, sum = TRUE) {
     gr <- matrix(0, nrow = nrow(X), ncol = nodes)
     colnames(gr) <- paste0("bb", 1:nodes)
     gr2 <- matrix(0, nrow = nrow(X), ncol = nodes * (nc + 1))
@@ -5341,7 +5342,10 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE)
         k <- k + 1
       }
     }
-    return(colSums(cbind(gr, gr2)))
+    if(sum)
+      return(colSums(cbind(gr, gr2)))
+    else
+      return(cbind(gr, gr2))
   }
 
   objfun <- function(par, X, y) {
@@ -5395,7 +5399,8 @@ boost.fit.nnet <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
   if(!is.null(weights))
     stop("weights is not supported!")
 
-  b <- nnet.fit(x$X, y, x$xt$k, rint = x$xt$rint, sint = x$xt$sint)
+  b <- nnet.fit(x$X, y, x$xt$k, rint = x$xt$rint, sint = x$xt$sint,
+    w = x$state$parameters[grep("bw", names(x$state$parameters))])
   b$coefficients[1:x$xt$k] <- nu * b$coefficients[1:x$xt$k]
 
   x$state$parameters <- set.par(x$state$parameters, b$coefficients, "b")
@@ -5434,9 +5439,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$state <- list()
   object$state$parameters <- rep(0, object$xt$k)
   names(object$state$parameters) <- paste0("bb", 1:object$xt$k)
-  wn <- names(unlist(n.weights(object$xt$k, k = ncol(object$X), type = "sigmoid")))
-  w <- rep(0, length(wn))
-  names(w) <- wn
+  w <- unlist(n.weights(object$xt$k, k = ncol(object$X), type = "sigmoid",
+    rint = object$xt$rint, sint = object$xt$sint, x = object$X))
   object$state$parameters <- c(object$state$parameters, w)
   object$state$fitted.values <- rep(0, nrow(object$X))
 
