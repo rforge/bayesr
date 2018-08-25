@@ -5365,6 +5365,92 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
 }
 
 
+nnet.fit.w <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
+{
+  nc <- ncol(X)
+  if(is.null(w))
+    w <- n.weights(nodes, k = nc, type = "sigmoid", x = X, ...)
+  w <- unlist(w)
+
+  X <- cbind(1, X)
+
+  Z <- matrix(0, nrow = nrow(X), ncol = nodes)
+  for(j in 1:nodes)
+    Z[, j] <- 1 / (1 + exp(-1 * drop(X %*% w[paste0("bw", j, "_w", 0:nc)])))
+  par <- drop(matrix_inv(crossprod(Z) + diag(1e-05, nodes)) %*% t(Z) %*% y)
+
+  names(par) <- paste0("bb", 1:nodes)
+
+  ff <- function(X, par, w) {
+    fit <- 0
+    for(j in 1:nodes) {
+      z <- drop(X %*% w[paste0("bw", j, "_w", 0:nc)])
+      fit <- fit + par[paste0("bb", j)] / (1 + exp(-z))
+    }
+    return(fit)
+  }
+
+  if(random) {
+    rval <- list(
+      "fitted.values" = ff(X, par, w),
+      "coefficients" = par,
+      "nodes" = nodes,
+      "converged" = TRUE
+    )
+    class(rval) <- "nnet.fit"
+    return(rval)
+  }
+
+  gradfun <- function(w, X, y, sum = TRUE) {
+    gr <- matrix(0, nrow = nrow(X), ncol = nodes * (nc + 1))
+    for(j in 1:nodes)
+      Z[, j] <- 1 / (1 + exp(-1 * drop(X %*% w[paste0("bw", j, "_w", 0:nc)])))
+    par <- drop(matrix_inv(crossprod(Z) + diag(1e-05, nodes)) %*% t(Z) %*% y)
+    k <- 1
+    e <- drop(y - Z %*% par)
+    for(j in 1:nodes) {
+      ez <- exp(-Z[, j])
+      for(i in 1:(nc + 1)) {
+        if(i < 2) {
+          gr[, k] <- -(2 * (par[j] * ez/(1 + ez)^2 * e))
+        } else {
+          gr[, k] <- -(2 * (par[j] * (ez * X[, i])/(1 + ez)^2 * e))
+        }
+        k <- k + 1
+      }
+    }
+    if(sum)
+      return(colSums(gr))
+    else
+      return(gr)
+  }
+
+  objfun <- function(w, X, y) {
+    Z <- matrix(0, nrow = nrow(X), ncol = nodes)
+    for(j in 1:nodes)
+      Z[, j] <- 1 / (1 + exp(-1 * drop(X %*% w[paste0("bw", j, "_w", 0:nc)])))
+    par <- drop(matrix_inv(crossprod(Z) + diag(1e-05, nodes)) %*% t(Z) %*% y)
+    return(sum((y - Z %*% par)^2))
+  }
+
+  opt <- optim(par = w, fn = objfun, gr = gradfun, method = "BFGS", X = X, y = y)
+
+  for(j in 1:nodes)
+    Z[, j] <- 1 / (1 + exp(-1 * drop(X %*% w[paste0("bw", j, "_w", 0:nc)])))
+  par <- drop(matrix_inv(crossprod(Z) + diag(1e-05, nodes)) %*% t(Z) %*% y)
+  names(par) <- paste0("bb", 1:nodes)
+
+  rval <- list(
+    "fitted.values" = ff(X, par, opt$par),
+    "coefficients" = c(par, opt$par),
+    "nodes" = nodes,
+    "converged" = opt$convergence == 1L
+  )
+  class(rval) <- "nnet.fit"
+  return(rval)
+}
+
+
 predict.nnet.fit <- function(object, newX, ...)
 {
   nc <- ncol(newX)
@@ -5399,7 +5485,10 @@ boost.fit.nnet <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
   if(!is.null(weights))
     stop("weights is not supported!")
 
-  b <- nnet.fit(x$X, y, x$xt$k, rint = x$xt$rint, sint = x$xt$sint,
+  n <- length(y)
+  i <- sample(1:n, size = ceiling(x$xt$frac * n), replace = TRUE)
+
+  b <- nnet.fit(x$X[i, , drop = FALSE], y[i], x$xt$k, rint = x$xt$rint, sint = x$xt$sint,
     w = if(x$xt$passw) x$state$parameters[grep("bw", names(x$state$parameters))] else NULL)
   b$coefficients[1:x$xt$k] <- nu * b$coefficients[1:x$xt$k]
 
@@ -5448,6 +5537,8 @@ smooth.construct.nnet.smooth.spec <- function(object, data, knots, ...)
   object$binning <- list("match.index" = 1:nrow(object$X))
   if(is.null(object$xt$passw))
     object$xt$passw <- TRUE
+  if(is.null(object$xt$frac))
+    object$xt$frac <- 0.8
 
   object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
   object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
