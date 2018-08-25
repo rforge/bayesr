@@ -5283,7 +5283,7 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 }
 
 
-nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
+nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FALSE)
 {
   nc <- ncol(X)
   if(is.null(w))
@@ -5308,6 +5308,32 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
       fit <- fit + par[paste0("bb", j)] / (1 + exp(-z))
     }
     return(fit)
+  }
+
+  if(nls) {
+    f <- NULL
+    for(j in 1:nodes) {
+      tf <- paste0(paste0("bw", j, "w0"), "+", paste0(paste0("bw", j, "w", 1:nc), "*X", 1:nc, collapse = "+"))
+      f <- c(f, paste0("bb", j, "/(1 + exp(-(", tf, ")))"))
+    }
+    f <- paste0(f, collapse = "+")
+    f <- as.formula(paste0("y~", f))
+    d <- as.data.frame(X[, -1, drop = FALSE])
+    names(d) <- paste0("X", 1:nc)
+    d$y <- y
+    nw0 <- names(par)
+    names(par) <- gsub("_", "", nw0, fixed = TRUE)
+    b <- nls(f, data = d, start = par, algorithm = "port", control = nls.control(maxiter = 1000, warnOnly = TRUE))
+    par <- coef(b)
+    names(par) <- nw0
+    rval <- list(
+      "fitted.values" = ff(X, par),
+      "coefficients" = par,
+      "nodes" = nodes,
+      "converged" = TRUE
+    )
+    class(rval) <- "nnet.fit"
+    return(rval)
   }
 
   if(random) {
