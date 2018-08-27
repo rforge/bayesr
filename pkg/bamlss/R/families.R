@@ -689,7 +689,7 @@ gaussian_bamlss <- function(...)
     },
     "q" = function(p, par) {
       qnorm(p, mean = par$mu, sd = par$sigma)
-    }
+    },
     "crps" = function(y, par, ...) {
       sum(scoringRules::crps_norm(y, mean = par$mu, sd = par$sigma), na.rm = TRUE)
     },
