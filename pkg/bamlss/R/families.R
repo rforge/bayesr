@@ -2581,6 +2581,9 @@ poisson_bamlss <- function(...)
     "r" = function(n, par) {
       rpois(n, lambda = par$lambda)
     },
+    "q" = function(p, par) {
+      qpois(p, lambda = par$lambda)
+    },
     "score" = list(
       "lambda" = function(y, par, ...) {
         y - par$lambda
