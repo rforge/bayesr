@@ -223,6 +223,13 @@ beta_bamlss <- function(...)
        b <- a * (1 - mu) / mu
        rbeta(n, shape1 = a, shape2 = b)
     },
+    "q" = function(p, par) {
+      mu <- par$mu
+      sigma2 <- par$sigma2
+      a <- mu * (1 - sigma2) / (sigma2)
+      b <- a * (1 - mu) / mu
+      qbeta(p, shape1 = a, shape2 = b)
+    },
     "mean" = function(par) {
       a <- par$mu * (1 - par$sigma2) / (par$sigma2)
       b <- a * (1 - par$mu) / par$mu
