@@ -984,6 +984,9 @@ gaussian2_bamlss <- function(...)
     "p" = function(y, par, ...) {
       pnorm(y, mean = par$mu, sd = sqrt(par$sigma2), ...)
     },
+    "q" = function(p, par) {
+      qnorm(p, mean = par$mu, sd = sqrt(par$sigma2))
+    },
     "mean"     = function(par) par$mu,
     "variance" = function(par) par$sigma2
   )
