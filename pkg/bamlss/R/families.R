@@ -457,6 +457,9 @@ binomial_bamlss <- function(link = "logit", ...)
     "r" = function(n, par) {
       rbinom(n, size = 1, prob = par$pi)
     },
+    "q" = function(p, par) {
+      qbinom(p, size = 1, prob = par$pi)
+    },
     "score" = list(
       "pi" = function(y, par, ...) {
         y <- process_factor_response(y)
