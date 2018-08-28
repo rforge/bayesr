@@ -1215,8 +1215,8 @@ cnorm_bamlss <- function(...)
   f$p <- function(y, par, log = FALSE) {
     return(ifelse(y == 0, runif(length(y), 0, pnorm(0, par$mu, par$sigma)), pnorm(y - par$mu, 0, par$sigma)))
   }
-  f$q <- function(y, par, ...) {
-    rval <- qnorm(y) * par$sigma + par$mu
+  f$q <- function(p, par, ...) {
+    rval <- qnorm(p) * par$sigma + par$mu
     pmax(pmin(rval, Inf), 0)
   }
   f$r <- function(n, par, ...) {
