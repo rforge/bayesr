@@ -3505,7 +3505,7 @@ glogis_bamlss <- function(...) {
    links <- c(mu="identity",sigma="log",alpha="log")
 
    rval <- list(
-      "family" = "Generalized Logistic Distribution Type I (a.k.a. skewed logistic distribution)",
+      "family" = "glogis", # Generalized Logistic Distribution Type I (a.k.a. skewed logistic distribution)
       "names"  = c("mu","sigma","alpha"),
       "score" = list(
          "mu" = function(y,par,...) {
@@ -3549,8 +3549,8 @@ glogis_bamlss <- function(...) {
          .Call("bamlss_glogis_distr",as.numeric(y),
                   as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
       },
-      "q" = function(y,par,...) {
-         .Call("bamlss_glogis_quantile",as.numeric(y),
+      "q" = function(p,par,...) {
+         .Call("bamlss_glogis_quantile",as.numeric(p),
                as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
       },
       "r" = function(y,par,...) {
