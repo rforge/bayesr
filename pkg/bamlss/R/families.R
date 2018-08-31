@@ -3541,17 +3541,23 @@ glogis_bamlss <- function(...) {
                   as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
       },
       "d" = function(y,par,log=FALSE) {
-         .Call("bamlss_glogis_density",as.numeric(y),
-                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha),
-                  as.integer(log))
+        sapply(y, FUN = function(x) {
+          .Call("bamlss_glogis_density",as.numeric(x),
+                as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha),
+                as.integer(log), PACKAGE = "bamlss")
+          })
       },
       "p" = function(y,par,...) {
-         .Call("bamlss_glogis_distr",as.numeric(y),
-                  as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+        sapply(y, FUN = function(x) {
+          .Call("bamlss_glogis_distr",as.numeric(x),
+                as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+        })
       },
       "q" = function(p,par,...) {
-         .Call("bamlss_glogis_quantile",as.numeric(p),
-               as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+        sapply(p, FUN = function(x) {
+          .Call("bamlss_glogis_quantile",as.numeric(p),
+                as.numeric(par$mu),as.numeric(par$sigma),as.numeric(par$alpha))
+        })
       },
       "r" = function(y,par,...) {
          glogis::rglogis(y,par$mu,par$sigma,par$alpha)
