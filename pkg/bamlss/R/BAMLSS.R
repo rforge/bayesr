@@ -4776,6 +4776,45 @@ Predict.matrix.linear.smooth <- function(object, data)
 }
 
 
+smooth.construct.ctree.smooth.spec <- function(object, data, knots, ...)
+{
+  object$X <- as.data.frame(data)[, object$term, drop = FALSE]
+  object$formula <- as.formula(paste0("y~", paste0(object$term, collapse = "+")))
+  if(is.null(object$xt$maxdepth))
+    object$xt$maxdepth <- 3
+  object$state <- list()
+  object$state$fitted.values <- rep(0, nrow(object$X))
+  object$state$parameters <- rep(NA, object$xt$maxdepth^2)
+  object$state$rules <- rep("", object$xt$maxdepth^2)
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+    ## process weights.
+    if(!is.null(weights))
+      stop("weights is not supported!")
+
+    b <- ctree(object$formula, data = object$X, control = ctree_control(maxdepth = x$xt$maxdepth))
+  
+    ## Finalize.
+    rules <- partykit:::.list.rules.party(b)
+    x$state$fitted.values <- nu * as.numeric(fitted(b)[, "(response)"])
+    par <- unique(x$state$fitted.values)
+    x$state$parameters[1:length(rules)] <- par
+    x$state$rules[1:length(rules)] <- rules[names(par)]
+
+    x$state$rss <- bf$rss[j]
+
+    if(hatmatrix) {
+      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+    }
+  
+    return(x$state)
+  }
+
+  class(object) <- c("linear.smooth", "mgcv.smooth")
+
+  return(object)
+}
+
+
 ## Neural networks.
 n <- function(..., k = 10, type = 2)
 {

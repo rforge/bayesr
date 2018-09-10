@@ -2278,14 +2278,19 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       maxit <- 10000
   }
 
-  always2 <- FALSE
+  always2 <- always3 <- FALSE
   if(!is.logical(always)) {
     if(is.character(always)) {
       if(!is.na(pmatch(always, "best"))) {
         always2 <- TRUE
         always <- TRUE
       } else {
-        always <- FALSE
+        if(!is.na(pmatch(always, "yes"))) {
+          always3 <- TRUE
+          always <- TRUE
+        } else {
+          always <- FALSE
+        }
       }
     }
   }
@@ -2316,7 +2321,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, ...)
+    weights = weights, always3 = always3, ...)
 
   if(!is.null(list(...)$ret.x)) {
     if(list(...)$ret.x)
@@ -2441,7 +2446,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
             y = grad, nu = nu2, hatmatrix = hatmatrix,
             weights = if(!is.null(weights)) weights[, i] else NULL,
-            rho = rho, nthreads = nthreads)
+            rho = rho, nthreads = nthreads, always3 = always3)
         }
         
         ## Get rss.
@@ -2567,7 +2572,14 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     x[[take[1]]]$smooth.construct[[take[2]]]$loglik[iter] <- loglik[i]
     
     ## Save parameters.
-    parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+    if(always3) {
+      tpar <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+      x[[take[1]]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
+      ##parm[[take[1]]][["(Intercept)"]][iter, ] <- tpar[1]
+      parm[[take[1]]][[take[2]]][iter, ] <- tpar[-1]
+    } else {
+      parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+    }
 
     ## Intercept updating.
     if(always) {
@@ -2579,6 +2591,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       nxa <- if(always2) take[1] else nx
       for(ii in nxa) {
         if("(Intercept)" %in% names(x[[ii]]$smooth.construct)) {
+          if(always3) {
+            if(ii == take[1])
+              next
+          }
           peta <- family$map2par(eta)
       
           ## Actual gradient.
@@ -2597,6 +2613,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
             states[[ii]][["(Intercept)"]])
           x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
           x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
+          parm[[ii]][["(Intercept)"]][iter, ] <- get.par(states[[ii]][["(Intercept)"]]$parameters, "b")
           if(approx.edf) {
             if(x[[ii]]$smooth.construct[["(Intercept)"]]$state$init.edf < 1) {
               redf <- redf + 1
@@ -3007,10 +3024,19 @@ boost.transform <- function(x, y, df = NULL, family,
       attr(x[[nx[j]]], "assign") <- assign
     }
   }
+
+  always3 <- list(...)$always3
+  if(is.null(always3))
+    always3 <- FALSE
   
   ## Save more info.
   for(j in 1:np) {
     for(sj in seq_along(x[[nx[j]]]$smooth.construct)) {
+      if(always3 & (x[[nx[j]]]$smooth.construct[[sj]]$label != "(Intercept)")) {
+        x[[nx[j]]]$smooth.construct[[sj]]$X <- cbind(1, x[[nx[j]]]$smooth.construct[[sj]]$X)
+        x[[nx[j]]]$smooth.construct[[sj]]$with.itcpt <- TRUE
+        x[[nx[j]]]$smooth.construct[[sj]]$state$parameters <- c("b0" = 0, x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)
+      }
       x[[nx[j]]]$smooth.construct[[sj]]$state$init.edf <- x[[nx[j]]]$smooth.construct[[sj]]$state$edf
       x[[nx[j]]]$smooth.construct[[sj]]$state$edf <- 0
       nc <- ncol(x[[nx[j]]]$smooth.construct[[sj]]$X)
@@ -3143,6 +3169,10 @@ make.par.list <- function(x, iter)
         }
         colnames(rval[[j]]) <- names(get.par(x$smooth.construct[[j]]$state$parameters, "b"))
         rval[[j]][1, ] <- get.par(x$smooth.construct[[j]]$state$parameters, "b")
+        if(!is.null(x$smooth.construct[[j]]$with.itcpt)) {
+          if(length(i <- grep("b0", colnames(rval[[j]]))))
+            rval[[j]] <- rval[[j]][, -i, drop = FALSE]
+        }
         if(!is.null(x$smooth.construct[[j]]$is.model.matrix))
           attr(rval[[j]], "is.model.matrix") <- TRUE
         if(inherits(x$smooth.construct[[j]], "nnet.smooth"))
