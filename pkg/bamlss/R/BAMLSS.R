@@ -5150,7 +5150,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(is.null(object$xt$K))
-    object$xt$K <- 1
+    object$xt$K <- 2
   if(is.null(object$xt$single))
     object$xt$single <- TRUE
   if(is.null(object$xt$ndf))
@@ -5183,7 +5183,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         y2 <- y[i]
         bf <- forward_reg(X2, y2, n = x$xt$ndf, nu = nu)
         if(!is.null(bf)) {
-          g2[bf$take] <- nu/x$xt$K * bf$coefficients
+          g2[bf$take] <- nu/x$xt$K * bf$coefficients[-1]
           x$state$fitted.values <- drop(x$X %*% g2)
           x$state$rss <- sum((y - x$state$fitted.values)^2)
         } else {
@@ -5230,6 +5230,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$lambda.min.ratio <- NULL
     class(object) <- c("nnet3.smooth", "mgcv.smooth")
   } else {
+    object[["lambda"]] <- object$xt[["lambda"]] <- NULL
     class(object) <- c("nnet2.smooth", "mgcv.smooth")
   }
 
@@ -5265,12 +5266,12 @@ forward_reg <- function(x, y, n = 4, ...)
   while(k < n) {
     rss <- NULL
     for(j in cols)
-      rss <- c(rss, sum(lm.fit(x[, c(take, j), drop = FALSE], y)$residuals^2) + 2 * length(c(take, j)))
+      rss <- c(rss, sum(lm.fit(cbind(1, x[, c(take, j), drop = FALSE]), y)$residuals^2) + 2 * length(c(take, j)))
     take <- c(take, cols[which.min(rss)])
     cols <- cols[!(cols %in% take)]
     k <- k + 1
   }
-  return(c(list("take" = take), lm.fit(x[, take, drop = FALSE], y)))
+  return(c(list("take" = take), lm.fit(cbind(1, x[, take, drop = FALSE]), y)))
 }
 
 
@@ -9281,11 +9282,11 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, trace
   if(is.null(fmstop)) {
     fmstop <- function(model, data) {
       y <- response.name(model)
-      p <- predictn(model, newdata = data, model = "mu")
+      p <- predict(model, newdata = data, model = "mu")
       mse <- NULL
       for(i in 1:nrow(model$parameters))
-        mse <- c(mse, mean((data[[y]] - p[, i])^2))
-      list("MSE" = mse, "mstop" = which.min(mse))
+        mse <- c(mse, sqrt(mean((data[[y]] - p[, i])^2)))
+      list("rMSE" = mse, "mstop" = which.min(mse))
     }
   }
 
@@ -9399,10 +9400,14 @@ predict.bboost <- function(object, newdata, ..., cores = 1)
   n <- length(object)
   drop <- attr(object, "drop")
   foo <- function(j) {
-    if(drop)
-      p <- predictn(object[[j]], newdata = newdata, ...)
-    else
-      p <- predictn(object[[j]], newdata = newdata, mstop = attr(object[[j]], "mstop"), ...)
+    if(drop) {
+      p <- predict(object[[j]], newdata = newdata, ...)
+    } else {
+      mstop <- attr(object[[j]], "mstop")
+      if(is.list(mstop))
+        mstop <- mstop$mstop
+      p <- predict(object[[j]], newdata = newdata, mstop = mstop, ...)
+    }
     if(is.list(p)) {
       p <- do.call("cbind", p)
       colnames(p) <- paste0(paste0("m", j), ".", colnames(p))

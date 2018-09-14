@@ -1424,7 +1424,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   
   ## Compute mean and precision.
   XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
-  
+
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
       P <- matrix_inv(XWX, index = x$sparse.setup)
@@ -2277,6 +2277,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(is.null(maxit))
       maxit <- 10000
   }
+  nu <- rep(nu, length.out = length(nx))
+  names(nu) <- nx
 
   always2 <- always3 <- FALSE
   if(!is.logical(always)) {
@@ -2321,7 +2323,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, always3 = always3, ...)
+    weights = weights, always3 = always3, nu = nu, ...)
+
+  if(nu.adapt) {
+    nu <- attr(x, "nu")
+    cat(paste("adapted steplength:", paste(round(nu, 5), collapse = ", ")), "\n")
+  }
 
   if(!is.null(list(...)$ret.x)) {
     if(list(...)$ret.x)
@@ -2432,7 +2439,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
         }
 
         ## Get updated parameters.
-        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) nu else nu
+        nu2 <- if(inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) nu[i] else nu[i]
         states[[i]][[j]] <- if(is.null(x[[i]]$smooth.construct[[j]][["boost.fit"]])) {
           if(hatmatrix) {
             boost_fit(x[[i]]$smooth.construct[[j]], grad, nu2,
@@ -2492,7 +2499,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
                       tredf <- tredf + aset
                     }
                   } else {
-                    tredf <- tredf + nu * x[[i]]$smooth.construct[[j]]$state$init.edf
+                    tredf <- tredf + nu[i] * x[[i]]$smooth.construct[[j]]$state$init.edf
                   }
                 }
                 rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
@@ -2602,10 +2609,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 
           ## Update.
           states[[ii]][["(Intercept)"]] <- if(hatmatrix) {
-            boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+            boost_fit(x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu[ii],
               hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, ii] else NULL)
           } else {
-            .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu,
+            .Call("boost_fit", x[[ii]]$smooth.construct[["(Intercept)"]], grad, nu[ii],
               if(!is.null(weights)) as.numeric(weights[, ii]) else numeric(0), rho, PACKAGE = "bamlss")
           }
           eta[[ii]] <- eta[[ii]] + fitted(states[[ii]][["(Intercept)"]])
@@ -2687,7 +2694,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               redf <- redf + aset
             }
           } else {
-            redf <- redf + nu * x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf
+            redf <- redf + nu[take[1]] * x[[take[1]]]$smooth.construct[[take[2]]]$state$init.edf
           }
         }
       } else {
@@ -2737,14 +2744,14 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     if((iter > 2) & all(loglik2 == loglik) & nu.adapt) {
-      warning("no more improvements in the log-likelihood, setting nu = nu * 0.5!")
-      nu <- nu * 0.5
+      warning("no more improvements in the log-likelihood, setting nu = nu * 0.9!")
+      nu[take[1]] <- nu[take[1]] * 0.9
       iter_ll2 <- iter_ll2 + 1
     }
 
-    if(iter_ll2 > 10) {
+    if(all(nu < .Machine$double.eps^0.5)) {
       nback <- TRUE
-      warning("no more improvements in the log-likelihood, stopped!")
+      warning(paste("no more improvements after", iter_ll2, "iterations in the log-likelihood, stopped!"))
       break
     }
     
@@ -2961,7 +2968,7 @@ hatmat_sumdiag <- function(H)
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
-  eps = .Machine$double.eps^0.25, initialize = TRUE, ...)
+  eps = .Machine$double.eps^0.25, initialize = TRUE, nu = 0.1, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -3112,6 +3119,31 @@ boost.transform <- function(x, y, df = NULL, family,
         x[[i]]$smooth.construct[["(Intercept)"]]$state$init.edf <- 1
       }
     }
+
+    ll <- objfun(opt$par)
+
+    llp <- slope <- list()
+    vals <- seq(0.001, 0.9, length = 100)
+    for(j in seq_along(nx)) {
+      for(i in vals) {
+        nu0 <- rep(1, length(nx))
+        nu0[j] <- 1 - i
+        llp[[nx[j]]] <- c(llp[[nx[j]]], objfun(opt$par * nu0))
+      }
+      slope[[nx[j]]] <- mean(diff(llp[[j]])/diff(vals))
+    }
+
+#    png("~/tmp/slope.png", units = "in", res = 120, width = 4, height = 8)
+#    par(mfrow = n2mfrow(length(nx)), mar = c(4.1, 4.1, 4.1, 0.5))
+#    for(j in seq_along(nx)) {
+#      plot(vals, llp[[j]], type = "l", xlab = nx[j], ylab = "logLik",
+#        main = paste("Diff", round(diff(range(llp[[j]])), 2), ", slope", round(slope[[nx[j]]], 2)))
+#    }
+#    dev.off()
+    slope <- -1 * unlist(slope)
+    slope <- min(abs(slope)) / slope
+
+    attr(x, "nu") <- nu * slope
   }
   
   return(x)
