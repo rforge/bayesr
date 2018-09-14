@@ -5150,7 +5150,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(is.null(object$xt$K))
-    object$xt$K <- 2
+    object$xt$K <- 1
   if(is.null(object$xt$single))
     object$xt$single <- TRUE
   if(is.null(object$xt$ndf))

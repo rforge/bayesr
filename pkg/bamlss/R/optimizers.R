@@ -2323,7 +2323,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, always3 = always3, nu = nu, ...)
+    weights = weights, always3 = always3, nu = nu, nu.adapt = nu.adapt, ...)
 
   if(nu.adapt) {
     nu <- attr(x, "nu")
@@ -2968,7 +2968,8 @@ hatmat_sumdiag <- function(H)
 ## Boost setup.
 boost.transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
-  eps = .Machine$double.eps^0.25, initialize = TRUE, nu = 0.1, ...)
+  eps = .Machine$double.eps^0.25, initialize = TRUE,
+  nu = 0.1, nu.adapt = TRUE, ...)
 {
   np <- length(x)
   nx <- names(x)
@@ -3120,30 +3121,32 @@ boost.transform <- function(x, y, df = NULL, family,
       }
     }
 
-    ll <- objfun(opt$par)
+    if(nu.adapt) {
+      ll <- objfun(opt$par)
 
-    llp <- slope <- list()
-    vals <- seq(0.001, 0.9, length = 100)
-    for(j in seq_along(nx)) {
-      for(i in vals) {
-        nu0 <- rep(1, length(nx))
-        nu0[j] <- 1 - i
-        llp[[nx[j]]] <- c(llp[[nx[j]]], objfun(opt$par * nu0))
+      llp <- slope <- list()
+      vals <- seq(0.001, 0.9, length = 100)
+      for(j in seq_along(nx)) {
+        for(i in vals) {
+          nu0 <- rep(1, length(nx))
+          nu0[j] <- 1 - i
+          llp[[nx[j]]] <- c(llp[[nx[j]]], objfun(opt$par * nu0))
+        }
+        slope[[nx[j]]] <- mean(diff(llp[[j]])/diff(vals))
       }
-      slope[[nx[j]]] <- mean(diff(llp[[j]])/diff(vals))
+
+#      png("~/tmp/slope.png", units = "in", res = 120, width = 4, height = 8)
+#      par(mfrow = n2mfrow(length(nx)), mar = c(4.1, 4.1, 4.1, 0.5))
+#      for(j in seq_along(nx)) {
+#        plot(vals, llp[[j]], type = "l", xlab = nx[j], ylab = "logLik",
+#          main = paste("Diff", round(diff(range(llp[[j]])), 2), ", slope", round(slope[[nx[j]]], 2)))
+#      }
+#      dev.off()
+      slope <- -1 * unlist(slope)
+      slope <- min(abs(slope)) / slope
+
+      attr(x, "nu") <- nu * slope
     }
-
-#    png("~/tmp/slope.png", units = "in", res = 120, width = 4, height = 8)
-#    par(mfrow = n2mfrow(length(nx)), mar = c(4.1, 4.1, 4.1, 0.5))
-#    for(j in seq_along(nx)) {
-#      plot(vals, llp[[j]], type = "l", xlab = nx[j], ylab = "logLik",
-#        main = paste("Diff", round(diff(range(llp[[j]])), 2), ", slope", round(slope[[nx[j]]], 2)))
-#    }
-#    dev.off()
-    slope <- -1 * unlist(slope)
-    slope <- min(abs(slope)) / slope
-
-    attr(x, "nu") <- nu * slope
   }
   
   return(x)
