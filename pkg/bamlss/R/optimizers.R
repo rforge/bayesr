@@ -2415,10 +2415,28 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   redf <- if(initialize) length(nx) else 0
   loglik <- loglik2 <- NULL
   iter_ll2 <- 0
+  nu0 <- nu
   ptm <- proc.time()
   while(iter <= maxit & qsel < maxq) {
     if(iter > 2)
       loglik2 <- loglik
+
+    if(nu.adapt & FALSE) {
+      etas <- eta
+      slope <- NULL
+      for(i in nx) {
+        etas[[i]] <- eta[[i]] + .Machine$double.eps^(1/3)
+        d1 <- family$loglik(y, family$map2par(etas))
+        etas[[i]] <- eta[[i]] - .Machine$double.eps^(1/3)
+        d2 <- family$loglik(y, family$map2par(etas))
+        etas[[i]] <- eta[[i]]
+        slope <- c(slope, abs((d1 - d2) / (.Machine$double.eps^(1/3) * 2)))
+      }
+      names(slope) <- nx
+      slope <- min(slope) / slope
+      nu <- nu0 * slope
+      cat(paste("adapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
+    }
 
     eta0 <- eta
     
@@ -2745,11 +2763,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
 
     if((iter > 2) & all(loglik2 == loglik) & nu.adapt) {
       warning("no more improvements in the log-likelihood, setting nu = nu * 0.9!")
-      nu[take[1]] <- nu[take[1]] * 0.9
+      ## nu[take[1]] <- nu[take[1]] * 0.9
       iter_ll2 <- iter_ll2 + 1
     }
 
-    if(all(nu < .Machine$double.eps^0.5)) {
+    if(all(nu < .Machine$double.eps^0.5) & (iter_ll2 > 10)) {
       nback <- TRUE
       warning(paste("no more improvements after", iter_ll2, "iterations in the log-likelihood, stopped!"))
       break
