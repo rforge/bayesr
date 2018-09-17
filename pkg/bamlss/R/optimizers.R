@@ -2436,7 +2436,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       slope <- min(slope) / slope
       slope[slope != 1] <- 1 - slope[slope != 1]
       nu <- nu0 * slope
-      ## cat(paste("\nadapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
+      cat(paste("\nadapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
     }
 
     eta0 <- eta

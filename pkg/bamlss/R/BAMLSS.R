@@ -9394,18 +9394,18 @@ plot.bboost <- function(...) {
   bboost.plot(...)
 }
 
-predict.bboost <- function(object, newdata, ..., cores = 1)
+predict.bboost <- function(object, newdata, ..., cores = 1, pfun = predict.bamlss)
 {
   n <- length(object)
   drop <- attr(object, "drop")
   foo <- function(j) {
     if(drop) {
-      p <- predict(object[[j]], newdata = newdata, ...)
+      p <- pfun(object[[j]], newdata = newdata, ...)
     } else {
       mstop <- attr(object[[j]], "mstop")
       if(is.list(mstop))
         mstop <- mstop$mstop
-      p <- predict(object[[j]], newdata = newdata, mstop = mstop, ...)
+      p <- pfun(object[[j]], newdata = newdata, mstop = mstop, ...)
     }
     if(is.list(p)) {
       p <- do.call("cbind", p)
