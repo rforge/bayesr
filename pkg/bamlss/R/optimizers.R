@@ -2323,12 +2323,12 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, always3 = always3, nu = nu, nu.adapt = nu.adapt, ...)
+    weights = weights, always3 = always3, nu = nu, nu.adapt = FALSE, ...)
 
-  if(nu.adapt) {
-    nu <- attr(x, "nu")
-    cat(paste("adapted steplength:", paste(round(nu, 5), collapse = ", ")), "\n")
-  }
+  #if(nu.adapt) {
+  #  nu <- attr(x, "nu")
+  #  cat(paste("adapted steplength:", paste(round(nu, 5), collapse = ", ")), "\n")
+  #}
 
   if(!is.null(list(...)$ret.x)) {
     if(list(...)$ret.x)
@@ -2421,7 +2421,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     if(iter > 2)
       loglik2 <- loglik
 
-    if(nu.adapt & FALSE) {
+    if(nu.adapt) {
       etas <- eta
       slope <- NULL
       for(i in nx) {
@@ -2434,8 +2434,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       }
       names(slope) <- nx
       slope <- min(slope) / slope
+      slope[slope != 1] <- 1 - slope[slope != 1]
       nu <- nu0 * slope
-      cat(paste("adapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
+      ## cat(paste("\nadapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
     }
 
     eta0 <- eta
