@@ -2323,12 +2323,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Intercepts are initalized.
   x <- boost.transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
-    weights = weights, always3 = always3, nu = nu, nu.adapt = FALSE, ...)
-
-  #if(nu.adapt) {
-  #  nu <- attr(x, "nu")
-  #  cat(paste("adapted steplength:", paste(round(nu, 5), collapse = ", ")), "\n")
-  #}
+    weights = weights, always3 = always3, ...)
 
   if(!is.null(list(...)$ret.x)) {
     if(list(...)$ret.x)
@@ -2420,24 +2415,6 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   while(iter <= maxit & qsel < maxq) {
     if(iter > 2)
       loglik2 <- loglik
-
-    if(nu.adapt) {
-      etas <- eta
-      slope <- NULL
-      for(i in nx) {
-        etas[[i]] <- eta[[i]] + .Machine$double.eps^(1/3)
-        d1 <- family$loglik(y, family$map2par(etas))
-        etas[[i]] <- eta[[i]] - .Machine$double.eps^(1/3)
-        d2 <- family$loglik(y, family$map2par(etas))
-        etas[[i]] <- eta[[i]]
-        slope <- c(slope, abs((d1 - d2) / (.Machine$double.eps^(1/3) * 2)))
-      }
-      names(slope) <- nx
-      slope <- min(slope) / slope
-      slope[slope != 1] <- 1 - slope[slope != 1]
-      nu <- nu0 * slope
-      cat(paste("\nadapted steplength:", paste(round(nu, 20), collapse = ", ")), "\n")
-    }
 
     eta0 <- eta
     
@@ -2553,6 +2530,19 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           next
       }
       select[i] <- which.min(rss[[i]])
+
+      if(nu.adapt) {
+        tbeta <- get.par(states[[i]][[select[i]]]$parameters, "b") * 1 / nu[i]
+        fv <- function(v) {
+          beta <- v * tbeta
+          eta[[i]] <- eta[[i]] + x[[i]]$smooth.construct[[select[i]]]$fit.fun(x[[i]]$smooth.construct[[select[i]]]$X, beta)
+          family$loglik(y, family$map2par(eta))
+        }
+        v <- optimize(fv, interval = c(.Machine$double.eps^0.5, 1), maximum = TRUE)$maximum
+        beta <- nu[i] * v * tbeta
+        states[[i]][[select[i]]]$parameters <- set.par(states[[i]][[select[i]]]$parameters, beta, "b")
+        states[[i]][[select[i]]]$fitted.values <- x[[i]]$smooth.construct[[select[i]]]$fit.fun(x[[i]]$smooth.construct[[select[i]]]$X, beta)
+      }
       
       ## Compute likelihood contribution.
       eta[[i]] <- eta[[i]] + fitted(states[[i]][[select[i]]])
@@ -2762,7 +2752,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       if(.Platform$OS.type != "unix" & ia) flush.console()
     }
 
-    if((iter > 2) & all(loglik2 == loglik) & nu.adapt) {
+    if((iter > 2) & all(loglik2 == loglik)) {
       warning("no more improvements in the log-likelihood, setting nu = nu * 0.9!")
       ## nu[take[1]] <- nu[take[1]] * 0.9
       iter_ll2 <- iter_ll2 + 1
@@ -3138,33 +3128,6 @@ boost.transform <- function(x, y, df = NULL, family,
         x[[i]]$smooth.construct[["(Intercept)"]]$state$edf <- 1
         x[[i]]$smooth.construct[["(Intercept)"]]$state$init.edf <- 1
       }
-    }
-
-    if(nu.adapt) {
-      ll <- objfun(opt$par)
-
-      llp <- slope <- list()
-      vals <- seq(0.001, 0.9, length = 100)
-      for(j in seq_along(nx)) {
-        for(i in vals) {
-          nu0 <- rep(1, length(nx))
-          nu0[j] <- 1 - i
-          llp[[nx[j]]] <- c(llp[[nx[j]]], objfun(opt$par * nu0))
-        }
-        slope[[nx[j]]] <- mean(diff(llp[[j]])/diff(vals))
-      }
-
-#      png("~/tmp/slope.png", units = "in", res = 120, width = 4, height = 8)
-#      par(mfrow = n2mfrow(length(nx)), mar = c(4.1, 4.1, 4.1, 0.5))
-#      for(j in seq_along(nx)) {
-#        plot(vals, llp[[j]], type = "l", xlab = nx[j], ylab = "logLik",
-#          main = paste("Diff", round(diff(range(llp[[j]])), 2), ", slope", round(slope[[nx[j]]], 2)))
-#      }
-#      dev.off()
-      slope <- -1 * unlist(slope)
-      slope <- min(abs(slope)) / slope
-
-      attr(x, "nu") <- nu * slope
     }
   }
   
