@@ -1624,6 +1624,8 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   bf
 }
 
+ff0 <- function(X, b, ...) { X %*% b }
+
 light_bamlss <- function(object)
 {
   if(!is.null(object$x)) {
@@ -1634,6 +1636,7 @@ light_bamlss <- function(object)
           object$x[[j]]$smooth.construct[[i]][["xt"]][["binning"]] <- NULL
           environment(object$x[[j]]$formula) <- emptyenv()
           environment(object$x[[j]]$terms) <- emptyenv()
+          environment(object$x[[j]]$fake.formula) <- emptyenv()
           if(!is.null(object$x[[j]]$smooth.construct[[i]][["margin"]])) {
             for(jj in seq_along(object$x[[j]]$smooth.construct[[i]][["margin"]])) {
               object$x[[j]]$smooth.construct[[i]][["margin"]][[jj]][c("X", "S", "Xr", "Xf", "binning", "prior", "grad", "hess", "boost.fit", "update", "propose")] <- NULL
@@ -1642,7 +1645,7 @@ light_bamlss <- function(object)
           }
           if(!is.null(object$x[[j]]$smooth.construct[[i]][["fit.fun"]])) {
             if(!is.null(attr(object$x[[j]]$smooth.construct[[i]][["fit.fun"]], ".internal")))
-              object$x[[j]]$smooth.construct[[i]][["fit.fun"]] <- function(X, b, ...) { drop(X %*% b) }
+              object$x[[j]]$smooth.construct[[i]][["fit.fun"]] <- ff0
           }
           for(ff in names(object$x[[j]]$smooth.construct[[i]])) {
             if(ff != "fit.fun") {
@@ -5154,7 +5157,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$single))
     object$xt$single <- TRUE
   if(is.null(object$xt$ndf))
-    object$xt$ndf <- 4
+    object$xt$ndf <- 1
   else
     object$xt$ndf <- ceiling(object$xt$ndf)
   if(object$xt$ndf < 2)
@@ -5211,11 +5214,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     }
   }
 
-  object$fit.fun <- function(X, b, ...) {
-    # fit <- drop(X %*% b)
-    # return(fit - mean(fit))
-    drop(X %*% b)
-  }
+  object$fit.fun <- ff0
   attr(object$fit.fun, ".internal") <- TRUE
 
 #plot2d(object$X ~ data$times, main = type)
