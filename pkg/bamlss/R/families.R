@@ -2131,7 +2131,7 @@ bivnorm_bamlss <- function(...)
       "mu1" = function(y, ...) {
         (y[, 1] + mean(y[, 1])) / 2
       },
-      "mu1" = function(y, ...) {
+      "mu2" = function(y, ...) {
         (y[, 2] + mean(y[, 2])) / 2
       },
       "sigma1" = function(y, ...) {
