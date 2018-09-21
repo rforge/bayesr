@@ -99,7 +99,11 @@ make.link2 <- function(link)
       rval <- switch(link,
         "rhogit" = list(
           "linkfun" = function(mu) { mu / sqrt(1 - mu^2) },
-          "linkinv" = function(eta) { eta / sqrt(1 + eta^2) },
+          "linkinv" = function(eta) {
+              rval <- eta / sqrt(1 + eta^2)
+              rval <- (abs(rval) - .Machine$double.eps) * sign(rval)
+              rval
+          },
           "mu.eta" = function(eta) { 1 / (1 + eta^2)^1.5 }
         ),
         "cloglog2" = list(
