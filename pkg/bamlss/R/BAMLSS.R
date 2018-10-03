@@ -9265,18 +9265,19 @@ Predict.matrix.srand.smooth <- function(object, data)
 
 ## Model fitting shortcuts.
 boost2 <- function(...) {
-  bamlss(..., sampler = FALSE, optimizer = bamlss::boost)
+  bamlss(..., sampler = FALSE, optimizer = boost)
 }
 
 lasso2 <- function(...) {
-  bamlss(..., sampler = FALSE, optimizer = bamlss::lasso)
+  bamlss(..., sampler = FALSE, optimizer = lasso)
 }
 
 bayesx2 <- function(...) {
-  bamlss(..., sampler = bamlss::BayesX, optimizer = FALSE)
+  bamlss(..., sampler = BayesX, optimizer = FALSE)
 }
 
-bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, trace = TRUE, drop = FALSE)
+bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
+  fmstop = NULL, trace = TRUE, drop = FALSE)
 {
   if(is.null(fmstop)) {
     fmstop <- function(model, data) {
@@ -9291,21 +9292,41 @@ bboost <- function(..., data, cores = 1, n = 2, prob = 0.6, fmstop = NULL, trace
 
   nobs <- nrow(data)
   ind <- 1:nobs
-  size <- ceiling(nobs * prob)
 
-  foo <- function(j) {
-    if(trace)
-      cat("... starting bootstrap sample", j, "\n")
-    i <- sample(ind, size = size, replace = TRUE)
-    d0 <- data[i, , drop = FALSE]
-    d1 <- data[!(ind %in% i), , drop = FALSE]
-    b <- boost2(..., data = d0, plot = FALSE)
-    attr(b, "mstop") <- fmstop(b, d1)
-    if(drop)
-      b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
-    if(trace)
-      cat("... finished bootstrap sample", j, "\n")
-    return(b)
+  if(type > 1) {
+    size <- ceiling(nobs * prob)
+
+    foo <- function(j) {
+      if(trace)
+        cat("... starting bootstrap sample", j, "\n")
+      i <- sample(ind, size = size, replace = TRUE)
+      d0 <- data[i, , drop = FALSE]
+      d1 <- data[!(ind %in% i), , drop = FALSE]
+      b <- boost2(..., data = d0, plot = FALSE)
+      attr(b, "mstop") <- fmstop(b, d1)
+      if(drop)
+        b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
+      if(trace)
+        cat("... finished bootstrap sample", j, "\n")
+      return(b)
+    }
+  } else {
+    foo <- function(j) {
+      if(trace)
+        cat("... starting bootstrap sample", j, "\n")
+      i <- sample(ind, size = nobs, replace = TRUE)
+      d0 <- data[i, , drop = FALSE]
+      b <- boost2(..., data = d0, plot = FALSE)
+      attr(b, "mstop") <- list(
+        "logLik" = b$model.stats$optimizer$boost.summary$ic,
+        "mstop" = nrow(b$parameters))
+      b$parameters <- b$parameters[nrow(b$parameters), ]
+      if(trace)
+        cat("... finished bootstrap sample", j, "\n")
+      return(b)
+    }
+
+    drop <- TRUE
   }
 
   m <- parallel::mclapply(1:n, foo, mc.cores = cores)

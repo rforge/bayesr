@@ -11,8 +11,9 @@
 
 \usage{
 ## Bootstrap boosting.
-bboost(..., data, cores = 1, n = 2, prob = 0.6,
-  fmstop = NULL, trace = TRUE)
+bboost(..., data, type = 1, cores = 1,
+  n = 2, prob = 0.6, fmstop = NULL,
+  trace = TRUE)
 
 ## Plotting function.
 bboost.plot(object, col = NULL)
@@ -24,6 +25,9 @@ bboost.plot(object, col = NULL)
 \arguments{
   \item{\dots}{Arguments passed to \code{\link{bamlss}} and \code{\link{predict.bamlss}}.}
   \item{data}{The data frame to be used for modeling.}
+  \item{type}{Type of algorithm, \code{type = 1} uses all observations and samples with
+    replacement, \code{type = 2} uses only a fraction specified in \code{prob} and samples
+    with replacement.}
   \item{cores}{The number of cores to be used.}
   \item{n}{The number of bootstrap iterations.}
   \item{prob}{The fraction that should be used to fit the model in each bootstrap iteration.}
