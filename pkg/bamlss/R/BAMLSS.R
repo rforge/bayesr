@@ -4850,7 +4850,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
   dropout <- list(...)$dropout
   if(!is.null(dropout)) {
     if(is.logical(dropout)) {
-      dropout <- if(dropout) 0.1 else NULL
+      dropout <- if(dropout) 0.9 else NULL
     } else {
       dropout <- as.numeric(dropout)
     }
@@ -4966,7 +4966,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
       )
       w <- runif(k - 1, -1, 1)
       if(!is.null(dropout))
-        w[sample(c(TRUE, FALSE), size = length(w), replace = TRUE, prob = c(dropout, 1 - dropout))] <- 0
+        w[sample(c(TRUE, FALSE), size = length(w), replace = TRUE, prob = c(1 - dropout, dropout))] <- 0
       w <- w * sw / sum(w)
       if(length(w) < 2)
         w <- w * sample(c(-1, 1), size = 1)
@@ -5895,7 +5895,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   object
 }
 
-make_weights <- function(object, data, dropout = 0.8) {
+make_weights <- function(object, data, dropout = 0.2) {
   object$xt$dropout <- dropout
   rval <- smooth.construct(object, data, NULL)
   if(length(i <- grep("weights", names(rval))))
