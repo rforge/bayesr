@@ -12,14 +12,14 @@
 \usage{
 ## Bootstrap boosting.
 bboost(..., data, type = 1, cores = 1,
-  n = 2, prob = 0.6, fmstop = NULL,
-  trace = TRUE)
+  n = 2, prob = 0.623, fmstop = NULL,
+  trace = TRUE, drop = FALSE)
 
 ## Plotting function.
 bboost.plot(object, col = NULL)
 
 ## Predict method.
-\method{predict}{bboost}(object, newdata, ..., cores = 1)
+\method{predict}{bboost}(object, newdata, ..., cores = 1, pfun = predict.bamlss)
 }
 
 \arguments{
@@ -37,8 +37,12 @@ bboost.plot(object, col = NULL)
     a vector of the objective criterion that should be evaluated by the hold out sample data during
     each bootstrap iteration. See the examples.}
   \item{trace}{Prints out the current state of the bootstrap algorithm.}
+  \item{drop}{Should only the best set of parameters be saved?}
   \item{object}{The \code{"bboost"} object used for prediction and plotting.}
+  \item{col}{The color that should be used for plotting.}
   \item{newdata}{The data frame predictions should be made for.}
+  \item{pfun}{The prediction function that should be used, for example \code{\link{predictn}} could
+    be used, too. Note that this is experimental.}
 }
 
 \value{

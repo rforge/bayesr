@@ -4779,43 +4779,43 @@ Predict.matrix.linear.smooth <- function(object, data)
 }
 
 
-smooth.construct.ctree.smooth.spec <- function(object, data, knots, ...)
-{
-  object$X <- as.data.frame(data)[, object$term, drop = FALSE]
-  object$formula <- as.formula(paste0("y~", paste0(object$term, collapse = "+")))
-  if(is.null(object$xt$maxdepth))
-    object$xt$maxdepth <- 3
-  object$state <- list()
-  object$state$fitted.values <- rep(0, nrow(object$X))
-  object$state$parameters <- rep(NA, object$xt$maxdepth^2)
-  object$state$rules <- rep("", object$xt$maxdepth^2)
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
-    ## process weights.
-    if(!is.null(weights))
-      stop("weights is not supported!")
+#smooth.construct.ctree.smooth.spec <- function(object, data, knots, ...)
+#{
+#  object$X <- as.data.frame(data)[, object$term, drop = FALSE]
+#  object$formula <- as.formula(paste0("y~", paste0(object$term, collapse = "+")))
+#  if(is.null(object$xt$maxdepth))
+#    object$xt$maxdepth <- 3
+#  object$state <- list()
+#  object$state$fitted.values <- rep(0, nrow(object$X))
+#  object$state$parameters <- rep(NA, object$xt$maxdepth^2)
+#  object$state$rules <- rep("", object$xt$maxdepth^2)
+#  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, ...) {
+#    ## process weights.
+#    if(!is.null(weights))
+#      stop("weights is not supported!")
 
-    b <- ctree(object$formula, data = object$X, control = ctree_control(maxdepth = x$xt$maxdepth))
-  
-    ## Finalize.
-    rules <- partykit:::.list.rules.party(b)
-    x$state$fitted.values <- nu * as.numeric(fitted(b)[, "(response)"])
-    par <- unique(x$state$fitted.values)
-    x$state$parameters[1:length(rules)] <- par
-    x$state$rules[1:length(rules)] <- rules[names(par)]
+#    b <- ctree(object$formula, data = object$X, control = ctree_control(maxdepth = x$xt$maxdepth))
+#  
+#    ## Finalize.
+#    rules <- partykit:::.list.rules.party(b)
+#    x$state$fitted.values <- nu * as.numeric(fitted(b)[, "(response)"])
+#    par <- unique(x$state$fitted.values)
+#    x$state$parameters[1:length(rules)] <- par
+#    x$state$rules[1:length(rules)] <- rules[names(par)]
 
-    x$state$rss <- bf$rss[j]
+#    x$state$rss <- bf$rss[j]
 
-    if(hatmatrix) {
-      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
-    }
-  
-    return(x$state)
-  }
+#    if(hatmatrix) {
+#      x$state$hat <- nu * x$X[, j] %*% (1/crossprod(x$X[, j])) %*% t(x$X[, j])
+#    }
+#  
+#    return(x$state)
+#  }
 
-  class(object) <- c("linear.smooth", "mgcv.smooth")
+#  class(object) <- c("linear.smooth", "mgcv.smooth")
 
-  return(object)
-}
+#  return(object)
+#}
 
 
 ## Neural networks.
@@ -5628,80 +5628,80 @@ Predict.matrix.nnet.smooth <- function(object, data)
   return(Predict.matrix.lasso.smooth(object, data))
 }
 
-smooth.construct.pnn.smooth.spec <- function(object, data, knots, ...)
-{
-  if(is.null(object$formula)) {
-    object$formula <- as.formula(paste("~", paste(object$term, collapse = "+")))
-    object$dim <- length(object$term)
-    object$by <- "NA"
-    object$type <- "single"
-    object$xt$fx <- FALSE
-  }
-  object[["standardize01"]] <- object$xt[["standardize01"]] <- TRUE
-  if(is.null(object$xt[["standardize"]]))
-    object$xt[["standardize"]] <- TRUE
-  if(!is.null(object$xt[["standardize"]])) {
-    if(!object$xt[["standardize"]]) {
-      object$xt[["standardize01"]] <- FALSE
-    }
-  }
-  object$xt$m1p1 <- TRUE
-  object <- smooth.construct.la.smooth.spec(object, data, knots)
-  object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
-  if(is.null(object$xt$degree))
-    object$xt$degree <- ncol(object$X) * 20
-  object$X <- as.matrix(polyreg::getPoly(object$X, object$xt$degree)$xdata)
-plot2d(object$X ~ dtrain$x)
-  object$S <- list(diag(1, ncol(object$X)))
-  object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
-  object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
+#smooth.construct.pnn.smooth.spec <- function(object, data, knots, ...)
+#{
+#  if(is.null(object$formula)) {
+#    object$formula <- as.formula(paste("~", paste(object$term, collapse = "+")))
+#    object$dim <- length(object$term)
+#    object$by <- "NA"
+#    object$type <- "single"
+#    object$xt$fx <- FALSE
+#  }
+#  object[["standardize01"]] <- object$xt[["standardize01"]] <- TRUE
+#  if(is.null(object$xt[["standardize"]]))
+#    object$xt[["standardize"]] <- TRUE
+#  if(!is.null(object$xt[["standardize"]])) {
+#    if(!object$xt[["standardize"]]) {
+#      object$xt[["standardize01"]] <- FALSE
+#    }
+#  }
+#  object$xt$m1p1 <- TRUE
+#  object <- smooth.construct.la.smooth.spec(object, data, knots)
+#  object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
+#  if(is.null(object$xt$degree))
+#    object$xt$degree <- ncol(object$X) * 20
+#  object$X <- as.matrix(polyreg::getPoly(object$X, object$xt$degree)$xdata)
+#plot2d(object$X ~ dtrain$x)
+#  object$S <- list(diag(1, ncol(object$X)))
+#  object$update <- function(...) { stop("no nnet updating function for bfit() implemented yet!") }
+#  object$propose <- function(...) { stop("no nnet proposal function for GMCMC() implemented yet!") }
 
-  object$N <- apply(object$X, 2, function(x) {
-    return((1/crossprod(x)) %*% t(x))
-  })
+#  object$N <- apply(object$X, 2, function(x) {
+#    return((1/crossprod(x)) %*% t(x))
+#  })
 
-  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
-    ## process weights.
-    if(!is.null(weights))
-      stop("weights are not supported for n()!")
+#  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
+#    ## process weights.
+#    if(!is.null(weights))
+#      stop("weights are not supported for n()!")
 
-    ncX <- ncol(x$X)
-    g2 <- rep(0, ncX)
+#    ncX <- ncol(x$X)
+#    g2 <- rep(0, ncX)
 
-    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
-    j <- which.min(bf$rss)
-    g2[j] <- bf$g[j]
-    x$state$fitted.values <- bf$fit[, j]
-    x$state$rss <- bf$rss[j]
+#    bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
+#    j <- which.min(bf$rss)
+#    g2[j] <- bf$g[j]
+#    x$state$fitted.values <- bf$fit[, j]
+#    x$state$rss <- bf$rss[j]
 
-    names(g2) <- paste0("b", 1:ncX)
-  
-    ## Finalize.
-    x$state$parameters <- set.par(x$state$parameters, g2, "b")
+#    names(g2) <- paste0("b", 1:ncX)
+#  
+#    ## Finalize.
+#    x$state$parameters <- set.par(x$state$parameters, g2, "b")
 
-    if(hatmatrix) {
-      stop("not supported for n()!")
-    }
-  
-    return(x$state)
-  }
+#    if(hatmatrix) {
+#      stop("not supported for n()!")
+#    }
+#  
+#    return(x$state)
+#  }
 
-  object$by <- "NA"
+#  object$by <- "NA"
 
-  class(object) <- c("pnn.smooth", "mgcv.smooth")
+#  class(object) <- c("pnn.smooth", "mgcv.smooth")
 
-  object
-}
+#  object
+#}
 
-Predict.matrix.pnn.smooth <- function(object, data)
-{
-  object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
-  object[["standardize01"]] <- TRUE
-  object$xt$m1p1 <- TRUE
-  X <- Predict.matrix.lasso.smooth(object, data)
-  X <- as.matrix(polyreg::getPoly(X, object$xt$degree)$xdata)
-  return(X)
-}
+#Predict.matrix.pnn.smooth <- function(object, data)
+#{
+#  object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
+#  object[["standardize01"]] <- TRUE
+#  object$xt$m1p1 <- TRUE
+#  X <- Predict.matrix.lasso.smooth(object, data)
+#  X <- as.matrix(polyreg::getPoly(X, object$xt$degree)$xdata)
+#  return(X)
+#}
 
 
 predictn <- function(object, newdata, model = NULL, mstop = NULL, type = c("link", "parameter"))

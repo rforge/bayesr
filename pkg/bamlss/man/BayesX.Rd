@@ -5,6 +5,7 @@
 \alias{tx}
 \alias{tx2}
 \alias{tx3}
+\alias{tx4}
 \alias{get_BayesXsrc}
 \alias{quant_bamlss}
 \alias{smooth.construct.tensorX.smooth.spec}

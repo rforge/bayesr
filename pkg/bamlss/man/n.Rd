@@ -20,10 +20,11 @@ n.weights(nodes, k, r = NULL, s = NULL,
   x = NULL, ...)
 
 ## Second weights initializer, internally calls n.weights.
-make_weights(object, data)
+make_weights(object, data, dropout = 0.2)
 
 ## Boosted neural net predictions.
-predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
+predictn(object, newdata, model = NULL,
+  mstop = NULL, type = c("link", "parameter"))
 }
 
 \arguments{
@@ -35,13 +36,17 @@ predictn(object, ..., mstop = NULL, type = c("link", "parameter"))
     parts with \code{k} nodes each. For function \code{n.weights()}, argument \code{k}
     is the number of input variables of the network (number of covariates).}
   \item{type}{Integer. Type \code{1} fits a complete network in each boosting iteration, \code{type = 2} selects
-    the best fitting node in each boosting iteration.}
+    the best fitting node in each boosting iteration. for function \code{n.weights()}, the type of
+    activation function that should be used. For function \code{predictn()}, the type of prediction
+    that should be computed.}
   \item{nodes}{Number of nodes for each layer, i.e., can also be a vector.}
   \item{r, s}{Parameters controlling the shape of the activation functions.}
-  \item{type}{The type of activation function that should be used.}
   \item{x}{A scaled covariate matrix, the data will be used to identify the range of the weights.}
   \item{object, data}{See \code{\link[mgcv]{smooth.construct}}. For function \code{predictn()},
     a boosted \code{"bamlss"} object.}
+  \item{dropout}{The fraction of inner weights that should be set to zero.}
+  \item{newdata}{The data frame that should be used for prediction.}
+  \item{model}{For which parameter of the distribution predictions should be computed.}
   \item{mstop}{The stopping iteration for which predictions should be computed. The default
     is to return a matrix of predictions, each column represents the prediction of one
     boosting iteration.}
