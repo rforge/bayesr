@@ -4850,7 +4850,7 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
   dropout <- list(...)$dropout
   if(!is.null(dropout)) {
     if(is.logical(dropout)) {
-      dropout <- if(dropout) 0.9 else NULL
+      dropout <- if(dropout) 0.1 else NULL
     } else {
       dropout <- as.numeric(dropout)
     }
@@ -9415,7 +9415,7 @@ plot.bboost <- function(...) {
   bboost.plot(...)
 }
 
-predict.bboost <- function(object, newdata, ..., cores = 1, pfun = predict.bamlss)
+predict.bboost <- function(object, newdata, ..., cores = 1, pfun = bamlss::predict.bamlss)
 {
   n <- length(object)
   drop <- attr(object, "drop")
