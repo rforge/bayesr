@@ -19,7 +19,7 @@ bboost(..., data, type = 1, cores = 1,
 bboost.plot(object, col = NULL)
 
 ## Predict method.
-\method{predict}{bboost}(object, newdata, ..., cores = 1, pfun = predict.bamlss)
+\method{predict}{bboost}(object, newdata, ..., cores = 1, pfun = NULL)
 }
 
 \arguments{

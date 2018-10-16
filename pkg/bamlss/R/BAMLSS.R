@@ -9415,8 +9415,10 @@ plot.bboost <- function(...) {
   bboost.plot(...)
 }
 
-predict.bboost <- function(object, newdata, ..., cores = 1, pfun = bamlss::predict.bamlss)
+predict.bboost <- function(object, newdata, ..., cores = 1, pfun = NULL)
 {
+  if(is.null(pfun))
+    pfun <- predict.bamlss
   n <- length(object)
   drop <- attr(object, "drop")
   foo <- function(j) {
