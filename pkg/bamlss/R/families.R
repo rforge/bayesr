@@ -769,6 +769,12 @@ AR1_bamlss <- function(ar.start = NULL, ...)
       mu <- par$mu + par$alpha * e1
       dnorm(y, mu, par$sigma, log = log)
     }
+    rval$p = function(y, par, ...) {
+      e <- y - par$mu
+      e1 <- c(0, e[-length(e)])
+      mu <- par$mu + par$alpha * e1
+      pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    }
   } else {
     nobs <- length(ar.start)
     i <- which(ar.start)
@@ -779,6 +785,20 @@ AR1_bamlss <- function(ar.start = NULL, ...)
       mu <- par$mu + par$alpha * e
       dnorm(y, mu, par$sigma, log = log)
     }
+    rval$p = function(y, par, ...) {
+      e <- y - par$mu
+      e <- c(0, e[-nobs])
+      e[i] <- 0
+      mu <- par$mu + par$alpha * e
+      pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    }
+  }
+
+  rval$r = function(n, par) {
+    rnorm(n, mean = par$mu, sd = par$sigma)
+  }
+  rval$q = function(p, par) {
+    qnorm(p, mean = par$mu, sd = par$sigma)
   }
 
   class(rval) <- "family.bamlss"
