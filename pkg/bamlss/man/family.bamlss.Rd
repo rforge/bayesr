@@ -16,6 +16,7 @@
 \alias{poisson_bamlss}
 \alias{gpareto_bamlss}
 \alias{glogis_bamlss}
+\alias{AR1_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -47,6 +48,7 @@ mvnormAR1_bamlss(k = 2, ...)
 poisson_bamlss(...)
 gpareto_bamlss(...)
 glogis_bamlss(...)
+AR1_bamlss(ar.start = NULL, ...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
@@ -58,6 +60,10 @@ glogis_bamlss(...)
     \code{\link{bamlss}} and \code{\link{bamlss.frame}}.}
   \item{k}{The dimension of the multivariate normal. Note, if \code{k = 1} function
     \code{gaussian_bamlss()} is called.}
+  \item{ar.start}{Logical vector of length equal to the number of rows of the full data set
+    used for modeling. Must hold entries \code{TRUE} indicating the start of a time series of
+    a section. If \code{ar.start = NULL} lagged residuals are computed by simple shifting.
+    See also \code{\link[mgcv]{bam}}.}
   \item{link}{Possible link functions.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }

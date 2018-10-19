@@ -748,6 +748,44 @@ Gaussian_bamlss <- function(...)
 }
 
 
+AR1_bamlss <- function(ar.start = NULL, ...)
+{
+  rval <- list(
+    "family" = "AR1",
+    "names" = c("mu", "alpha", "sigma"),
+    "links" = c(mu = "identity", alpha = "rhogit", sigma = "log"),
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "alpha" = function(y, ...) {
+        rep(acf(y - mean(y), lag.max = 1, plot = FALSE, na.action = na.pass)$acf[2], length(y))
+      },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+    )
+  )
+  if(is.null(ar.start)) {
+    rval$d = function(y, par, log = FALSE, ...) {
+      e <- y - par$mu
+      e1 <- c(0, e[-length(e)])
+      mu <- par$mu + par$alpha * e1
+      dnorm(y, mu, par$sigma, log = log)
+    }
+  } else {
+    nobs <- length(ar.start)
+    i <- which(ar.start)
+    rval$d = function(y, par, log = FALSE, ...) {
+      e <- y - par$mu
+      e <- c(0, e[-nobs])
+      e[i] <- 0
+      mu <- par$mu + par$alpha * e
+      dnorm(y, mu, par$sigma, log = log)
+    }
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 gpareto_bamlss <- function(...)
 {
   rval <- list(
