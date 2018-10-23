@@ -9451,6 +9451,8 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$constr))
     object$xt$constr <- 1
 
+  object$xt$force.center <- TRUE
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
     ## process weights.
     if(is.null(weights))
@@ -9492,7 +9494,6 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
     ## Finalize.
     x$state$parameters <- set.par(x$state$parameters, g, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
 
     x$state$rss <- sum((x$state$fitted.values - y)^2 * weights)
 
