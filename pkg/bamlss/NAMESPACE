@@ -178,6 +178,9 @@ export(
   "rb",
   "smooth.construct.randombits.smooth.spec",
 
+  ## monotone P-splines
+  "smooth.construct.ms.smooth.spec",
+
   ## stability selection
   "stabsel",
 
@@ -234,6 +237,7 @@ S3method("smooth.construct", "nnet2.smooth.spec")
 S3method("smooth.construct", "linear.smooth.spec")
 S3method("smooth.construct", "randombits.smooth.spec")
 S3method("smooth.construct", "sr.smooth.spec")
+S3method("smooth.construct", "ms.smooth.spec")
 S3method("Predict.matrix", "kriging.smooth")
 S3method("Predict.matrix", "deriv.smooth")
 S3method("Predict.matrix", "tensorX.smooth")

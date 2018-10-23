@@ -9443,3 +9443,65 @@ predict.bboost <- function(object, newdata, ..., cores = 1, pfun = NULL)
   return(pred)
 }
 
+
+smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
+{
+  class(object) <- "ps.smooth.spec"
+  object <- smooth.construct.ps.smooth.spec(object, data, knots)
+  if(is.null(object$xt$constr))
+    object$xt$constr <- 1
+
+  object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
+    ## process weights.
+    if(is.null(weights))
+      weights <- rep(1, length = length(y))
+
+    ## Compute reduced residuals.
+    xbin.fun(x$binning$sorted.index, weights, y, x$weights, x$rres, x$binning$order)
+  
+    ## Compute mean and precision.
+    XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
+
+    S <- 0
+    tau2 <- get.state(x, "tau2")
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters) else x$S[[j]]
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
+  
+    ## New parameters.
+    g <- nu * drop(P %*% crossprod(x$X, x$rres))
+
+    vfun <- function(gamma, constr) {
+      v <- diff(drop(gamma))
+      if(constr < 2)
+        v <- (v < 0) * 1
+      else
+        v <- (v > 0) * 1
+      v
+    }
+
+    D <- diff(diag(ncol(x$X)))
+
+    d <- 1
+    while(d > 0.0001) {
+      v <- diag(vfun(g, constr = x$xt$constr))
+      g <- drop(matrix_inv(XWX + S + 1e+10 * t(D) %*% v %*% D) %*% crossprod(x$X, x$rres))
+      d <- sum((v - diag(vfun(g, constr = x$xt$constr)))^2)
+    }
+  
+    ## Finalize.
+    x$state$parameters <- set.par(x$state$parameters, g, "b")
+    x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
+    x$state$fitted.values - x$state$fitted.values - mean(x$state$fitted.values)
+
+    x$state$rss <- sum((x$state$fitted.values - y)^2 * weights)
+
+    if(hatmatrix)
+      x$state$hat <- nu * x$X %*% P %*% t(x$X)
+  
+    return(x$state)
+  }
+
+  return(object)
+}
+
