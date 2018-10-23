@@ -9492,7 +9492,7 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
     ## Finalize.
     x$state$parameters <- set.par(x$state$parameters, g, "b")
     x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
-    x$state$fitted.values - x$state$fitted.values - mean(x$state$fitted.values)
+    x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values)
 
     x$state$rss <- sum((x$state$fitted.values - y)^2 * weights)
 
