@@ -9451,6 +9451,8 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$constr))
     object$xt$constr <- 1
 
+  object$xt$force.center <- TRUE
+
   object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
     ## process weights.
     if(is.null(weights))
