@@ -955,9 +955,6 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute fitted values.        
   attr(theta, "fitted.values") <- data$fit.fun(data$X, g)
-  if(!is.null(data$xt$constr)) {
-    attr(theta, "fitted.values") <- attr(theta, "fitted.values") - mean(attr(theta, "fitted.values"), na.rm = TRUE)
-  }
 
   ## Set up new predictor.
   eta[[id[1]]] <- eta[[id[1]]] + attr(theta, "fitted.values")
