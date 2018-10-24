@@ -3230,8 +3230,9 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
         verbose = verbose, drop = drop, cores = cores, chunks = chunks, ...))
     }
   }
-  if(is.null(object$x))
+  if(is.null(object$x)) {
     object$x <- smooth.construct(object)
+  }
   if(is.null(newdata)) {
     newdata <- model.frame(object)
   } else {
@@ -9422,6 +9423,8 @@ predict.bboost <- function(object, newdata, ..., cores = 1, pfun = NULL)
   n <- length(object)
   drop <- attr(object, "drop")
   foo <- function(j) {
+    if(is.null(object[[j]]))
+      return(NULL)
     if(drop) {
       p <- pfun(object[[j]], newdata = newdata, ...)
     } else {

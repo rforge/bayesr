@@ -1464,10 +1464,30 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
         g <- drop(g - t(U) %*% x$C %*% g)
       }
 
+      if(!is.null(x$xt$constr)) {
+        vfun <- function(gamma, constr) {
+          v <- diff(drop(gamma))
+          if(constr < 2)
+            v <- (v < 0) * 1
+          else
+            v <- (v > 0) * 1
+          v
+        }
+
+        D <- diff(diag(ncol(x$X)))
+
+        d <- 1
+        while(d > 0.0001) {
+          v <- diag(vfun(g, constr = x$xt$constr))
+          g <- drop(matrix_inv(XWX + S + 1e+10 * t(D) %*% v %*% D) %*% crossprod(x$X, x$rres))
+          d <- sum((v - diag(vfun(g, constr = x$xt$constr)))^2)
+        }
+      }
+
       if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) g <- rep(0, length(g))
       fit <- x$fit.fun(x$X, g)
 
-      if(!is.null(x$doCmat))
+      if(!is.null(x$doCmat) | !is.null(x$xt$constr))
         fit <- fit - mean(fit, na.rm = TRUE)
 
       edf <- sum_diag(XWX %*% P)
@@ -1523,7 +1543,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
   }
   x$state$fitted.values <- x$fit.fun(x$X, get.state(x, "b"))
 
-  if(!is.null(x$doCmat))
+  if(!is.null(x$doCmat) | !is.null(x$xt$constr))
     x$state$fitted.values <- x$state$fitted.values - mean(x$state$fitted.values, na.rm = TRUE)
 
   x$state$edf <- sum_diag(XWX %*% P)
