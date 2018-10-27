@@ -9447,6 +9447,16 @@ predict.bboost <- function(object, newdata, ..., cores = 1, pfun = NULL)
 }
 
 
+vfun <- function(gamma, constr) {
+  v <- diff(drop(gamma))
+  if(constr < 2)
+    v <- (v < 0) * 1
+  else
+    v <- (v > 0) * 1
+  v
+}
+
+
 smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
 {
   class(object) <- "ps.smooth.spec"
@@ -9470,20 +9480,11 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
     S <- 0
     tau2 <- get.state(x, "tau2")
     for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](x$state$parameters) else x$S[[j]]
+      S <- S + 1 / tau2[j] * x$S0[[j]]
     P <- matrix_inv(XWX + S, index = x$sparse.setup)
   
     ## New parameters.
     g <- nu * drop(P %*% crossprod(x$X, x$rres))
-
-    vfun <- function(gamma, constr) {
-      v <- diff(drop(gamma))
-      if(constr < 2)
-        v <- (v < 0) * 1
-      else
-        v <- (v > 0) * 1
-      v
-    }
 
     D <- diff(diag(ncol(x$X)))
 
@@ -9505,6 +9506,102 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
   
     return(x$state)
   }
+
+  object$update <- function(x, family, y, eta, id, weights, criterion, ...) {
+    args <- list(...)
+  
+    no_ff <- !inherits(y, "ff")
+    peta <- family$map2par(eta)
+  
+    if(is.null(args$hess)) {
+      ## Compute weights.
+      if(no_ff) {
+        hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+      } else {
+        hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+          process.derivs(family$hess[[id]](y, par, id = id), is.weight = TRUE)
+        })
+      }
+    } else hess <- args$hess
+  
+    if(!is.null(weights))
+      hess <- hess * weights
+  
+    if(is.null(args$z)) {
+      ## Score.
+      if(no_ff) {
+        score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+      } else {
+        score <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
+          process.derivs(family$score[[id]](y, par, id = id), is.weight = FALSE)
+        })
+      }
+    
+      ## Compute working observations.
+      z <- eta[[id]] + 1 / hess * score
+    } else z <- args$z
+  
+    ## Compute partial predictor.
+    eta[[id]] <- eta[[id]] - fitted(x$state)
+  
+    ## Compute reduced residuals.
+    e <- z - eta[[id]]
+
+    xbin.fun(x$binning$sorted.index, hess, e, x$weights, x$rres, x$binning$order, x$binning$uind)
+  
+    ## Old parameters.
+    g0 <- get.state(x, "b")
+    ng0 <- names(g0)
+  
+    ## Compute mean and precision.
+    XWX <- do.XWX(x$X, 1 / x$weights, x$sparse.setup$matrix)
+
+    D <- diff(diag(ncol(x$X)))
+
+    tau2 <- get.state(x, "tau2")
+
+    S <- 0
+    for(j in seq_along(x$S))
+      S <- S + 1 / tau2[j] * x$S0[[j]]
+    P <- matrix_inv(XWX + S, index = x$sparse.setup)
+    g <- drop(P %*% crossprod(x$X, x$rres))
+
+    d <- 1
+    while(d > 0.0001) {
+      v <- diag(vfun(g, constr = x$xt$constr))
+      g <- drop((P <- matrix_inv(XWX + S + 1e+10 * t(D) %*% v %*% D)) %*% crossprod(x$X, x$rres))
+      d <- sum((v - diag(vfun(g, constr = x$xt$constr)))^2)
+    }
+    names(g) <- ng0
+  
+    ## Compute fitted values.
+    if(any(is.na(g)) | any(g %in% c(-Inf, Inf))) {
+      x$state$parameters <- set.par(x$state$parameters, rep(0, length(get.state(x, "b"))), "b")
+    } else {
+      x$state$parameters <- set.par(x$state$parameters, g, "b")
+    }
+    x$state$fitted.values <- x$fit.fun(x$X, g)
+
+    x$state$edf <- sum_diag(XWX %*% P)
+
+    if(!is.null(x$prior)) {
+      if(is.function(x$prior))
+        x$state$log.prior <- x$prior(x$state$parameters)
+    }
+  
+    return(x$state)
+  }
+
+  K <- object$S[[1]]
+  object$S0 <- object$S
+  object$S <- list()
+  object$S[[1]] <- function(beta, ...) {
+    b <- get.par(beta, "b")
+    D <- diff(diag(length(b)))
+    v <- diag(vfun(b, constr = object$xt$constr))
+    return(K + 1e+10 * t(D) %*% v %*% D)
+  }
+  attr(object$S[[1]], "npar") <- ncol(object$X)
 
   return(object)
 }

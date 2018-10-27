@@ -926,26 +926,6 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
     g <- drop(g - t(U) %*% data$C %*% g)
   }
 
-  if(!is.null(data$xt$constr)) {
-    vfun <- function(gamma, constr) {
-      v <- diff(drop(gamma))
-      if(constr < 2)
-        v <- (v < 0) * 1
-      else
-        v <- (v > 0) * 1
-      v
-    }
-
-    D <- diff(diag(ncol(data$X)))
-
-    d <- 1
-    while(d > 0.0001) {
-      v <- diag(vfun(g, constr = data$xt$constr))
-      g <- drop(matrix_inv(XWX + S + 1e+10 * t(D) %*% v %*% D) %*% crossprod(data$X, data$rres))
-      d <- sum((v - diag(vfun(g, constr = data$xt$constr)))^2)
-    }
-  }
-
   ## Compute log priors.
   p2 <- data$prior(c("b" = g, get.par(theta, "tau2")))
   qbetaprop <- try(dmvnorm(g, mean = M, sigma = P, log = TRUE), silent = TRUE)
