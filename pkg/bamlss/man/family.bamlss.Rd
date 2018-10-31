@@ -17,6 +17,7 @@
 \alias{gpareto_bamlss}
 \alias{glogis_bamlss}
 \alias{AR1_bamlss}
+\alias{beta1_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -49,6 +50,7 @@ poisson_bamlss(...)
 gpareto_bamlss(...)
 glogis_bamlss(...)
 AR1_bamlss(ar.start = NULL, ...)
+beta1_bamlss(ar.start = NULL, ...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)

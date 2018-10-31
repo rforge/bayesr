@@ -82,6 +82,7 @@ export(
   ## families,
   "AR1_bamlss",
   "beta_bamlss",
+  "beta1_bamlss",
   "binomial_bamlss",
   "cnorm_bamlss",
   "cox_bamlss",

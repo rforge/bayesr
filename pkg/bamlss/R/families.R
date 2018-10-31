@@ -935,6 +935,88 @@ AR1_bamlss <- function(ar.start = NULL, ...)
   rval
 }
 
+beta1_bamlss <- function(ar.start, ...)
+{
+  rval <- list(
+    "family" = "beta1",
+    "names" = c("mu", "phi", "rho"),
+    "links" = c(mu = "logit", phi = "log", rho = "rhogit"),
+    "valid.response" = function(x) {
+      if(ok <- !all(x > 0 & x < 1)) stop("response values not in (0, 1)!", call. = FALSE)
+      ok
+    }
+  )
+
+  lmu <- make.link2(rval$links["mu"])
+  lphi <- make.link2(rval$links["phi"])
+  lrho <- make.link2(rval$links["rho"])
+
+  nobs <- length(ar.start)
+  i <- which(ar.start)
+
+  rval$d <- function(y, par, log = FALSE, ...) {
+    mu <- lmu$linkfun(par$mu)
+    e <- lmu$linkfun(y) - mu
+    e <- c(0, e[-nobs])
+    e[i] <- 0
+    mu <- lmu$linkinv(mu + par$rho * e)
+    a <- mu * par$phi
+    b <- (1 - mu) * par$phi
+    return(dbeta(y, a, b, log = log))
+  }
+
+  rval$score <- list(
+    "mu" = function(y, par, ...) {
+      mu <- lmu$linkfun(par$mu)
+      e <- lmu$linkfun(y) - mu
+      e <- c(0, e[-nobs])
+      e[i] <- 0
+      eta <- mu + par$rho * e
+      mu <- lmu$linkinv(eta)
+      ystar <- qlogis(y)
+      mustar <- digamma(mu * par$phi) - digamma((1 - mu) * par$phi)
+      return(par$phi * (ystar - mustar) * lmu$mu.eta(eta))
+    },
+    "phi" = function(y, par, ...) {
+      mu <- lmu$linkfun(par$mu)
+      e <- lmu$linkfun(y) - mu
+      e <- c(0, e[-nobs])
+      e[i] <- 0
+      eta <- mu + par$rho * e
+      mu <- lmu$linkinv(eta)
+      ystar <- qlogis(y)
+      mustar <- digamma(mu * par$phi) - digamma((1 - mu) * par$phi)
+      (mu * (ystar - mustar) + log(1-y) - digamma((1-mu)*par$phi) + digamma(par$phi)) * lphi$mu.eta(lphi$linkfun(par$phi))
+    },
+    "rho" = function(y, par, ...) {
+      mu <- lmu$linkfun(par$mu)
+      e <- lmu$linkfun(y) - mu
+      e <- c(0, e[-nobs])
+      e[i] <- 0
+      eta <- mu + par$rho * e
+      mu <- lmu$linkinv(eta)
+      ystar <- qlogis(y)
+      mustar <- digamma(mu * par$phi) - digamma((1 - mu) * par$phi)
+      sa <- par$phi * (ystar - mustar) * lmu$mu.eta(eta)
+      return(sa * e * lrho$mu.eta(lrho$linkfun(par$rho)))
+    }
+  )
+
+  rval$p <- function(y, par, ...) {
+    mu <- linkfun$linkfun(par$mu)
+    e <- linkfun$linkfun(y) - mu
+    e <- c(0, e[-nobs])
+    e[i] <- 0
+    mu <- linkfun$linkinv(mu + par$rho * e)
+    a <- mu * par$phi
+    b <- (1 - mu) * par$phi
+    pbeta(y, shape1 = a, shape2 = b, ...)
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
 
 gpareto_bamlss <- function(...)
 {
