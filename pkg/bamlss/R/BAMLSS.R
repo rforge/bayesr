@@ -5213,14 +5213,15 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #  
 #      return(x$state)
 #    }
-    if(is.null
+    if(is.null(object$xt$nn.control))
+      object$xt$nn.control <- list(k = 50, size = min(c(floor(ncol(object$X) / 2), 50)))
 
     object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
       ## process weights.
       if(!is.null(weights))
         stop("weights are not supported for n()!")
 
-      b <- nn.fit(x$X, y)
+      b <- nn.fit(x$X, y, k = x$xt$nn.control$k, size = x$xt$nn.control$size)
   
       ## Finalize.
       x$state$parameters <- nu * set.par(x$state$parameters, coef(b)[-1], "b")
