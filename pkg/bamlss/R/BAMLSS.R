@@ -5174,38 +5174,58 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         return((1/crossprod(x)) %*% t(x))
       })
     }
+#    object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
+#      ## process weights.
+#      if(!is.null(weights))
+#        stop("weights are not supported for n()!")
+
+#      g2 <- rep(0, ncX)
+
+#      if(!is.null(x$xt$ndf)) {
+#        i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
+#        X2 <- x$X[i, ]
+#        y2 <- y[i]
+#        bf <- forward_reg(X2, y2, n = x$xt$ndf, nu = nu)
+#        if(!is.null(bf)) {
+#          g2[bf$take] <- nu/x$xt$K * bf$coefficients[-1]
+#          x$state$fitted.values <- drop(x$X %*% g2)
+#          x$state$rss <- sum((y - x$state$fitted.values)^2)
+#        } else {
+#          x$state$fitted.values <- rep(0, length(y))
+#          x$state$rss <- sum(y^2)
+#        }
+#      } else {
+#        bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
+#        j <- which.min(bf$rss)
+#        g2[j] <- bf$g[j]
+#        x$state$fitted.values <- bf$fit[, j]
+#        x$state$rss <- bf$rss[j]
+#      }
+
+#      names(g2) <- paste0("b", 1:ncX)
+#  
+#      ## Finalize.
+#      x$state$parameters <- set.par(x$state$parameters, g2, "b")
+
+#      if(hatmatrix) {
+#        stop("not supported for n()!")
+#      }
+#  
+#      return(x$state)
+#    }
+    if(is.null
+
     object$boost.fit <- function(x, y, nu, hatmatrix = FALSE, weights = NULL, nthreads = 1, ...) {
       ## process weights.
       if(!is.null(weights))
         stop("weights are not supported for n()!")
 
-      g2 <- rep(0, ncX)
-
-      if(!is.null(x$xt$ndf)) {
-        i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
-        X2 <- x$X[i, ]
-        y2 <- y[i]
-        bf <- forward_reg(X2, y2, n = x$xt$ndf, nu = nu)
-        if(!is.null(bf)) {
-          g2[bf$take] <- nu/x$xt$K * bf$coefficients[-1]
-          x$state$fitted.values <- drop(x$X %*% g2)
-          x$state$rss <- sum((y - x$state$fitted.values)^2)
-        } else {
-          x$state$fitted.values <- rep(0, length(y))
-          x$state$rss <- sum(y^2)
-        }
-      } else {
-        bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
-        j <- which.min(bf$rss)
-        g2[j] <- bf$g[j]
-        x$state$fitted.values <- bf$fit[, j]
-        x$state$rss <- bf$rss[j]
-      }
-
-      names(g2) <- paste0("b", 1:ncX)
+      b <- nn.fit(x$X, y)
   
       ## Finalize.
-      x$state$parameters <- set.par(x$state$parameters, g2, "b")
+      x$state$parameters <- nu * set.par(x$state$parameters, coef(b)[-1], "b")
+      x$state$fitted.values <- drop(x$X %*% get.par(x$state$parameters, "b"))
+      x$state$rss <- sum((y - x$state$fitted.values)^2)
 
       if(hatmatrix) {
         stop("not supported for n()!")
@@ -5235,6 +5255,28 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
 
   object
+}
+
+
+nn.fit <- function(x, y, k = 50, size = min(c(floor(ncol(x) / 2), 50))) {
+  my <- mean(y)
+  y <- y - my
+  coefs <- matrix(0, k, ncol(x))
+  id <- 1:ncol(x)
+  for(i in 1:k) {
+    f <- 0
+    for(j in sample(id, size = size, replace = FALSE)) {
+      e <- y - f
+      m <- lm.fit(x[, j, drop = FALSE], e)
+      f <- f + m$fitted.values
+      coefs[i, j] <- m$coefficients
+    }
+  }
+  rval <- list(
+    "coefficients" = c(my, apply(coefs, 2, mean))
+  )
+  rval$fitted.values <- drop(cbind(1, x) %*% rval$coefficients)
+  return(rval)
 }
 
 
