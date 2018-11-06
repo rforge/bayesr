@@ -4310,7 +4310,7 @@ SEXP ztnbinom_score_theta(SEXP y, SEXP mu, SEXP theta)
     lr = log(r) + 1.0;
     r2 = (yptr[i] + thetaptr[i]) / (muptr[i] + thetaptr[i]);
     rvalptr[i] = thetaptr[i] * (digamma(yptr[i] + thetaptr[i]) - digamma(thetaptr[i]) + 
-                 lr - r2 - pr * (lr - r) / (1.0 - pr));
+                 lr - r2 + pr * (lr - r) / (1.0 - pr));
   }
 
   UNPROTECT(1);
