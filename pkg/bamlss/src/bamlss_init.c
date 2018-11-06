@@ -52,6 +52,9 @@ SEXP mu_score_mvnormAR1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP sigma_score_mvnormAR1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP rho_score_mvnormAR1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
+SEXP ztnbinom_score_mu(SEXP, SEXP, SEXP);
+SEXP ztnbinom_score_theta(SEXP, SEXP, SEXP);
+
 static R_CallMethodDef callMethods[] = {
   {"bamlss_glogis_score", (DL_FUNC) &bamlss_glogis_score, 5},
   {"bamlss_glogis_hesse", (DL_FUNC) &bamlss_glogis_hesse, 5},
@@ -101,6 +104,8 @@ static R_CallMethodDef callMethods[] = {
   {"mu_score_mvnormAR1", (DL_FUNC) &mu_score_mvnormAR1, 8},
   {"sigma_score_mvnormAR1", (DL_FUNC) &sigma_score_mvnormAR1, 8},
   {"rho_score_mvnormAR1", (DL_FUNC) &rho_score_mvnormAR1, 7},
+  {"ztnbinom_score_mu", (DL_FUNC) &ztnbinom_score_theta, 3},
+  {"ztnbinom_score_theta", (DL_FUNC) &ztnbinom_score_theta, 3},
   {NULL, NULL, 0}
 };
 

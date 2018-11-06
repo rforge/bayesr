@@ -4260,3 +4260,59 @@ SEXP bamlss_glogis_hesse(SEXP which, SEXP y, SEXP mu, SEXP sigma, SEXP alpha )
    UNPROTECT(1);
    return rval;
 }
+
+/* Zero-truncated negbin. */
+SEXP ztnbinom_score_mu(SEXP y, SEXP mu, SEXP theta)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *muptr = REAL(mu);
+  double *thetaptr = REAL(theta);
+  double *rvalptr = REAL(rval);
+
+  double r = 0.0;
+  double pr = 0.0;
+
+  for(i = 0; i < n; i++) {
+    r = thetaptr[i] / (muptr[i] + thetaptr[i]);
+    pr = pow(r, thetaptr[i]);
+    rvalptr[i] = r * ((yptr[i] - muptr[i]) - (pr * thetaptr[i]) / (1.0 - pr));
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
+SEXP ztnbinom_score_theta(SEXP y, SEXP mu, SEXP theta)
+{
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, length(y)));
+  int i;
+  int n = length(y);
+  double *yptr = REAL(y);
+  double *muptr = REAL(mu);
+  double *thetaptr = REAL(theta);
+  double *rvalptr = REAL(rval);
+
+  double r = 0.0;
+  double pr = 0.0;
+  double lr = 0.0;
+  double r2 = 0.0;
+
+  for(i = 0; i < n; i++) {
+    r = thetaptr[i] / (muptr[i] + thetaptr[i]);
+    pr = pow(r, thetaptr[i]);
+    lr = log(r) + 1.0;
+    r2 = (yptr[i] + thetaptr[i]) / (muptr[i] + thetaptr[i]);
+    rvalptr[i] = thetaptr[i] * (digamma(yptr[i] + thetaptr[i]) - digamma(thetaptr[i]) + 
+                 lr - r2 - pr * (lr - r) / (1.0 - pr));
+  }
+
+  UNPROTECT(1);
+  return rval;
+}
+
+
