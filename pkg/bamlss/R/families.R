@@ -3078,7 +3078,7 @@ ztnbinom_bamlss <- function(...) {
     },
     "p" = function(y, par, ...) {
         rval <- log(stats::pnbinom(y, mu = par$mu, size = par$theta,
-                                   lower.tail = lower.tail, log.p = FALSE) -
+                                   lower.tail = TRUE, log.p = FALSE) -
                     stats::dnbinom(0, mu = par$mu, size = par$theta)) -
                     stats::pnbinom(0, mu = par$mu, size = par$theta,
                                    lower.tail = FALSE, log.p = TRUE)

@@ -4279,7 +4279,9 @@ SEXP ztnbinom_score_mu(SEXP y, SEXP mu, SEXP theta)
   for(i = 0; i < n; i++) {
     r = thetaptr[i] / (muptr[i] + thetaptr[i]);
     pr = pow(r, thetaptr[i]);
-    rvalptr[i] = r * ((yptr[i] - muptr[i]) - (pr * thetaptr[i]) / (1.0 - pr));
+    rvalptr[i] = r * ((yptr[i] - muptr[i]) - (pr * muptr[i]) / (1.0 - pr));
+/*    rvalptr[i] = (yptr[i]/muptr[i] - (yptr[i] + thetaptr[i])/(muptr[i] + thetaptr[i]) -
+                 pr * r / (1.0 - pr)) * muptr[i]; */
   }
 
   UNPROTECT(1);
