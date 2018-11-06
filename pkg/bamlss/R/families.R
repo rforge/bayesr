@@ -2967,7 +2967,7 @@ negbin_bamlss <- function(...)
     "names" = c("mu", "delta"),
     "links" = parse.links(links, c(mu = "log", delta = "log"), ...),
     "bayesx" = list(
-      "mu" = c("negbin", "mu"),
+     "mu" = c("negbin", "mu"),
       "delta" = c("negbin", "delta")
     ),
     "mu" = function(par, ...) {
@@ -3055,6 +3055,58 @@ hurdleNB_bamlss <- function(...)
   rval
 }
 
+ztnbinom_bamlss <- function(...) {
+### Zero-truncated neg bin
+### Author: Thorsten Simon
+### Date:   2018 Nov
+  rval <- list(
+    "family" = "ztnbinom",
+    "names"  = c("mu", "theta"),
+    "links"  = c(mu = "log", theta = "log"),
+    "mu" = function(par, ...) {
+      par$mu / stats::pnbinom(0, mu = par$mu, size = par$theta, lower.tail = FALSE)
+    },
+    "loglik" = function(y, par, ...) {
+        rval <- stats::dnbinom(y, mu = par$mu, size = par$theta, log = TRUE) -
+                stats::pnbinom(0, mu = par$mu, size = par$theta, lower.tail = FALSE, log.p = TRUE)
+        sum(rval) 
+    },
+    "d" = function(y, par, log = FALSE) {
+        rval <- stats::dnbinom(y, mu = par$mu, size = par$theta, log = TRUE) -
+                stats::pnbinom(0, mu = par$mu, size = par$theta, lower.tail = FALSE, log.p = TRUE)
+        if(log) rval else exp(rval)
+    },
+    "p" = function(y, par, ...) {
+        rval <- log(stats::pnbinom(y, mu = par$mu, size = par$theta,
+                                   lower.tail = lower.tail, log.p = FALSE) -
+                    stats::dnbinom(0, mu = par$mu, size = par$theta)) -
+                    stats::pnbinom(0, mu = par$mu, size = par$theta,
+                                   lower.tail = FALSE, log.p = TRUE)
+        exp(rval)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        .Call("ztnbinom_score_mu", as.numeric(y), as.numeric(par$mu),
+              as.numeric(par$theta), PACKAGE = "bamlss")
+      },
+      "theta" = function(y, par, ...) {
+        .Call("ztnbinom_score_theta", as.numeric(y), as.numeric(par$mu),
+              as.numeric(par$theta), PACKAGE = "bamlss")
+      }
+    ),
+    "initialize" = list(
+      "mu" = function(y, ...) {
+        (y + mean(y)) / 2
+      },
+      "theta" = function(y, ...) {
+        rep( mean(y)^2 / (var(y) - mean(y)), length(y))
+      }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
 
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
 quant_bamlss <- function(prob = 0.5)
