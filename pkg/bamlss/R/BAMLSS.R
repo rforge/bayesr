@@ -5195,11 +5195,14 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
           x$state$rss <- sum(y^2)
         }
       } else {
+        y <- y - mean(y)
+        maxy <- max(abs(y)) * 2
+        y <- y / maxy
         bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
         j <- which.min(bf$rss)
-        g2[j] <- bf$g[j]
-        x$state$fitted.values <- bf$fit[, j]
-        x$state$rss <- bf$rss[j]
+        g2[j] <- bf$g[j] * maxy
+        x$state$fitted.values <- bf$fit[, j] * maxy
+        x$state$rss <- sum((y - x$state$fitted.values)^2)
       }
 
       names(g2) <- paste0("b", 1:ncX)
