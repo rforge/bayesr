@@ -3096,10 +3096,12 @@ ztnbinom_bamlss <- function(...) {
     ),
     "initialize" = list(
       "mu" = function(y, ...) {
-        (y + mean(y)) / 2
+##        rep(mean(y) - 1, length(y))
+        (y + mean(y) - 1) / 2
       },
       "theta" = function(y, ...) {
-        rep( mean(y)^2 / (var(y) - mean(y)), length(y))
+##        rep( mean(y)^2 / (var(y) - mean(y)), length(y))
+        rep( 1, length(y))
       }
     )
   )
