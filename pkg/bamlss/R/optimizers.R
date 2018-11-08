@@ -2272,6 +2272,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   
   if(!is.null(mstop))
     maxit <- mstop
+
+  light <- list(...)$boost.light
+  if(is.null(light))
+    light <- FALSE
   
   if(!is.null(nback)) {
     if(is.null(maxit))
@@ -2335,7 +2339,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   states <- make.state.list(x)
   
   ## Matrix of all parameters.
-  parm <- make.par.list(x, iter = maxit)
+  parm <- make.par.list(x, iter = if(light) 1L else maxit)
 
   ## Term selector help vectors.
   select <- rep(NA, length = length(nx))
@@ -2466,53 +2470,55 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
                 tll <- family$loglik(y, family$map2par(teta))
               else
                 tll <- sum(family$d(y, family$map2par(teta), log = TRUE) * W)
-              if(approx.edf) {
-                tredf <- redf
-                if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix) | inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) {
-                  if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
-                    tredf <- tredf + 1
-                } else {
-                  if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
-                    if(iter < 2) {
-                      aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
-                        sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
-                      } else {
-                        sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
-                      }
-                      tredf <- tredf + aset
-                    } else {
-                      aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
-                      aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
-                        get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
-                      if(x[[i]]$smooth.construct[[j]]$fuse) {
-                        aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
-                        aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
-                      } else {
-                        aset0 <- sum(abs(aset0) > 1e-10)
-                        aset1 <- sum(abs(aset1) > 1e-10)
-                      }
-                      aset <- aset1 - aset0
-                      tredf <- tredf + aset
-                    }
+              if(!light) {
+                if(approx.edf) {
+                  tredf <- redf
+                  if(!is.null(x[[i]]$smooth.construct[[j]]$is.model.matrix) | inherits(x[[i]]$smooth.construct[[j]], "nnet.boost")) {
+                    if(x[[i]]$smooth.construct[[j]]$state$init.edf < 1)
+                      tredf <- tredf + 1
                   } else {
-                    tredf <- tredf + nu[i] * x[[i]]$smooth.construct[[j]]$state$init.edf
+                    if(inherits(x[[i]]$smooth.construct[[j]], "lasso.smooth") | inherits(x[[i]]$smooth.construct[[j]], "nnet.smooth")) {
+                      if(iter < 2) {
+                        aset <- if(x[[i]]$smooth.construct[[j]]$fuse) {
+                          sum(abs(unique.fuse(get.par(states[[i]][[j]]$parameters, "b"))) > 1e-10)
+                        } else {
+                          sum(abs(get.par(states[[i]][[j]]$parameters, "b")) > 1e-10)
+                        }
+                        tredf <- tredf + aset
+                      } else {
+                        aset0 <- apply(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE], 2, sum)
+                        aset1 <- apply(rbind(parm[[i]][[j]][1:(iter - 1L), , drop = FALSE],
+                          get.par(states[[i]][[j]]$parameters, "b")), 2, sum)
+                        if(x[[i]]$smooth.construct[[j]]$fuse) {
+                          aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
+                          aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
+                        } else {
+                          aset0 <- sum(abs(aset0) > 1e-10)
+                          aset1 <- sum(abs(aset1) > 1e-10)
+                        }
+                        aset <- aset1 - aset0
+                        tredf <- tredf + aset
+                      }
+                    } else {
+                      tredf <- tredf + nu[i] * x[[i]]$smooth.construct[[j]]$state$init.edf
+                    }
                   }
-                }
-                rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
-              } else {
-                if(reverse.edf) {
-                  states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
-                    bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs, grad, teta[[i]])
-                  tredf <- redf + states[[i]][[j]]$redf$edf
                   rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
                 } else {
-                  ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
-                  tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
-                  if(length(nxr <- nx[nx != i])) {
-                    for(ii in nxr)
-                      tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+                  if(reverse.edf) {
+                    states[[i]][[j]]$redf <- reverse_edf(x = x[[i]]$smooth.construct[[j]], bn = get.par(states[[i]][[j]]$parameters, "b"),
+                      bmat = parm[[i]][[j]][1:iter, , drop = FALSE], nobs, grad, teta[[i]])
+                    tredf <- redf + states[[i]][[j]]$redf$edf
+                    rss[[i]][j] <- -2 * tll + tredf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
+                  } else {
+                    ## tedf0 <- sum(diag(Imat - HatMat[[i]] %*% (Imat - states[[i]][[j]]$hat)))
+                    tedf <- hatmat_trace(HatMat[[i]], states[[i]][[j]]$hat)
+                    if(length(nxr <- nx[nx != i])) {
+                      for(ii in nxr)
+                        tedf <- tedf + hatmat_sumdiag(HatMat[[i]])
+                    }
+                    rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
                   }
-                  rss[[i]][j] <- -2 * tll + tedf * (if(tolower(stop.criterion) == "aic") 2 else log(nobs))
                 }
               }
             }
@@ -2592,9 +2598,17 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       tpar <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
       x[[take[1]]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
       ##parm[[take[1]]][["(Intercept)"]][iter, ] <- tpar[1]
-      parm[[take[1]]][[take[2]]][iter, ] <- tpar[-1]
+      if(light) {
+        parm[[take[1]]][[take[2]]] <- parm[[take[1]]][[take[2]]] + tpar[-1]
+      } else {
+        parm[[take[1]]][[take[2]]][iter, ] <- tpar[-1]
+      }
     } else {
-      parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+      if(light) {
+        parm[[take[1]]][[take[2]]] <- parm[[take[1]]][[take[2]]] + get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+      } else {
+        parm[[take[1]]][[take[2]]][iter, ] <- get.par(states[[take[1]]][[take[2]]]$parameters, "b")
+      }
     }
 
     ## Intercept updating.
@@ -2629,7 +2643,11 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
             states[[ii]][["(Intercept)"]])
           x[[ii]]$smooth.construct[["(Intercept)"]]$selected[iter] <- 1
           x[[ii]]$smooth.construct[["(Intercept)"]]$loglik[iter] <- -1 * (ll - family$loglik(y, family$map2par(eta)))
-          parm[[ii]][["(Intercept)"]][iter, ] <- get.par(states[[ii]][["(Intercept)"]]$parameters, "b")
+          if(light) {
+            parm[[ii]][["(Intercept)"]] <- parm[[ii]][["(Intercept)"]] + get.par(states[[ii]][["(Intercept)"]]$parameters, "b")
+          } else {
+            parm[[ii]][["(Intercept)"]][iter, ] <- get.par(states[[ii]][["(Intercept)"]]$parameters, "b")
+          }
           if(approx.edf) {
             if(x[[ii]]$smooth.construct[["(Intercept)"]]$state$init.edf < 1) {
               redf <- redf + 1
@@ -2684,14 +2702,14 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
           if(inherits(x[[take[1]]]$smooth.construct[[take[2]]], "lasso.smooth") | inherits(x[[take[1]]]$smooth.construct[[take[2]]], "nnet.smooth")) {
             if(iter < 2) {
               aset <- if(x[[take[1]]]$smooth.construct[[take[2]]]$fuse) {
-                  sum(abs(unique.fuse(parm[[take[1]]][[take[2]]][iter, ])) > 1e-10)
+                  sum(abs(unique.fuse(parm[[take[1]]][[take[2]]][if(light) 1L else iter, ])) > 1e-10)
                 } else {
-                  sum(abs(parm[[take[1]]][[take[2]]][iter, ]) > 1e-10)
+                  sum(abs(parm[[take[1]]][[take[2]]][if(light) 1L else iter, ]) > 1e-10)
                 }
               redf <- redf + aset
             } else {
-              aset0 <- apply(parm[[take[1]]][[take[2]]][1:(iter - 1L), , drop = FALSE], 2, sum)
-              aset1 <- apply(parm[[take[1]]][[take[2]]][1:iter, , drop = FALSE], 2, sum)
+              aset0 <- apply(parm[[take[1]]][[take[2]]][if(light) 1L else 1:(iter - 1L), , drop = FALSE], 2, sum)
+              aset1 <- apply(parm[[take[1]]][[take[2]]][if(light) 1L else 1:iter, , drop = FALSE], 2, sum)
               if(x[[take[1]]]$smooth.construct[[take[2]]]$fuse) {
                 aset0 <- sum(abs(unique.fuse(aset0)) > 1e-10)
                 aset1 <- sum(abs(unique.fuse(aset1)) > 1e-10)
@@ -2736,7 +2754,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     }
 
     ## Compute number of selected base learners.
-    qsel <- get.qsel(x, iter, qsel.splitfactor = qsel.splitfactor)
+    qsel <- get.qsel(x, if(light) 1L else iter, qsel.splitfactor = qsel.splitfactor)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -2797,7 +2815,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     bsum$criterion$userIC <- save.ic[1:(if(is.null(nback)) maxit else (iter - 1))]
   }
   
-  return(list("parameters" = parm2mat(parm, if(is.null(nback)) maxit else (iter - 1)),
+  return(list("parameters" = parm2mat(parm, if(light) { 1L} else { if(is.null(nback)) maxit else (iter - 1) }),
     "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
 }
 

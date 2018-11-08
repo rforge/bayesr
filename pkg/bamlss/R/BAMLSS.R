@@ -9363,7 +9363,7 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
         cat("... starting bootstrap sample", j, "\n")
       i <- sample(ind, size = nobs, replace = TRUE)
       d0 <- data[i, , drop = FALSE]
-      b <- boost2(..., data = d0, plot = FALSE)
+      b <- boost2(..., data = d0, plot = FALSE, boost.light = TRUE)
       attr(b, "mstop") <- list(
         "logLik" = b$model.stats$optimizer$boost.summary$ic,
         "mstop" = nrow(b$parameters))
