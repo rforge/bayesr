@@ -2971,7 +2971,7 @@ SEXP log_dmvnorm(SEXP Y, SEXP PAR, SEXP N, SEXP K, SEXP MJ, SEXP SJ, SEXP RJ)
   PROTECT(d = allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
-  double lpi = - 0.5 * k * log(2.0 * 3.14159265358979323846);
+  double lpi = - 0.5 * (float)k * log(2.0 * 3.14159265358979323846);
   double det = 0.0;
   double sum = 0.0;
 
