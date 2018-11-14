@@ -9346,7 +9346,8 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
       i <- sample(ind, size = size, replace = TRUE)
       d0 <- data[i, , drop = FALSE]
       d1 <- data[!(ind %in% i), , drop = FALSE]
-      b <- boost2(..., data = d0, plot = FALSE)
+      b <- bamlss(..., data = d0, plot = FALSE, sampler = FALSE,
+        optimizer = boost, boost.light = FALSE, light = TRUE)
       attr(b, "mstop") <- fmstop(b, d1)
       if(drop)
         b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
@@ -9360,7 +9361,8 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
         cat("... starting bootstrap sample", j, "\n")
       i <- sample(ind, size = nobs, replace = TRUE)
       d0 <- data[i, , drop = FALSE]
-      b <- boost2(..., data = d0, plot = FALSE, boost.light = TRUE)
+      b <- bamlss(..., data = d0, plot = FALSE, boost.light = TRUE,
+        light = TRUE, sampler = FALSE, optimizer = boost)
       attr(b, "mstop") <- list(
         "logLik" = b$model.stats$optimizer$boost.summary$ic,
         "mstop" = nrow(b$parameters))
