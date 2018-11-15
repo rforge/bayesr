@@ -5827,6 +5827,22 @@ rb <- function(..., k = 50)
   ret
 }
 
+BitsMat <- function(X, w, thres = TRUE) {
+  B <- matrix(0, nrow = nrow(X), ncol = length(w))
+  for(i in 1:length(w)) {
+    z <- X[, attr(w[[i]], "id"), drop = FALSE] %*% w[[i]]
+    if(thres)
+      attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
+    ##B[, i] <- c(1, -1)[(z >= attr(w[[i]], "thres")) + 1L]
+    B[, i] <- 1 * (z >= attr(w[[i]], "thres"))
+  }
+  if(thres) {
+    return(list("X" = B, "weights" = w))
+  } else {
+    return(B)
+  }
+}
+
 smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
 {
   object$X <- model.matrix(object$formula, data = as.data.frame(data))[, -1, drop = FALSE]
@@ -5866,21 +5882,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
       attr(object$xt$weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
     }
   }
-  object$BitsMat <- function(X, w, thres = TRUE) {
-    B <- matrix(0, nrow = nrow(X), ncol = length(w))
-    for(i in 1:length(w)) {
-      z <- X[, attr(w[[i]], "id"), drop = FALSE] %*% w[[i]]
-      if(thres)
-        attr(w[[i]], "thres") <- z[attr(w[[i]], "thres")]
-      ##B[, i] <- c(1, -1)[(z >= attr(w[[i]], "thres")) + 1L]
-      B[, i] <- 1 * (z >= attr(w[[i]], "thres"))
-    }
-    if(thres)
-      return(list("X" = B, "weights" = w))
-    else
-      return(B)
-  }
-  tXw <- object$BitsMat(object$X, object$xt$weights, thres = thres)
+  tXw <- BitsMat(object$X, object$xt$weights, thres = thres)
   if(thres) {
     object$X <- tXw$X
     object$xt$weights <- tXw$weights
@@ -5956,7 +5958,7 @@ Predict.matrix.randombits.smooth <- function(object, data)
     if(!is.na(object$scale$center[j]))
       X[, j] <- (X[, j] - object$scale$center[j]) / object$scale$scale[j]
   }
-  X <- object$BitsMat(X, object$xt$weights, thres = FALSE)
+  X <- BitsMat(X, object$xt$weights, thres = FALSE)
   X <- X - rep(object$xt$cmeans, rep.int(nrow(X), ncol(X)))
   X <- X[, object$Xkeep, drop = FALSE]
   X
@@ -9321,7 +9323,7 @@ bayesx2 <- function(...) {
 }
 
 bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
-  fmstop = NULL, trace = TRUE, drop = FALSE)
+  fmstop = NULL, trace = TRUE, drop = FALSE, replace = FALSE)
 {
   if(is.null(fmstop)) {
     fmstop <- function(model, data) {
@@ -9359,7 +9361,11 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
     foo <- function(j) {
       if(trace)
         cat("... starting bootstrap sample", j, "\n")
-      i <- sample(ind, size = nobs, replace = TRUE)
+      if(replace) {
+        i <- sample(ind, size = nobs, replace = TRUE)
+      } else {
+        i <- sample(ind, size = ceiling(nobs * prob), replace = FALSE)
+      }
       d0 <- data[i, , drop = FALSE]
       b <- bamlss(..., data = d0, plot = FALSE, boost.light = TRUE,
         light = TRUE, sampler = FALSE, optimizer = boost)

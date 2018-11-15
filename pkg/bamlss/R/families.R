@@ -3150,7 +3150,7 @@ quant2_bamlss <- function(prob = 0.5, ...)
   rval
 }
 
-kde_bamlss <- function(...)
+kde_bamlss <- function(..., err)
 {
   rval <- list(
     "family" = "kde",
@@ -3164,8 +3164,8 @@ kde_bamlss <- function(...)
       e <- y - par$mu
       h <- 1.06 * sd(y) * n^(-1/5)
       for(i in 1:n) {
-        z <- r(e[i]) - r(e[-i])
-        d[i] <- log( 1/((n - 1) * h) * sum(K(z/h)) )
+        z <- e[i] - err[-i]
+        d[i] <- log(1/n * sum(1/h * K(z / h)))
       }
       if(!log)
         d <- exp(d)
