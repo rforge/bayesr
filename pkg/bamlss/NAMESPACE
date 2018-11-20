@@ -97,6 +97,7 @@ export(
   "gpareto_bamlss",
   "glogis_bamlss",
   "ztnbinom_bamlss",
+  "lognormal_bamlss",
   "gF",
 
   ## extractor functions

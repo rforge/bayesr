@@ -2172,7 +2172,7 @@ lognormal_bamlss <- function(...)
       "mu" = function(y, par, ...) { 1 / (par$sigma^2) },
       "sigma" = function(y, par, ...) { rep(2, length(y)) }
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       exp(par$mu + 0.5 * (par$sigma)^2)
     },
     "d" = function(y, par, log = FALSE) {
@@ -2186,7 +2186,11 @@ lognormal_bamlss <- function(...)
     },
     "r" = function(n, par) {
       rlnorm(n, meanlog = par$mu, sdlog = par$sigma)
-    }
+    },
+    "initialize" = list(
+      "mu"    = function(y, ...) { (log(y) + mean(log(y))) / 2 },
+      "sigma" = function(y, ...) { rep(sd(log(y)), length(y)) }
+    )
   )
 
   class(rval) <- "family.bamlss"

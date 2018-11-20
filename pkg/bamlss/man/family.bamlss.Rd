@@ -19,6 +19,7 @@
 \alias{AR1_bamlss}
 \alias{beta1_bamlss}
 \alias{ztnbinom_bamlss}
+\alias{lognormal_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -53,6 +54,7 @@ glogis_bamlss(...)
 AR1_bamlss(ar.start = NULL, ...)
 beta1_bamlss(ar.start = NULL, ...)
 ztnbinom_bamlss(...)
+lognormal_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
