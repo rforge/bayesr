@@ -4966,8 +4966,10 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
         "sin" = runif(1, acos(r[i]), s[i] * acos(r[i]))
       )
       w <- runif(k - 1, -1, 1)
-      if(!is.null(dropout))
-        w[sample(c(TRUE, FALSE), size = length(w), replace = TRUE, prob = c(1 - dropout, dropout))] <- 0
+      if(!is.null(dropout)) {
+        j <- sample(c(FALSE, TRUE), size = length(w), replace = TRUE, prob = c(1 - dropout, dropout))
+        w[j] <- 0
+      }
       w <- w * sw / sum(w)
       if(length(w) < 2)
         w <- w * sample(c(-1, 1), size = 1)
