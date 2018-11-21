@@ -345,7 +345,9 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
       for(j in seq_along(tau2))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](get.state(x, "b")) else x$S[[j]]
       P <- matrix_inv(x$state$XX + S, index = x$sparse.setup)
-      edf <- sum_diag(x$state$XX %*% P)
+      edf <- try(sum_diag(x$state$XX %*% P), silent = TRUE)
+      if(inherits(edf, "try-error"))
+        edf <- ncol(x$X)
       return(edf)
     }
   }
