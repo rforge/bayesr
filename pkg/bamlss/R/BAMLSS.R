@@ -5199,7 +5199,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
         j <- sample(1:ncol(x$X), size = x$xt$ndf)
         Z <- x$X[, j, drop = FALSE]
         pen <- if(is.null(x$xt$pen)) {
-          ncol(Z)*2
+          1e-05
         } else {
           x$xt$pen
         }
