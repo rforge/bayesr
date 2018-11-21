@@ -5198,13 +5198,17 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #        }
         j <- sample(1:ncol(x$X), size = x$xt$ndf)
         Z <- x$X[, j, drop = FALSE]
-        pen <- if(is.null(x$xt$pen)) ncol(Z) else x$xt$pen
+        pen <- if(is.null(x$xt$pen)) {
+          ncol(Z)*2
+        } else {
+          x$xt$pen
+        }
         K <- diag(pen, ncol(Z))
         b <- nu/x$xt$K * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% y
         g2[j] <- b
         x$state$fitted.values <- drop(Z %*% b)
         x$state$rss <- sum((y - x$state$fitted.values)^2)
-#print(sum_diag(crossprod(Z) %*% matrix_inv(crossprod(Z) + K)))
+##print(sum_diag(crossprod(Z) %*% matrix_inv(crossprod(Z) + K)))
       } else {
         bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
         j <- which.min(bf$rss)
