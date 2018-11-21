@@ -4627,3 +4627,83 @@ print(beta)
   stop("yess!\n")
 }
 
+
+boost.net <- function(formula, maxit = 400, nu = 0.1, nodes = 10, pen = 1000, flush = TRUE, initialize = TRUE, ...)
+{
+  bf <- bamlss.frame(formula, ...)
+  y <- bf$y
+
+  nx <- names(bf$x)
+  np <- length(nx)
+  nobs <- nrow(y)
+
+  if(is.data.frame(y)) {
+    if(ncol(y) < 2)
+      y <- y[[1]]
+  }
+
+  X <- list()
+  beta <- list()
+  for(i in nx) {
+    k <- ncol(bf$x[[i]]$model.matrix)
+    beta[[i]] <- matrix(0, nrow = maxit, ncol = k + k + 1)
+    colnames(beta[[i]]) <- c(colnames(bf$x[[i]]$model.matrix), "g", paste0(colnames(bf$x[[i]]$model.matrix), ".w"))
+  }
+
+  if(initialize) {
+    objfun <- function(par) {
+      eta <- list()
+      for(i in seq_along(nx))
+        eta[[nx[i]]] <- rep(par[i], length = nobs)
+      ll <- bf$family$loglik(y, bf$family$map2par(eta))
+      return(ll)
+    }
+    
+    gradfun <- function(par) {
+      eta <- list()
+      for(i in seq_along(nx))
+        eta[[nx[i]]] <- rep(par[i], length = nobs)
+      peta <- bf$family$map2par(eta)
+      grad <- par
+      for(j in nx) {
+        score <- process.derivs(bf$family$score[[j]](y, peta, id = j), is.weight = FALSE)
+        grad[i] <- mean(score)
+      }
+      return(grad)
+    }
+
+    start <- init.eta(get.eta(bf$x), y, bf$family, nobs)
+    start <- unlist(lapply(start, mean, na.rm = TRUE))    
+    opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
+
+    eta <- list()
+    for(i in nx) {
+      beta[[i]][1, "(Intercept)"] <- as.numeric(opt$par[i])
+      eta[[i]] <- rep(as.numeric(opt$par[i]), length = nobs)
+    }
+  } else {
+    eta <- get.eta(bf$x)
+  }
+
+  ia <- if(flush) interactive() else FALSE
+  ptm <- proc.time()
+  iter <- 2
+  while(iter <= maxit) {
+    for(i in nx) {
+      peta <- bf$family$map2par(eta)
+      grad <- process.derivs(bf$family$score[[i]](y, peta, id = i), is.weight = FALSE)
+      w <- n.weights(nodes, k = ncol(bf$x[[i]]$model.matrix) - 1L, ..., type = "sigmoid")
+      Z <- nnet2Zmat(bf$x[[i]]$model.matrix, w, NULL, "sigmoid")
+      Z <- cbind(bf$x[[i]]$model.matrix, Z)
+      K <- diag(pen, ncol(Z))
+      b <- nu * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% grad
+      eta[[i]] <- eta[[i]] + Z %*% b
+plot(y ~ x, data = d, main = iter)
+plot2d(eta[[i]] ~ d$x, add = TRUE, col.lines = 2)
+    }
+    iter <- iter + 1
+  }
+
+  return(beta)
+}
+
