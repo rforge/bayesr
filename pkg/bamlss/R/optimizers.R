@@ -4859,7 +4859,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 
 predict.boost.net <- function(object, newdata, model = NULL, ...)
 {
-  nx <- names(bf$x)
+  nx <- object$family$names
   formula <- object$formula
   for(i in nx) {
     formula[[i]]$formula <- delete.response(formula[[i]]$formula)
