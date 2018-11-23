@@ -5198,13 +5198,15 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #        }
         j <- sample(1:ncol(x$X), size = x$xt$ndf)
         Z <- x$X[, j, drop = FALSE]
-        pen <- if(is.null(x$xt$pen)) {
-          1e-05
-        } else {
-          x$xt$pen
-        }
-        K <- diag(pen, ncol(Z))
-        b <- nu/x$xt$K * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% y
+#        pen <- if(is.null(x$xt$pen)) {
+#          1e-05
+#        } else {
+#          x$xt$pen
+#        }
+#        K <- diag(pen, ncol(Z))
+#        b <- nu/x$xt$K * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% y
+        b <- glmnet(Z, y, alpha = 0.5, family = "gaussian")
+        b <- nu/x$xt$K * b$beta[, ncol(b$beta)]
         g2[j] <- b
         x$state$fitted.values <- drop(Z %*% b)
         x$state$rss <- sum((y - x$state$fitted.values)^2)

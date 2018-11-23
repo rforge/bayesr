@@ -4630,14 +4630,26 @@ print(beta)
 }
 
 
-boost.net <- function(formula, maxit = 400, nu = 0.1, nodes = 10, pen = 1000, flush = TRUE, initialize = TRUE, ...)
+boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
+  flush = TRUE, initialize = TRUE, eps = .Machine$double.eps^0.25,
+  verbose = TRUE, digits = 4, activation = "sigmoid", 
+  r = list("sigmoid" = 0.01, "gauss" = 0.01, "sin" = 0.01, "cos" = 0.01),
+  s = list("sigmoid" = 10000, "gauss" = 20, "sin" = 20, "cos" = 20),
+  select = FALSE, ...)
 {
   bf <- bamlss.frame(formula, ...)
   y <- bf$y
 
+  has_offset <- any(grepl("(offset)", names(bf$model.frame), fixed = TRUE))
+
   nx <- names(bf$x)
   np <- length(nx)
   nobs <- nrow(y)
+  nu <- rep(nu, length.out = np)
+  names(nu) <- nx
+
+  nodes <- rep(nodes, length.out = np)
+  names(nodes) <- nx
 
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
@@ -4648,8 +4660,19 @@ boost.net <- function(formula, maxit = 400, nu = 0.1, nodes = 10, pen = 1000, fl
   beta <- list()
   for(i in nx) {
     k <- ncol(bf$x[[i]]$model.matrix)
-    beta[[i]] <- matrix(0, nrow = maxit, ncol = k + k + 1)
-    colnames(beta[[i]]) <- c(colnames(bf$x[[i]]$model.matrix), "g", paste0(colnames(bf$x[[i]]$model.matrix), ".w"))
+    if(k > 1) {
+      w <- list()
+      for(j in activation)
+        w[[j]] <- n.weights(nodes[i], k = k - 1L, type = j)
+      w <- unlist(w)
+      beta[[i]] <- matrix(0, nrow = maxit, ncol = k + (nodes[i] * length(activation)) + length(w))
+      colnames(beta[[i]]) <- c(colnames(bf$x[[i]]$model.matrix),
+        paste0("b", 1:(nodes[i] * length(activation))), names(w))
+    } else {
+      beta[[i]] <- matrix(0, nrow = maxit, ncol = 1)
+      colnames(beta[[i]]) <- "(Intercept)"
+      nodes[i] <- -1
+    }
   }
 
   if(initialize) {
@@ -4675,6 +4698,7 @@ boost.net <- function(formula, maxit = 400, nu = 0.1, nodes = 10, pen = 1000, fl
     }
 
     start <- init.eta(get.eta(bf$x), y, bf$family, nobs)
+
     start <- unlist(lapply(start, mean, na.rm = TRUE))    
     opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
 
@@ -4687,25 +4711,187 @@ boost.net <- function(formula, maxit = 400, nu = 0.1, nodes = 10, pen = 1000, fl
     eta <- get.eta(bf$x)
   }
 
+  if(has_offset) {
+    for(i in nx) {
+      eta[[i]] <- eta[[i]] + bf$model.frame[["(offset)"]][, i]
+    }
+  }
+
+  logLik <- rep(0, maxit)
+  logLik[1] <- bf$family$loglik(y, bf$family$map2par(eta))
   ia <- if(flush) interactive() else FALSE
-  ptm <- proc.time()
   iter <- 2
-  while(iter <= maxit) {
+  eps0 <- eps + 1
+  ll_contrib <- rep(NA, np)
+  names(ll_contrib) <- nx
+  ll_contrib_save <- list()
+  for(i in nx)
+    ll_contrib_save[[i]] <- rep(0, maxit)
+  par <- bpar <- Z <- list()
+  tau2o <- rep(0.1, np)
+  names(tau2o) <- nx
+
+  ptm <- proc.time()
+
+  while(iter <= maxit & eps0 > eps) {
+    eta0 <- eta
+    ll0 <- bf$family$loglik(y, bf$family$map2par(eta))
     for(i in nx) {
       peta <- bf$family$map2par(eta)
       grad <- process.derivs(bf$family$score[[i]](y, peta, id = i), is.weight = FALSE)
-      w <- n.weights(nodes, k = ncol(bf$x[[i]]$model.matrix) - 1L, ..., type = "sigmoid")
-      Z <- nnet2Zmat(bf$x[[i]]$model.matrix, w, NULL, "sigmoid")
-      Z <- cbind(bf$x[[i]]$model.matrix, Z)
-      K <- diag(pen, ncol(Z))
-      b <- nu * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% grad
-      eta[[i]] <- eta[[i]] + Z %*% b
-plot(y ~ x, data = d, main = iter)
-plot2d(eta[[i]] ~ d$x, add = TRUE, col.lines = 2)
+      if(nodes[i] > 0) {
+        Z[[i]] <- NULL
+        w <- list()
+        k <- ncol(bf$x[[i]]$model.matrix)
+        for(j in activation) {
+          w[[j]] <- n.weights(nodes[i], k = k - 1L,
+            rint = r[[j]], sint = s[[j]], type = j)
+          Z[[i]] <- cbind(Z[[i]], nnet2Zmat(bf$x[[i]]$model.matrix, w[[j]], NULL, j))
+        }
+        Z[[i]] <- cbind(bf$x[[i]]$model.matrix, Z[[i]])
+        S <- diag(c(rep(0, k), rep(1, ncol(Z[[i]]) - k)))
+        ZZ <- crossprod(Z[[i]])
+
+        fn <- function(tau2) {
+          Si <- 1 / tau2 * S
+          P <- matrix_inv(ZZ + Si)
+          b <- drop(P %*% crossprod(Z[[i]], grad))
+          fit <- Z[[i]] %*% b
+          edf <- sum_diag(ZZ %*% P)
+          ic <- if(is.null(df)) {
+            sum((grad - fit)^2) + 2 * edf
+          } else {
+            (df - edf)^2
+          }
+          return(ic)
+        }
+
+        tau2o[i] <- tau2.optim(fn, tau2o[i], maxit = 1e+04, force.stop = FALSE)
+
+        S <- 1 / tau2o[i] * S
+        P <- matrix_inv(ZZ + S)
+        b <- nu[i] * drop(P %*% crossprod(Z[[i]], grad))
+        par[[i]] <- c(b, unlist(w))
+        bpar[[i]] <- b
+        eta[[i]] <- eta[[i]] + Z[[i]] %*% b
+      } else {
+        mgrad <- nu[i] * mean(grad)
+        eta[[i]] <- eta[[i]] + mgrad
+        par[[i]] <- bpar[[i]] <- mgrad
+        Z[[i]] <- matrix(1, nrow = length(grad), ncol = 1)
+      }
+      ll1 <- bf$family$loglik(y, bf$family$map2par(eta))
+      if(ll1 < ll0) {
+        nu[i] <- nu[i] * 0.9
+        next
+      }
+      ll_contrib[i] <- ll1 - ll0
+      if(select) {
+        eta[[i]] <- eta0[[i]]
+      } else {
+        ll_contrib_save[[i]][iter] <- ll_contrib[i]
+        beta[[i]][iter, ] <- par[[i]]
+      }
     }
+
+    if(select) {
+      i <- nx[which.max(ll_contrib)]
+      beta[[i]][iter, ] <- par[[i]]
+      eta[[i]] <- eta[[i]] + Z[[i]] %*% bpar[[i]]
+      ll_contrib_save[[i]][iter] <- ll_contrib[i]
+    }
+
+    eps0 <- do.call("cbind", eta)
+    eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+    if(is.na(eps0) | !is.finite(eps0)) eps0 <- eps + 1
+
+    ll <- bf$family$loglik(y, bf$family$map2par(eta))
+    logLik[iter] <- ll
+
     iter <- iter + 1
+    if(verbose) {
+      cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
+      vtxt <- paste(
+        "logLik ", fmt(ll, width = 8, digits = digits),
+        " eps ", fmt(eps0, width = 6, digits = digits + 2),
+        " iteration ", formatC(iter - 1L, width = nchar(maxit)), sep = "")
+      cat(vtxt)
+        
+      if(.Platform$OS.type != "unix" & ia) flush.console()
+    }
   }
 
-  return(beta)
+  elapsed <- c(proc.time() - ptm)[3]
+
+  if(verbose) {
+    cat("\n")
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("elapsed time: ", et, "\n", sep = "")
+  }
+
+  for(i in nx) {
+    beta[[i]] <- beta[[i]][1:(iter - 1L), , drop = FALSE]
+    ll_contrib_save[[i]]<- cumsum(ll_contrib_save[[i]][1:(iter - 1L)])
+  }
+
+  rval <- list(
+    "parameters" = beta,
+    "fitted.values" = eta,
+    "loglik" = data.frame("loglik" = logLik[1:(iter - 1L)]),
+    "family" = bf$family,
+    "formula" = bf$formula,
+    "nodes" = nodes,
+    "elapsed" = elapsed,
+    "activation" = activation
+  )
+  rval$loglik[["contrib"]] <- do.call("cbind", ll_contrib_save)
+
+  class(rval) <- "boost.net"
+
+  return(rval)
 }
+
+
+predict.boost.net <- function(object, newdata, model = NULL, ...)
+{  
+  bf <- bamlss.frame(object$formula, data = newdata, family = object$family)
+  activation <- object$activation
+  nodes <- object$nodes
+  nx <- names(bf$x)
+  if(is.null(model))
+    model <- nx
+  for(j in seq_along(model))
+    model[j] <- grep(model[j], nx, fixed = TRUE, value = TRUE)
+  fit <- list()
+  for(j in model) {
+    fit[[j]] <- 0.0
+    k <- ncol(bf$x[[j]]$model.matrix)
+    ind <- as.factor(sort(rep(rep(1:nodes[j]), k)))
+    for(i in 1:nrow(object$parameters[[j]])) {
+      if(nodes[j] > 0) {
+        b <- object$parameters[[j]][i, 1:(k + nodes[j] * length(activation))]
+        w <- object$parameters[[j]][i, -c(1:(k + nodes[j] * length(activation)))]
+        Z <- NULL
+        for(a in activation) {
+          wa <- split(w[grep(a, names(w))], ind)
+          Z <- cbind(Z, nnet2Zmat(bf$x[[j]]$model.matrix, wa, NULL, a))
+        }
+        Z <- cbind(bf$x[[j]]$model.matrix, Z)
+        fit[[j]] <- fit[[j]] + drop(Z %*% b)
+      } else {
+        fit[[j]] <- fit[[j]] + object$parameters[[j]][i, "(Intercept)"]
+      }
+    }
+  }
+  if(length(fit) < 2) {
+    fit <- fit[[1L]]
+  } else {
+    fit <- as.data.frame(fit)
+  }
+  return(fit)
+}
+
+# b <- boost.net(y ~x, data = dtrain)
 
