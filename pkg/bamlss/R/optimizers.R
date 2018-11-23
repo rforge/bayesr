@@ -4831,9 +4831,11 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
     cat("elapsed time: ", et, "\n", sep = "")
   }
 
+  scale <- list()
   for(i in nx) {
     beta[[i]] <- beta[[i]][1:(iter - 1L), , drop = FALSE]
     ll_contrib_save[[i]]<- cumsum(ll_contrib_save[[i]][1:(iter - 1L)])
+    scale[[i]] <- attr(bf$x[[i]], "scale")
   }
 
   rval <- list(
@@ -4844,7 +4846,8 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
     "formula" = bf$formula,
     "nodes" = nodes,
     "elapsed" = elapsed,
-    "activation" = activation
+    "activation" = activation,
+    "scale" = scale
   )
   rval$loglik[["contrib"]] <- do.call("cbind", ll_contrib_save)
 
@@ -4855,11 +4858,23 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 
 
 predict.boost.net <- function(object, newdata, model = NULL, ...)
-{  
-  bf <- bamlss.frame(object$formula, data = newdata, family = object$family)
+{
+  nx <- names(bf$x)
+  formula <- object$formula
+  for(i in nx) {
+    formula[[i]]$formula <- delete.response(formula[[i]]$formula)
+    formula[[i]]$fake.formula <- delete.response(formula[[i]]$fake.formula)
+  }
+  bf <- bamlss.frame(formula, data = newdata, family = object$family)
+  for(i in nx) {
+    if(!is.null(object$scale[[i]])) {
+      for(j in 1:ncol(bf$x[[i]]$model.matrix)) {
+        bf$x[[i]]$model.matrix[, j] <- (bf$x[[i]]$model.matrix[, j] - object$scale[[i]]$center[j]) / object$scale[[i]]$scale[j]
+      }
+    }
+  }
   activation <- object$activation
   nodes <- object$nodes
-  nx <- names(bf$x)
   if(is.null(model))
     model <- nx
   for(j in seq_along(model))
