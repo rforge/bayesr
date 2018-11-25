@@ -4656,7 +4656,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
       y <- y[[1]]
   }
 
-  X <- list()
+  Xn <- s01 <- list()
   beta <- list()
   for(i in nx) {
     k <- ncol(bf$x[[i]]$model.matrix)
@@ -4668,6 +4668,18 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
       beta[[i]] <- matrix(0, nrow = maxit, ncol = k + (nodes[i] * length(activation)) + length(w))
       colnames(beta[[i]]) <- c(colnames(bf$x[[i]]$model.matrix),
         paste0("b", 1:(nodes[i] * length(activation))), names(w))
+      Xn[[i]] <- bf$x[[i]]$model.matrix
+      for(j in 2:k) {
+        xmin <- min(Xn[[i]][, j], 2, na.rm = TRUE)
+        xmax <- max(Xn[[i]][, j], 2, na.rm = TRUE)
+        if((xmax - xmin) < sqrt(.Machine$double.eps)) {
+          xmin <- 0
+          xmax <- 1
+        }
+        Xn[[i]][, j] <- (Xn[[i]][, j] - xmin) / (xmax - xmin)
+        s01[[i]]$xmin <- c(s01[[i]]$xmin, xmin)
+        s01[[i]]$xmax <- c(s01[[i]]$xmax, xmax)
+      }
     } else {
       beta[[i]] <- matrix(0, nrow = maxit, ncol = 1)
       colnames(beta[[i]]) <- "(Intercept)"
@@ -4745,8 +4757,9 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
         k <- ncol(bf$x[[i]]$model.matrix)
         for(j in activation) {
           w[[j]] <- n.weights(nodes[i], k = k - 1L,
-            rint = r[[j]], sint = s[[j]], type = j)
-          Z[[i]] <- cbind(Z[[i]], nnet2Zmat(bf$x[[i]]$model.matrix, w[[j]], NULL, j))
+            rint = r[[j]], sint = s[[j]], type = j,
+            x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE])
+          Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], NULL, j))
         }
         Z[[i]] <- cbind(bf$x[[i]]$model.matrix, Z[[i]])
         S <- diag(c(rep(0, k), rep(1, ncol(Z[[i]]) - k)))
@@ -4835,7 +4848,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
   for(i in nx) {
     beta[[i]] <- beta[[i]][1:(iter - 1L), , drop = FALSE]
     ll_contrib_save[[i]]<- cumsum(ll_contrib_save[[i]][1:(iter - 1L)])
-    scale[[i]] <- attr(bf$x[[i]], "scale")
+    scale[[i]] <- attr(bf$x[[i]]$model.matrix, "scale")
   }
 
   rval <- list(
@@ -4847,7 +4860,8 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
     "nodes" = nodes,
     "elapsed" = elapsed,
     "activation" = activation,
-    "scale" = scale
+    "scale" = scale,
+    "s01" = s01
   )
   rval$loglik[["contrib"]] <- do.call("cbind", ll_contrib_save)
 
@@ -4866,10 +4880,17 @@ predict.boost.net <- function(object, newdata, model = NULL, ...)
     formula[[i]]$fake.formula <- delete.response(formula[[i]]$fake.formula)
   }
   bf <- bamlss.frame(formula, data = newdata, family = object$family)
+  Xn <- list()
   for(i in nx) {
     if(!is.null(object$scale[[i]])) {
       for(j in 1:ncol(bf$x[[i]]$model.matrix)) {
         bf$x[[i]]$model.matrix[, j] <- (bf$x[[i]]$model.matrix[, j] - object$scale[[i]]$center[j]) / object$scale[[i]]$scale[j]
+      }
+    }
+    if(!is.null(object$s01[[i]])) {
+      Xn[[i]] <- bf$x[[i]]$model.matrix
+      for(j in 1:length(object$s01[[i]]$xmin)) {
+        Xn[[i]][, j + 1L] <- (Xn[[i]][, j + 1L] - object$s01[[i]]$xmin[j]) / (object$s01[[i]]$xmax[j] - object$s01[[i]]$xmin[j])
       }
     }
   }
@@ -4891,7 +4912,7 @@ predict.boost.net <- function(object, newdata, model = NULL, ...)
         Z <- NULL
         for(a in activation) {
           wa <- split(w[grep(a, names(w))], ind)
-          Z <- cbind(Z, nnet2Zmat(bf$x[[j]]$model.matrix, wa, NULL, a))
+          Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
         }
         Z <- cbind(bf$x[[j]]$model.matrix, Z)
         fit[[j]] <- fit[[j]] + drop(Z %*% b)
