@@ -4631,7 +4631,7 @@ print(beta)
 
 
 boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
-  flush = TRUE, initialize = TRUE, eps = .Machine$double.eps^0.25,
+  lambda = NULL, flush = TRUE, initialize = TRUE, eps = .Machine$double.eps^0.25,
   verbose = TRUE, digits = 4, activation = "sigmoid", 
   r = list("sigmoid" = 0.01, "gauss" = 0.01, "sin" = 0.01, "cos" = 0.01),
   s = list("sigmoid" = 10000, "gauss" = 20, "sin" = 20, "cos" = 20),
@@ -4650,6 +4650,11 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 
   nodes <- rep(nodes, length.out = np)
   names(nodes) <- nx
+
+  if(!is.null(lambda)) {
+    lambda <- rep(lambda, length.out = np)
+    names(lambda) <- nx
+  }
 
   if(is.data.frame(y)) {
     if(ncol(y) < 2)
@@ -4765,21 +4770,25 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
         S <- diag(c(rep(0, k), rep(1, ncol(Z[[i]]) - k)))
         ZZ <- crossprod(Z[[i]])
 
-        fn <- function(tau2) {
-          Si <- 1 / tau2 * S
-          P <- matrix_inv(ZZ + Si)
-          b <- drop(P %*% crossprod(Z[[i]], grad))
-          fit <- Z[[i]] %*% b
-          edf <- sum_diag(ZZ %*% P)
-          ic <- if(is.null(df)) {
-            sum((grad - fit)^2) + 2 * edf
-          } else {
-            (df - edf)^2
+        if(is.null(lambda)) {
+          fn <- function(tau2) {
+            Si <- 1 / tau2 * S
+            P <- matrix_inv(ZZ + Si)
+            b <- drop(P %*% crossprod(Z[[i]], grad))
+            fit <- Z[[i]] %*% b
+            edf <- sum_diag(ZZ %*% P)
+            ic <- if(is.null(df)) {
+              sum((grad - fit)^2) + 2 * edf
+            } else {
+              (df - edf)^2
+            }
+            return(ic)
           }
-          return(ic)
-        }
 
-        tau2o[i] <- tau2.optim(fn, tau2o[i], maxit = 1e+04, force.stop = FALSE)
+          tau2o[i] <- tau2.optim(fn, tau2o[i], maxit = 1e+04, force.stop = FALSE)
+        } else {
+          tau2o[i] <- 1/lambda[i]
+        }
 
         S <- 1 / tau2o[i] * S
         P <- matrix_inv(ZZ + S)
