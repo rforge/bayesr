@@ -4631,8 +4631,9 @@ print(beta)
 
 
 boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
-  lambda = NULL, flush = TRUE, initialize = TRUE, eps = .Machine$double.eps^0.25,
-  verbose = TRUE, digits = 4, activation = "sigmoid", 
+  lambda = NULL, dropout = NULL, flush = TRUE, initialize = TRUE,
+  eps = .Machine$double.eps^0.25, verbose = TRUE, digits = 4,
+  activation = "sigmoid", 
   r = list("sigmoid" = 0.01, "gauss" = 0.01, "sin" = 0.01, "cos" = 0.01),
   s = list("sigmoid" = 10000, "gauss" = 20, "sin" = 20, "cos" = 20),
   select = FALSE, ...)
@@ -4747,6 +4748,8 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
   par <- bpar <- Z <- list()
   tau2o <- rep(0.1, np)
   names(tau2o) <- nx
+  edfn <- rep(NA, np)
+  names(edfn) <- nx
 
   ptm <- proc.time()
 
@@ -4763,7 +4766,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
         for(j in activation) {
           w[[j]] <- n.weights(nodes[i], k = k - 1L,
             rint = r[[j]], sint = s[[j]], type = j,
-            x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE])
+            x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE], dropout = dropout)
           Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], NULL, j))
         }
         Z[[i]] <- cbind(bf$x[[i]]$model.matrix, Z[[i]])
@@ -4776,7 +4779,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
             P <- matrix_inv(ZZ + Si)
             b <- drop(P %*% crossprod(Z[[i]], grad))
             fit <- Z[[i]] %*% b
-            edf <- sum_diag(ZZ %*% P)
+            edf <- sum_diag(ZZ %*% P) - k
             ic <- if(is.null(df)) {
               sum((grad - fit)^2) + 2 * edf
             } else {
@@ -4796,6 +4799,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
         par[[i]] <- c(b, unlist(w))
         bpar[[i]] <- b
         eta[[i]] <- eta[[i]] + Z[[i]] %*% b
+        edfn[i] <- sum_diag(ZZ %*% P) - k          
       } else {
         mgrad <- nu[i] * mean(grad)
         eta[[i]] <- eta[[i]] + mgrad
@@ -4835,6 +4839,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
       cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
       vtxt <- paste(
         "logLik ", fmt(ll, width = 8, digits = digits),
+        " edf ", paste(paste(nx, fmt(edfn, digits = 2, width = 4)), collapse = " "),
         " eps ", fmt(eps0, width = 6, digits = digits + 2),
         " iteration ", formatC(iter - 1L, width = nchar(maxit)), sep = "")
       cat(vtxt)
@@ -4937,6 +4942,4 @@ predict.boost.net <- function(object, newdata, model = NULL, ...)
   }
   return(fit)
 }
-
-# b <- boost.net(y ~x, data = dtrain)
 
