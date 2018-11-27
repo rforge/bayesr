@@ -3911,34 +3911,6 @@ glogis_bamlss <- function(...) {
 }
 
 
-## Nested multinomial logit.
-nml_bamlss <- function()
-{
-  links <- c(omega = "identity", xi = "log", pi = "log")
-
-  rval <- list(
-    "family" = "Nested Multinomial Logit",
-    "names"  = c("omega", "xi", "pi"),
-    "d" = function(y, par, log = FALSE) {
-      d0 <- log(1 - exp((1 - par$xi * par$omega)^(-1 / par$xi)))^y[[2]]
-      if(is.factor(y[[1]]))
-        y[[1]] <- model.matrix(~ y[[1]] - 1)
-      par <- cbind(do.call("cbind", par[, grep()]), 1)
-      d1 <- rowSums(y[[1]] * log(par))
-      d2 <- log(rowSums(par))
-      d <- d0 + d1 - d2
-      if(!log)
-        d <- exp(d)
-      return(d)
-    }
-  )
-
-  # Return family object
-  class(rval) <- "family.bamlss"
-  return(rval)
-}
-
-
 ## Most likely transformations.
 mlt_bamlss <- function(todistr = "Normal")
 {

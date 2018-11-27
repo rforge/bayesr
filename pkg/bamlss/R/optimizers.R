@@ -4662,15 +4662,30 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
       y <- y[[1]]
   }
 
+  if(!is.null(dropout)) {
+    dropout <- rep(dropout, length.out = np)
+    if(any(dropout > 1) | any(dropout < 0))
+      stop("argument dropout must be between [0,1]!")
+    names(dropout) <- nx
+  }
+
+  ntake <- rep(NA, length.out = np)
+  names(ntake) <- nx
   Xn <- s01 <- list()
-  beta <- list()
+  beta <- taken <- list()
   for(i in nx) {
     k <- ncol(bf$x[[i]]$model.matrix)
+    if(!is.null(dropout))
+      ntake[i] <- ceiling(k * (1 - dropout[i]))
+    else
+      ntake[i] <- k - 1L
     if(k > 1) {
       w <- list()
       for(j in activation)
-        w[[j]] <- n.weights(nodes[i], k = k - 1L, type = j)
+        w[[j]] <- n.weights(nodes[i], k = ntake[i], type = j)
       w <- unlist(w)
+      if(!is.null(dropout))
+        taken[[i]] <- matrix(0L, nrow = maxit, ncol = ntake[i])
       beta[[i]] <- matrix(0, nrow = maxit, ncol = k + (nodes[i] * length(activation)) + length(w))
       colnames(beta[[i]]) <- c(colnames(bf$x[[i]]$model.matrix),
         paste0("b", 1:(nodes[i] * length(activation))), names(w))
@@ -4764,10 +4779,18 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
         w <- list()
         k <- ncol(bf$x[[i]]$model.matrix)
         for(j in activation) {
-          w[[j]] <- n.weights(nodes[i], k = k - 1L,
-            rint = r[[j]], sint = s[[j]], type = j,
-            x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE], dropout = dropout)
-          Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], NULL, j))
+          if(is.null(dropout)) {
+            w[[j]] <- n.weights(nodes[i], k = ntake[i],
+              rint = r[[j]], sint = s[[j]], type = j,
+              x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE])
+            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], NULL, j))
+          } else {
+            taken[[i]][iter, ] <- sample(2:k, size = ntake[i], replace = FALSE)
+            w[[j]] <- n.weights(nodes[i], k = ntake[i],
+              rint = r[[j]], sint = s[[j]], type = j,
+              x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), taken[[i]][iter, ], drop = FALSE])
+            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]][, c(1, taken[[i]][iter, ]), drop = FALSE], w[[j]], NULL, j))
+          }
         }
         Z[[i]] <- cbind(bf$x[[i]]$model.matrix, Z[[i]])
         S <- diag(c(rep(0, k), rep(1, ncol(Z[[i]]) - k)))
@@ -4860,24 +4883,32 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 
   scale <- list()
   for(i in nx) {
-    beta[[i]] <- beta[[i]][1:(iter - 1L), , drop = FALSE]
+    beta[[i]] <- beta[[i]][1L:(iter - 1L), , drop = FALSE]
     ll_contrib_save[[i]]<- cumsum(ll_contrib_save[[i]][1:(iter - 1L)])
     scale[[i]] <- attr(bf$x[[i]]$model.matrix, "scale")
+    if(!is.null(dropout)) {
+      taken[[i]] <- taken[[i]][1L:(iter - 1L), , drop = FALSE]
+      taken[[i]][1L, ] <- taken[[i]][2L, ]
+    }
   }
 
   rval <- list(
     "parameters" = beta,
     "fitted.values" = eta,
-    "loglik" = data.frame("loglik" = logLik[1:(iter - 1L)]),
+    "loglik" = data.frame("loglik" = logLik[1L:(iter - 1L)]),
     "family" = bf$family,
     "formula" = bf$formula,
     "nodes" = nodes,
     "elapsed" = elapsed,
     "activation" = activation,
     "scale" = scale,
-    "s01" = s01
+    "s01" = s01,
+    "taken" = taken,
+    "ntake" = ntake,
+    "dropout" = dropout
   )
   rval$loglik[["contrib"]] <- do.call("cbind", ll_contrib_save)
+  rval$call <- match.call()
 
   class(rval) <- "boost.net"
 
@@ -4885,7 +4916,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 }
 
 
-predict.boost.net <- function(object, newdata, model = NULL, ...)
+predict.boost.net <- function(object, newdata, model = NULL, verbose = FALSE, cores = 1, ...)
 {
   nx <- object$family$names
   formula <- object$formula
@@ -4918,23 +4949,69 @@ predict.boost.net <- function(object, newdata, model = NULL, ...)
   for(j in model) {
     fit[[j]] <- 0.0
     k <- ncol(bf$x[[j]]$model.matrix)
-    ind <- as.factor(sort(rep(rep(1:nodes[j]), k)))
-    for(i in 1:nrow(object$parameters[[j]])) {
-      if(nodes[j] > 0) {
-        b <- object$parameters[[j]][i, 1:(k + nodes[j] * length(activation))]
-        w <- object$parameters[[j]][i, -c(1:(k + nodes[j] * length(activation)))]
-        Z <- NULL
-        for(a in activation) {
-          wa <- split(w[grep(a, names(w))], ind)
-          Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+    if(!is.null(object$dropout))
+      ind <- as.factor(sort(rep(rep(1:nodes[j]), object$ntake[i] + 1L)))
+    else
+      ind <- as.factor(sort(rep(rep(1:nodes[j]), k)))
+    nr <- nrow(object$parameters[[j]])
+    if(cores < 2) {
+      for(i in 1:nr) {
+        if(verbose)
+          cat(i, "/", sep = "")
+        if(nodes[j] > 0) {
+          b <- object$parameters[[j]][i, 1:(k + nodes[j] * length(activation))]
+          w <- object$parameters[[j]][i, -c(1:(k + nodes[j] * length(activation)))]
+          Z <- NULL
+          for(a in activation) {
+            wa <- split(w[grep(a, names(w))], ind)
+            if(is.null(object$dropout)) {
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+            } else {
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
+            }
+          }
+          Z <- cbind(bf$x[[j]]$model.matrix, Z)
+          fit[[j]] <- fit[[j]] + drop(Z %*% b)
+        } else {
+          fit[[j]] <- fit[[j]] + object$parameters[[j]][i, "(Intercept)"]
         }
-        Z <- cbind(bf$x[[j]]$model.matrix, Z)
-        fit[[j]] <- fit[[j]] + drop(Z %*% b)
-      } else {
-        fit[[j]] <- fit[[j]] + object$parameters[[j]][i, "(Intercept)"]
       }
+    } else {
+      jind <- split(1:nr, as.factor(sort(rep(1:cores, length.out = nr))))
+      parallel_fun <- function(cid) {
+        if(verbose)
+          cat(j, ": started core", cid, "\n", sep = "")
+        fit2 <- 0
+        for(i in jind[[cid]]) {
+          if(nodes[j] > 0) {
+            b <- object$parameters[[j]][i, 1:(k + nodes[j] * length(activation))]
+            w <- object$parameters[[j]][i, -c(1:(k + nodes[j] * length(activation)))]
+            Z <- NULL
+            for(a in activation) {
+              wa <- split(w[grep(a, names(w))], ind)
+            if(is.null(object$dropout)) {
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+            } else {
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
+            }
+            }
+            Z <- cbind(bf$x[[j]]$model.matrix, Z)
+            fit2 <- fit2 + drop(Z %*% b)
+          } else {
+            fit2 <- fit2 + object$parameters[[j]][i, "(Intercept)"]
+          }
+        }
+        if(verbose)
+          cat(j, ": finished core", cid, "\n", sep = "")
+        fit2
+      }
+      fit[[j]] <- parallel::mclapply(1:cores, parallel_fun, mc.cores = cores)
+      fit[[j]] <- do.call("cbind", fit[[j]])
+      fit[[j]] <- rowSums(fit[[j]])
     }
   }
+  if(verbose)
+    cat("\n")
   if(length(fit) < 2) {
     fit <- fit[[1L]]
   } else {
