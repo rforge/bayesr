@@ -4989,11 +4989,11 @@ predict.boost.net <- function(object, newdata, model = NULL, verbose = FALSE, co
             Z <- NULL
             for(a in activation) {
               wa <- split(w[grep(a, names(w))], ind)
-            if(is.null(object$dropout)) {
-              Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
-            } else {
-              Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
-            }
+              if(is.null(object$dropout)) {
+                Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+              } else {
+                Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
+              }
             }
             Z <- cbind(bf$x[[j]]$model.matrix, Z)
             fit2 <- fit2 + drop(Z %*% b)
