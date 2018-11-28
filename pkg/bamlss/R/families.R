@@ -2416,7 +2416,7 @@ bivnorm_bamlss <- function(...)
         rep(sd(y[, 1]), length(y[, 1]))
       },
       "sigma2" = function(y, ...) {
-        rep(sd(y[, 1]), length(y[, 1]))
+        rep(sd(y[, 2]), length(y[, 2]))
       },
       "rho" = function(y, ...) {
         rep(0, length(y[, 1]))
