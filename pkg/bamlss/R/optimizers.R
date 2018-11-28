@@ -4916,7 +4916,8 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 }
 
 
-predict.boost.net <- function(object, newdata, model = NULL, verbose = FALSE, cores = 1, ...)
+predict.boost.net <- function(object, newdata, model = NULL,
+  verbose = FALSE, cores = 1, mstop = NULL, matrix = FALSE, ...)
 {
   nx <- object$family$names
   formula <- object$formula
@@ -4954,6 +4955,8 @@ predict.boost.net <- function(object, newdata, model = NULL, verbose = FALSE, co
     else
       ind <- as.factor(sort(rep(rep(1:nodes[j]), k)))
     nr <- nrow(object$parameters[[j]])
+    if(!is.null(mstop))
+      nr <- min(c(nr, mstop))
     if(cores < 2) {
       for(i in 1:nr) {
         if(verbose)
