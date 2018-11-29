@@ -9,7 +9,7 @@ file.copy(figs, file.path("docs/figures", basename(figs)))
 ```
 
 The _bamlss_ package provides a modular computational framework for distributional regression
-models (and beyond). Users can specify complex models using the familiar formula syntax. The
+models (and beyond). Users can specify complex models using the familiar formula syntax of R. The
 package supports commonly used extractor functions like `plot()`, `summary()`, `predict()`, etc.
 Moreover, users can specify their own model term constructors or even model fitting engines, 
 Bayesian or frequentist.
@@ -34,9 +34,6 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
   side = 3, line = 1, outer = TRUE, cex = 1.2)
 ```
 
-![](figures/firemodel-effects-baseline.png){width=50%}
-![](figures/firemodel-effects-daytime-curves.png){width=50%}
-
 ### Spatial effects
 
 ---
@@ -44,23 +41,24 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
 ![](figures/firemodel-effects-spatial-tc.png){width=50%}
 ![](figures/firemodel-effects-spatial-td.png){width=50%}
 
+![](figures/firemodel-effects-baseline.png){width=50%}
+![](figures/firemodel-effects-daytime-curves.png){width=50%}
+
 ### Prediction
 
 ---
 
 ![](figures/rainmodel-effects-predict.png){width=100%}
 
-## Model diagnostics
+### Model diagnostics
 
 ---
 
-```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
-par(mar = c(4.1, 4.1, 2.5, 1.5), mfrow = c(1, 2))
+```{r, fig.width = 8.5, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.1, 4.1, 2.5, 1.1), mfrow = c(1, 2))
 plot(b, which = 3, spar = FALSE, col = "lightgray")
 plot(b, which = 4, spar = FALSE)
 ```
 
-```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
-par(mar = c(4.1, 4.1, 2.5, 1.5), mfrow = c(1, 2))
-plot(b$samples[[1]][, 1:2])
-```
+![](figures/traceplot-03.png){width=100%}
+

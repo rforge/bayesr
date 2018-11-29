@@ -60,4 +60,13 @@ It can be installed via
 install.packages("bamlss", repos = "http://R-Forge.R-project.org")
 ```
 
+## Running your first model
+
+As a startup on how to use _bamlss_ we illustrate the basic steps on a small textbook
+example using the well-known simulated motorcycle accident data \citep{bamlss:Silverman:1985}.
+The data contain measurements of the head acceleration
+(in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after impact (variable \code{times}). To estimate a Gaussian location-scale model with
+$\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))$
+we use the following model formula
+
 ## References
