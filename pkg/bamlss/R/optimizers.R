@@ -405,8 +405,8 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
     } else {
       if(!is.null(x$xt$tau2))
         tau2 <- x$xt$tau2
-      if(!is.null(x$xt$lambda)) {
-        tau2 <- 1 / x$xt$lambda
+      if(!is.null(x$xt[["lambda"]])) {
+        tau2 <- 1 / x$xt[["lambda"]]
         x$fxsp <- TRUE
       }
     }
@@ -1381,7 +1381,7 @@ bfit_lm <- function(x, family, y, eta, id, weights, criterion, ...)
 bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
-  
+
   no_ff <- !inherits(y, "ff")
   peta <- family$map2par(eta)
   
