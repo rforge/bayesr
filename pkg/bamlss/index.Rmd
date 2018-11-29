@@ -15,7 +15,7 @@ Moreover, users can specify their own model term constructors or even model fitt
 Bayesian or frequentist.
 
 
-### Flexible model terms for all parameters of the reponse distribution
+## Flexible model terms
 
 ---
 
@@ -34,7 +34,7 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
   side = 3, line = 1, outer = TRUE, cex = 1.2)
 ```
 
-### Spatial effects
+## Spatial effects
 
 ---
 
@@ -44,13 +44,13 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
 ![](figures/firemodel-effects-baseline.png){width=50%}
 ![](figures/firemodel-effects-daytime-curves.png){width=50%}
 
-### Prediction
+## Prediction
 
 ---
 
 ![](figures/rainmodel-effects-predict.png){width=100%}
 
-### Model diagnostics
+## Model diagnostics
 
 ---
 
@@ -61,4 +61,25 @@ plot(b, which = 4, spar = FALSE)
 ```
 
 ![](figures/traceplot-03.png){width=100%}
+
+## Custom model terms and model fitting engines
+
+```{r, eval=FALSE}
+## Posterior mode optimization.
+bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"), ..) { }
+
+## MCMC Sampler.
+GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, step = 20, ...) { }
+
+## Gradient boosting.
+boost <- function(x, y, family, weights = NULL, offset = NULL,
+  nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400, ...) { }
+
+## LASSO.
+lasso <- function(x, y, start = NULL, adaptive = TRUE,
+  lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL, ...) { }
+```
+
 
