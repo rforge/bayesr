@@ -1,0 +1,66 @@
+# A 'Lego' Toolbox for Flexible Regression Models
+
+```{r, echo=FALSE, message=FALSE, results='hide'}
+if(!file.exists("docs/figures")) {
+  dir.create("docs/figures")
+}
+figs <- dir("vignettes/figures", full.names = TRUE)
+file.copy(figs, file.path("docs/figures", basename(figs)))
+```
+
+The _bamlss_ package provides a modular computational framework for distributional regression
+models (and beyond). Users can specify complex models using the familiar formula syntax. The
+package supports commonly used extractor functions like `plot()`, `summary()`, `predict()`, etc.
+Moreover, users can specify their own model term constructors or even model fitting engines, 
+Bayesian or frequentist.
+
+
+### Flexible model terms for all parameters of the reponse distribution
+
+---
+
+```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+library("bamlss")
+data("mcycle", package = "MASS")
+load("vignettes/figures/toymodel.rda")
+par(mar = c(4.1, 4.1, 0, 1.5), mfrow = c(1, 2), oma = c(0, 0, 2.5, 0))
+p <- predict(b, model = "mu", FUN = c95)
+plot2d(p ~ mcycle$times, fill.select = c(0, 1, 0, 1), scheme = 2, grid = 100,
+  xlab = "times", ylab = expression(paste("Effect on ", mu)))
+points(mcycle, cex = 0.6)
+plot(b, model = "sigma", term = "s(times)", spar = FALSE, scheme = 2, grid = 100,
+  ylab = expression(paste("Effect on ", log(sigma))))
+mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f(times), ")")),
+  side = 3, line = 1, outer = TRUE, cex = 1.2)
+```
+
+![](figures/firemodel-effects-baseline.png){width=50%}
+![](figures/firemodel-effects-daytime-curves.png){width=50%}
+
+### Spatial effects
+
+---
+
+![](figures/firemodel-effects-spatial-tc.png){width=50%}
+![](figures/firemodel-effects-spatial-td.png){width=50%}
+
+### Prediction
+
+---
+
+![](figures/rainmodel-effects-predict.png){width=100%}
+
+## Model diagnostics
+
+---
+
+```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.1, 4.1, 2.5, 1.5), mfrow = c(1, 2))
+plot(b, which = 3, spar = FALSE, col = "lightgray")
+plot(b, which = 4, spar = FALSE)
+```
+
+```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.1, 4.1, 2.5, 1.5), mfrow = c(1, 2))
+plot(b$samples[[1]][, 1:2])
+```

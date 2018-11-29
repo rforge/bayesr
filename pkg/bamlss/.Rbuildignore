@@ -7,3 +7,5 @@ data/MunichBnd.rda
 data/rent99.rda
 tests
 paper
+vignettes
+index.Rmd

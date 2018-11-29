@@ -1,0 +1,63 @@
+---
+title: "Distributional Regression with _bamlss_"
+author: "Nikolaus Umlauf, Nadja Klein, Achim Zeileis, Thorsten Simon"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{First Steps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, first steps}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+```
+
+## Overview
+
+The R package _bamlss_ provides a modular computational framework for distributional regression
+models (and beyond). The implementation follows the conceptional framework presented in
+[@bamlss:Umlauf+Klein+Zeileis:2017], which supports Bayesian and/or frequentist estimation engines
+using complex possibly nonlinear model terms of any type. The highlights of the package are:
+
+* A unified model description where a `formula` specifies how to set up the predictors
+  from the `data` and `family` objects provide information about the response distribution.
+* A generic method for setting up model terms and a `model.frame` along with the
+  corresponding prior structures. A `transformer` can optionally set up modified terms, e.g.,
+  using mixed model representation for smooth terms.
+* Support for modular and exchangeable updating functions or complete model fitting engines
+  in order to optionally implement either algorithms for maximization of the log-posterior for
+  posterior mode estimation or for solving high-dimensional integrals, e.g., for posterior mean
+  or median estimation.
+  First, an (optional) `optimizer` function can be run, e.g., for computing posterior mode
+  estimates. Second, a `sampler` is employed for full Bayesian inference with MCMC, which uses the
+  posterior mode estimates from the `optimizer` as staring values. An additional step can be used
+  for preparing the `results`.
+* Standard post-modeling extractor functions to create sampling statistics, visualizations,
+  predictions, etc.
+
+## Installation
+
+The stable release version of _colorspace_ is hosted on the Comprehensive R Archive Network
+(CRAN) at <https://CRAN.R-project.org/package=bamlss> and can be installed via
+
+```{r installation-cran, eval=FALSE}
+install.packages("bamlss")
+```
+
+The development version of _bamlss_ is hosted on R-Forge at
+<https://R-Forge.R-project.org/projects/bayesr/> in a Subversion (SVN) repository.
+It can be installed via
+
+```{r installation-rforge, eval=FALSE}
+install.packages("bamlss", repos = "http://R-Forge.R-project.org")
+```
+
+## References
