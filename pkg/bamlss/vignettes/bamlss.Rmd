@@ -85,8 +85,11 @@ estimated with
 library("bamlss")
 data("mcycle", package = "MASS")
 
-b <- bamlss(f, data = mcycle, family = "gaussian")
+b <- bamlss(f, data = mcycle, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
 ```
+using `12000` iterations for the MCMC chain, a burnin of `2000` (dropped samples) and a thinning
+of `10`, i.e., only every 10th sample is saved.
 The returned object is of class `"bamlss"` for which generic extractor functions like
 `summary()`, `plot()`, `predict()`, etc., are provided. For example, the estimated effects
 for distribution paramaters `mu` and `sigma` can be visualized by
@@ -101,5 +104,20 @@ The model summary gives
 ```{r}
 summary(b)
 ```
+showing, e.g., the acceptance probabilities of the MCMC chains, the estimated degrees of freedom of
+the optimizer and the successive sampler, the final AIC and DIC as well as parametric model coefficients
+(in this case only the intercepts). Using MCMC involves convergence checks of the sampled parameters.
+The easiest diagnostics are traceplots
+```{r, eval=FALSE}
+plot(b, which = "samples")
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+plot(b$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")])
+```
+In this case, the traceplots of the intercepts indicate convergence of the Markov chains. Further
+inspections are the maximum autocorrelation of all parameters `which = "max-acf"`, besides other
+convergence diagnostics, e.g., diagnostics that are part of the _coda_ package
+[@bamlss:Plummer+Best+Cowles+Vines:2006].
+
 
 ## References
