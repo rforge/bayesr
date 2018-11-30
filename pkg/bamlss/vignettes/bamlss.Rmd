@@ -89,7 +89,9 @@ b <- bamlss(f, data = mcycle, family = "gaussian",
   n.iter = 12000, burnin = 2000, thin = 10)
 ```
 using `12000` iterations for the MCMC chain, a burnin of `2000` (dropped samples) and a thinning
-of `10`, i.e., only every 10th sample is saved.
+of `10`, i.e., only every 10th sample is saved. Note that per defaul `bamlss()` uses a bachfitting
+algorithm to compute posterior mode estimates, afterwards these estimates are used as starting
+values for the MCMC chains.
 The returned object is of class `"bamlss"` for which generic extractor functions like
 `summary()`, `plot()`, `predict()`, etc., are provided. For example, the estimated effects
 for distribution paramaters `mu` and `sigma` can be visualized by
@@ -104,10 +106,10 @@ The model summary gives
 ```{r}
 summary(b)
 ```
-showing, e.g., the acceptance probabilities of the MCMC chains, the estimated degrees of freedom of
-the optimizer and the successive sampler, the final AIC and DIC as well as parametric model coefficients
-(in this case only the intercepts). Using MCMC involves convergence checks of the sampled parameters.
-The easiest diagnostics are traceplots
+showing, e.g., the acceptance probabilities of the MCMC chains (`alpha`), the estimated degrees of freedom of
+the optimizer and the successive sampler (`edf`), the final AIC and DIC as well as parametric
+model coefficients (in this case only the intercepts). Using MCMC involves convergence checks of the
+sampled parameters. The easiest diagnostics are traceplots
 ```{r, eval=FALSE}
 plot(b, which = "samples")
 ```
@@ -116,9 +118,39 @@ plot(b$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")])
 ```
 Note that this call would show all traceplots, for convenience we only show the plots for the intercepts.
 In this case, the traceplots indicate convergence of the Markov chains. Further
-inspections are the maximum autocorrelation of all parameters `which = "max-acf"`, besides other
+inspections are the maximum autocorrelation of all parameters, `which = "max-acf"`, besides other
 convergence diagnostics, e.g., diagnostics that are part of the _coda_ package
 [@bamlss:Plummer+Best+Cowles+Vines:2006].
 
+Inspecting randomized quantile residuals [@bamlss:Dunn+Gordon:1996] is useful for judging how
+well the model fits to the data
+```{r, eval = FALSE}
+plot(b, which = c("hist-resid", "qq-resid"))
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+par(mfrow = c(1, 2))
+plot(b, which = c("hist-resid", "qq-resid"), spar = FALSE)
+```
+Randomized quantile residuals are the default method in _bamlss_, which are computed using
+the cdf function of the corresponding family object.
+
+The posterior mean function for new data based on MCMC samples for parameter $\mu$ can be computed by
+```{r, eval=FALSE}
+nd <- data.frame("times" = seq(2.4, 57.6), length = 100)
+nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
+plot2d(p ~ times, data = nd)
+```
+```{r, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1))
+nd <- data.frame("times" = seq(2.4, 57.6), length = 100)
+nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
+plot2d(p ~ times, data = nd)
+```
+where argument `FUN` can be any function, e.g., a function computing credible intervals from
+the empirical quantiles of the MCMC samples
+```{r}
+nd$p <- predict(b, newdata = nd, model = "mu", FUN = quantile)
+print(head(nd))
+```
 
 ## References
