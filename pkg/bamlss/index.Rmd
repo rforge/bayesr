@@ -34,6 +34,11 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
   side = 3, line = 1, outer = TRUE, cex = 1.2)
 ```
 
+<div style="text-align: center;">
+![](figures/MunichRent_mu_yoc.png){width=40%}
+![](figures/MunichRent_sigma_yoc.png){width=40%}
+</div>
+
 ## Spatial effects
 
 ---
@@ -62,7 +67,7 @@ plot(b, which = 4, spar = FALSE)
 
 ![](figures/traceplot-03.png){width=100%}
 
-## Custom model terms and model fitting engines
+## Extendable model terms and model fitting engines
 
 ```{r, eval=FALSE}
 ## Posterior mode optimization.
