@@ -4640,7 +4640,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
 {
   bf <- bamlss.frame(formula, ...)
   y <- bf$y
-
+stop("ok!")
   has_offset <- any(grepl("(offset)", names(bf$model.frame), fixed = TRUE))
 
   nx <- names(bf$x)
@@ -4708,7 +4708,7 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
     }
   }
 
-  if(initialize) {
+  if(initialize & !has_offset) {
     objfun <- function(par) {
       eta <- list()
       for(i in seq_along(nx))
