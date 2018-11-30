@@ -114,7 +114,8 @@ plot(b, which = "samples")
 ```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 plot(b$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")])
 ```
-In this case, the traceplots of the intercepts indicate convergence of the Markov chains. Further
+Note that this call would show all traceplots, for convenience we only show the plots for the intercepts.
+In this case, the traceplots indicate convergence of the Markov chains. Further
 inspections are the maximum autocorrelation of all parameters `which = "max-acf"`, besides other
 convergence diagnostics, e.g., diagnostics that are part of the _coda_ package
 [@bamlss:Plummer+Best+Cowles+Vines:2006].
