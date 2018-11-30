@@ -75,9 +75,12 @@ we use the following model formula
 ```{r}
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 ```
-where `s()` is the smooth term constructor from the _mgcv_ [@bamlss:Wood:2018]. Note that all
-smooth terms, i.e., `te()`, `ti()`, etc., are supported by _bamlss_. This way, it is also possible
-to incorporate user defined model terms. A full Bayesian model is the estimated with
+where `s()` is the smooth term constructor from the _mgcv_ [@bamlss:Wood:2018]. Note,
+that formulae are provided as `list`s of formulae, i.e., each list entry represents one
+parameter of the response distribution. Also note that all
+smooth terms, i.e., `te()`, `ti()`, etc., are supported by _bamlss_. This way, it is also
+possible to incorporate user defined model terms. A full Bayesian model is the
+estimated with
 ```{r, eval=FALSE}
 library("bamlss")
 data("mcycle", package = "MASS")
@@ -93,6 +96,10 @@ plot(b, model = c("mu", "sigma"))
 ```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(1, 2))
 plot(b, pages = 1, spar = FALSE, scheme = 2, grid = 100)
+```
+The model summary gives
+```{r}
+summary(b)
 ```
 
 ## References
