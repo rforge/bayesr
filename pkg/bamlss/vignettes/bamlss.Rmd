@@ -127,7 +127,7 @@ well the model fits to the data
 ```{r, eval = FALSE}
 plot(b, which = c("hist-resid", "qq-resid"))
 ```
-```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
 par(mfrow = c(1, 2))
 plot(b, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
@@ -140,7 +140,7 @@ nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
 nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
 plot2d(p ~ times, data = nd)
 ```
-```{r, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
+```{r, fig.width = 7, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
 par(mar = c(4.1, 4.1, 1.1, 1.1))
 nd <- data.frame("times" = seq(2.4, 57.6), length = 100)
 nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)

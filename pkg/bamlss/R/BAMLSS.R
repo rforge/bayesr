@@ -5122,13 +5122,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
 
-#  pid <- sort(rep(1:npen, length.out = ncol(object$X)))
   object$S <- list()
-#  for(j in 1:npen) {
-#    object$S[[j]] <- rep(1, ncol(object$X))
-#    object$S[[j]][pid != j] <- 0
-#    object$S[[j]] <- diag(object$S[[j]])
-#  }
 
   df <- ncol(object$X)
   const <- object$xt$const
@@ -5143,12 +5137,14 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
   attr(object$S[[1]], "npar") <- ncol(object$X)
 
+  object$S[[2]] <- diag(1, ncol(object$X))
+
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
   object$by <- "NA"
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
 
-  object$rank <- qr(object$S[[1]](runif(df)))$rank
+  object$rank <- qr(object$S[[1]](runif(df)) + object$S[[2]])$rank
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE

@@ -29,12 +29,12 @@ infrastructures. However, this is a bit more technical and assumes that the user
 knowledge of the internal structure of the package and is only very briefly discussed in this
 article.
 
-## Model term specification
+## Specification
 
 To give an overview of users not familiar with _mgcv_, the following table lists some model
 specifications using R's formula syntax:
 
-| Desicription | Formula |
+| Description | Formula |
 |:---|:---|
 | Linear effects $\mathbf{X}\boldsymbol{\beta}$ | `~ x1 + x2 + x3` |
 | Nonlinear effects of continuous covariates $f(\mathbf{x}) = f(x_1)$ | `~ s(x1)` |
@@ -45,7 +45,23 @@ specifications using R's formula syntax:
 | Random intercepts with cluster index $c$: $f(\mathbf{x}) = \beta_c$ | `~ s(id,bs="re")`, where `id` is a factor of cluster indices |
 | Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ | `~ s(id,x1,bs="re")`, as above with continuous covariate `x1` |
 
+Note that each model term constructor has an argument called `bs`, which specifies the type
+of basis that should be used for modeling.
 For more details on the smooth constructors, please visit the _mgcv_ manual pages of `s()`, `te()` and `ti()`.
+
+## Examples
+
+To better introduce the standard types of model terms we use simulated data that is part of the
+_bamlss_ package. The data contains for of a couple of different response types and is usually
+used for internal tests, only.
+```{r}
+d <- GAMart()
+print(head(d))
+```
+The first column holding variable `num` is a Gaussian response, all subsequent columns up to
+variable `cens` are basically transformations of variable `num`. Variables `x1` to `lat` are
+covariates, which we use for illustrating how to set up the different model terms in the
+following.
 
 ## References
 
