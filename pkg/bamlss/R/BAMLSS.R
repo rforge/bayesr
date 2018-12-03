@@ -5122,18 +5122,33 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
 
-  pid <- sort(rep(1:npen, length.out = ncol(object$X)))
+#  pid <- sort(rep(1:npen, length.out = ncol(object$X)))
   object$S <- list()
-  for(j in 1:npen) {
-    object$S[[j]] <- rep(1, ncol(object$X))
-    object$S[[j]][pid != j] <- 0
-    object$S[[j]] <- diag(object$S[[j]])
+#  for(j in 1:npen) {
+#    object$S[[j]] <- rep(1, ncol(object$X))
+#    object$S[[j]][pid != j] <- 0
+#    object$S[[j]] <- diag(object$S[[j]])
+#  }
+
+  df <- ncol(object$X)
+  const <- object$xt$const
+  if(is.null(const))
+    const <- 1e-05
+
+  object$S[[1]] <- function(parameters, ...) {
+    b <- get.par(parameters, "b")
+    A <- df / sqrt(b^2 + const)
+    A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+    A
   }
+  attr(object$S[[1]], "npar") <- ncol(object$X)
+
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
   object$by <- "NA"
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
-  object$rank <- sapply(object$S, sum)
+
+  object$rank <- qr(object$S[[1]](runif(df)))$rank
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
@@ -5269,7 +5284,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     class(object) <- c("nnet3.smooth", "mgcv.smooth")
   } else {
     object[["lambda"]] <- object$xt[["lambda"]] <- NULL
-    class(object) <- c("nnet2.smooth", "mgcv.smooth")
+    class(object) <- c("nnet2.smooth", "mgcv.smooth", "lasso.smooth")
   }
 
   object
