@@ -5137,7 +5137,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   }
   attr(object$S[[1]], "npar") <- ncol(object$X)
 
-  object$S[[2]] <- diag(1, ncol(object$X))
+  ## object$S[[2]] <- diag(1, ncol(object$X))
 
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
   object$by <- "NA"
