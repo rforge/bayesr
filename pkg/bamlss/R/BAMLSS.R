@@ -5144,7 +5144,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
 
-  object$rank <- qr(object$S[[1]](runif(df)) + object$S[[2]])$rank
+  object$rank <- qr(object$S[[1]](runif(df)))$rank
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
