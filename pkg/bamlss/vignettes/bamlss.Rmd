@@ -136,7 +136,7 @@ the cdf function of the corresponding family object.
 
 The posterior mean function for new data based on MCMC samples for parameter $\mu$ can be computed by
 ```{r, eval=FALSE}
-nd <- data.frame("times" = seq(2.4, 57.6), length = 100)
+nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
 nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
 plot2d(p ~ times, data = nd)
 ```
@@ -149,8 +149,12 @@ plot2d(p ~ times, data = nd)
 where argument `FUN` can be any function, e.g., a function computing credible intervals from
 the empirical quantiles of the MCMC samples
 ```{r}
-nd$p <- predict(b, newdata = nd, model = "mu", FUN = quantile)
+foo <- function(x) {
+  quantile(x, probs = c(0.025, 0.5, 0.975))
+}
+nd$p <- predict(b, newdata = nd, model = "mu", FUN = foo)
 print(head(nd))
 ```
 
 ## References
+

@@ -1,0 +1,53 @@
+---
+title: "Available Model Terms"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Model Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, model terms}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+```
+
+## Overview
+
+The _bamlss_ package heavily builds upon the R package _mgcv_ [@bamlss:Wood:2018] infrastructures,
+i.e., all model terms that are provided by _mgcv_ can also be used in _bamlss_. As a consequence,
+it is also possible to write user defined model terms using the generic `smooth.construct()`method
+of _mgcv_. Moreover, users can in principle even extent this, writing model terms beyond _mgcv_
+infrastructures. However, this is a bit more technical and assumes that the user has a good basic
+knowledge of the internal structure of the package and is only very briefly discussed in this
+article.
+
+## Model term specification
+
+To give an overview of users not familiar with _mgcv_, the following lists some model
+specifications using R's formula syntax:
+
+* Linear effects $\mathbf{X}\boldsymbol{\beta}$: `~ x1 + x2 + x3`.
+* Nonlinear effects of continuous covariates $f(\mathbf{x}) = f(x_1)$: `~ s(x1)`.
+* Two-dimensional surfaces $f(\mathbf{x}) = f(x_1, x_2)$: `~ s(x1,x2)`, `~ te(x1,x2)` or `~ ti(x1,x2)`
+    (higher dimensional terms possible).
+* Spatially correlated effects $f(\mathbf{x}) = f_{spat}(x_s)$: `~ s(xs,bs="mrf",xt=list(penalty=K))`,
+    where `xs` is a factor indicating the discrete regional information and `K` is a supplied
+    penalty matrix. Other options within the `xt` argument are possible, please see the documentation
+    of `smooth.construct.mrf.smooth.spec()`.
+* Varying coefficients $f(\mathbf{x}) = x_1f(x_2)$: `~ s(x2,by=x1)`.
+* Spatially varying effects $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or
+    $f(\mathbf{x}) = x_1f(x_2, x_3)$: `~ s(xs,bs="mrf",xt=list(penalty=K),by=x1)`,
+    `~ s(x2,x3,by=x1)` or `~ te(x2,x3,by=x1)`.
+* Random intercepts with cluster index $c$: $f(\mathbf{x}) = \beta_c$: `~ s(id,bs="re")`, where
+    `id` is a factor of cluster indices.
+* Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$: `~ s(id,x1,bs="re")`, as
+    above with continuous covariate `x1`.
+
