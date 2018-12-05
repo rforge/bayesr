@@ -5128,23 +5128,30 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   const <- object$xt$const
   if(is.null(const))
     const <- 1e-05
+  pt <- object$xt$pt
+  if(is.null(pt))
+    pt <- "ridge"
 
-  object$S[[1]] <- function(parameters, ...) {
-    b <- get.par(parameters, "b")
-    A <- df / sqrt(b^2 + const)
-    A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
-    A
+  k <- 1
+  if(("lasso" %in% pt) | ("enet" %in% pt)) {
+    object$S[[1]] <- function(parameters, ...) {
+      b <- get.par(parameters, "b")
+      A <- df / sqrt(b^2 + const)
+      A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+      A
+    }
+    attr(object$S[[k]], "npar") <- ncol(object$X)
+    k <- k + 1
   }
-  attr(object$S[[1]], "npar") <- ncol(object$X)
-
-  ## object$S[[2]] <- diag(1, ncol(object$X))
+  if(("ridge" %in% pt) | ("enet" %in% pt))
+    object$S[[k]] <- diag(1, ncol(object$X))
 
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
   object$by <- "NA"
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
 
-  object$rank <- qr(object$S[[1]](runif(df)))$rank
+  object$rank <- df#qr(object$S[[1]](runif(df)))$rank
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
@@ -5929,14 +5936,28 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$weights))
     object$xt$weights <- tXw$weights
   rm(tXw)
-  object$S <- list(diag(ncol(object$X)))
+
+  df <- ncol(object$X)
+  const <- object$xt$const
+  if(is.null(const))
+    const <- 1e-05
+
+  object$S <- list()
+  object$S[[1]] <- function(parameters, ...) {
+    b <- get.par(parameters, "b")
+    A <- df / sqrt(b^2 + const)
+    A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+    A
+  }
+  attr(object$S[[1]], "npar") <- ncol(object$X)
+
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- FALSE
   object$xt$df <- 4
   object$by <- "NA"
   object$null.space.dim <- 0
   object$bs.dim <- ncol(object$X)
-  object$rank <- sapply(object$S, sum)
+  # object$rank <- qr(object$S[[1]](runif(df)))$rank
   object$N <- apply(object$X, 2, function(x) {
     return((1/crossprod(x)) %*% t(x))
   })

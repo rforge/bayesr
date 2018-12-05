@@ -297,6 +297,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
     x$sparse.setup$matrix)
 
   Xr <- crossprod(x$X, x$rres)
+  g0 <- get.state(x, "b")
 
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
@@ -306,7 +307,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
-        S <- S + 1 / tau2[j] * x$S[[j]]
+        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       x$state$hessian <- XWX + S
       P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
     }
@@ -317,7 +318,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
     objfun <- function(tau2, ...) {
       S <- 0
       for(j in seq_along(x$S))
-        S <- S + 1 / tau2[j] * x$S[[j]]
+        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
       P <- matrix_inv(XWX + S, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
       g <- drop(P %*% Xr)
@@ -334,7 +335,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
     x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
     S <- 0
     for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * x$S[[j]]
+      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
     x$state$hessian <- XWX + S
     P <- matrix_inv(x$state$hessian, index = x$sparse.setup)
     x$state$parameters <- set.par(x$state$parameters, drop(P %*% Xr), "b")
