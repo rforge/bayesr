@@ -433,8 +433,6 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
   x$fit.fun <- make.fit.fun(x)
   x$state$fitted.values <- x$fit.fun(x$X, get.par(x$state$parameters, "b"))
   x$state$edf <- x$edf(x)
-
-print(get.par(x$state$parameters, "tau2"))
   
   x
 }
