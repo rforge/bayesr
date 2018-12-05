@@ -4359,6 +4359,7 @@ blockstand <- function(x, n)
 smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 {
   ridge <- if(is.null(object$xt[["ridge"]])) FALSE else object$xt[["ridge"]]
+  enet <- if(is.null(object$xt[["enet"]])) FALSE else object$xt[["enet"]]
   fuse <- if(is.null(object$xt[["fuse"]])) FALSE else object$xt[["fuse"]]
   standardize <- if(is.null(object$xt[["standardize"]])) FALSE else object$xt[["standardize"]]
   standardize01 <- if(is.null(object$xt[["standardize01"]])) FALSE else object$xt[["standardize01"]]
@@ -4564,9 +4565,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
 
-  object$xt[["prior"]] <- "hn"
-#  object$xt[["a"]] <- 10
-#  object$xt[["b"]] <- 1e-5
+  object$xt[["prior"]] <- "ig"
+  object$xt[["a"]] <- 1e-10
+  object$xt[["b"]] <- 1e+04
   object$fixed <- if(is.null(object$xt[["fx"]])) FALSE else object$xt[["fx"]]
   priors <- make.prior(object)
   object$prior <- priors$prior
@@ -4583,6 +4584,9 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
 
   if(ridge)
     object$S <- list(diag(1, ncol(object$X)))
+
+  if(enet)
+    object$S[[length(object$S) + 1L]] <- list(diag(1, ncol(object$X)))
 
   if(is.null(object$xt[["binning"]]))
     object$xt[["binning"]] <- TRUE
