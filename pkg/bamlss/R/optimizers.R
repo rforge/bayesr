@@ -407,7 +407,6 @@ bamlss.engine.setup.smooth.default <- function(x, Matrix = FALSE, ...)
         tau2 <- x$xt$tau2
       if(!is.null(x$xt[["lambda"]])) {
         tau2 <- 1 / x$xt[["lambda"]]
-        x$fxsp <- TRUE
       }
     }
     if(!is.null(tau2)) {

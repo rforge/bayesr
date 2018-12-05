@@ -674,7 +674,15 @@ sparse.setup <- function(x, S = NULL, ...)
     if(!is.list(S))
       S <- list(S)
     for(j in seq_along(S)) {
-      x <- x + if(length(S[[j]]) < 1) 0 else { if(is.function(S[[j]])) S[[j]](c("b" = rep(0, attr(S[[j]], "npar")))) else S[[j]] }
+      x <- x + if(length(S[[j]]) < 1) {
+        0
+      } else {
+        if(is.function(S[[j]])) {
+          S[[j]](c("b" = rep(0, attr(S[[j]], "npar"))))
+        } else {
+          S[[j]]
+        }
+      }
     }
   }
   index.crossprod <- if(!symmetric) sparse.matrix.index(x, ...) else NULL
@@ -4565,6 +4573,12 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     attr(object$S[[ls]], "npar") <- ncol(object$X)
   }
 
+  if(ridge)
+    object$S <- list(diag(1, ncol(object$X)))
+
+  if(enet)
+    object$S[[length(object$S) + 1L]] <- diag(1, ncol(object$X))
+
   object$xt[["prior"]] <- "ig"
   object$xt[["a"]] <- 1e-10
   object$xt[["b"]] <- 1e+04
@@ -4581,12 +4595,6 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
   }
   object$xt$do.optim <- TRUE
   object$lasso$const <- const
-
-  if(ridge)
-    object$S <- list(diag(1, ncol(object$X)))
-
-  if(enet)
-    object$S[[length(object$S) + 1L]] <- list(diag(1, ncol(object$X)))
 
   if(is.null(object$xt[["binning"]]))
     object$xt[["binning"]] <- TRUE
