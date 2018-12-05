@@ -5122,6 +5122,9 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
 
+  object$xt[["a"]] <- 1e-10
+  object$xt[["b"]] <- 1e+04
+
   object$S <- list()
 
   df <- ncol(object$X)
@@ -5133,7 +5136,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     pt <- "ridge"
 
   k <- 1
-  if(("lasso" %in% pt) | ("enet" %in% pt)) {
+  if(("lasso" %in% pt) | ("enet" %in% pt) | ("elasticnet" %in% pt)) {
     object$S[[1]] <- function(parameters, ...) {
       b <- get.par(parameters, "b")
       A <- df / sqrt(b^2 + const)
@@ -5143,7 +5146,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     attr(object$S[[k]], "npar") <- ncol(object$X)
     k <- k + 1
   }
-  if(("ridge" %in% pt) | ("enet" %in% pt))
+  if(("ridge" %in% pt) | ("enet" %in% pt) | ("elasticnet" %in% pt))
     object$S[[k]] <- diag(1, ncol(object$X))
 
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
