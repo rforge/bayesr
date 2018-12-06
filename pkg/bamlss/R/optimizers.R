@@ -4118,7 +4118,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   x$parameters <- x$parameters[, npar, drop = FALSE]
   ic <- x$model.stats$optimizer$lasso.stats
   multiple <- attr(ic, "multiple")
-  log_lambda <- log(ic[, grep("lambda", colnames(ic))])
+  log_lambda <- log(ic[, grep("lambda", colnames(ic)), drop = FALSE])
   nic <- grep("ic", colnames(ic), value = TRUE, ignore.case = TRUE)
   if(spar) {
     op <- par(no.readonly = TRUE)

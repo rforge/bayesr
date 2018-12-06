@@ -167,6 +167,7 @@ update_surv_tv <- function(x, y, eta, eta_timegrid, width, sub, update.nu, crite
   xgrad <- drop(t(y[, "status"]) %*% x$XT - int$grad)
 
   if(!(!x$state$do.optim | x$fixed | x$fxsp)) {
+
     env <- new.env()
     par <- x$state$parameters
 
