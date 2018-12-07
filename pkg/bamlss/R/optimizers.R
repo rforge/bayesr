@@ -1087,10 +1087,16 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
 {
   type <- match.arg(type)
   ll <- family$loglik(y, par)
+  denom <- (n - edf - 1)
+  if(denom < 1e-10) {
+    add <- 0
+  } else {
+    add <- (2 * edf * (edf + 1)) / denom
+  }
   pen <- switch(type,
                 "AIC" = -2 * ll + 2 * edf,
                 "BIC" = -2 * ll + edf * log(n),
-                "AICc" = -2 * ll + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
+                "AICc" = -2 * ll + 2 * edf + add,
                 "MP" = -1 * (ll + edf)
   )
   return(pen)
@@ -1099,10 +1105,16 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
 get.ic2 <- function(logLik, edf, n, type = c("AIC", "BIC", "AICc", "MP"), ...)
 {
   type <- match.arg(type)
+  denom <- (n - edf - 1)
+  if(denom < 1e-10) {
+    add <- 0
+  } else {
+    add <- (2 * edf * (edf + 1)) / denom
+  }
   pen <- switch(type,
                 "AIC" = -2 * logLik + 2 * edf,
                 "BIC" = -2 * logLik + edf * log(n),
-                "AICc" = -2 * logLik + 2 * edf + (2 * edf * (edf + 1)) / (n - edf - 1),
+                "AICc" = -2 * logLik + 2 * edf + add,
                 "MP" = -1 * (logLik + edf)
   )
   return(pen)
