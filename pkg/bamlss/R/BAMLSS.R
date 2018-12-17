@@ -8618,7 +8618,10 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
         warning(paste("no $p() function in family '", family$family,
           "', cannot compute quantile residuals, computing response resdiuals instead!", sep = ""))
       } else {
-        res <- qnorm(family$p(y, par))
+        prob <- family$p(y, par)
+        prob[prob > 0.9999] <- 0.9999
+        prob[prob < 1e-10] <- 0.0001
+        res <- qnorm(prob)
         attr(res, "type") <- "Quantile"
       }
     }
