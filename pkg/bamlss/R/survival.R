@@ -25,7 +25,7 @@ cox_bamlss <- function(...)
 
 
 ## Posterior mode estimation.
-cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
+cox.mode <- function(x, y, start, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, update.nu = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
 {
@@ -33,6 +33,9 @@ cox.mode <- function(x, y, weights, offset, criterion = c("AICc", "BIC", "AIC"),
     stop("nu must be 0 < nu < 1!")
 
   criterion <- match.arg(criterion)
+
+  if(!is.null(start))
+    x <- set.starting.values(x, start)
 
   ## Names of parameters/predictors.
   nx <- names(x)
