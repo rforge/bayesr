@@ -5091,6 +5091,11 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #      return(Z[[length(Z)]])
 #    }
 
+  if(is.null(object$xt$rint))
+    object$xt$rint <- c(0.01, 0.2)
+  if(is.null(object$xt$sint))
+    object$xt$sint <- c(1.01, 10)
+
   if(is.null(object$xt$weights)) {
     nobs <- nrow(object$X)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
@@ -5136,8 +5141,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
 
-#  object$xt[["a"]] <- 1e-10
-#  object$xt[["b"]] <- 1e+04
+  object$xt[["a"]] <- 1e-04
+  object$xt[["b"]] <- 1e+04
 
   object$S <- list()
 
