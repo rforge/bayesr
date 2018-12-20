@@ -1857,7 +1857,7 @@ log_posterior <- function(par, x, y, family, verbose = TRUE, digits = 3, scale =
 }
 
 
-## Gradient vecor of the log-posterior.
+## Gradient vector of the log-posterior.
 grad_posterior <- function(par, x, y, family, ...)
 {
   nx <- names(x)

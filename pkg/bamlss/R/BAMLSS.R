@@ -984,8 +984,8 @@ make.prior <- function(x, sigma = 0.1)
         }
       }
       if(!is.null(score)) {
-        grad <- if(!is.null(x$xbin.ind)) {
-          drop(crossprod(x$X[x$xbin.ind, , drop = FALSE], score)) + c(grad, grad2)
+        grad <- if(!is.null(x$binning)) {
+          drop(crossprod(x$X[x$binning$match.index, , drop = FALSE], score)) + c(grad, grad2)
         } else drop(crossprod(x$X, score)) + c(grad, grad2)
       } else grad <- c(grad, grad2)
       return(grad)
