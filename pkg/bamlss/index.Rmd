@@ -1,11 +1,11 @@
 # A 'Lego' Toolbox for Flexible Regression Models
 
 ```{r, echo=FALSE, message=FALSE, results='hide'}
-if(!file.exists("docs/figures")) {
-  dir.create("docs/figures")
+if(!file.exists("../../www/misc")) {
+  dir.create("../../www/misc")
 }
 figs <- dir("vignettes/figures", full.names = TRUE)
-file.copy(figs, file.path("docs/figures", basename(figs)))
+file.copy(figs, file.path("../../www/misc/", basename(figs)))
 ```
 
 The _bamlss_ package provides a modular computational framework for distributional regression
@@ -38,17 +38,17 @@ mtext(expression(paste(accel, "~ N(", mu, "=", f(times), ",", log(sigma), "=", f
 
 ---
 
-![](figures/firemodel-effects-spatial-tc.png){width=50%}
-![](figures/firemodel-effects-spatial-td.png){width=50%}
+![](misc/firemodel-effects-spatial-tc.png){width=50%}
+![](misc/firemodel-effects-spatial-td.png){width=50%}
 
-![](figures/firemodel-effects-baseline.png){width=50%}
-![](figures/firemodel-effects-daytime-curves.png){width=50%}
+![](misc/firemodel-effects-baseline.png){width=50%}
+![](misc/firemodel-effects-daytime-curves.png){width=50%}
 
 ## Prediction
 
 ---
 
-![](figures/rainmodel-effects-predict.png){width=100%}
+![](misc/rainmodel-effects-predict.png){width=100%}
 
 ## Model diagnostics
 
@@ -60,7 +60,7 @@ plot(b, which = 3, spar = FALSE, col = "lightgray")
 plot(b, which = 4, spar = FALSE)
 ```
 
-![](figures/traceplot-03.png){width=100%}
+![](misc/traceplot-03.png){width=100%}
 
 ## Extendable model terms and model fitting engines
 
