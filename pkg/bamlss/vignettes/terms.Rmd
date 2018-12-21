@@ -25,7 +25,7 @@ The _bamlss_ package heavily builds upon the R package _mgcv_ [@bamlss:Wood:2018
 i.e., all model terms that are provided by _mgcv_ can also be used in _bamlss_. As a consequence,
 it is also possible to write user defined model terms using the generic `smooth.construct()`method
 of _mgcv_. Moreover, users can in principle even extent this, writing model terms beyond _mgcv_
-infrastructures. However, this is a bit more technical and assumes that the user has a good basic
+framework. However, this is a bit more technical and assumes that the user has a good basic
 knowledge of the internal structure of the package and is only very briefly discussed in this
 article.
 
@@ -52,7 +52,7 @@ For more details on the smooth constructors, please visit the _mgcv_ manual page
 ## Examples
 
 To better introduce the standard types of model terms we use simulated data that is part of the
-_bamlss_ package. The data contains for of a couple of different response types and is usually
+_bamlss_ package. The data contains of a couple of different response types and is usually
 used for internal tests, only.
 ```{r}
 d <- GAMart()
@@ -61,7 +61,7 @@ print(head(d))
 The first column holding variable `num` is a Gaussian response, all subsequent columns up to
 variable `cens` are basically transformations of variable `num`. Variables `x1` to `lat` are
 covariates, which we use for illustrating how to set up the different model terms in the
-following.
+following. 
 
 ## References
 

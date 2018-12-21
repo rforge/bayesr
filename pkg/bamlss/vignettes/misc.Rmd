@@ -1,0 +1,23 @@
+---
+title: "Miscellaneous Topics"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Model Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, model terms}
+  %\VignettePackage{bamlss}
+---
+
+## Supplementary material
+
+Data for the article "Spatio-Temporal Precipitation Climatology over Complex Terrain Using a Censored Additive Regression Models" [@bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016]
+
+## References
+
