@@ -61,7 +61,35 @@ print(head(d))
 The first column holding variable `num` is a Gaussian response, all subsequent columns up to
 variable `cens` are basically transformations of variable `num`. Variables `x1` to `lat` are
 covariates, which we use for illustrating how to set up the different model terms in the
-following. 
+following.
+
+Let's start with a simple example using three covariates for a Gaussian model with
+possible nonlinear influence on the response distribution. The model formula can be specified by
+```{r}
+f <- list(
+  num ~ s(x1) + s(x2) + s(x3),
+  sigma ~ s(x1) + s(x2) + s(x3)
+)
+```
+Note that the default basis function type in _mgcv_ are thin plate regression splines
+[@bamlss:Wood:2003] using `k = 10` basis functions per default. Setting `k = 10` is reasonable in
+most cases, but this may not be enough for very complex functional forms.
+
+The type of basis in _mgcv_ is selected with the `bs` argument. There are a number of different
+basis types readily available, from P-splines [@bamlss:Eilers+Marx:1996] to Markov random fields.
+Setting up the smooth terms is relatively straightforward when already known one. For example,
+if one is interested in specifying interaction terms, i.e., with main effects and interaction,
+e.g., we could do the following using tensor product splines
+```{r}
+f <- list(
+  num ~ ti(x1) + ti(x2) + ti(x1,x2),
+  sigma ~ s(x1) + s(x2) + s(x3)
+)
+```
+Here, we use a functional decomposition of the effects of covariates `x1` and `x2` in the
+first formula. Note again that the number of basis function within `ti()` is small, `k = 5`. The
+reason is, that constructing tensor product model terms can easily end up with thousands of
+parameters, i.e., these type of model terms need to be specified with care. 
 
 ## References
 
