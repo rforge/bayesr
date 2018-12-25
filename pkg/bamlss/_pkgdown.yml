@@ -1,0 +1,124 @@
+destination: "../../www/"
+
+navbar:
+  structure:
+    left:
+    - home
+    - intro
+    - articles
+    - reference
+    - news
+  components:
+    home:
+      icon: fa-home fa-lg
+      href: index.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    intro:
+      text: Get started
+      href: articles/bamlss.html
+    articles:
+      text: Articles
+      menu:
+      - text: Miscellaneous Topics
+        href: articles/misc.html
+      - text: Available Model Terms
+        href: articles/terms.html
+    news:
+      text: Changelog
+      href: news/index.html
+
+articles:
+  - title: ~
+    desc: ~
+    contents:
+    - '`terms`'
+    - '`bamlss`'
+    - '`misc`'
+
+reference:
+  - title: Main Model Fitting Function
+    contents:
+    - '`bamlss`'
+  - title: Optimizers
+    desc: >
+      Optimizer functions that can be used for model fitting using `bamlss()`
+    contents:
+    - '`bfit`'
+    - '`boost`'
+    - '`cox.mode`'
+    - '`jm_bamlss`'
+    - '`stabsel`'
+    - '`boost2`'
+    - '`bboost`'
+  - title: Samplers
+    desc: >
+      Sampler functions that can be used for model fitting using `bamlss()`
+    contents:
+    - '`BayesX`'
+    - '`JAGS`'
+    - '`MVNORM`'
+    - '`cox.mcmc`'
+    - '`GMCMC`'
+    - '`jm_bamlss`'
+  - title: Special Model Terms
+    contents:
+    - '`la`'
+    - '`lin`'
+    - '`n`'
+    - '`rb`'
+    - '`s2`'
+  - title: Datasets
+    contents:
+    - '`Austria`'
+    - '`GAMart`'
+    - '`LondonFire`'
+    - '`Volcano`'
+    - '`homstart_data`'
+  - title: Misc
+    contents:
+    - '`DIC`'
+    - '`Surv2`'
+    - '`bamlss-package`'
+    - '`bamlss.engine.helpers`'
+    - '`bamlss.engine.setup`'
+    - '`bamlss.formula`'
+    - '`bamlss.frame`'
+    - '`c95`'
+    - '`coef.bamlss`'
+    - '`colorlegend`'
+    - '`continue`'
+    - '`cox.predict`'
+    - '`dl.bamlss`'
+    - '`family.bamlss`'
+    - '`fitted.bamlss`'
+    - '`gF`'
+    - '`smooth.construct.kr.smooth.spec`'
+    - '`model.frame.bamlss`'
+    - '`model.matrix.bamlss.frame`'
+    - '`neighbormatrix`'
+    - '`parameters`'
+    - '`plot.bamlss`'
+    - '`plot2d`'
+    - '`plot3d`'
+    - '`plotblock`'
+    - '`plotmap`'
+    - '`predict.bamlss`'
+    - '`randomize`'
+    - '`residuals.bamlss`'
+    - '`results.bamlss.default`'
+    - '`rmf`'
+    - '`samples`'
+    - '`samplestats`'
+    - '`scale2`'
+    - '`simJM`'
+    - '`simSurv`'
+    - '`sliceplot`'
+    - '`smooth.construct`'
+    - '`smooth.construct.ms.smooth.spec`'
+    - '`smooth.construct.sr.smooth.spec`'
+    - '`summary.bamlss`'
+    - '`surv.transform`'
+    - '`terms.bamlss`'
+

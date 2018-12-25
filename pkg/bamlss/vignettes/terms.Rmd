@@ -17,6 +17,7 @@ vignette: >
 
 ```{r preliminaries, echo=FALSE, message=FALSE}
 library("bamlss")
+set.seed(123)
 ```
 
 ## Overview
@@ -49,7 +50,7 @@ Note that each model term constructor has an argument called `bs`, which specifi
 of basis that should be used for modeling.
 For more details on the smooth constructors, please visit the _mgcv_ manual pages of `s()`, `te()` and `ti()`.
 
-## Examples
+## Basics
 
 To better introduce the standard types of model terms we use simulated data that is part of the
 _bamlss_ package. The data contains of a couple of different response types and is usually
@@ -76,10 +77,11 @@ Note that the default basis function type in _mgcv_ are thin plate regression sp
 most cases, but this may not be enough for very complex functional forms.
 
 The type of basis in _mgcv_ is selected with the `bs` argument. There are a number of different
-basis types readily available, from P-splines [@bamlss:Eilers+Marx:1996] to Markov random fields.
+basis types readily available, from P-splines [@bamlss:Eilers+Marx:1996] to Markov random fields,
+this is documented on the _mgcv_ manual page `?smooth.terms`.
 Setting up the smooth terms is relatively straightforward when already known one. For example,
-if one is interested in specifying interaction terms, i.e., with main effects and interaction,
-e.g., we could do the following using tensor product splines
+if one is interested in specifying interaction terms, e.g., with main effects and interaction using
+two covariates, we could do the following using tensor product splines
 ```{r}
 f <- list(
   num ~ ti(x1) + ti(x2) + ti(x1,x2),
@@ -87,9 +89,27 @@ f <- list(
 )
 ```
 Here, we use a functional decomposition of the effects of covariates `x1` and `x2` in the
-first formula. Note again that the number of basis function within `ti()` is small, `k = 5`. The
-reason is, that constructing tensor product model terms can easily end up with thousands of
-parameters, i.e., these type of model terms need to be specified with care. 
+first formula. Note again that the number of basis function within `ti()` is again small, `k = 5`.
+The reason is, that constructing tensor product model terms can easily end up with thousands of
+parameters, i.e., these type of model terms need to be specified with care.
+
+## Markov Random Fields
+
+Markov random fields (MRF) can be used to model spatially correlated effects using discrete
+locational observations. However, setting up MRFs can be a bit tricky, so I would like to illustrate
+the process with a short example. In the simulated data from above, we artificially sample from
+spatial locations, see the plot of the coordinates
+```{r, eval=FALSE}
+plot(lat ~ lon, data = d)
+```
+```{r, fig.width = 4.5, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+plot(lat ~ lon, data = d)
+```
+Let's suppose we only have the coordinates of the locations. Sure, we could directly model the
+spatial effect using some 2D smoother, e.g., with thin plate regression splines. In most situations
+spatial information is available as region identifier, but for illustrating the full path, it is
+a good exercise to start from exact locations. Now, either we have a map available
 
 ## References
 
