@@ -5154,8 +5154,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(is.null(pt))
     pt <- "ridge"
 
+  alpha <- object$xt$alpha
+  if(is.null(alpha))
+    alpha <- 0.5
+
   k <- 1
-  if(("lasso" %in% pt) | ("enet" %in% pt) | ("elasticnet" %in% pt)) {
+  if("lasso" %in% pt) {
     object$S[[1]] <- function(parameters, ...) {
       b <- get.par(parameters, "b")
       A <- df / sqrt(b^2 + const)
@@ -5165,7 +5169,17 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     attr(object$S[[k]], "npar") <- ncol(object$X)
     k <- k + 1
   }
-  if(("ridge" %in% pt) | ("enet" %in% pt) | ("elasticnet" %in% pt))
+  if(("enet" %in% pt) | ("elasticnet" %in% pt)) {
+    object$S[[1]] <- function(parameters, ...) {
+      b <- get.par(parameters, "b")
+      A <- df / sqrt(b^2 + const)
+      A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+      A + diag(0.0001, ncol(A))
+    }
+    attr(object$S[[k]], "npar") <- ncol(object$X)
+    k <- k + 1
+  }
+  if("ridge" %in% pt)
     object$S[[k]] <- diag(1, ncol(object$X))
 
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
