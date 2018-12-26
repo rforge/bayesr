@@ -5156,7 +5156,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   alpha <- object$xt$alpha
   if(is.null(alpha))
-    alpha <- 0.5
+    alpha <- 1e-04
 
   k <- 1
   if("lasso" %in% pt) {
@@ -5174,7 +5174,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       b <- get.par(parameters, "b")
       A <- df / sqrt(b^2 + const)
       A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
-      A + diag(0.0001, ncol(A))
+      A + diag(alpha, ncol(A))
     }
     attr(object$S[[k]], "npar") <- ncol(object$X)
     k <- k + 1
