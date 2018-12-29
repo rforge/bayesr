@@ -5200,7 +5200,6 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$lambda.min.ratio <- 1e-20
   if(is.null(object$xt$update))
     object$xt$update <- bfit_iwls
-
   if(!is.function(object$xt$update)) {
     if(object$xt$update == "lasso") {
       object$no.assign.df <- TRUE
@@ -5221,6 +5220,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$xt$ndf <- NULL
   if(is.null(object$xt$frac))
     object$xt$frac <- 0.99
+
+  object$xt[["df"]] <- object$xt[["ndf"]]
 
   if(object$xt$single) {
     ncX <- ncol(object$X)
