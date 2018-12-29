@@ -4913,27 +4913,27 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     sint <- list(...)$sint
     if(type == "sigmoid") {
       if(is.null(rint))
-        rint <- 0.01
+        rint <- 0.05
       if(is.null(sint))
-        sint <- c(1.02, 100)
+        sint <- 5
     }
     if(type == "gauss") {
       if(is.null(rint))
-        rint <- 0.01
+        rint <- 0.05
       if(is.null(sint))
-        sint <- c(1.02, 10)
+        sint <- 5
     }
     if(type == "softplus") {
       if(is.null(rint))
-        rint <- 0.01
+        rint <- 0.05
       if(is.null(sint))
-        sint <- c(1.02, 100)
+        sint <- 5
     }
     if(type == "cos" | type == "sin") {
       if(is.null(rint))
-        rint <- 0.01
+        rint <- 0.05
       if(is.null(sint))
-        sint <- c(1.02, 10)
+        sint <- 5
     }
     sint <- sort(rep(sint, length.out = 2))
     rint <- sort(rep(rint, length.out = 2))
@@ -5050,6 +5050,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object$by <- "NA"
     object$type <- "single"
     object$xt$fx <- FALSE
+    object$xt$k <- object$bs.dim
   }
   object$xt[["standardize"]] <- object[["standardize01"]] <- object$xt[["standardize01"]] <-  TRUE
   object <- smooth.construct.la.smooth.spec(object, data, knots)
@@ -5190,7 +5191,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   object$rank <- df#qr(object$S[[1]](runif(df)))$rank
 
   object$xt$prior <- "ig"
-  object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
+  #object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
 
   if(is.null(object$xt$alpha))
     object$xt$alpha <- 1
@@ -5326,6 +5327,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     object[["lambda"]] <- object$xt[["lambda"]] <- NULL
     class(object) <- c("nnet2.smooth", "mgcv.smooth", "lasso.smooth")
   }
+  object$fixed <- FALSE
 
   object
 }
