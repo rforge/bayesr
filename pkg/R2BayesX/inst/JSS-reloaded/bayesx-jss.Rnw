@@ -1,0 +1,73 @@
+% \documentclass[article]{jss}
+\documentclass[nojss]{jss}
+\usepackage{amsmath,amssymb,amsfonts,thumbpdf}
+\usepackage{multirow,longtable}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% Authors: NU + rest in alphabetical order
+\author{Nadja Klein\\ Humboldt-University of Berlin \And Thomas Kneib\\ University G\"ottingen \AND
+        Stefan Lang\\ Universit\"at Innsbruck \And 
+        Nikolaus Umlauf\\Universit\"at Innsbruck \And 
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nadja Klein, Thomas Kneib, Stefan Lang, Nikolaus Umlauf, Achim Zeileis}
+
+\title{\pkg{R2BayesX} Reloaded: Estimating Multilevel Structured Additive Distributional Regression via an \proglang{R} Interface to \pkg{BayesX}}
+\Plaintitle{R2BayesX Reloaded: Estimating Multilevel Structured Additive Distributional Regression via an R Interface to BayesX}
+\Shorttitle{\pkg{R2BayesX} Reloaded}
+
+\Keywords{Bayesian variable selection, Distributional regression, Hierarchical Rergression, Markov chain Monte Carlo simulations, Multivariate responses}
+\Plainkeywords{Bayesian variable selection, Distributional regression, Hierarchical Rergression, Markov chain Monte Carlo simulations, Multivariate responses}
+
+\Abstract{
+Multilevel structured additive distributional regression models provide a 
+flexible framework for modeling (i) the entire distribution of potentially multivariate responses of any form, (ii) complex effect types including nonlinear effects of continuous covariates, random effects or tensor-product interactions, (iii) multilevel hierarchical predictors for covariates measured on different scales. In this paper, we describe the implementation of multilevel structured additive distributional regression models via the 
+\proglang{R} interface \pkg{R2BayesX} to the standalone software package \pkg{BayesX}. The latter relies on efficient Markov chain Monte Carlo simulation algorithms that have been implemented in \proglang{C++} and make use of sparse matrix algorithms for storing and handling data. While an earlier publication on \pkg{R2BayesX} focused on technical aspects of interfacing \pkg{BayesX} with \proglang{R} via the \proglang{R} package \pkg{BayesXsrc}, this paper reviews recent developments implemented in \pkg{BayesX} with a particular focus on hierarchical model specifications, hyperprior elicitation and automatic effect selection based on a novel type of spike and slab priors. Fitted models are represented in \proglang{R} with objects of suitable classes that can be printed/summarized/plotted. This makes \pkg{BayesX} much more accessible to users familiar with \proglang{R}, adds extensive graphics capabilities for visualizing and makes a very flexible class of models accessible to a large audience of applied researchers.
+}
+
+\Address{
+  Nadja Klein\\
+  Humboldt-University of Berlin\\
+  School of Business and Economics\\
+  Applied Statistics\\
+  Unter den Linden 6\\
+  10099 Berlin, Germany\\
+  E-mail: \email{nadja.klein@hu-berlin.de}\\
+  URL: \url{https://hu.berlin/NK}\\
+  
+  Thomas Kneib\\
+  University of G\"ottingen\\
+  Department of Economics\\
+  Chair of Statistics\\
+  Humboldtallee 3\\
+  37073 G\"ottingen, Germany\\
+  E-mail: \email{tkneib@uni-goettingen.de}\\
+  URL: \url{http://www.uni-goettingen.de/de/264255.html}\\
+  
+  Stefan Lang, Nikolaus Umlauf, Achim Zeileis\\
+  Department of Statistics\\
+  Faculty of Economics and Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  6020 Innsbruck, Austria\\
+  E-mail: \email{Stefan.Lang@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Nikolaus.Umlauf@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
+  URL: \url{https://www.uibk.ac.at/statistics/personal/lang/index.html.en}
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+}
+
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\end{document}
