@@ -5134,10 +5134,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   ## object$Xsubset <- subset_features(object$X)
   ## object$X <- object$X[, object$Xsubset, drop = FALSE]
 
-  object$xt$cmeans <- colMeans(object$X)
-  object$xt$csd <- apply(object$X, 2, sd)
-  for(j in 1:ncol(object$X))
-    object$X[, j] <- (object$X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+  if(is.null(object$xt$nocenter)) {
+    object$xt$cmeans <- colMeans(object$X)
+    object$xt$csd <- apply(object$X, 2, sd)
+    for(j in 1:ncol(object$X))
+      object$X[, j] <- (object$X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+  }
 
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
@@ -5440,8 +5442,10 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
   X <- X[, object$Xkeep, drop = FALSE]
   if(!is.null(object$Xsubset))
     X <- X[, object$Xsubset, drop = FALSE]
-  for(j in 1:length(object$xt$cmeans))
-    X[, j] <- (X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+  if(is.null(object$xt$nocenter)) {
+    for(j in 1:length(object$xt$cmeans))
+      X[, j] <- (X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+  }
   return(X)
 }
 
