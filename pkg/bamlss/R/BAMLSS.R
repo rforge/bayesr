@@ -5136,9 +5136,9 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   if(is.null(object$xt$nocenter)) {
     object$xt$cmeans <- colMeans(object$X)
-    object$xt$csd <- apply(object$X, 2, sd)
+    ## object$xt$csd <- apply(object$X, 2, sd)
     for(j in 1:ncol(object$X))
-      object$X[, j] <- (object$X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+      object$X[, j] <- object$X[, j] - object$xt$cmeans[j]
   }
 
   if(ncol(object$X) < 1)
@@ -5216,7 +5216,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$single))
     object$xt$single <- TRUE
   if(is.null(object$xt$ndf))
-    object$xt$ndf <- 1
+    object$xt$ndf <- 4
   else
     object$xt$ndf <- ceiling(object$xt$ndf)
   if(object$xt$ndf < 2)
@@ -5444,7 +5444,7 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
     X <- X[, object$Xsubset, drop = FALSE]
   if(is.null(object$xt$nocenter)) {
     for(j in 1:length(object$xt$cmeans))
-      X[, j] <- (X[, j] - object$xt$cmeans[j]) / object$xt$csd[j]
+      X[, j] <- X[, j] - object$xt$cmeans[j]
   }
   return(X)
 }
