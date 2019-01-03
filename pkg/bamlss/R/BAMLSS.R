@@ -4941,8 +4941,11 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
     sint <- sort(rep(s, length.out = 2))
     rint <- sort(rep(r, length.out = 2))
   }
-  r <- runif(nodes, rint[1], rint[2])
-  s <- runif(nodes, sint[1], sint[2])
+  nodes2 <- floor(nodes/2)
+#  r <- runif(nodes, rint[1], rint[2])
+#  s <- runif(nodes, sint[1], sint[2])
+  r <- sort(rep(c(rep(rint[1], nodes2), rep(rint[2], nodes2)), length.out = nodes))
+  s <- sort(rep(c(rep(sint[1], nodes2), rep(sint[2], nodes2)), length.out = nodes))
   if(type == "sigmoid") {
     if(any(r >= 0.5))
       r[r >= 0.5] <- 0.495
@@ -5009,10 +5012,13 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
   return(weights)
 }
 
-nnet2Zmat <- function(X, weights, knots = NULL, afun)
+nnet2Zmat <- function(X, weights, afun)
 {
-  if(is.character(afun)) {
-    afun <- switch(afun,
+  nc <- length(weights[[1]])
+  Z <- list()
+  k <- 1
+  for(i in names(weights)) {
+    afun <- switch(i,
       "relu" = function(x) {
         x[x < 0] <- 0
         x
@@ -5027,16 +5033,9 @@ nnet2Zmat <- function(X, weights, knots = NULL, afun)
       "identity" = function(x) { x },
       "softplus" = function(x) { log(1 + exp(x)) }
     )
-  }
-  if(!is.function(afun))
-    stop("afun must be a function!")
-  nc <- length(weights)
-  Z <- vector(mode = "list", length = nc)
-  for(j in 1:nc) {
-    if(!is.null(knots)) {
-      Z[[j]] <- splines::spline.des(knots[[j]], as.numeric(X %*% weights[[j]]), 0 + 1, outer.ok = TRUE)$design
-    } else {
-      Z[[j]] <- afun(X %*% weights[[j]])
+    for(j in 1:nc) {
+      Z[[k]] <- afun(X %*% weights[[i]][[j]])
+      k <- k + 1
     }
   }
   return(do.call("cbind", Z))
@@ -5097,37 +5096,31 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$sint))
     object$xt$sint <- c(1.01, 10)
 
+  if(!is.list(object$xt$rint)) {
+    object$xt$rint <- rep(list(object$xt$rint), length.out = length(type))
+    names(object$xt$rint) <- type
+  }
+  if(!is.list(object$xt$sint)) {
+    object$xt$sint <- rep(list(object$xt$sint), length.out = length(type))
+    names(object$xt$sint) <- type
+  }
+
   if(is.null(object$xt$weights)) {
     nobs <- nrow(object$X)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
-    object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint, sint = object$xt$sint, type = type,
-      x = object$xt[["tx"]], dropout = object$xt[["dropout"]])
+    object$n.weights <- list()
+    for(j in type) {
+      object$n.weights[[j]] <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[j]],
+        sint = object$xt$sint[[j]], type = j,
+        x = object$xt[["tx"]], dropout = object$xt[["dropout"]])
+    }
   } else {
     if(length(object$xt$weights) != nodes)
       stop("not enough weights supplied!")
     object$n.weights <- object$xt$weights
   }
-  if(is.null(object$xt$bs))
-    object$xt$bs <- FALSE
-  if(!is.null(object$xt$bs)) {
-    if(object$xt$bs) {
-      object$knots <- vector(mode = "list", length = nodes)
-      if(is.null(object$xt$nk))
-        object$xt$nk <- 5
-      for(j in 1:nodes) {
-        xr <- range(drop(object$X %*% object$n.weights[[j]]))
-        xl <- xr[1]
-        xu <- xr[2]
-        xr <- xu - xl
-        xl <- xl - xr * 0.001
-        xu <- xu + xr * 0.001
-        dx <- (xu - xl)/(object$xt$nk - 1)
-        object$knots[[j]] <- seq(xl - dx * (2 + 1), xu + dx * (2 + 1), length = object$xt$nk + 2 * 2 + 2)
-      }
-    }
-  } else object$knots <- NULL
 
-  object$X <- nnet2Zmat(object$X, object$n.weights, object$knots, object$xt$afun)
+  object$X <- nnet2Zmat(object$X, object$n.weights, object$xt$afun)
 
   object$Xkeep <- which(apply(object$X, 2, function(x) { abs(diff(range(x))) })  > 1e-05)
   object$X <- object$X[, object$Xkeep, drop = FALSE]
@@ -5135,10 +5128,13 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   ## object$X <- object$X[, object$Xsubset, drop = FALSE]
 
   if(is.null(object$xt$nocenter)) {
-    object$xt$cmeans <- colMeans(object$X)
+#    object$xt$cmeans <- colMeans(object$X)
     ## object$xt$csd <- apply(object$X, 2, sd)
-    for(j in 1:ncol(object$X))
-      object$X[, j] <- object$X[, j] - object$xt$cmeans[j]
+#    for(j in 1:ncol(object$X))
+#      object$X[, j] <- object$X[, j] - object$xt$cmeans[j]
+
+    object$QR <- qr.Q(qr(crossprod(object$X, rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
+    object$X <- object$X %*% object$QR
   }
 
   if(ncol(object$X) < 1)
@@ -5438,13 +5434,14 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
-  X <- nnet2Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$knots, object$xt$afun)
+  X <- nnet2Zmat(cbind(1, Predict.matrix.lasso.smooth(object, data)), object$n.weights, object$xt$afun)
   X <- X[, object$Xkeep, drop = FALSE]
   if(!is.null(object$Xsubset))
     X <- X[, object$Xsubset, drop = FALSE]
   if(is.null(object$xt$nocenter)) {
-    for(j in 1:length(object$xt$cmeans))
-      X[, j] <- X[, j] - object$xt$cmeans[j]
+#    for(j in 1:length(object$xt$cmeans))
+#      X[, j] <- X[, j] - object$xt$cmeans[j]
+    X <- X %*% object$QR
   }
   return(X)
 }
