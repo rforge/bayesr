@@ -5140,9 +5140,6 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(ncol(object$X) < 1)
     stop("please check your n() specifications, no columns in the design matrix!")
 
-  object$xt[["a"]] <- 1e-04
-  object$xt[["b"]] <- 1e+04
-
   object$S <- list()
 
   df <- ncol(object$X)
