@@ -4793,13 +4793,13 @@ boost.net <- function(formula, maxit = 1000, nu = 1, nodes = 10, df = 4,
             w[[j]] <- n.weights(nodes[i], k = ntake[i],
               rint = r[[j]], sint = s[[j]], type = j,
               x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), -1, drop = FALSE])
-            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], NULL, j))
+            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]], w[[j]], j))
           } else {
             taken[[i]][iter, ] <- sample(2:k, size = ntake[i], replace = FALSE)
             w[[j]] <- n.weights(nodes[i], k = ntake[i],
               rint = r[[j]], sint = s[[j]], type = j,
               x = Xn[[i]][sample(1:nobs, size = nodes[i], replace = FALSE), taken[[i]][iter, ], drop = FALSE])
-            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]][, c(1, taken[[i]][iter, ]), drop = FALSE], w[[j]], NULL, j))
+            Z[[i]] <- cbind(Z[[i]], nnet2Zmat(Xn[[i]][, c(1, taken[[i]][iter, ]), drop = FALSE], w[[j]], j))
           }
         }
         Z[[i]] <- cbind(bf$x[[i]]$model.matrix, Z[[i]])
@@ -4978,9 +4978,9 @@ predict.boost.net <- function(object, newdata, model = NULL,
           for(a in activation) {
             wa <- split(w[grep(a, names(w))], ind)
             if(is.null(object$dropout)) {
-              Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, a))
             } else {
-              Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
+              Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, a))
             }
           }
           Z <- cbind(bf$x[[j]]$model.matrix, Z)
@@ -5003,9 +5003,9 @@ predict.boost.net <- function(object, newdata, model = NULL,
             for(a in activation) {
               wa <- split(w[grep(a, names(w))], ind)
               if(is.null(object$dropout)) {
-                Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, NULL, a))
+                Z <- cbind(Z, nnet2Zmat(Xn[[j]], wa, a))
               } else {
-                Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, NULL, a))
+                Z <- cbind(Z, nnet2Zmat(Xn[[j]][, c(1, object$taken[[j]][i, ]), drop = FALSE], wa, a))
               }
             }
             Z <- cbind(bf$x[[j]]$model.matrix, Z)
