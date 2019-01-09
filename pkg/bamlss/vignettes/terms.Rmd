@@ -109,7 +109,124 @@ plot(lat ~ lon, data = d)
 Let's suppose we only have the coordinates of the locations. Sure, we could directly model the
 spatial effect using some 2D smoother, e.g., with thin plate regression splines. In most situations
 spatial information is available as region identifier, but for illustrating the full path, it is
-a good exercise to start from exact locations. Now, either we have a map available
+a good exercise to start from exact locations. Now, either we have a map available, or we can
+create a hexagonal polygon grid, e.g., using the _spdep_ and _rgeos_ package
+```{r, fig.width = 4.5, fig.height = 4, fig.align = "center", dev = "png", message=FALSE}
+library("spdep")
+library("rgeos")
+
+## First, create convex hull of points.
+i <- chull(as.matrix(d[, c("lon", "lat")]))
+co_hull <- d[i, c("lon", "lat")]
+
+## Create spatial polygon object.
+hullpoly <- SpatialPolygons(list(Polygons(list(Polygon(co_hull)), ID=1)))
+
+## Expand the polygon just slightly to have all points
+## within hexagonal polygons later.
+hullpoly_large <- gBuffer(hullpoly, width = 0.3)
+
+## Sample from large polygon 200 hexagonal polygons.
+pts <- spsample(hullpoly_large, n = 200, type = "hexagonal", offset = c(0.5, 0.5))
+
+## Create final polygons.
+hexpolys <- HexPoints2SpatialPolygons(pts)
+
+## Does not produce a nice map yet.
+par(mar = rep(0.5, 4))
+plot(hullpoly)
+plot(hexpolys, add = TRUE)
+points(d[, c("lon", "lat")])
+```
+Now, note that the hexagonal polygons do not intersect correctly with the polygon of the convex
+hull. To achieve this, we again need the _rgeos_ package
+```{r, fig.width = 4.5, fig.height = 4, fig.align = "center", dev = "png"}
+## Intersect with convex hull polygon.
+hexpolys <- gIntersection(hullpoly, hexpolys, byid = TRUE, drop_lower_td = TRUE)
+
+## Plot the intersections.
+par(mar = rep(0.5, 4))
+plot(hullpoly)
+plot(hexpolys, add = TRUE)
+points(d[, c("lon", "lat")])
+```
+We only need to assign polygon ID's to the individual observations in the data frame to
+set up a MRF smooth.
+```{r}
+d$ID <- over(SpatialPoints(d[c("lon", "lat")]), hexpolys)
+
+## Note, over() only returns the index of the polygons,
+## but for the MRF we need the polygon names.
+d$ID <- as.factor(names(hexpolys)[d$ID])
+print(head(d))
+```
+However, there is still a small Problem, because not all coordinates could be assigned to polygons.
+Unfortunately we get some `NA`'s
+```{r}
+sum(is.na(d$ID))
+```
+To get around this we could use a slightly increased convex hull and intersect once
+more with the hexagonal polygons.
+```{r}
+hexpolys <- HexPoints2SpatialPolygons(pts)
+hexpolys <- gIntersection(gBuffer(hullpoly, width = 0.05),
+  hexpolys, byid = TRUE, drop_lower_td = TRUE)
+
+## Note again, over() only returns the index of the polygons,
+## but for the MRF we need the polygon names.
+d$ID <- over(SpatialPoints(d[c("lon", "lat")]), hexpolys)
+
+## No more NA's.
+sum(is.na(d$ID))
+
+## Get the polygon names.
+pn <- names(hexpolys)
+print(head(pn))
+
+## Ok, we need to modify the names a bit.
+pn <- gsub("buffer ID", "", pn)
+
+## Set up new ID variable with names.
+d$ID <- as.factor(pn[d$ID])
+```
+To set up the final MRF smooth we need to construct the neighborhood information from the
+polygons. This can be done, e.g., by defining polygons as neighbors, that share a common
+border.
+```{r}
+nb <- poly2nb(hexpolys)
+```
+Now, the neighborhood object `nb` can be used to construct the MRF penalty matrix that can
+be passed to the smooth constructor
+```{r}
+## Compute 0/1 neigbhbormatrix.
+P <- nb2mat(nb, style = "B")
+
+## Off diagonal entries are -1, diagonal entries
+## count the number of neighbors for each region.
+nn <- colSums(P)
+P <- P * -1
+diag(P) <- nn
+
+## Set row and column names as in the identifier variable.
+rownames(P) <- colnames(P) <- pn
+```
+Finally, this penalty matrix can be used so set up the MRF smooth term. However, this will still
+give an error, because due to the expansion of the convex hull, a couple of polygons do not have
+any observations, i.e., the dimension of the penalty matrix `P` will be too large at the moment,
+since not all polygon names are assigned levels in the
+`ID` variable in our data frame. To fix this we need to fill up the missing levels.
+```{r}
+i <- !(pn %in% levels(d$ID))
+levels(d$ID) <- c(levels(d$ID), pn[i])
+```
+
+```{r}
+## Smooth specification object.
+st <- s(ID, bs= "mrf", xt = list("penalty" = P))
+
+## Design and penalty constructor.
+str(smooth.construct(st, data = d, knots = NULL))
+```
 
 ## References
 
