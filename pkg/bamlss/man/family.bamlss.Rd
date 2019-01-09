@@ -52,7 +52,7 @@ poisson_bamlss(...)
 gpareto_bamlss(...)
 glogis_bamlss(...)
 AR1_bamlss(ar.start = NULL, ...)
-beta1_bamlss(ar.start = NULL, ...)
+beta1_bamlss(ar.start, ...)
 ztnbinom_bamlss(...)
 lognormal_bamlss(...)
 

@@ -9,3 +9,4 @@ tests
 paper
 vignettes
 index.Rmd
+_pkgdown.yml

@@ -5234,7 +5234,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
       g2 <- rep(0, ncX)
 
-      if(!is.null(x$xt$ndf)) {
+      if(!is.null(x$xt$ndf) & FALSE) {
 #        i <- sample(1:nrX, size = ceiling(nrX * x$xt$frac), replace = FALSE)
 #        X2 <- x$X[i, ]
 #        y2 <- y[i]
@@ -5256,11 +5256,11 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #        }
 #        K <- diag(pen, ncol(Z))
 #        b <- nu/x$xt$K * matrix_inv(crossprod(Z) + K) %*% t(Z) %*% y
-        b <- glmnet(Z, y, alpha = 0.5, family = "gaussian")
-        b <- nu/x$xt$K * b$beta[, ncol(b$beta)]
-        g2[j] <- b
-        x$state$fitted.values <- drop(Z %*% b)
-        x$state$rss <- sum((y - x$state$fitted.values)^2)
+#        b <- glmnet(Z, y, alpha = 0.5, family = "gaussian")
+#        b <- nu/x$xt$K * b$beta[, ncol(b$beta)]
+#        g2[j] <- b
+#        x$state$fitted.values <- drop(Z %*% b)
+#        x$state$rss <- sum((y - x$state$fitted.values)^2)
 ##print(sum_diag(crossprod(Z) %*% matrix_inv(crossprod(Z) + K)))
       } else {
         bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)

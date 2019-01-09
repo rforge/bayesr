@@ -7,7 +7,7 @@
   P-spline model terms. Note that this currently only works using boosting.}
 
 \usage{
-\method{smooth.construct}{ms.smooth.spec}(object, data = NULL, knots = NULL, ...)
+\method{smooth.construct}{ms.smooth.spec}(object, data, knots, ...)
 }
 
 \arguments{

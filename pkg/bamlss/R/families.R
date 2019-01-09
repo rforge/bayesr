@@ -1003,11 +1003,11 @@ beta1_bamlss <- function(ar.start, ...)
   )
 
   rval$p <- function(y, par, ...) {
-    mu <- linkfun$linkfun(par$mu)
-    e <- linkfun$linkfun(y) - mu
+    mu <- lmu$linkfun(par$mu)
+    e <- lmu$linkfun(y) - mu
     e <- c(0, e[-nobs])
     e[i] <- 0
-    mu <- linkfun$linkinv(mu + par$rho * e)
+    mu <- lmu$linkinv(mu + par$rho * e)
     a <- mu * par$phi
     b <- (1 - mu) * par$phi
     pbeta(y, shape1 = a, shape2 = b, ...)
