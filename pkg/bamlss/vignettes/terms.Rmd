@@ -93,7 +93,7 @@ first formula. Note again that the number of basis function within `ti()` is aga
 The reason is, that constructing tensor product model terms can easily end up with thousands of
 parameters, i.e., these type of model terms need to be specified with care.
 
-## Markov Random Fields
+## Markov Random Fields {#mrfs}
 
 Markov random fields (MRF) can be used to model spatially correlated effects using discrete
 locational observations. However, setting up MRFs can be a bit tricky, so I would like to illustrate
@@ -110,7 +110,7 @@ Let's suppose we only have the coordinates of the locations. Sure, we could dire
 spatial effect using some 2D smoother, e.g., with thin plate regression splines. In most situations
 spatial information is available as region identifier, but for illustrating the full path, it is
 a good exercise to start from exact locations. Now, either we have a map available, or we can
-create a hexagonal polygon grid, e.g., using the _spdep_ and _rgeos_ package
+create polygon grid over the observations, e.g., a hexagonal grid using the _spdep_ and _rgeos_ package
 ```{r, fig.width = 4.5, fig.height = 4, fig.align = "center", dev = "png", message=FALSE}
 library("spdep")
 library("rgeos")
@@ -160,12 +160,12 @@ d$ID <- over(SpatialPoints(d[c("lon", "lat")]), hexpolys)
 d$ID <- as.factor(names(hexpolys)[d$ID])
 print(head(d))
 ```
-However, there is still a small Problem, because not all coordinates could be assigned to polygons.
+However, there is still a small problem, because not all coordinates could be assigned to polygons.
 Unfortunately we get some `NA`'s
 ```{r}
 sum(is.na(d$ID))
 ```
-To get around this we could use a slightly increased convex hull and intersect once
+To get around this, we could use a slightly increased convex hull and intersect once
 more with the hexagonal polygons.
 ```{r}
 hexpolys <- HexPoints2SpatialPolygons(pts)
@@ -227,6 +227,23 @@ st <- s(ID, bs= "mrf", xt = list("penalty" = P))
 ## Design and penalty constructor.
 str(smooth.construct(st, data = d, knots = NULL))
 ```
+
+## Functional Random Intercepts
+
+This type of model term is basically a random intercept and slope term, where the functional
+type might be nonlinear, e.g., this type of term is heavily used in joint models for longitudinal
+and survival data [@bamlss:Koehler+Umlauf+Greven:2016; @bamlss:Koehler+Umlauf+Greven:2018].
+Fortunately, using the _mgcv_ package it is not very difficult to set them up. Using the
+artificial data from above, together with our newly created region identifier from the
+[MRF](#mrfs) example, we can set up a functional random intercept using numeric variable `x1` and
+factor variable `ID` with
+```{r, eval = FALSE}
+num ~ ti(ID,bs="re") + ti(xi,bs="ps",k=10) + ti(ID,x1,bs=c("re","ps"),k=c(nlevels(d$ID),5))
+```
+where all nonlinear functions are modeled with P-splines [@bamlss:Eilers+Marx:1996]. One needs
+to be a little bit careful with the number of basis functions in the `ti()` smooth constructor
+since this can easily end up in thousands of parameters and problems with memory might occur
+(also, depending on the number of levels in the factor variable, here `ID`).
 
 ## References
 
