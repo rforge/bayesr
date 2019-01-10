@@ -194,12 +194,12 @@
 )</code></pre></div>
 <p>Here, we use a functional decomposition of the effects of covariates <code>x1</code> and <code>x2</code> in the first formula. Note again that the number of basis function within <code>ti()</code> is again small, <code>k = 5</code>. The reason is, that constructing tensor product model terms can easily end up with thousands of parameters, i.e., these type of model terms need to be specified with care.</p>
 </div>
-<div id="markov-random-fields" class="section level2">
+<div id="mrfs" class="section level2">
 <h2 class="hasAnchor">
-<a href="#markov-random-fields" class="anchor"></a>Markov Random Fields</h2>
+<a href="#mrfs" class="anchor"></a>Markov Random Fields</h2>
 <p>Markov random fields (MRF) can be used to model spatially correlated effects using discrete locational observations. However, setting up MRFs can be a bit tricky, so I would like to illustrate the process with a short example. In the simulated data from above, we artificially sample from spatial locations, see the plot of the coordinates</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(lat ~<span class="st"> </span>lon, <span class="dt">data =</span> d)</code></pre></div>
-<p><img src="terms_files/figure-html/unnamed-chunk-5-1.png" width="432" style="display: block; margin: auto;"> Let’s suppose we only have the coordinates of the locations. Sure, we could directly model the spatial effect using some 2D smoother, e.g., with thin plate regression splines. In most situations spatial information is available as region identifier, but for illustrating the full path, it is a good exercise to start from exact locations. Now, either we have a map available, or we can create a hexagonal polygon grid, e.g., using the <em>spdep</em> and <em>rgeos</em> package</p>
+<p><img src="terms_files/figure-html/unnamed-chunk-5-1.png" width="432" style="display: block; margin: auto;"> Let’s suppose we only have the coordinates of the locations. Sure, we could directly model the spatial effect using some 2D smoother, e.g., with thin plate regression splines. In most situations spatial information is available as region identifier, but for illustrating the full path, it is a good exercise to start from exact locations. Now, either we have a map available, or we can create polygon grid over the observations, e.g., a hexagonal grid using the <em>spdep</em> and <em>rgeos</em> package</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"spdep"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"rgeos"</span>)
 
@@ -262,10 +262,10 @@ d$ID &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 ## 4  1 ID67
 ## 5 1 ID105
 ## 6  1 ID81</code></pre>
-<p>However, there is still a small Problem, because not all coordinates could be assigned to polygons. Unfortunately we get some <code>NA</code>’s</p>
+<p>However, there is still a small problem, because not all coordinates could be assigned to polygons. Unfortunately we get some <code>NA</code>’s</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/NA">is.na</a></span>(d$ID))</code></pre></div>
 <pre><code>## [1] 7</code></pre>
-<p>To get around this we could use a slightly increased convex hull and intersect once more with the hexagonal polygons.</p>
+<p>To get around this, we could use a slightly increased convex hull and intersect once more with the hexagonal polygons.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">hexpolys &lt;-<span class="st"> </span><span class="kw">HexPoints2SpatialPolygons</span>(pts)
 hexpolys &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/rgeos/topics/topo-bin-gIntersection">gIntersection</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/rgeos/topics/misc-gBuffer">gBuffer</a></span>(hullpoly, <span class="dt">width =</span> <span class="fl">0.05</span>),
   hexpolys, <span class="dt">byid =</span> <span class="ot">TRUE</span>, <span class="dt">drop_lower_td =</span> <span class="ot">TRUE</span>)
@@ -346,12 +346,25 @@ st &lt;-<span class="st"> </span><span class="kw">s</span>(ID, <span class="dt">
 ##  $ noterp        : logi TRUE
 ##  - attr(*, "class")= chr "mrf.smooth"</code></pre>
 </div>
+<div id="functional-random-intercepts" class="section level2">
+<h2 class="hasAnchor">
+<a href="#functional-random-intercepts" class="anchor"></a>Functional Random Intercepts</h2>
+<p>This type of model term is basically a random intercept and slope term, where the functional type might be nonlinear, e.g., this type of term is heavily used in joint models for longitudinal and survival data <span class="citation">(Köhler et al. 2017; Köhler, Umlauf, and Greven 2018)</span>. Fortunately, using the <em>mgcv</em> package it is not very difficult to set them up. Using the artificial data from above, together with our newly created region identifier from the <a href="#mrfs">MRF</a> example, we can set up a functional random intercept using numeric variable <code>x1</code> and factor variable <code>ID</code> with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">num ~<span class="st"> </span><span class="kw">ti</span>(ID,<span class="dt">bs=</span><span class="st">"re"</span>) +<span class="st"> </span><span class="kw">ti</span>(xi,<span class="dt">bs=</span><span class="st">"ps"</span>,<span class="dt">k=</span><span class="dv">10</span>) +<span class="st"> </span><span class="kw">ti</span>(ID,x1,<span class="dt">bs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"re"</span>,<span class="st">"ps"</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nlevels">nlevels</a></span>(d$ID),<span class="dv">5</span>))</code></pre></div>
+<p>where all nonlinear functions are modeled with P-splines <span class="citation">(Eilers and Marx 1996)</span>. One needs to be a little bit careful with the number of basis functions in the <code>ti()</code> smooth constructor since this can easily end up in thousands of parameters and problems with memory might occur (also, depending on the number of levels in the factor variable, here <code>ID</code>).</p>
+</div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
 <div id="ref-bamlss:Eilers+Marx:1996">
 <p>Eilers, P. H. C, and B. D. Marx. 1996. “Flexible Smoothing Using B-Splines and Penalized Likelihood.” <em>Statistical Science</em> 11: 89–121. doi:<a href="https://doi.org/10.1214/ss/1038425655">10.1214/ss/1038425655</a>.</p>
+</div>
+<div id="ref-bamlss:Koehler+Umlauf+Greven:2018">
+<p>Köhler, Meike, Nikolaus Umlauf, and Sonja Greven. 2018. “Nonlinear Association Structures in Flexible Bayesian Additive Joint Models.” <em>Statistics in Medicine</em> 37 (30): 4771–88. doi:<a href="https://doi.org/10.1002/sim.7967">10.1002/sim.7967</a>.</p>
+</div>
+<div id="ref-bamlss:Koehler+Umlauf+Greven:2016">
+<p>Köhler, Meike, Nikolaus Umlauf, Andreas Beyerlein, Christiane Winkler, Anette-Gabriele Ziegler, and Sonja Greven. 2017. “Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research.” <em>Biometrical Journal</em> 59 (6): 1144–65. doi:<a href="https://doi.org/10.1002/bimj.201600224">10.1002/bimj.201600224</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
@@ -374,7 +387,8 @@ st &lt;-<span class="st"> </span><span class="kw">s</span>(ID, <span class="dt">
 <li><a href="#overview">Overview</a></li>
       <li><a href="#specification">Specification</a></li>
       <li><a href="#basics">Basics</a></li>
-      <li><a href="#markov-random-fields">Markov Random Fields</a></li>
+      <li><a href="#mrfs">Markov Random Fields</a></li>
+      <li><a href="#functional-random-intercepts">Functional Random Intercepts</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
