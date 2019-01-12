@@ -23,9 +23,23 @@ set.seed(123)
 ## Intro
 
 The _bamlss_ package is perfectly suitable for estimating (Bayesian) generalized linear 
-models (GLM) and has infrastructure for very large data sets, too. First, we illustrate how 
-to fit standard GLMs and how to do inference using the _bamlss_ framework. In addition,
-we show how to estimate GLMs using very large data set.
+models (GLM) and has infrastructure for very large data sets, too.  Within the main
+model fitting function `bamlss()`, the possible `family` specifications for fitting GLMs
+are:
+
+* `"gaussian"` or `gaussian_bamlss()`,
+* `"beta"` or `beta_bamlss()`,
+* `"binomial"` or `binomial_bamlss()`,
+* `"gamma"` or `gamma_bamlss()`,
+* `"poisson"` or `poisson_bamlss()`.
+
+However, there is a wrapper function for the family objects provided by the _gamlss_
+package, so in principle all _gamlss_ families can be used by just passing them to the
+`family` argument in the `bamlss()` function.
+
+First, we illustrate 
+how  to fit standard GLMs and how to do inference using the _bamlss_ framework.
+In addition, we show how to estimate GLMs using very large data set.
 
 ## Logit Model
 
@@ -73,7 +87,7 @@ plot(b, which = "samples")
 ```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 plot(b$samples[, c("pi.p.(Intercept)", "pi.p.income")])
 ```
-Which indicate convergent of the MCMC chains. Note that this call would show all
+Which indicate convergence of the MCMC chains. Note that this call would show all
 traceplots, for convenience we only show the plots for the intercepts and variable `income`.
 
 The coefficients can also be extracted using the `coef()` method
