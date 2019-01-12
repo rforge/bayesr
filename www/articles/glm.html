@@ -95,7 +95,21 @@
 <div id="intro" class="section level2">
 <h2 class="hasAnchor">
 <a href="#intro" class="anchor"></a>Intro</h2>
-<p>The <em>bamlss</em> package is perfectly suitable for estimating (Bayesian) generalized linear models (GLM) and has infrastructure for very large data sets, too. First, we illustrate how to fit standard GLMs and how to do inference using the <em>bamlss</em> framework. In addition, we show how to estimate GLMs using very large data set.</p>
+<p>The <em>bamlss</em> package is perfectly suitable for estimating (Bayesian) generalized linear models (GLM) and has infrastructure for very large data sets, too. Within the main model fitting function <code><a href="../reference/bamlss.html">bamlss()</a></code>, the possible <code>family</code> specifications for fitting GLMs are:</p>
+<ul>
+<li>
+<code>"gaussian"</code> or <code><a href="../reference/family.bamlss.html">gaussian_bamlss()</a></code>,</li>
+<li>
+<code>"beta"</code> or <code><a href="../reference/family.bamlss.html">beta_bamlss()</a></code>,</li>
+<li>
+<code>"binomial"</code> or <code><a href="../reference/family.bamlss.html">binomial_bamlss()</a></code>,</li>
+<li>
+<code>"gamma"</code> or <code><a href="../reference/family.bamlss.html">gamma_bamlss()</a></code>,</li>
+<li>
+<code>"poisson"</code> or <code><a href="../reference/family.bamlss.html">poisson_bamlss()</a></code>.</li>
+</ul>
+<p>However, there is a wrapper function for the family objects provided by the <em>gamlss</em> package, so in principle all <em>gamlss</em> families can be used by just passing them to the <code>family</code> argument in the <code><a href="../reference/bamlss.html">bamlss()</a></code> function.</p>
+<p>First, we illustrate how to fit standard GLMs and how to do inference using the <em>bamlss</em> framework. In addition, we show how to estimate GLMs using very large data set.</p>
 </div>
 <div id="logit-model" class="section level2">
 <h2 class="hasAnchor">
@@ -159,7 +173,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## ---</code></pre>
 <p>which suggests “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. Before we proceed, we usually do some convergence checks of the MCMC chains using traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Which indicate convergent of the MCMC chains. Note that this call would show all traceplots, for convenience we only show the plots for the intercepts and variable <code>income</code>.</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Which indicate convergence of the MCMC chains. Note that this call would show all traceplots, for convenience we only show the plots for the intercepts and variable <code>income</code>.</p>
 <p>The coefficients can also be extracted using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef()</a></code> method</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Extract posterior mean.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef</a></span>(b, <span class="dt">FUN =</span> mean)</code></pre></div>
