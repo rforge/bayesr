@@ -1,0 +1,142 @@
+---
+title: "Generalized Linear Models"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Model Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, GLM, big data}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+```
+
+## Intro
+
+The _bamlss_ package is perfectly suitable for estimating (Bayesian) generalized linear 
+models (GLM) and has infrastructure for very large data sets, too. First, we illustrate how 
+to fit standard GLMs and how to do inference using the _bamlss_ framework. In addition,
+we show how to estimate GLMs using very large data set.
+
+## Logit Model
+
+This example is taken from the _AER_ package [@bamlss:Kleiber+Zeileis:2018; @bamlss:Kleiber+Zeileis:2008] and is about labor force participation (yes/no) of women in Switzerland
+1981. The data can be loaded with
+```{r}
+data("SwissLabor", package = "AER")
+print(head(SwissLabor))
+```
+The data frame contains of 872 observations on 7 variables, where some of them might have
+a nonlinear influence on the response labor `participation`. Now, a standard Bayesian 
+binomial logit model can be fitted with
+```{r, echo=FALSE, message=FALSE, results='hide'}
+if(!file.exists("figures/SwissLabor.rda")) {
+  f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
+  set.seed(123)
+  b <- bamlss(f, family = "binomial", data = SwissLabor,
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b, file = "figures/SwissLabor.rda")
+} else {
+  load("figures/SwissLabor.rda")
+}
+```
+```{r, eval=FALSE}
+## First, set the seed for reproducibly.
+set.seed(123)
+
+## Model formula.
+f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
+
+## Estimate model.
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  n.iter = 12000, burnin = 2000, thin = 10)
+```
+Note, to capture nonlinearities, a quadratic term for variable `age` is added to the model. The model summary gives
+```{r}
+summary(b)
+```
+which suggests "significant" effects for all covariates, since there are no zeros within
+the 95% credible intervals. Before we proceed, we usually do some convergence checks of
+the MCMC chains using traceplots
+```{r, eval=FALSE}
+plot(b, which = "samples")
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+plot(b$samples[, c("pi.p.(Intercept)", "pi.p.income")])
+```
+Which indicate convergent of the MCMC chains. Note that this call would show all
+traceplots, for convenience we only show the plots for the intercepts and variable `income`.
+
+The coefficients can also be extracted using the `coef()` method
+```{r}
+## Extract posterior mean.
+coef(b, FUN = mean)
+
+## Or use any other function on the samples.
+coef(b, FUN = function(x) { quantile(x, prob = c(0.025, 0.975)) })
+```
+The naming convention here might first seem a bit atypical, it is based on the idea a
+_bamlss_ family can have more than just one distributional parameter, as well as linear
+and nonlinear model terms. So `pi` is the name of the distributional parameter in the
+`binomial_bamlss()` family and `p` stands for parametric terms.
+
+Model predictions on the probability scale can be obtained by the predict method (see also
+function `predict.bamlss()`)
+```{r}
+## Create some newdata for prediction, note that
+## factors need to be fully specified (this will be changed soon).
+nd <- data.frame(income = 11, age = 3.3,
+  education = 12, youngkids = 1, oldkids = 1,
+  foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
+
+## Predicted probabilities.
+predict(b, newdata = nd, type = "parameter")
+nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
+predict(b, newdata = nd, type = "parameter")
+```
+```{r, eval=FALSE}
+## Predict effect of age including 95% credible intervals and plot.
+nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
+  education = 12, youngkids = 1, oldkids = 1,
+  foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
+
+nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
+nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+
+plot2d(p.no ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
+plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
+  lty = c(2, 1, 2))
+legend("topright", c("foreign yes", "foreign no"), lwd = 1,
+  col = c("blue", "black"))
+```
+```{r, fig.width = 5, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
+  education = 12, youngkids = 1, oldkids = 1,
+  foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
+
+nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
+nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+plot2d(p.no ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
+plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
+  lty = c(2, 1, 2))
+legend("topright", c("foreign yes", "foreign no"), lwd = 1,
+  col = c("blue", "black"))
+```
+
+## References
+
