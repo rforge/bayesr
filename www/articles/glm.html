@@ -95,7 +95,7 @@
 <div id="intro" class="section level2">
 <h2 class="hasAnchor">
 <a href="#intro" class="anchor"></a>Intro</h2>
-<p>The <em>bamlss</em> package is perfectly suitable for estimating (Bayesian) generalized linear models (GLM) and has infrastructure for very large data sets, too. Within the main model fitting function <code><a href="../reference/bamlss.html">bamlss()</a></code>, the possible <code>family</code> specifications for fitting GLMs are:</p>
+<p>The <em>bamlss</em> package is perfectly suitable for estimating (Bayesian) generalized linear models (GLM) and provides infrastructures for the estimation using very large data sets, too. Within the main model fitting function <code><a href="../reference/bamlss.html">bamlss()</a></code>, the possible <code>family</code> specifications for fitting GLMs are:</p>
 <ul>
 <li>
 <code>"gaussian"</code> or <code><a href="../reference/family.bamlss.html">gaussian_bamlss()</a></code>,</li>
@@ -108,8 +108,8 @@
 <li>
 <code>"poisson"</code> or <code><a href="../reference/family.bamlss.html">poisson_bamlss()</a></code>.</li>
 </ul>
-<p>However, there is a wrapper function for the family objects provided by the <em>gamlss</em> package, so in principle all <em>gamlss</em> families can be used by just passing them to the <code>family</code> argument in the <code><a href="../reference/bamlss.html">bamlss()</a></code> function.</p>
-<p>First, we illustrate how to fit standard GLMs and how to do inference using the <em>bamlss</em> framework. In addition, we show how to estimate GLMs using very large data set.</p>
+<p>In addition, there is a wrapper function for the family objects provided by the <em>gamlss</em> package, so in principle all <em>gamlss</em> families can be used by just passing them to the <code>family</code> argument in the <code><a href="../reference/bamlss.html">bamlss()</a></code> function.</p>
+<p>First, we illustrate how to fit standard GLMs and how to do inference using the <em>bamlss</em> framework. Aftwards, we show how to estimate GLMs using very large data set.</p>
 </div>
 <div id="logit-model" class="section level2">
 <h2 class="hasAnchor">
@@ -171,10 +171,10 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## logLik = -508.7851 logPost = -571.3986 nobs = 872
 ## runtime = 0.171
 ## ---</code></pre>
-<p>which suggests “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. Before we proceed, we usually do some convergence checks of the MCMC chains using traceplots</p>
+<p>which suggests “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. Before we proceed, we usually do some convergence checks of the MCMC chains using traceplots.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Which indicate convergence of the MCMC chains. Note that this call would show all traceplots, for convenience we only show the plots for the intercepts and variable <code>income</code>.</p>
-<p>The coefficients can also be extracted using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef()</a></code> method</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> The plots indicate convergence of the MCMC chains, i.e., there is no visible trend in the MCMC chains and very low autocorrelation suggest i.i.d. sampling from the posterior distribution. Note that the function call would show all traceplots, however, for convenience we only show the plots for the intercept and variable <code>income</code>.</p>
+<p>The estimated regression coefficients can also be extracted using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef()</a></code> method</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Extract posterior mean.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef</a></span>(b, <span class="dt">FUN =</span> mean)</code></pre></div>
 <pre><code>## pi.p.(Intercept)      pi.p.income         pi.p.age   pi.p.education 
@@ -195,8 +195,8 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## pi.p.foreignyes   0.77612963  1.53449289
 ## pi.p.I(age^2)    -0.64783455 -0.32830179
 ## pi.p.alpha        0.29466484  1.00000000</code></pre>
-<p>The naming convention here might first seem a bit atypical, it is based on the idea a <em>bamlss</em> family can have more than just one distributional parameter, as well as linear and nonlinear model terms. So <code>pi</code> is the name of the distributional parameter in the <code><a href="../reference/family.bamlss.html">binomial_bamlss()</a></code> family and <code>p</code> stands for parametric terms.</p>
-<p>Model predictions on the probability scale can be obtained by the predict method (see also function <code><a href="../reference/predict.bamlss.html">predict.bamlss()</a></code>)</p>
+<p>(there is also a <code><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint()</a></code> method). The naming convention of the regression coefficients might first seem a bit atypical, it is based on the idea that a <em>bamlss</em> family/response distribution can have more than just one distributional parameter, as well as linear and/or nonlinear model terms. To explain, <code>pi</code> is the name of the distributional parameter in the <code><a href="../reference/family.bamlss.html">binomial_bamlss()</a></code> family and <code>p</code> stands for parametric terms, i.e., there would also be a <code>s</code> for smooth terms if they are part of the model.</p>
+<p>Model predictions on the probability scale can be obtained by the predict method (see also function <code><a href="../reference/predict.bamlss.html">predict.bamlss()</a></code>).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Create some newdata for prediction, note that
 ## factors need to be fully specified (this will be changed soon).
 nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="dt">income =</span> <span class="dv">11</span>, <span class="dt">age =</span> <span class="fl">3.3</span>,
@@ -209,6 +209,7 @@ nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocument
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd$foreign &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/factor">factor</a></span>(<span class="dv">2</span>, <span class="dt">levels =</span> <span class="dv">1</span>:<span class="dv">2</span>, <span class="dt">labels =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"no"</span>, <span class="st">"yes"</span>))
 <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">type =</span> <span class="st">"parameter"</span>)</code></pre></div>
 <pre><code>## [1] 0.552208</code></pre>
+<p>To visualize the effect of age on the probability we can do the following:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Predict effect of age including 95% credible intervals and plot.
 nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="dt">income =</span> <span class="dv">11</span>, <span class="dt">age =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">2</span>, <span class="fl">6.2</span>, <span class="dt">length =</span> <span class="dv">100</span>),
   <span class="dt">education =</span> <span class="dv">12</span>, <span class="dt">youngkids =</span> <span class="dv">1</span>, <span class="dt">oldkids =</span> <span class="dv">1</span>,
@@ -224,7 +225,7 @@ nd$p.yes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
   <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">"topright"</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"foreign yes"</span>, <span class="st">"foreign no"</span>), <span class="dt">lwd =</span> <span class="dv">1</span>,
   <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"blue"</span>, <span class="st">"black"</span>))</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-10-1.png" width="480" style="display: block; margin: auto;"></p>
+<p><img src="glm_files/figure-html/unnamed-chunk-10-1.png" width="480" style="display: block; margin: auto;"> The plot nicely depicts the nonlinear effect of variable <code>age</code> for the two levels of <code>foreign</code>.</p>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
