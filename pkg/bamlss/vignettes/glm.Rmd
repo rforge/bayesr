@@ -23,9 +23,9 @@ set.seed(123)
 ## Intro
 
 The _bamlss_ package is perfectly suitable for estimating (Bayesian) generalized linear 
-models (GLM) and has infrastructure for very large data sets, too.  Within the main
-model fitting function `bamlss()`, the possible `family` specifications for fitting GLMs
-are:
+models (GLM) and provides infrastructures for the estimation using very large data sets,
+too.  Within the main model fitting function `bamlss()`, the possible `family` 
+specifications for fitting GLMs are:
 
 * `"gaussian"` or `gaussian_bamlss()`,
 * `"beta"` or `beta_bamlss()`,
@@ -33,18 +33,18 @@ are:
 * `"gamma"` or `gamma_bamlss()`,
 * `"poisson"` or `poisson_bamlss()`.
 
-However, there is a wrapper function for the family objects provided by the _gamlss_
+In addition, there is a wrapper function for the family objects provided by the _gamlss_
 package, so in principle all _gamlss_ families can be used by just passing them to the
 `family` argument in the `bamlss()` function.
 
-First, we illustrate 
-how  to fit standard GLMs and how to do inference using the _bamlss_ framework.
-In addition, we show how to estimate GLMs using very large data set.
+First, we illustrate how  to fit standard GLMs and how to do inference using the _bamlss_ 
+framework. Aftwards, we show how to estimate GLMs using very large data set.
 
-## Logit Model
+## Lsvogit Model
 
-This example is taken from the _AER_ package [@bamlss:Kleiber+Zeileis:2018; @bamlss:Kleiber+Zeileis:2008] and is about labor force participation (yes/no) of women in Switzerland
-1981. The data can be loaded with
+This example is taken from the _AER_ package
+[@bamlss:Kleiber+Zeileis:2018; @bamlss:Kleiber+Zeileis:2008] and is about labor force 
+participation (yes/no) of women in Switzerland 1981. The data can be loaded with
 ```{r}
 data("SwissLabor", package = "AER")
 print(head(SwissLabor))
@@ -80,17 +80,19 @@ summary(b)
 ```
 which suggests "significant" effects for all covariates, since there are no zeros within
 the 95% credible intervals. Before we proceed, we usually do some convergence checks of
-the MCMC chains using traceplots
+the MCMC chains using traceplots.
 ```{r, eval=FALSE}
 plot(b, which = "samples")
 ```
 ```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 plot(b$samples[, c("pi.p.(Intercept)", "pi.p.income")])
 ```
-Which indicate convergence of the MCMC chains. Note that this call would show all
-traceplots, for convenience we only show the plots for the intercepts and variable `income`.
+The plots indicate convergence of the MCMC chains, i.e., there is no visible trend in the
+MCMC chains and very low autocorrelation suggest i.i.d. sampling from the posterior
+distribution. Note that the function call would show all traceplots, however, for 
+convenience we only show the plots for the intercept and variable `income`.
 
-The coefficients can also be extracted using the `coef()` method
+The estimated regression coefficients can also be extracted using the `coef()` method
 ```{r}
 ## Extract posterior mean.
 coef(b, FUN = mean)
@@ -98,13 +100,15 @@ coef(b, FUN = mean)
 ## Or use any other function on the samples.
 coef(b, FUN = function(x) { quantile(x, prob = c(0.025, 0.975)) })
 ```
-The naming convention here might first seem a bit atypical, it is based on the idea a
-_bamlss_ family can have more than just one distributional parameter, as well as linear
-and nonlinear model terms. So `pi` is the name of the distributional parameter in the
-`binomial_bamlss()` family and `p` stands for parametric terms.
+(there is also a `confint()` method). The naming convention of the regression coefficients 
+might first seem a bit atypical, it is based on the idea that a _bamlss_ family/response 
+distribution can have more than just one distributional parameter, as well as 
+linear and/or nonlinear model terms. To explain, `pi` is the name of the distributional 
+parameter in the `binomial_bamlss()` family and `p` stands for parametric terms, i.e.,
+there would also be a `s` for smooth terms if they are part of the model.
 
 Model predictions on the probability scale can be obtained by the predict method (see also
-function `predict.bamlss()`)
+function `predict.bamlss()`).
 ```{r}
 ## Create some newdata for prediction, note that
 ## factors need to be fully specified (this will be changed soon).
@@ -117,6 +121,7 @@ predict(b, newdata = nd, type = "parameter")
 nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
 predict(b, newdata = nd, type = "parameter")
 ```
+To visualize the effect of age on the probability we can do the following:
 ```{r, eval=FALSE}
 ## Predict effect of age including 95% credible intervals and plot.
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
@@ -143,7 +148,7 @@ nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
 nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 
-par(mar = c(4.1, 4.1, 0.1, 0.1))
+par(mar = c(4.5, 4, 0.5, 0.5))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
 plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
@@ -151,6 +156,8 @@ plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
 legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   col = c("blue", "black"))
 ```
+The plot nicely depicts the nonlinear effect of variable `age` for the two levels
+of `foreign`.
 
 ## References
 
