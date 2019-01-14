@@ -269,7 +269,7 @@ and the corresponding randomized quantile residuals plots are created with
 ```{r, eval = FALSE}
 plot(b2, which = c("hist-resid", "qq-resid"))
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png"}
 par(mfrow = c(1, 2))
 plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
@@ -279,6 +279,89 @@ the model performance could probably be improved further. The corresponding DIC 
 DIC(b1, b2)
 ```
 which also state that the zero-inflated negative binomial model is better than the Poisson model.
+
+## Large Data Sets
+
+The R package _bamlss_ provides infrastructures to estimate models using large data sets. The default
+algorithms for posterior mode estimation (see function `bfit()`) and MCMC simulation
+(function `GMCMC()`) can be utilized in these situations. More precisely, the algorithms make advantage
+of the fact that usually the number of unique observations is much smaller than the number of
+total observations in the data (for a detailed description of the algorithms see
+@bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014). For illustration, we load the precipitation
+data of the HOMSTART-project which was first analyzed in @bamlss:Umlauf+Mayr+Messner:2012
+(note, an internet connection is required).
+```{r, eval=FALSE}
+homstart_data(load = TRUE)
+```
+```{r, echo=FALSE, results='hide', message=FALSE}
+if(!file.exists("figures/homstart.rda")) {
+  owd <- getwd()
+  setwd("figures")
+  homstart_data(load = TRUE)
+  save(homstart, file = "figures/homstart.rda")
+  setwd(owd)
+} else {
+  load("figures/homstart.rda")
+}
+```
+```{r}
+print(head(homstart))
+print(dim(homstart))
+```
+The data consists of 1063610 observations. To illustrate how large models can be fitted using
+_bamlss_, we estimate a logit model using the binary response variable `bin`, which indicates if
+it rained or not.
+```{r, eval=FALSE}
+## Set the seed for reproducibly.
+set.seed(123)
+
+## Model formula including a seasonal effect of the day
+## of the year using harmonic regression.
+f <- bin ~ weekend + elevation + cos1 + cos2 + sin1 + sin2
+
+## Estimate model using only unique observations by setting
+## argument binning = TRUE in the bamlss() call. Moreover,
+## only use minimum storage for the returned object by
+## setting light = TRUE.
+b <- bamlss(f, data = homstart, family = "binomial",
+  binning = TRUE, light = TRUE)
+```
+```{r, echo=FALSE, results='hide', message=FALSE}
+if(!file.exists("figures/homstart_model.rda")) {
+  set.seed(123)
+  f <- bin ~ weekend + elevation + cos1 + cos2 + sin1 + sin2
+  b <- bamlss(f, data = homstart, family = "binomial",
+    binning = TRUE, light = TRUE)
+  save(b, file = "figures/homstart_model.rda")
+} else {
+  load("figures/homstart_model.rda")
+}
+```
+By setting `binning = TRUE`, the algorithms only use 33580 unique observations for model fitting.
+This could in principle even be further utilized if each covariate represents one model term,
+e.g.:
+```{r}
+f <- bin ~ weekend +
+  s(elevation,bs="re",fx=TRUE) +
+  s(cos1,bs="re",fx=TRUE) + s(cos2,bs="re",fx=TRUE) +
+  s(sin1,bs="re",fx=TRUE) + s(sin2,bs="re",fx=TRUE)
+```
+Which is a bit of a hack using the random effects smooth constructor and setting `fx = TRUE`,
+forcing the smoother to use fixed effects (linear effects) estimation. However, by doing so, the
+resulting number of unique observations for the harmonic part is only 365 and for elevation only
+46, which saves quite a lot of memory storage.
+
+In this example, we are interested if it is more likely to rain on weekends than during
+the week (see also @bamlss:Umlauf+Mayr+Messner:2012 and @bamlss:Umlauf+Klein+Zeileis:2017 for a
+more detailed analysis). The model summary suggests
+```{r}
+summary(b)
+```
+that the weekend effect is very little and since we did not account for any spatial correlations
+in this example, the effect is most probably not existing (at least in Austria). Note, because
+we set `light = TRUE` in the `bamlss()` call, there will be no real sampler summary except of
+the presented runtime of the sampler. The reason is, that computing the DIC from the posterior
+samples can take quite long and can lead to memory storage problems, too.
 
 ## References
 
