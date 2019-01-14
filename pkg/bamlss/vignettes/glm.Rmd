@@ -1,5 +1,5 @@
 ---
-title: "Generalized Linear Models"
+title: "Generalized Linear Models (+)"
 output:
   html_document:
     toc: true
@@ -34,13 +34,14 @@ specifications for fitting GLMs are:
 * `"poisson"` or `poisson_bamlss()`.
 
 In addition, there is a wrapper function for the family objects provided by the _gamlss_
-package, so in principle all _gamlss_ families can be used by just passing them to the
-`family` argument in the `bamlss()` function.
+package [@bamlss:Stasinopoulos+Rigby:2018], so in principle all _gamlss_ families can be used by
+just passing them to the `family` argument in the `bamlss()` function (see also the
+[count data regression example](#countreg)).
 
 First, we illustrate how  to fit standard GLMs and how to do inference using the _bamlss_ 
 framework. Aftwards, we show how to estimate GLMs using very large data set.
 
-## Lsvogit Model
+## Logit Model
 
 This example is taken from the _AER_ package
 [@bamlss:Kleiber+Zeileis:2018; @bamlss:Kleiber+Zeileis:2008] and is about labor force 
@@ -158,6 +159,125 @@ legend("topright", c("foreign yes", "foreign no"), lwd = 1,
 ```
 The plot nicely depicts the nonlinear effect of variable `age` for the two levels
 of `foreign`.
+
+## Models for Count Data {#countreg}
+
+This example is taken from @bamlss:Zeileis+Kleiber+Jackman:2008. The application is about
+modeling the demand for medical care by elderly and was first analyzed by @bamlss:Deb+Trivedi:1997. The data can be downloaded on loaded into R with
+```{r}
+download.file(
+  "https://www.jstatsoft.org/index.php/jss/article/downloadSuppFile/v027i08/DebTrivedi.rda.zip",
+  "DebTrivedi.rda.zip"
+)
+unzip("DebTrivedi.rda.zip")
+load("DebTrivedi.rda")
+print(head(DebTrivedi))
+```
+The response variable in this data is the number of physician office visits, variable `ofp`. A
+histogram of the count data response can be plotted with
+```{r, eval=FALSE}
+plot(table(DebTrivedi$ofp),
+  xlab = "Number of physician office visits",
+  ylab = "Frequency")
+```
+```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5))
+plot(table(DebTrivedi$ofp),
+  xlab = "Number of physician office visits",
+  ylab = "Frequency")
+```
+which shows very large counts and also a large number of zero counts. Our first model is a
+Poisson regression, which can be estimated with
+```{r, echo=FALSE, message=FALSE, results='hide'}
+if(!file.exists("figures/Poisson.rda")) {
+  f <- ofp ~ hosp + health + numchron + gender + school + privins
+  set.seed(123)
+  b1 <- bamlss(f, family = "poisson", data = DebTrivedi,
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b1, file = "figures/Poisson1.rda")
+} else {
+  load("figures/Poisson1.rda")
+}
+```
+```{r, eval=FALSE}
+## Set the seed for reproducibly.
+set.seed(123)
+
+## Model formula.
+f <- ofp ~ hosp + health + numchron + gender + school + privins
+
+## Estimate model.
+b1 <- bamlss(f, family = "poisson", data = DebTrivedi,
+  n.iter = 12000, burnin = 2000, thin = 10)
+```
+The model summary is shown by
+```{r}
+summary(b1)
+```
+which shows "significant" effects for all covariates, since there are no zeros within
+the 95% credible intervals. We can use randomized quantile residuals [@bamlss:Dunn+Gordon:1996]
+to evaluate how good the models fits to the data.
+```{r, eval = FALSE}
+plot(b1, which = c("hist-resid", "qq-resid"))
+```
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+par(mfrow = c(1, 2))
+plot(b1, which = c("hist-resid", "qq-resid"), spar = FALSE)
+```
+Clearly, the plots shows that the model performance is not very good at the tails of the data,
+this might be caused by the large amount of zero counts in the data, which is not accounted for
+using the Poisson distribution.
+
+Therefore, another possible candidate for the response distribution is the
+zero-inflated negative binomial distribution, which is implemented in the _gamlss_ package
+[@bamlss:Stasinopoulos+Rigby:2018] in the function `ZINBI`. The family has 3 parameters `mu`,
+`sigma` and `nu`. In this example we model distributional parameters `mu` and `sigma` in terms of
+covariates by setting up the model formula with
+```{r}
+f <- list(
+  ofp ~ hosp + health + numchron + gender + school + privins,
+  sigma ~ hosp + health + numchron + gender + school + privins,
+  nu ~ 1
+)
+```
+Note, for parameter `nu` an intercept only model would also be the default if the specification
+is omitted in the model formula. The model is estimated with (note, this can take some time)
+```{r, echo=FALSE, message=FALSE, results='hide'}
+library("gamlss")
+if(!file.exists("figures/Poisson2.rda")) {
+  set.seed(123)
+  b2 <- bamlss(f, family = ZINBI, data = DebTrivedi,
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b2, file = "figures/Poisson2.rda")
+} else {
+  load("figures/Poisson2.rda")
+}
+```
+```{r, eval=FALSE}
+## Set the seed for reproducibly.
+set.seed(123)
+
+## Estimate model.
+b2 <- bamlss(f, family = ZINBI, data = DebTrivedi,
+  n.iter = 12000, burnin = 2000, thin = 10)
+```
+The model summary gives
+```{r}
+summary(b2)
+```
+and the corresponding randomized quantile residuals plots are created with
+```{r, eval = FALSE}
+plot(b2, which = c("hist-resid", "qq-resid"))
+```
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+par(mfrow = c(1, 2))
+plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
+```
+The plots indicate a better model fit compared to the Poisson model, this is also indicated
+by the much lower DIC.
+```{r}
+DIC(b1, b2)
+```
 
 ## References
 

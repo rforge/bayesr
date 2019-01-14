@@ -238,7 +238,7 @@ artificial data from above, together with our newly created region identifier fr
 [MRF](#mrfs) example, we can set up a functional random intercept using numeric variable `x1` and
 factor variable `ID` with
 ```{r, eval = FALSE}
-num ~ ti(ID,bs="re") + ti(xi,bs="ps",k=10) + ti(ID,x1,bs=c("re","ps"),k=c(nlevels(d$ID),5))
+num ~ ti(ID,bs="re") + ti(x1,bs="ps",k=10) + ti(ID,x1,bs=c("re","ps"),k=c(nlevels(d$ID),5))
 ```
 where all nonlinear functions are modeled with P-splines [@bamlss:Eilers+Marx:1996]. One needs
 to be a little bit careful with the number of basis functions in the `ti()` smooth constructor

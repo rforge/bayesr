@@ -3003,7 +3003,7 @@ zinb_bamlss <- function(...)
       "pi" = c("zinb", "pi"),
       "delta" = c("zinb", "delta")
     ),
-	  "mu" = function(par, ...) {
+    "mu" = function(par, ...) {
       par$mu * (1 - par$pi)
     },
     "d" = function(y, par, log = FALSE) {

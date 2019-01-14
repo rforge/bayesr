@@ -25,7 +25,7 @@ navbar:
         href: articles/misc.html
       - text: Available Model Terms
         href: articles/terms.html
-      - text: Generalized Linear Models
+      - text: Generalized Linear Models (+)
         href: articles/glm.html
     news:
       text: Changelog
