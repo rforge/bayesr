@@ -25,7 +25,7 @@ set.seed(123)
 The _bamlss_ package is perfectly suitable for estimating (Bayesian) generalized linear 
 models (GLM) and provides infrastructures for the estimation using very large data sets,
 too.  Within the main model fitting function `bamlss()`, the possible `family` 
-specifications for fitting GLMs are:
+specifications for fitting GLMs are: 
 
 * `"gaussian"` or `gaussian_bamlss()`,
 * `"beta"` or `beta_bamlss()`,
@@ -273,11 +273,12 @@ plot(b2, which = c("hist-resid", "qq-resid"))
 par(mfrow = c(1, 2))
 plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
-The plots indicate a better model fit compared to the Poisson model, this is also indicated
-by the much lower DIC.
+The plots indicate a better model fit compared to the Poisson model, however, for very large counts
+the model performance could probably be improved further. The corresponding DIC values are
 ```{r}
 DIC(b1, b2)
 ```
+which also state that the zero-inflated negative binomial model is better than the Poisson model.
 
 ## References
 

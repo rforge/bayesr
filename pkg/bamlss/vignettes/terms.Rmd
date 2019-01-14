@@ -213,7 +213,7 @@ rownames(P) <- colnames(P) <- pn
 Finally, this penalty matrix can be used so set up the MRF smooth term. However, this will still
 give an error, because due to the expansion of the convex hull, a couple of polygons do not have
 any observations, i.e., the dimension of the penalty matrix `P` will be too large at the moment,
-since not all polygon names are assigned levels in the
+since not all polygon names are assigned levels in the 
 `ID` variable in our data frame. To fix this we need to fill up the missing levels.
 ```{r}
 i <- !(pn %in% levels(d$ID))

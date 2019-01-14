@@ -16,7 +16,7 @@ vignette: >
 ---
 
 * Data for the article "Spatio-Temporal Precipitation Climatology over Complex Terrain
-  Using a Censored Additive Regression Models"
+  Using a Censored Additive Regression Models" 
   [@bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016].
   Download [precipitation_clim.tar.gz](../misc/precipitation_clim.tar.gz).
 

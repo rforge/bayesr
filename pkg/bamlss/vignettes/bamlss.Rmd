@@ -26,7 +26,7 @@ load("figures/toymodel.rda")
 The R package _bamlss_ provides a modular computational framework for distributional regression
 models (and beyond). The implementation follows the conceptional framework presented in
 @bamlss:Umlauf+Klein+Zeileis:2017, which supports Bayesian and/or frequentist estimation engines
-using complex possibly nonlinear model terms of any type. The highlights of the package are:
+using complex possibly nonlinear model terms of any type. The highlights of the package are: 
 
 * A unified model description where a `formula` specifies how to set up the predictors
   from the `data` and `family` objects provide information about the response distribution.

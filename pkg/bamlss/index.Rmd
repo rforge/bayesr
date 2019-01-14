@@ -12,7 +12,7 @@ The _bamlss_ package provides a modular computational framework for distribution
 models (and beyond). Users can specify complex models using the familiar formula syntax of R. The
 package supports commonly used extractor functions like `plot()`, `summary()`, `predict()`, etc.
 Moreover, users can specify their own model term constructors or even model fitting engines, 
-Bayesian or frequentist.
+Bayesian or frequentist. 
 
 
 ## Flexible model terms
