@@ -294,13 +294,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 35958.86 logLik = -17975.52 pd = 7.813
-## runtime = 29.618
+## runtime = 35.811
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 35959.26 converged = 1 edf = 8
 ## logLik = -17971.61 logPost = -18034.23 nobs = 4406
-## runtime = 0.204
+## runtime = 0.239
 ## ---</code></pre>
 <p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
@@ -386,6 +386,84 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## b2 24206.20 17.395871</code></pre>
 <p>which also state that the zero-inflated negative binomial model is better than the Poisson model.</p>
 </div>
+<div id="large-data-sets" class="section level2">
+<h2 class="hasAnchor">
+<a href="#large-data-sets" class="anchor"></a>Large Data Sets</h2>
+<p>The R package <em>bamlss</em> provides infrastructures to estimate models using large data sets. The default algorithms for posterior mode estimation (see function <code><a href="../reference/bfit.html">bfit()</a></code>) and MCMC simulation (function <code><a href="../reference/GMCMC.html">GMCMC()</a></code>) can be utilized in these situations. More precisely, the algorithms make advantage of the fact that usually the number of unique observations is much smaller than the number of total observations in the data (for a detailed description of the algorithms see <span class="citation">Lang et al. (2014)</span>). For illustration, we load the precipitation data of the HOMSTART-project which was first analyzed in <span class="citation">Umlauf et al. (2012)</span> (note, an internet connection is required).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/homstart_data.html">homstart_data</a></span>(<span class="dt">load =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(homstart))</code></pre></div>
+<pre><code>##    raw cens  bin    cat     trend month year day   lon  lat id      cos1
+## 1   NA   NA &lt;NA&gt;   &lt;NA&gt; -22.00000   Jan 1948   1 14.75 47.6  1 0.9998518
+## 2 37.0 37.0  yes   high -21.99726   Jan 1948   2 14.75 47.6  1 0.9994074
+## 3  3.0  3.0  yes medium -21.99452   Jan 1948   3 14.75 47.6  1 0.9986668
+## 4  0.0  0.0   no   none -21.99178   Jan 1948   4 14.75 47.6  1 0.9976303
+## 5  5.2  5.2  yes   high -21.98904   Jan 1948   5 14.75 47.6  1 0.9962982
+## 6  0.0  0.0   no   none -21.98630   Jan 1948   6 14.75 47.6  1 0.9946708
+##        cos2       sin1       sin2 weekend elevation
+## 1 0.9994074 0.01721336 0.03442161      no       779
+## 2 0.9976303 0.03442161 0.06880243      no       779
+## 3 0.9946708 0.05161967 0.10310170     yes       779
+## 4 0.9905325 0.06880243 0.13727877     yes       779
+## 5 0.9852201 0.08596480 0.17129314      no       779
+## 6 0.9787401 0.10310170 0.20510450      no       779</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(homstart))</code></pre></div>
+<pre><code>## [1] 1063610      17</code></pre>
+<p>The data consists of 1063610 observations. To illustrate how large models can be fitted using <em>bamlss</em>, we estimate a logit model using the binary response variable <code>bin</code>, which indicates if it rained or not.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibly.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
+
+## Model formula including a seasonal effect of the day
+## of the year using harmonic regression.
+f &lt;-<span class="st"> </span>bin ~<span class="st"> </span>weekend +<span class="st"> </span>elevation +<span class="st"> </span>cos1 +<span class="st"> </span>cos2 +<span class="st"> </span>sin1 +<span class="st"> </span>sin2
+
+## Estimate model using only unique observations by setting
+## argument binning = TRUE in the bamlss() call. Moreover,
+## only use minimum storage for the returned object by
+## setting light = TRUE.
+b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> homstart, <span class="dt">family =</span> <span class="st">"binomial"</span>,
+  <span class="dt">binning =</span> <span class="ot">TRUE</span>, <span class="dt">light =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<p>By setting <code>binning = TRUE</code>, the algorithms only use 33580 unique observations for model fitting. This could in principle even be further utilized if each covariate represents one model term, e.g.:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span>bin ~<span class="st"> </span>weekend +
+<span class="st">  </span><span class="kw">s</span>(elevation,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +
+<span class="st">  </span><span class="kw">s</span>(cos1,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +<span class="st"> </span><span class="kw">s</span>(cos2,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +
+<span class="st">  </span><span class="kw">s</span>(sin1,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +<span class="st"> </span><span class="kw">s</span>(sin2,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>)</code></pre></div>
+<p>Which is a bit of a hack using the random effects smooth constructor and setting <code>fx = TRUE</code>, forcing the smoother to use fixed effects (linear effects) estimation. However, by doing so, the resulting number of unique observations for the harmonic part is only 365 and for elevation only 46, which saves quite a lot of memory storage.</p>
+<p>In this example, we are interested if it is more likely to rain on weekends than during the week (see also <span class="citation">Umlauf et al. (2012)</span> and <span class="citation">Umlauf, Klein, and Zeileis (2017)</span> for a more detailed analysis). The model summary suggests</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<pre><code>## 
+## Call:
+## bamlss(formula = f, family = "binomial", data = homstart, light = TRUE, 
+##     binning = TRUE)
+## ---
+## Family: binomial 
+## Link function: pi = logit
+## *---
+## Formula pi:
+## ---
+## bin ~ weekend + elevation + cos1 + cos2 + sin1 + sin2
+## -
+## Parametric coefficients:
+##                   Mean       2.5%        50%      97.5% parameters
+## (Intercept) -3.118e-01 -3.209e-01 -3.118e-01 -3.028e-01     -0.312
+## weekendyes   1.241e-02  4.298e-03  1.244e-02  2.083e-02      0.012
+## elevation    6.440e-05  5.241e-05  6.433e-05  7.664e-05      0.000
+## cos1        -2.652e-01 -2.707e-01 -2.652e-01 -2.596e-01     -0.265
+## cos2         1.462e-01  1.405e-01  1.461e-01  1.520e-01      0.146
+## sin1         7.021e-02  6.494e-02  7.025e-02  7.590e-02      0.070
+## sin2        -2.897e-02 -3.462e-02 -2.900e-02 -2.359e-02     -0.029
+## ---
+## Sampler summary:
+## -
+## runtime = 552.797
+## ---
+## Optimizer summary:
+## -
+## AICc = 1330320 converged = 1 edf = 7
+## logLik = -665152.9 logPost = -665207.7 nobs = 980633
+## runtime = 1.711
+## ---</code></pre>
+<p>that the weekend effect is very little and since we did not account for any spatial correlations in this example, the effect is most probably not existing (at least in Austria). Note, because we set <code>light = TRUE</code> in the <code><a href="../reference/bamlss.html">bamlss()</a></code> call, there will be no real sampler summary except of the presented runtime of the sampler. The reason is, that computing the DIC from the posterior samples can take quite long and can lead to memory storage problems, too.</p>
+</div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
@@ -402,11 +480,20 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 <div id="ref-bamlss:Kleiber+Zeileis:2018">
 <p>———. 2018. <em>AER: Applied Econometrics with R</em>. <a href="https://CRAN.R-project.org/package=AER" class="uri">https://CRAN.R-project.org/package=AER</a>.</p>
 </div>
+<div id="ref-bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014">
+<p>Lang, Stefan, Nikolaus Umlauf, Peter Wechselberger, Kenneth Harttgen, and Thomas Kneib. 2014. “Multilevel Structured Additive Regression.” <em>Statistics and Computing</em> 24 (2). Springer-Verlag: 223–38. doi:<a href="https://doi.org/10.1007/s11222-012-9366-0">10.1007/s11222-012-9366-0</a>.</p>
+</div>
 <div id="ref-bamlss:Stasinopoulos+Rigby:2018">
 <p>Stasinopoulos, Mikis, and Bob Rigby. 2018. <em>Gamlss: Generalised Additive Models for Location Scale and Shape</em>. <a href="https://CRAN.R-project.org/package=gamlss" class="uri">https://CRAN.R-project.org/package=gamlss</a>.</p>
 </div>
+<div id="ref-bamlss:Umlauf+Klein+Zeileis:2017">
+<p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2017. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em>. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
+</div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
+</div>
+<div id="ref-bamlss:Umlauf+Mayr+Messner:2012">
+<p>Umlauf, Nikolaus, Georg Mayr, Jakob Messner, and Achim Zeileis. 2012. “Why Does It Always Rain on Me? A Spatio-Temporal Analysis of Precipitation in Austria.” <em>Austrian Journal of Statistics</em> 41 (1): 81–92. doi:<a href="https://doi.org/10.1002/joc.4913">10.1002/joc.4913</a>.</p>
 </div>
 <div id="ref-bamlss:Zeileis+Kleiber+Jackman:2008">
 <p>Zeileis, Achim, Christian Kleiber, and Simon Jackman. 2008. “Regression Models for Count Data in R.” <em>Journal of Statistical Software, Articles</em> 27 (8): 1–25. doi:<a href="https://doi.org/10.18637/jss.v027.i08">10.18637/jss.v027.i08</a>.</p>
@@ -423,6 +510,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 <li><a href="#intro">Intro</a></li>
       <li><a href="#logit-model">Logit Model</a></li>
       <li><a href="#countreg">Models for Count Data</a></li>
+      <li><a href="#large-data-sets">Large Data Sets</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
