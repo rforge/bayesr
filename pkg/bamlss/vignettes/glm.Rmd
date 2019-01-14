@@ -254,6 +254,8 @@ if(!file.exists("figures/Poisson2.rda")) {
 }
 ```
 ```{r, eval=FALSE}
+library("gamlss")
+
 ## Set the seed for reproducibly.
 set.seed(123)
 
