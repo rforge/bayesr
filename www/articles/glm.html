@@ -5,11 +5,11 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Generalized Linear Models • bamlss</title>
+<title>Generalized Linear Models (+) • bamlss</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="Generalized Linear Models">
+<script src="../pkgdown.js"></script><meta property="og:title" content="Generalized Linear Models (+)">
 <meta property="og:description" content="">
 <meta name="twitter:card" content="summary">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
@@ -53,7 +53,7 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="../articles/glm.html">Generalized Linear Models</a>
+      <a href="../articles/glm.html">Generalized Linear Models (+)</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -82,7 +82,7 @@
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1>Generalized Linear Models</h1>
+      <h1>Generalized Linear Models (+)</h1>
             
       
       
@@ -108,7 +108,7 @@
 <li>
 <code>"poisson"</code> or <code><a href="../reference/family.bamlss.html">poisson_bamlss()</a></code>.</li>
 </ul>
-<p>In addition, there is a wrapper function for the family objects provided by the <em>gamlss</em> package, so in principle all <em>gamlss</em> families can be used by just passing them to the <code>family</code> argument in the <code><a href="../reference/bamlss.html">bamlss()</a></code> function.</p>
+<p>In addition, there is a wrapper function for the family objects provided by the <em>gamlss</em> package <span class="citation">(Stasinopoulos and Rigby 2018)</span>, so in principle all <em>gamlss</em> families can be used by just passing them to the <code>family</code> argument in the <code><a href="../reference/bamlss.html">bamlss()</a></code> function (see also the <a href="#countreg">count data regression example</a>).</p>
 <p>First, we illustrate how to fit standard GLMs and how to do inference using the <em>bamlss</em> framework. Aftwards, we show how to estimate GLMs using very large data set.</p>
 </div>
 <div id="logit-model" class="section level2">
@@ -227,18 +227,189 @@ nd$p.yes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
   <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"blue"</span>, <span class="st">"black"</span>))</code></pre></div>
 <p><img src="glm_files/figure-html/unnamed-chunk-10-1.png" width="480" style="display: block; margin: auto;"> The plot nicely depicts the nonlinear effect of variable <code>age</code> for the two levels of <code>foreign</code>.</p>
 </div>
+<div id="countreg" class="section level2">
+<h2 class="hasAnchor">
+<a href="#countreg" class="anchor"></a>Models for Count Data</h2>
+<p>This example is taken from <span class="citation">Zeileis, Kleiber, and Jackman (2008)</span>. The application is about modeling the demand for medical care by elderly and was first analyzed by <span class="citation">Deb and Trivedi (1997)</span>. The data can be downloaded on loaded into R with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/download.file">download.file</a></span>(
+  <span class="st">"https://www.jstatsoft.org/index.php/jss/article/downloadSuppFile/v027i08/DebTrivedi.rda.zip"</span>,
+  <span class="st">"DebTrivedi.rda.zip"</span>
+)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/unzip">unzip</a></span>(<span class="st">"DebTrivedi.rda.zip"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/load">load</a></span>(<span class="st">"DebTrivedi.rda"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(DebTrivedi))</code></pre></div>
+<pre><code>##   ofp ofnp opp opnp emer hosp  health numchron adldiff region age black
+## 1   5    0   0    0    0    1 average        2      no  other 6.9   yes
+## 2   1    0   2    0    2    0 average        2      no  other 7.4    no
+## 3  13    0   0    0    3    3    poor        4     yes  other 6.6   yes
+## 4  16    0   5    0    1    1    poor        2     yes  other 7.6    no
+## 5   3    0   0    0    0    0 average        2     yes  other 7.9    no
+## 6  17    0   0    0    0    0    poor        5     yes  other 6.6    no
+##   gender married school faminc employed privins medicaid
+## 1   male     yes      6 2.8810      yes     yes       no
+## 2 female     yes     10 2.7478       no     yes       no
+## 3 female      no     10 0.6532       no      no      yes
+## 4   male     yes      3 0.6588       no     yes       no
+## 5 female     yes      6 0.6588       no     yes       no
+## 6 female      no      7 0.3301       no      no      yes</code></pre>
+<p>The response variable in this data is the number of physician office visits, variable <code>ofp</code>. A histogram of the count data response can be plotted with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(DebTrivedi$ofp),
+  <span class="dt">xlab =</span> <span class="st">"Number of physician office visits"</span>,
+  <span class="dt">ylab =</span> <span class="st">"Frequency"</span>)</code></pre></div>
+<p><img src="glm_files/figure-html/unnamed-chunk-13-1.png" width="480" style="display: block; margin: auto;"> which shows very large counts and also a large number of zero counts. Our first model is a Poisson regression, which can be estimated with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibly.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
+
+## Model formula.
+f &lt;-<span class="st"> </span>ofp ~<span class="st"> </span>hosp +<span class="st"> </span>health +<span class="st"> </span>numchron +<span class="st"> </span>gender +<span class="st"> </span>school +<span class="st"> </span>privins
+
+## Estimate model.
+b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> <span class="st">"poisson"</span>, <span class="dt">data =</span> DebTrivedi,
+  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
+<p>The model summary is shown by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b1)</code></pre></div>
+<pre><code>## 
+## Call:
+## bamlss(formula = f, family = "poisson", data = DebTrivedi, n.iter = 12000, 
+##     burnin = 2000, thin = 10)
+## ---
+## Family: poisson 
+## Link function: lambda = log
+## *---
+## Formula lambda:
+## ---
+## ofp ~ hosp + health + numchron + gender + school + privins
+## -
+## Parametric coefficients:
+##                     Mean     2.5%      50%    97.5% parameters
+## (Intercept)      1.03049  0.98540  1.03074  1.07790      1.029
+## hosp             0.16452  0.15322  0.16440  0.17678      0.165
+## healthpoor       0.24810  0.21558  0.24791  0.27968      0.248
+## healthexcellent -0.36253 -0.42490 -0.36207 -0.30116     -0.362
+## numchron         0.14669  0.13829  0.14641  0.15585      0.147
+## gendermale      -0.11279 -0.13677 -0.11268 -0.08745     -0.112
+## school           0.02606  0.02223  0.02611  0.02960      0.026
+## privinsyes       0.20102  0.16795  0.20116  0.23446      0.202
+## ---
+## Sampler summary:
+## -
+## DIC = 35958.86 logLik = -17975.52 pd = 7.813
+## runtime = 29.618
+## ---
+## Optimizer summary:
+## -
+## AICc = 35959.26 converged = 1 edf = 8
+## logLik = -17971.61 logPost = -18034.23 nobs = 4406
+## runtime = 0.204
+## ---</code></pre>
+<p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
+<p><img src="glm_files/figure-html/unnamed-chunk-18-1.png" width="768" style="display: block; margin: auto;"> Clearly, the plots shows that the model performance is not very good at the tails of the data, this might be caused by the large amount of zero counts in the data, which is not accounted for using the Poisson distribution.</p>
+<p>Therefore, another possible candidate for the response distribution is the zero-inflated negative binomial distribution, which is implemented in the <em>gamlss</em> package <span class="citation">(Stasinopoulos and Rigby 2018)</span> in the function <code>ZINBI</code>. The family has 3 parameters <code>mu</code>, <code>sigma</code> and <code>nu</code>. In this example we model distributional parameters <code>mu</code> and <code>sigma</code> in terms of covariates by setting up the model formula with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
+  ofp ~<span class="st"> </span>hosp +<span class="st"> </span>health +<span class="st"> </span>numchron +<span class="st"> </span>gender +<span class="st"> </span>school +<span class="st"> </span>privins,
+  sigma ~<span class="st"> </span>hosp +<span class="st"> </span>health +<span class="st"> </span>numchron +<span class="st"> </span>gender +<span class="st"> </span>school +<span class="st"> </span>privins,
+  nu ~<span class="st"> </span><span class="dv">1</span>
+)</code></pre></div>
+<p>Note, for parameter <code>nu</code> an intercept only model would also be the default if the specification is omitted in the model formula. The model is estimated with (note, this can take some time)</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibly.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
+
+## Estimate model.
+b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> ZINBI, <span class="dt">data =</span> DebTrivedi,
+  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
+<p>The model summary gives</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b2)</code></pre></div>
+<pre><code>## 
+## Call:
+## bamlss(formula = f, family = ZINBI, data = DebTrivedi, n.iter = 12000, 
+##     burnin = 2000, thin = 10)
+## ---
+## Family: ZINBI 
+## Link function: mu = log, sigma = log, nu = logit
+## *---
+## Formula mu:
+## ---
+## ofp ~ hosp + health + numchron + gender + school + privins
+## -
+## Parametric coefficients:
+##                     Mean     2.5%      50%    97.5% parameters
+## (Intercept)      1.01470  0.88866  1.01485  1.13262      1.016
+## hosp             0.20735  0.16496  0.20773  0.24950      0.210
+## healthpoor       0.21927  0.12495  0.22063  0.31016      0.221
+## healthexcellent -0.35063 -0.47696 -0.34898 -0.23186     -0.341
+## numchron         0.15875  0.13652  0.15845  0.18334      0.159
+## gendermale      -0.11469 -0.17365 -0.11470 -0.05689     -0.115
+## school           0.02641  0.01720  0.02630  0.03495      0.027
+## privinsyes       0.18738  0.09794  0.18607  0.27407      0.184
+## ---
+## Formula sigma:
+## ---
+## sigma ~ hosp + health + numchron + gender + school + privins
+## -
+## Parametric coefficients:
+##                      Mean      2.5%       50%     97.5% parameters
+## (Intercept)      0.510961  0.316771  0.508389  0.706571      0.520
+## hosp            -0.028914 -0.095758 -0.028909  0.038187     -0.023
+## healthpoor       0.227347  0.063571  0.231602  0.396216      0.227
+## healthexcellent -0.002851 -0.228342 -0.007384  0.234369      0.003
+## numchron        -0.236836 -0.278745 -0.236980 -0.194826     -0.236
+## gendermale       0.222175  0.105449  0.223875  0.332764      0.225
+## school          -0.012696 -0.028136 -0.012729  0.003863     -0.013
+## privinsyes      -0.449505 -0.587264 -0.452838 -0.308850     -0.452
+## ---
+## Formula nu:
+## ---
+## nu ~ 1
+## -
+## Parametric coefficients:
+##               Mean   2.5%    50%  97.5% parameters
+## (Intercept) -4.210 -5.071 -4.177 -3.607     -4.268
+## ---
+## Sampler summary:
+## -
+## DIC = 24206.2 logLik = -12094.4 pd = 17.3959
+## runtime = 987.661
+## ---
+## Optimizer summary:
+## -
+## AICc = 24205.35 converged = 1 edf = 17
+## logLik = -12085.61 logPost = -12218.66 nobs = 4406
+## runtime = 2.508
+## ---</code></pre>
+<p>and the corresponding randomized quantile residuals plots are created with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
+<p><img src="glm_files/figure-html/unnamed-chunk-24-1.png" width="768" style="display: block; margin: auto;"> The plots indicate a better model fit compared to the Poisson model, however, for very large counts the model performance could probably be improved further. The corresponding DIC values are</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2)</code></pre></div>
+<pre><code>##         DIC        pd
+## b1 35958.86  7.813035
+## b2 24206.20 17.395871</code></pre>
+<p>which also state that the zero-inflated negative binomial model is better than the Poisson model.</p>
+</div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
+<div id="ref-bamlss:Deb+Trivedi:1997">
+<p>Deb, Partha, and P. K. Trivedi. 1997. “Demand for Medical Care by the Elderly: A Finite Mixture Approach.” <em>Journal of Applied Econometrics</em> 12 (3): 313–36. doi:<a href="https://doi.org/10.1002/(SICI)1099-1255(199705)12:3&lt;313::AID-JAE440&gt;3.0.CO;2-G">10.1002/(SICI)1099-1255(199705)12:3&lt;313::AID-JAE440&gt;3.0.CO;2-G</a>.</p>
+</div>
+<div id="ref-bamlss:Dunn+Gordon:1996">
+<p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: pp. 236–44. doi:<a href="https://doi.org/10.2307/1390802">10.2307/1390802</a>.</p>
+</div>
 <div id="ref-bamlss:Kleiber+Zeileis:2008">
 <p>Kleiber, Christian, and Achim Zeileis. 2008. <em>Applied Econometrics with R</em>. New York: Springer-Verlag. doi:<a href="https://doi.org/10.1007/978-0-387-77318-6">10.1007/978-0-387-77318-6</a>.</p>
 </div>
 <div id="ref-bamlss:Kleiber+Zeileis:2018">
 <p>———. 2018. <em>AER: Applied Econometrics with R</em>. <a href="https://CRAN.R-project.org/package=AER" class="uri">https://CRAN.R-project.org/package=AER</a>.</p>
 </div>
+<div id="ref-bamlss:Stasinopoulos+Rigby:2018">
+<p>Stasinopoulos, Mikis, and Bob Rigby. 2018. <em>Gamlss: Generalised Additive Models for Location Scale and Shape</em>. <a href="https://CRAN.R-project.org/package=gamlss" class="uri">https://CRAN.R-project.org/package=gamlss</a>.</p>
+</div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
+</div>
+<div id="ref-bamlss:Zeileis+Kleiber+Jackman:2008">
+<p>Zeileis, Achim, Christian Kleiber, and Simon Jackman. 2008. “Regression Models for Count Data in R.” <em>Journal of Statistical Software, Articles</em> 27 (8): 1–25. doi:<a href="https://doi.org/10.18637/jss.v027.i08">10.18637/jss.v027.i08</a>.</p>
 </div>
 </div>
 </div>
@@ -251,6 +422,7 @@ nd$p.yes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#intro">Intro</a></li>
       <li><a href="#logit-model">Logit Model</a></li>
+      <li><a href="#countreg">Models for Count Data</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
