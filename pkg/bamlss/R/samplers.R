@@ -895,18 +895,18 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   P <- if(data$fixed) {
     if((k <- ncol(data$X)) < 2) {
       1 / XWX
-    } else matrix_inv(XWX, data$sparse.setup)
+    } else matrix_inv(XWX + if(!is.null(data$xt[["pS"]])) data$xt[["pS"]] else 0, data$sparse.setup)
   } else {
     tau2 <- get.par(theta, "tau2")
     for(j in seq_along(data$S))
       S <- S + 1 / tau2[j] * if(is.function(data$S[[j]])) data$S[[j]](c(theta, data$fixed.hyper)) else data$S[[j]]
-    matrix_inv(XWX + S, data$sparse.setup)
+    matrix_inv(XWX + S + if(!is.null(data$xt[["pS"]])) data$xt[["pS"]] else 0, data$sparse.setup)
   }
   P[P == Inf] <- 0
-  if(is.null(data$xt[["pmean"]]))
+  if(is.null(data$xt[["pm"]]))
     M <- P %*% crossprod(data$X, data$rres)
   else
-    M <- P %*% (crossprod(data$X, data$rres) + P %*% data$xt[["pmean"]])
+    M <- P %*% (crossprod(data$X, data$rres) + data$xt[["pS"]] %*% data$xt[["pm"]])
 
   ## Degrees of freedom.
   edf <- sum_diag(XWX %*% P)
@@ -976,15 +976,15 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
   P2 <- if(data$fixed) {
     if(k < 2) {
       1 / (XWX)
-    } else matrix_inv(XWX, data$sparse.setup)
+    } else matrix_inv(XWX + if(!is.null(data$xt[["pS"]])) data$xt[["pS"]] else 0, data$sparse.setup)
   } else {
-    matrix_inv(XWX + S, data$sparse.setup)
+    matrix_inv(XWX + S + if(!is.null(data$xt[["pS"]])) data$xt[["pS"]] else 0, data$sparse.setup)
   }
   P2[P2 == Inf] <- 0
-  if(is.null(data$xt[["pmean"]]))
+  if(is.null(data$xt[["pm"]]))
     M2 <- P2 %*% crossprod(data$X, data$rres)
   else
-    M2 <- P2 %*% (crossprod(data$X, data$rres) + P2 %*% data$xt[["pmean"]])
+    M2 <- P2 %*% (crossprod(data$X, data$rres) + data$xt[["pS"]] %*% data$xt[["pm"]])
 
   ## Get the log prior.
   qbeta <- try(dmvnorm(g0, mean = M2, sigma = P2, log = TRUE), silent = TRUE)

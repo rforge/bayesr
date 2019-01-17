@@ -878,12 +878,6 @@ make.prior <- function(x, sigma = 0.1)
     }
   }
 
-  pgamma <- if(!is.null(x$xt[["pmean"]])) {
-    x$xt[["pmean"]]
-  } else x$xt[["pgamma"]]
-  if(is.null(pgamma))
-    pgamma <- 0
-
   if(!is.function(prior)) {
     rval <- list()
 
@@ -937,7 +931,7 @@ make.prior <- function(x, sigma = 0.1)
         gamma <- parameters[x$pid$b]
         tau2 <-  parameters[x$pid$tau2]
       }
-      gamma <- gamma - pgamma
+      gamma <- gamma
       if(fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
@@ -945,6 +939,8 @@ make.prior <- function(x, sigma = 0.1)
           K <- if(is.function(x$S[[1]])) x$S[[1]](c(parameters, x$fixed.hyper)) else x$S[[1]]
           if(is.null(x$rank))
             x$rank <- qr(K)$rank
+          if(!is.null(x$xt[["pS"]]))
+            K <- K + x$xt[["pS"]][[1]]
           lp <- -log(tau2) * x$rank / 2 + drop(-0.5 / tau2 * t(gamma) %*% K %*% gamma) + var_prior_fun(tau2)
         } else {
           ld <- 0
@@ -958,6 +954,12 @@ make.prior <- function(x, sigma = 0.1)
           dP <- as.numeric(dP$modulus) * as.numeric(dP$sign)
           lp <- 0.5 * dP - 0.5 * (t(gamma) %*% P %*% gamma) + ld
         }
+      }
+      if(!is.null(x$xt[["pm"]])) {
+        dP2 <- determinant(x$xt[["pS"]], logarithm = TRUE)
+        dP2 <- as.numeric(dP2$modulus) * as.numeric(dP2$sign)
+        lp2 <- 0.5 * dP2 - 0.5 * (t(gamma - x$xt[["pm"]]) %*% x$xt[["pS"]] %*% (gamma - x$xt[["pm"]]))
+        lp <- lp + lp2
       }
       return(as.numeric(lp))
     }
@@ -8891,7 +8893,7 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
     try(chol2inv(p), silent = TRUE)
   }
   if(inherits(p, "try-error")) {
-    diag(x) <- jitter(diag(x), amount = 1e-5)
+    x <- x + diag(0.0001, ncol(x))
     p <- try(solve(x), silent = TRUE)
   }
   if(inherits(p, "try-error") & force) {

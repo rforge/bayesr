@@ -1440,18 +1440,18 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   if(!x$state$do.optim | x$fixed | x$fxsp) {
     if(x$fixed) {
-      P <- matrix_inv(XWX, index = x$sparse.setup)
+      P <- matrix_inv(XWX + if(!is.null(x$xt[["pS"]])) x$xt[["pS"]] else 0, index = x$sparse.setup)
     } else {
       S <- 0
       tau2 <- get.state(x, "tau2")
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      P <- matrix_inv(XWX + S + if(!is.null(x$xt[["pS"]])) x$xt[["pS"]] else 0, index = x$sparse.setup)
     }
-    if(is.null(x$xt[["pmean"]]))
+    if(is.null(x$xt[["pm"]]))
       x$state$parameters <- set.par(x$state$parameters, drop(P %*% crossprod(x$X, x$rres)), "b")
     else
-      x$state$parameters <- set.par(x$state$parameters, drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]])), "b")
+      x$state$parameters <- set.par(x$state$parameters, drop(P %*% (crossprod(x$X, x$rres) + x$xt[["pS"]] %*% x$xt[["pm"]])), "b")
   } else {
     args <- list(...)
     edf0 <- args$edf - x$state$edf
@@ -1463,12 +1463,12 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       S <- 0
       for(j in seq_along(x$S))
         S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(g0, x$fixed.hyper)) else x$S[[j]]
-      P <- matrix_inv(XWX + S, index = x$sparse.setup)
+      P <- matrix_inv(XWX + S + if(!is.null(x$xt[["pS"]])) x$xt[["pS"]] else 0, index = x$sparse.setup)
       if(inherits(P, "try-error")) return(NA)
-      if(is.null(x$xt[["pmean"]]))
+      if(is.null(x$xt[["pm"]]))
         g <- drop(P %*% crossprod(x$X, x$rres))
       else
-        g <- drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]]))
+        g <- drop(P %*% (crossprod(x$X, x$rres) + x$xt[["pS"]] %*% x$xt[["pm"]]))
 
       if(!is.null(x$doCmat)) {
         V <- P %*% t(x$C)
@@ -1515,11 +1515,11 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
     S <- 0
     for(j in seq_along(x$S))
       S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(x$state$parameters, x$fixed.hyper)) else x$S[[j]]
-    P <- matrix_inv(XWX + S, index = x$sparse.setup)
-    if(is.null(x$xt[["pmean"]]))
+    P <- matrix_inv(XWX + S + if(!is.null(x$xt[["pS"]])) x$xt[["pS"]] else 0, index = x$sparse.setup)
+    if(is.null(x$xt[["pm"]]))
       g <- drop(P %*% crossprod(x$X, x$rres))
     else
-      g <- drop(P %*% (crossprod(x$X, x$rres) + P %*% x$xt[["pmean"]]))
+      g <- drop(P %*% (crossprod(x$X, x$rres) + x$xt[["pS"]] %*% x$xt[["pm"]]))
 
     if(!is.null(x$doCmat)) {
       V <- P %*% t(x$C)
