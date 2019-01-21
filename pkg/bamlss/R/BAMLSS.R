@@ -931,7 +931,6 @@ make.prior <- function(x, sigma = 0.1)
         gamma <- parameters[x$pid$b]
         tau2 <-  parameters[x$pid$tau2]
       }
-      gamma <- gamma
       if(fixed | !length(tau2)) {
         lp <- sum(dnorm(gamma, sd = 1000, log = TRUE))
       } else {
@@ -968,7 +967,6 @@ make.prior <- function(x, sigma = 0.1)
 
     rval$grad <- function(score = NULL, parameters, full = TRUE) {
       gamma <- get.par(parameters, "b")
-      gamma <- gamma - pgamma
       tau2 <-  get.par(parameters, "tau2")
       grad2 <- NULL
       if(x$fixed | !length(tau2)) {
