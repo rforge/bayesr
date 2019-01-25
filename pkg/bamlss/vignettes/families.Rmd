@@ -1,0 +1,78 @@
+---
+title: "BAMLSS Families"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Families}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, families}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+```
+
+## Overview
+
+Family objects are important building blocks in the design of BAMLSS models.
+They specify the distribution by collecting functions of the density,
+respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.
+predictors, and (optionally) second-order derivatives of the log-likelihood
+w.r.t. predictors.
+
+## How to build a BAMLSS family
+
+## Available families
+
+There are some families implemented:
+```{r}
+x <- scan("../R/families.R", what = character(0))
+x[grep("^\\w*_bamlss", x)]
+```
+
+### Continuous response
+
+* `gaussian_bamlss`
+
+### Positive continuous response
+
+* `gpareto_bamlss`
+* `weibull_bamlss`
+* `gamma_bamlss`
+* `lognormal_bamlss`
+
+### Censored continuous responses
+
+* `cnorm_bamlss`
+
+### Interval responses
+
+* `beta_bamlss`
+
+### Discrete responses
+
+* `binomial_bamlss`
+* `mlt_bamlss`
+
+### Count data responses
+
+* `poisson_bamlss`
+* `negbin_bamlss`
+
+### Multivariate responses
+
+* `bivnorm_bamlss`
+* `mvnorm_bamlss`
+
+### Others
+
+
+
