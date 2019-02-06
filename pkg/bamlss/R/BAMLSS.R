@@ -955,9 +955,16 @@ make.prior <- function(x, sigma = 0.1)
         }
       }
       if(!is.null(x$xt[["pm"]])) {
-        dP2 <- determinant(x$xt[["pS"]], logarithm = TRUE)
+        pS <- if(!is.null(x$xt[["pS"]])) {
+          x$xt[["pS"]]
+        } else {
+          if(!is.null(x$xt[["pSa"]])) {
+            1 / tau2[length(tau2)] * x$xt[["pSa"]]
+          } else 0
+        }
+        dP2 <- determinant(pS, logarithm = TRUE)
         dP2 <- as.numeric(dP2$modulus) * as.numeric(dP2$sign)
-        lp2 <- 0.5 * dP2 - 0.5 * (t(gamma - x$xt[["pm"]]) %*% x$xt[["pS"]] %*% (gamma - x$xt[["pm"]]))
+        lp2 <- 0.5 * dP2 - 0.5 * (t(gamma - x$xt[["pm"]]) %*% pS %*% (gamma - x$xt[["pm"]]))
         lp <- lp + lp2
       }
       return(as.numeric(lp))
@@ -5323,6 +5330,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     class(object) <- c("nnet2.smooth", "mgcv.smooth", "lasso.smooth")
   }
   object$fixed <- FALSE
+  if(!is.null(object$xt$fx)) {
+    if(object$xt$fx) {
+      object$sp <- object$xt$sp <- 1e-10
+      object$S <- list(diag(1, ncol(object$X)))
+    }
+  }
 
   object
 }
