@@ -4096,3 +4096,4 @@ nmult_bamlss <- function(K)
   class(rval) <- "family.bamlss"
   return(rval)
 }
+

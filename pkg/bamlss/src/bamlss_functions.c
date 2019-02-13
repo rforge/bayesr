@@ -4319,33 +4319,33 @@ SEXP ztnbinom_score_theta(SEXP y, SEXP mu, SEXP theta)
 }
 
 
-// Nested multiomial logit.
-SEXP nlogit_p(SEXP P1, SEXP P2, SEXP id, SEXP y)
-{
-  int i, j;
-  int nr = length(id);
-  int nc = ncols(P1);
+// Nested multiomial.
+/*SEXP nlogit_p(SEXP P1, SEXP P2, SEXP id, SEXP y)*/
+/*{*/
+/*  int i, j;*/
+/*  int nr = length(id);*/
+/*  int nc = ncols(P1);*/
 
-  double *P1ptr = REAL(P1);
-  double *P2ptr = REAL(P2);
-  double *yptr = REAL(y);
-  int *idptr = INTEGER(id);
+/*  double *P1ptr = REAL(P1);*/
+/*  double *P2ptr = REAL(P2);*/
+/*  double *yptr = REAL(y);*/
+/*  int *idptr = INTEGER(id);*/
 
-  SEXP d = PROTECT(allocVector(REALSXP, nr));
-  double *dptr = REAL(d);
+/*  SEXP d = PROTECT(allocVector(REALSXP, nr));*/
+/*  double *dptr = REAL(d);*/
 
-  for(i = 0; i < nr; i++) {
-    dptr[i] = 0.0;
-    for(j = 0; j < (nc - 1); j++) {
-      if(yptr[i + nc * j] > 0.0) {
-        dptr[i] = P1ptr[i + nc * j] + log(P2ptr[i + nc * idptr[i]]);
-      }
-    }
-    if(ISNA(dptr[i]))
-      dptr[i] = 0.0;
-  }
+/*  for(i = 0; i < nr; i++) {*/
+/*    dptr[i] = 0.0;*/
+/*    for(j = 0; j < (nc - 1); j++) {*/
+/*      if(yptr[i + nc * j] > 0.0) {*/
+/*        dptr[i] = P1ptr[i + nc * j] + log(P2ptr[i + nc * idptr[i]]);*/
+/*      }*/
+/*    }*/
+/*    if(ISNA(dptr[i]))*/
+/*      dptr[i] = 0.0;*/
+/*  }*/
 
-  UNPROTECT(1);
-  return(d);
-}
+/*  UNPROTECT(1);*/
+/*  return(d);*/
+/*}*/
 
