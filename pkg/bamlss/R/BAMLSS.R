@@ -65,15 +65,23 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       attr(formula, "orig.formula") <- orig.formula
     } else {
       rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
+      if(any(i <- grepl("|", rn, fixed = TRUE))) {
+        rnt <- rn[i]
+        rn <- rn[!i]
+        rnt <- gsub(" ", "", unlist(strsplit(rnt, "|", fixed = TRUE)))
+        rn <- c(rn, rnt)
+      }
       rn <- rn[rn %in% names(bf$model.frame)]
       bf$y <- bf$model.frame[rn]
-      for(j in rn) {
-        if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
-          f <- as.formula(paste("~ -1 +", j), env = NULL)
-          bf$y[j] <- model.matrix(f, data = bf$model.frame)
-        }
-        if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
-          bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
+      if(is.null(family$nocat)) {
+        for(j in rn) {
+          if(is.factor(bf$y[[j]]) & (ytype == "matrix")) {
+            f <- as.formula(paste("~ -1 +", j), env = NULL)
+            bf$y[j] <- model.matrix(f, data = bf$model.frame)
+          }
+          if(is.factor(bf$y[[j]]) & (ytype == "integer")) {
+            bf$y[[j]] <- as.integer(bf$y[[j]]) - if(nlevels(bf$y[[j]]) < 3) 1L else 0L
+          }
         }
       }
       if(family$family == "dirichlet") {
@@ -99,16 +107,18 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 
   ## Process possible score and hess functions.
   if(!is.null(score <- family$score)) {
-    if(is.function(score))
+    if(is.function(score)) {
       score <- list(score)
-    family$score <- rep(score, length.out = length(formula))
-    names(family$score) <- names(formula)
+      family$score <- rep(score, length.out = length(formula))
+      names(family$score) <- names(formula)
+    }
   }
   if(!is.null(hess <- family$hess)) {
-    if(is.function(hess))
+    if(is.function(hess)) {
       hess <- list(hess)
-    family$hess <- rep(hess, length.out = length(formula))
-    names(family$hess) <- names(formula)
+      family$hess <- rep(hess, length.out = length(formula))
+      names(family$hess) <- names(formula)
+    }
   }
 
   ## Add more functions to family object.
@@ -2361,7 +2371,7 @@ bamlss.formula.cat <- function(formula, family, data, reference)
   }
   rn2 <- rn[rn %in% names(data)]
   cat <- !is.null(family$cat) & (length(rn2) > 1)
-  if(is.factor(data[[rn2[1]]]) | cat) {
+  if((is.factor(data[[rn2[1]]]) | cat) & is.null(family$nocat)) {
     if((nlevels(data[[rn2[1]]]) > 2) | cat) {
       if(!cat | is.factor(data[[rn2[1]]])) {
         ft <- as.formula(paste("~ -1 +", rn2[1]), env = NULL)

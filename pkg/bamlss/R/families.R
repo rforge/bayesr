@@ -3971,3 +3971,128 @@ mlt_distr <- function(which = c("Normal", "Logistic", "MinExtrVal")) {
     do.call(paste("mlt_", which, sep = ""), list())
 }
 
+
+## Family object for the nested multinomial model.
+nmult_bamlss <- function(K)
+{
+  links <- c(rep("identity", K - 1L), rep("identity", K), "identity")
+  names(links) <- c(paste0("alpha", 1L:(K - 1L)), paste0("w", 1L:K), "xi")
+
+  rval <- list(
+    "family" = "Nested Multinomial",
+    "names"  = names(links),
+    "links" = links,
+    "d" = function(y, par, log = FALSE) {
+      P2 <- exp(do.call("cbind", par[grep("alpha", names(par))]))
+      w <- do.call("cbind", par[grep("w", names(par))])
+      xi <- par$xi
+      xi[abs(xi) < 0.00001] <- 0.00001
+      xi[xi <= -0.5] <- -0.4999
+
+      P2 <- P2 / (1 + rowSums(P2))
+      P2 <- log(cbind(P2, 1 - rowSums(P2)))
+
+      a <- (1 - xi * w)
+      a[a <= 0] <- 1e-05
+      P1 <- 1 - exp(-a^(-1/xi))
+      P1[P1 < 1e-05] <- 1e-05
+      P1 <- log(P1)
+
+      Pi <- P1 + P2
+      nPi <- 1 - exp(P1)
+      nPi[nPi < 1e-05] <- 1e-05
+      nPi <- log(nPi) + P2
+
+      d <- matrix(0, nrow = nrow(y), ncol = K)
+
+      for(j in 1:K) {
+        yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
+        ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
+        d[, j] <- yd * Pi[, j] + ynd * nPi[, j]
+      }
+
+      d <- rowSums(d)
+
+      if(!log)
+        d <- log(d)
+
+      return(d)
+    }
+  )
+
+  rval$nocat <- TRUE
+
+  score_alpha <- function(y, par, id, ...) {
+    j <- as.integer(gsub("alpha", "", id))
+    yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
+    ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
+    P2 <- exp(do.call("cbind", par[grep("alpha", names(par))]))
+    pj <- P2[, id] / (1 + rowSums(P2))
+    (yd + ynd) - pj
+  }
+
+  score_w <- function(y, par, id, ...) {
+    j <- as.integer(gsub("w", "", id))
+    yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
+    ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
+    w <- par[[id]]
+    xi <- par$xi
+    drop <- w >= 1/xi
+    xi[abs(xi) < 0.00001] <- 0.00001
+    xi[xi <= -0.5] <- -0.4999
+    a <- (1 - xi * w)
+    a[a <= 0] <- 1e-05
+    P1 <- log(1 - exp(-a^(-1/xi)))
+    id <- as.integer(gsub("w", "", id))
+    sw <- (yd * 1/P1 - ynd * 1/(1 - P1)) * (exp(-a^(-1/xi)) * (a^(-1/xi - 1)))
+    sw[drop] <- 0
+    sw
+  }
+
+  score_xi <- function(y, par, id, ...) {
+    w <- do.call("cbind", par[grep("w", names(par))])
+    xi <- par$xi
+    xi[abs(xi) < 0.00001] <- 0.00001
+    xi[xi <= -0.5] <- -0.4999
+    a <- (1 - xi * w)
+    a[a <= 0] <- 1e-05
+
+    P1 <- log(1 - exp(-a^(-1/xi)))
+    B <- -(exp(-a)^((-1/xi) - 1) * ((-1/xi) * (exp(-a) * w)) + exp(-a)^(-1/xi) * (log(exp(-a)) * (1/xi^2)))
+
+    sxi <- matrix(0, nrow = nrow(y), ncol = K)
+
+    for(j in 1:K) {
+      yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
+      ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
+      sxi[, j] <- (yd * 1/P1[, j] - ynd * 1/(1 - P1[, j])) * B[, j]
+    }
+
+    sxi <- rowSums(sxi)
+    sxi
+  }
+
+  score1 <- rep(list(score_alpha), length = K - 1L)
+  names(score1) <- paste0("alpha", 1:(K - 1L))
+
+  score2 <- rep(list(score_w), length = K)
+  names(score2) <- paste0("w", 1:K)
+
+  score3 <- rep(list(score_xi), length = K)
+  names(score3) <- paste0("xi", 1:K)
+
+  rval$score <- c(score1, score2, score3)
+
+  rval$initialize <- list(
+    "xi" = function(y, ...) { rep(0.1, nrow(y)) }
+  )
+
+  init_w <- rep(list(function(y, ...) { rep(0.1, nrow(y)) }), K)
+  names(init_w) <- paste0("w", 1:K)
+
+  rval$initialize <- c(rval$initialize, init_w)
+
+  ## Return family object
+  class(rval) <- "family.bamlss"
+  return(rval)
+}

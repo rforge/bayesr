@@ -1094,6 +1094,8 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
 {
   type <- match.arg(type)
   ll <- family$loglik(y, par)
+  if(is.na(edf))
+    edf <- n - 1
   denom <- (n - edf - 1)
   if(denom < 1e-10) {
     add <- 0
