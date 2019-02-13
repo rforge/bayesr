@@ -8920,8 +8920,14 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
   if(inherits(p, "try-error") & force) {
     p <- diag(ncol(x))
   }
-  rownames(p) <- rn
-  colnames(p) <- cn
+  if(is.null(dim(p))) {
+    p <- matrix(p, 1, 1)
+    rownames(p) <- rn[1]
+    colnames(p) <- cn[1]
+  } else {
+    rownames(p) <- rn
+    colnames(p) <- cn
+  }
   return(p)
 }
 
