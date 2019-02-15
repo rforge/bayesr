@@ -4013,6 +4013,8 @@ nmult_bamlss <- function(K)
 
       d <- rowSums(d)
 
+      d[is.na(d) | !is.finite(d)] <- 1.490116e-08
+
       if(!log)
         d <- log(d)
 
@@ -4028,7 +4030,9 @@ nmult_bamlss <- function(K)
     ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
     P2 <- exp(do.call("cbind", par[grep("alpha", names(par))]))
     pj <- P2[, id] / (1 + rowSums(P2))
-    (yd + ynd) - pj
+    sa <- (yd + ynd) - pj
+    sa[is.na(sa) | !is.finite(sa)] <- 1.490116e-08
+    sa
   }
 
   score_w <- function(y, par, id, ...) {
@@ -4046,6 +4050,7 @@ nmult_bamlss <- function(K)
     id <- as.integer(gsub("w", "", id))
     sw <- (yd * 1/P1 - ynd * 1/(1 - P1)) * (exp(-a^(-1/xi)) * (a^(-1/xi - 1)))
     sw[drop] <- 0
+    sw[is.na(sw) | !is.finite(sw)] <- 1.490116e-08
     sw
   }
 
@@ -4069,6 +4074,7 @@ nmult_bamlss <- function(K)
     }
 
     sxi <- rowSums(sxi)
+    sxi[is.na(sxi) | !is.finite(sxi)] <- 1.490116e-08
     sxi
   }
 
@@ -4078,8 +4084,7 @@ nmult_bamlss <- function(K)
   score2 <- rep(list(score_w), length = K)
   names(score2) <- paste0("w", 1:K)
 
-  score3 <- rep(list(score_xi), length = K)
-  names(score3) <- paste0("xi", 1:K)
+  score3 <- list("xi" = score_xi)
 
   rval$score <- c(score1, score2, score3)
 

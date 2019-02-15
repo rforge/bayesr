@@ -1549,9 +1549,17 @@ MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, he
 
   npar <- names(par)
   hessian <- hessian[npar, npar]
-  hessian <- hessian + diag(1e-04, ncol(hessian))
+  Sigma <- matrix_inv(-1 * hessian)
+  if(ncol(Sigma) != length(par)) {
+    for(i in c(1e-05, 1e-04, 1e-03, 1e-02)) {
+      if(ncol(Sigma) != length(par)) {
+        hessian2 <- hessian + diag(i, ncol(hessian))
+        Sigma <- matrix_inv(-1 * hessian2)
+      }
+    }
+  }
 
-  samps <- rmvnorm(n.samples, mean = par, sigma = matrix_inv(-1 * hessian))
+  samps <- rmvnorm(n.samples, mean = par, sigma = Sigma)
   colnames(samps) <- npar
 
   as.mcmc(samps)
