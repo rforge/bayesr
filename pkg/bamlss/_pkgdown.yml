@@ -27,6 +27,8 @@ navbar:
         href: articles/terms.html
       - text: Generalized Linear Models (+)
         href: articles/glm.html
+      - text: Families
+        href: articles/families.html
     news:
       text: Changelog
       href: news/index.html
@@ -39,6 +41,7 @@ articles:
     - '`bamlss`'
     - '`misc`'
     - '`glm`'
+    - '`families`'
 
 reference:
   - title: Main Model Fitting Function
