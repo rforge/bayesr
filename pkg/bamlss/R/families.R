@@ -4086,7 +4086,7 @@ nmult_bamlss <- function(K)
 
   score3 <- list("xi" = score_xi)
 
-  ##rval$score <- c(score1, score2, score3)
+  ##rval$score <- c(score1, score2, score3) 
   rval$score <- score1
 
   rval$initialize <- list(
