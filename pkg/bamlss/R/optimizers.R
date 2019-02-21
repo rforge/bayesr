@@ -1060,9 +1060,15 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       }
 
       ll_save <- c(ll_save, logLik)
+      if(iter > 2)
+        slope <- ll_save[length(ll_save)] - ll_save[length(ll_save) - 1L]
+      else
+        slope <- NA
 
       if(plot) {
-        plot(ll_save, xlab = "Iteration", ylab = "logLik", type = "l")
+        plot(ll_save, xlab = "Iteration", ylab = "logLik",
+          main = paste("Slope", fmt(slope, width = 6, digits = digits + 2)),
+          type = "l", ylim = c(0.9 * max(ll_save), max(ll_save)))
       }
     }
     
@@ -1073,6 +1079,10 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     logPost <- as.numeric(logLik + get.log.prior(x))
 
     ll_save <- c(ll_save, logLik)
+    if(iter > 2)
+      slope <- ll_save[length(ll_save)] - ll_save[length(ll_save) - 1L]
+    else
+      slope <- NA
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -1091,7 +1101,9 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     }
 
     if(plot) {
-      plot(ll_save, xlab = "Iteration", ylab = "logLik", type = "l")
+      plot(ll_save, xlab = "Iteration", ylab = "logLik",
+        main = paste("Slope", fmt(slope, width = 6, digits = digits + 2)),
+        type = "l", ylim = c(0.9 * max(ll_save), max(ll_save)))
     }
     
     if(iter == maxit)
