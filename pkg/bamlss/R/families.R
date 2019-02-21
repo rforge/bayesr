@@ -4048,7 +4048,7 @@ nmult_bamlss <- function(K)
     a[a <= 0] <- 1e-05
     P1 <- log(1 - exp(-a^(-1/xi)))
     id <- as.integer(gsub("w", "", id))
-    sw <- (yd * 1/P1 - ynd * 1/(1 - P1)) * (exp(-a^(-1/xi)) * (a^(-1/xi - 1)))
+    sw <- (yd * 1/P1) * (exp(-a^(-1/xi)) * (a^(-1/xi - 1)))
     sw[drop] <- 0
     sw[is.na(sw) | !is.finite(sw)] <- 1.490116e-08
     sw
@@ -4070,7 +4070,7 @@ nmult_bamlss <- function(K)
     for(j in 1:K) {
       yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
       ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
-      sxi[, j] <- (yd * 1/P1[, j] - ynd * 1/(1 - P1[, j])) * B[, j]
+      sxi[, j] <- (yd * 1/P1[, j]) * B[, j]
     }
 
     sxi <- rowSums(sxi)

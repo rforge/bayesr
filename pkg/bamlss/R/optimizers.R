@@ -737,6 +737,12 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   
   if(is.null(attr(x, "bamlss.engine.setup")))
     x <- bamlss.engine.setup(x, update = update, ...)
+
+  plot <- if(is.null(list(...)$plot)) {
+    FALSE
+  } else {
+    list(...)$plot
+  }
   
   criterion <- match.arg(criterion)
   np <- length(nx)
@@ -915,6 +921,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   backfit <- function(verbose = TRUE) {
     eps0 <- eps + 1; iter <- 0
     edf <- get.edf(x, type = 2)
+    ll_save <- NULL
     ptm <- proc.time()
     while(eps0 > eps & iter < maxit) {
       eta0 <- eta
@@ -1036,18 +1043,26 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
       IC <- get.ic(family, y, peta, edf, nobs, criterion)
       
       iter <- iter + 1
+
+      logLik <- family$loglik(y, peta)
       
       if(verbose) {
         cat(if(ia) "\r" else if(iter > 1) "\n" else NULL)
         vtxt <- paste(criterion, " ", fmt(IC, width = 8, digits = digits),
                       " logPost ", fmt(family$loglik(y, peta) + get.log.prior(x), width = 8, digits = digits),
-                      " logLik ", fmt(family$loglik(y, peta), width = 8, digits = digits),
+                      " logLik ", fmt(logLik, width = 8, digits = digits),
                       " edf ", fmt(edf, width = 6, digits = digits),
                       " eps ", fmt(eps0, width = 6, digits = digits + 2),
                       " iteration ", formatC(iter, width = nchar(maxit)), sep = "")
         cat(vtxt)
         
         if(.Platform$OS.type != "unix" & ia) flush.console()
+      }
+
+      ll_save <- c(ll_save, logLik)
+
+      if(plot) {
+        plot(ll_save, xlab = "Iteration", ylab = "logLik", type = "l")
       }
     }
     
@@ -1056,6 +1071,8 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
     IC <- get.ic(family, y, peta, edf, nobs, criterion)
     logLik <- family$loglik(y, peta)
     logPost <- as.numeric(logLik + get.log.prior(x))
+
+    ll_save <- c(ll_save, logLik)
     
     if(verbose) {
       cat(if(ia) "\r" else "\n")
@@ -1071,6 +1088,10 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
         paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
       } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
       cat("\nelapsed time: ", et, "\n", sep = "")
+    }
+
+    if(plot) {
+      plot(ll_save, xlab = "Iteration", ylab = "logLik", type = "l")
     }
     
     if(iter == maxit)
