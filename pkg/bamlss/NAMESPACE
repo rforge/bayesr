@@ -80,6 +80,7 @@ export(
   "set.par",
 
   ## families,
+  "ALD_bamlss",
   "AR1_bamlss",
   "beta_bamlss",
   "beta1_bamlss",

@@ -4103,3 +4103,55 @@ nmult_bamlss <- function(K)
   return(rval)
 }
 
+
+ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
+{
+  if(p < 0.001 | p > (1 - 0.001))
+    stop("p must be between 0 and 1!")
+
+  abs2 <- function(x) { sqrt(x^2 + const)}
+  logpc <- log(p * (1 - p))
+
+  rval <- list(
+    "family" = "Asymmetric Laplace",
+    "names" = "mu",
+    "links" = c(mu = "identity"),
+    "d" = function(y, par, log = FALSE) {
+      r <- y - par$mu
+      d <- logpc - r * (p - 1 * (r < 0))
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        r <- y - par$mu
+        score <- rep(0, length(r))
+        i <- r < 0
+        rt <- (0.5 * (2 * r * (r^2 + const)^-0.5))
+        score[!i] <- -(-1 * p * rt[!i])
+        score[i] <- -(-1 * (1 - p) * rt[i])
+        return(score)
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        r <- y - par$mu
+        hess <- rep(0, length(r))
+        i <- r < 0
+        r2 <- r^2 + const
+        rt <- (0.5 * (2 * r * (-0.5 * (2 * r * r2^-1.5)) + 2 * r2^-0.5))
+        hess[!i] <- p * rt[!i]
+        hess[i] <- (1 - p) * rt[i]
+        return(hess)
+      }
+    ),
+    "initialize" = list(
+      "mu"    = function(y, ...) { (y + median(y)) / 2 }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+

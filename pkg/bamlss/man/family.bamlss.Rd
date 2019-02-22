@@ -20,6 +20,7 @@
 \alias{beta1_bamlss}
 \alias{ztnbinom_bamlss}
 \alias{lognormal_bamlss}
+\alias{ALD_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -37,6 +38,7 @@
 
 \usage{
 ## Family objects in bamlss:
+ALD_bamlss(..., p = 0.5, const = 1e-03)
 beta_bamlss(...)
 binomial_bamlss(link = "logit", ...)
 cnorm_bamlss(...)
@@ -71,6 +73,8 @@ lognormal_bamlss(...)
     a section. If \code{ar.start = NULL} lagged residuals are computed by simple shifting.
     See also \code{\link[mgcv]{bam}}.}
   \item{link}{Possible link functions.}
+  \item{const}{Constant to be used for the approximation of the absolute function.}
+  \item{p}{The quantile the should be fitted.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }
 
