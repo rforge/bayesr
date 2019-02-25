@@ -4122,38 +4122,38 @@ nmult_bamlss <- function(K)
 }
 
 
-foo1 <- function(x, p = 0.1) {
-  log(p * (1 - p)) - x * (p - 1 * (x < 0))
-}
+#foo1 <- function(x, p = 0.1) {
+#  log(p * (1 - p)) - x * (p - 1 * (x < 0))
+#}
 
-foo2 <- function(x, p = 0.1, const = 0.00001) {
-  abs2 <- function(x) { sqrt(x^2 + const)}
-  i <- x > 0
-  rval <- rep(0, length(x))
-  rval[i] <- p * abs2(x[i])
-  rval[!i] <- (1 - p) * abs2(x[!i])
-  log(p * (1 - p)) - rval
-}
+#foo2 <- function(x, p = 0.1, const = 0.00001) {
+#  abs2 <- function(x) { sqrt(x^2 + const)}
+#  i <- x > 0
+#  rval <- rep(0, length(x))
+#  rval[i] <- p * abs2(x[i])
+#  rval[!i] <- (1 - p) * abs2(x[!i])
+#  log(p * (1 - p)) - rval
+#}
 
-huber <- function(x, p = 0.1, const = 0.001) {
-  x <- rev(x)
-  rval <- rep(0, length(x))
+#huber <- function(x, p = 0.1, const = 0.001) {
+#  x <- rev(x)
+#  rval <- rep(0, length(x))
 
-  i <- x < -1 * p * const
-  rval[i] <- p * abs(x[i]) - const * p^2/2
+#  i <- x < -1 * p * const
+#  rval[i] <- p * abs(x[i]) - const * p^2/2
 
-  i <-  x >= -const * p & x <= (1 - p) * const 
-  rval[i] <- 1/(2*const) * x[i]^2
+#  i <-  x >= -const * p & x <= (1 - p) * const 
+#  rval[i] <- 1/(2*const) * x[i]^2
 
-  i <- x > (1 - p) * const
-  rval[i] <- (1 - p) * abs(x[i]) - (const * (1 - p)^2)/2
+#  i <- x > (1 - p) * const
+#  rval[i] <- (1 - p) * abs(x[i]) - (const * (1 - p)^2)/2
 
-  log(p * (1 - p)) - rval 
-}
+#  log(p * (1 - p)) - rval 
+#}
 
-curve(foo, -0.1, 0.1)
-curve(foo2, -0.1, 0.1, col = 2, add = TRUE)
-curve(huber, -0.1, 0.1, col = 3, add = TRUE)
+#curve(foo, -0.1, 0.1)
+#curve(foo2, -0.1, 0.1, col = 2, add = TRUE)
+#curve(huber, -0.1, 0.1, col = 3, add = TRUE)
 
 ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
 {
