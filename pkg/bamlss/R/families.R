@@ -3985,7 +3985,7 @@ nmult_bamlss <- function(K)
     "d" = function(y, par, log = FALSE) {
       P2 <- exp(do.call("cbind", par[grep("alpha", names(par))]))
       w <- do.call("cbind", par[grep("w", names(par))])
-      xi <- par$xi
+      xi <- as.numeric(par$xi)
       xi[abs(xi) < 0.00001] <- 0.00001
       xi[xi <= -0.5] <- -0.4999
 
@@ -4040,37 +4040,57 @@ nmult_bamlss <- function(K)
     yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
     ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
     w <- par[[id]]
-    xi <- par$xi
-    drop <- w >= 1/xi
+    xi <- as.numeric(par$xi)
     xi[abs(xi) < 0.00001] <- 0.00001
     xi[xi <= -0.5] <- -0.4999
     a <- (1 - xi * w)
     a[a <= 0] <- 1e-05
-    P1 <- log(1 - exp(-a^(-1/xi)))
-    id <- as.integer(gsub("w", "", id))
-    sw <- (yd * 1/P1) * (exp(-a^(-1/xi)) * (a^(-1/xi - 1)))
-    sw[drop] <- 0
+    P1 <- 1 - exp(-a^(-1/xi))
+    b <- exp(-a^(-1/xi)) * (a^(-1/xi - 1))
+    sw <- (yd * 1/P1 - ynd * 1/(1-P1)) * b
     sw[is.na(sw) | !is.finite(sw)] <- 1.490116e-08
     sw
   }
 
+#library(numDeriv)
+
+#foo <- function(xi, w = 0.5) {
+#  xi[abs(xi) < 0.00001] <- 0.00001
+#  xi[xi <= -0.5] <- -0.4999
+#  a <- (1 - xi * w)
+#  a[a <= 0] <- 1e-05
+#  1 - exp(-a^(-1/xi))
+#}
+
+#bar <- function(xi, w = 0.5) {
+#  xi[abs(xi) < 0.00001] <- 0.00001
+#  xi[xi <= -0.5] <- -0.4999
+#  a <- (1 - xi * w)
+#  a[a <= 0] <- 1e-05
+#  exp(-a^(-1/xi)) * (a^(-1/xi) * (log(a) * (1/xi^2)) - a^((-1/xi) - 1) * ((-1/xi) * w))
+#}
+
+#curve(foo, -0.5, 10)
+#numDeriv::grad(foo, 0.2)
+#bar(0.2)
+
   score_xi <- function(y, par, id, ...) {
     w <- do.call("cbind", par[grep("w", names(par))])
-    xi <- par$xi
+    xi <- as.numeric(par$xi)
     xi[abs(xi) < 0.00001] <- 0.00001
     xi[xi <= -0.5] <- -0.4999
     a <- (1 - xi * w)
     a[a <= 0] <- 1e-05
 
-    P1 <- log(1 - exp(-a^(-1/xi)))
-    B <- -(exp(-a)^((-1/xi) - 1) * ((-1/xi) * (exp(-a) * w)) + exp(-a)^(-1/xi) * (log(exp(-a)) * (1/xi^2)))
+    P1 <- 1 - exp(-a^(-1/xi))
+    B <- exp(-a^(-1/xi)) * (a^(-1/xi) * (log(a) * (1/xi^2)) - a^((-1/xi) - 1) * ((-1/xi) * w))
 
     sxi <- matrix(0, nrow = nrow(y), ncol = K)
 
     for(j in 1:K) {
       yd <- 1 * ((y[[1]] == 1L) & (y[[2]] == j))
       ynd <- 1 * ((y[[1]] == 0L) & (y[[2]] == j))
-      sxi[, j] <- (yd * 1/P1[, j]) * B[, j]
+      sxi[, j] <- (yd * 1/P1[, j] - ynd * 1/(1 - P1[, j])) * B[, j]
     }
 
     sxi <- rowSums(sxi)
@@ -4085,9 +4105,7 @@ nmult_bamlss <- function(K)
   names(score2) <- paste0("w", 1:K)
 
   score3 <- list("xi" = score_xi)
-
-  ##rval$score <- c(score1, score2, score3) 
-  rval$score <- score1
+  rval$score <- c(score1, score2, score3)
 
   rval$initialize <- list(
     "xi" = function(y, ...) { rep(0.1, nrow(y)) }
