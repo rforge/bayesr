@@ -25,17 +25,133 @@ set.seed(123)
 Family objects are important building blocks in the design of BAMLSS models.
 They specify the distribution by collecting functions of the density,
 respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.
-predictors, and (optionally) second-order derivatives of the log-likelihood
-w.r.t. predictors.
+predictors (the score function), and (optionally) second-order derivatives of
+the log-likelihood w.r.t. predictors _or_ their expectation (the Hessian).
 
 ## How to build a BAMLSS family
+
+We illustrate how to build a BAMLSS family _by hand_ along the Gaussian
+distribution, with density
+$$
+f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
+\left( \frac{-(y-\mu)^2}{2\sigma^2} \right),
+$$
+and log-likelihood function
+$$
+\ell(\mu,\sigma\,|\,y) = - \frac{1}{2} \log(2\pi) - \log(\sigma) -
+\frac{(y-\mu)^2}{2\sigma^2},
+$$
+for an individual observation. The sum of the log-likelihood function
+over all observations is the target function of the optimization problem.
+
+In the distributional regression framework the parameters are linked
+to predictors by link functions,
+$$
+\mu = \eta_\mu, \qquad \log(\sigma) = \eta_\sigma.
+$$
+For the Gaussian $\mu$ and $\sigma$ are linked to $\eta_\mu$ and $\eta_\sigma$
+by the identity funciton and the logarithm, respectively.
+
+The score functions in BAMLSS are the first derivatives of the log-likelihood w.r.t.
+the predictors:
+$$
+s_\mu = \frac{\partial\ell}{\partial\eta_\mu} = \frac{\partial\ell}{\partial\mu} \cdot
+\frac{\partial\mu}{\partial\eta_\mu} = \frac{y-\mu}{\sigma^2},
+$$
+and
+$$
+s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\partial\sigma} \cdot
+\frac{\partial\sigma}{\partial\eta_\sigma} = -1 + \frac{(y-\mu)^2}{\sigma^2}.
+$$
+
+For the second derivative of the log-likelihood we are able to obtain the
+negative expectation,
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\mu}^{2} ) = \sigma^{-2},
+$$
+and
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\sigma}^{2} ) = 2.
+$$
+
+Now we have to write a function that returns a `family.bamlss` object (S3)
+which encapsulates functions for density, score and Hessian, and the names of
+the family, parameter and link functions:
+
+| Name of element | Value                                                        |
+|-----------------|--------------------------------------------------------------|
+| `family`        | character string with the name of the family                 |
+| `names`         | vector of character strings with the names of the parameters |
+| `links`         | vector of character strings with the names of the link functions |
+| `d`             | a function returning the density with arguments `y, par, log = FALSE` (see below) |
+| `score`         | a list with functions (one for each parameter) returning the first derivatives of the log-likelihood w.r.t. predictors |
+| `hess`          | a list with functions (one for each parameter) returning the negative second derivatives of the log-likelihood w.r.t. predictors |
+
+Merely all functions take as first argument the response `y` and as second
+argument a named list holding the evaluated parameters `par` of the
+distribution. 
+
+The implementation looks like this:
+```{r, mygauss1}
+mygauss <- function(...) {
+    f <- list(
+        "family" = "normal",
+        "names"  = c("mu", "sigma"),
+        "links"  = c(mu = "identity", sigma = "log"),
+        "d" = function(y, par, log = FALSE) {
+            dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+        },
+        "score" = list(
+            mu = function(y, par, ...) {
+                drop((y - par$mu) / (par$sigma^2))
+            },
+            sigma = function(y, par, ...) {
+                drop(-1 + (y - par$mu)^2 / (par$sigma^2))
+            }
+        ),
+        "hess" = list(
+            mu = function(y, par, ...) {
+                drop(1 / (par$sigma^2))
+            },
+            sigma = function(y, par, ...) { 
+                rep(2, length(y))
+            }
+        )
+    )
+    class(f) <- "family.bamlss"
+    return(f)
+}
+
+### ## simulate some data
+### d <- GAMart()
+### b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d, family = mygauss, verbose = FALSE)
+### par(mfrow = c(1, 3))   ## TODO: Wie kann man den Schaaasss nebenenander plotten???
+### plot(b, model = "mu", term = "s(x1)")
+### plot(b, model = "mu", term = "s(x2)")
+### plot(b, model = "mu", term = "s(x3)")
+```
+
+Optionally, the `family.bamlss` object can be extended by functions for
+
+* the cumulative distribution function `p(y, par, ...)`,
+* the quantile function (the inverse cdf) `q(p, par)`,
+* a random number generator `r(n, par)`,
+* the log-likelihood `loglik(y, par)`,
+* the expectation `mu(par, ...)`,
+* initial values for optimization, which has to be a list containing a
+  function for each parameter,
+* ...
+
 
 ## Available families
 
 There are some families implemented:
 ```{r}
-x <- scan("../R/families.R", what = character(0))
-x[grep("^\\w*_bamlss", x)]
+x <- scan("../NAMESPACE", what = character(0))
+x <- x[seq(which(x == "families,") + 1, length(x))]
+x <- x[1:which(x == "##")[1] - 1]
+x <- x[grep("_bamlss$", x)]
+x
 ```
 
 ### Continuous response
@@ -74,5 +190,5 @@ x[grep("^\\w*_bamlss", x)]
 
 ### Others
 
-
+## References
 
