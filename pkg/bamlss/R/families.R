@@ -4128,45 +4128,55 @@ nmult_bamlss <- function(K)
 }
 
 
-#foo1 <- function(x, p = 0.1) {
-#  log(p * (1 - p)) - x * (p - 1 * (x < 0))
-#}
+if(FALSE) {
+foo1 <- function(x, p = 0.7) {
+  log(p * (1 - p)) - x * (p - 1 * (x < 0))
+}
 
-#foo2 <- function(x, p = 0.1, const = 0.00001) {
-#  abs2 <- function(x) { sqrt(x^2 + const)}
-#  i <- x > 0
-#  rval <- rep(0, length(x))
-#  rval[i] <- p * abs2(x[i])
-#  rval[!i] <- (1 - p) * abs2(x[!i])
-#  log(p * (1 - p)) - rval
-#}
+absx <- function(x) { x * tanh(x/0.1) }
 
-#huber <- function(x, p = 0.1, const = 0.001) {
-#  x <- rev(x)
-#  rval <- rep(0, length(x))
+foo2 <- function(x, p = 0.7) {
+  i <- x > 0
+  rval <- rep(0, length(x))
+  rval[i] <- p * absx(x[i])
+  rval[!i] <- (1 - p) * absx(x[!i])
+  log(p * (1 - p)) - rval
+}
 
-#  i <- x < -1 * p * const
-#  rval[i] <- p * abs(x[i]) - const * p^2/2
+curve(foo1, -1, 1)
+curve(foo2, -1, 1, col = 2, add = TRUE)
 
-#  i <-  x >= -const * p & x <= (1 - p) * const 
-#  rval[i] <- 1/(2*const) * x[i]^2
+library(numDeriv)
 
-#  i <- x > (1 - p) * const
-#  rval[i] <- (1 - p) * abs(x[i]) - (const * (1 - p)^2)/2
+numDeriv::grad(foo3, -0.01)
+foo3prime(-0.01)
 
-#  log(p * (1 - p)) - rval 
-#}
+n <- 2000
+x <- runif(n, -3, 3)
+y <- sin(x) + rnorm(n, sd = exp(-1 + 0.5 * x))
 
-#curve(foo, -0.1, 0.1)
-#curve(foo2, -0.1, 0.1, col = 2, add = TRUE)
-#curve(huber, -0.1, 0.1, col = 3, add = TRUE)
+data("mcycle", package = "MASS")
+x <- mcycle$times
+y <- mcycle$accel
 
-ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
+b0.1 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.1), optimizer = boost, sampler = F)
+b0.5 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.5), optimizer = boost, sampler = F)
+b0.9 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.9), optimizer = boost, sampler = F)
+
+p0.1 <- predict(b0.1, mstop = 400)
+p0.5 <- predict(b0.5, mstop = 400)
+p0.9 <- predict(b0.9, mstop = 400)
+
+plot(x, y)
+plot2d(cbind(p0.1, p0.5, p0.9) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
+}
+
+ALD_bamlss <- function(..., p = 0.5, eps = 1e-02)
 {
   if(p < 0.001 | p > (1 - 0.001))
     stop("p must be between 0 and 1!")
 
-  abs2 <- function(x) { sqrt(x^2 + const)}
+  absx <- function(x) { x * tanh(x/eps) }
   logpc <- log(p * (1 - p))
 
   rval <- list(
@@ -4175,7 +4185,15 @@ ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
     "links" = c(mu = "identity"),
     "d" = function(y, par, log = FALSE) {
       r <- y - par$mu
-      d <- logpc - r * (p - 1 * (r < 0))
+      ##d <- logpc - r * (p - 1 * (r < 0))
+
+      i <- r > 0
+      d <- rep(0, length(r))
+      d[i] <- p * abs(r[i])
+      d[!i] <- (1 - p) * abs(r[!i])
+
+      d <- logpc - d
+
       if(!log)
         d <- exp(d)
       return(d)
@@ -4184,10 +4202,9 @@ ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
       "mu" = function(y, par, ...) {
         r <- y - par$mu
         score <- rep(0, length(r))
-        i <- r < 0
-        rt <- (0.5 * (2 * r * (r^2 + const)^-0.5))
-        score[!i] <- -(-1 * p * rt[!i])
-        score[i] <- -(-1 * (1 - p) * rt[i])
+        i <- r > 0
+        score[i] <- -(p * (r[i] * (1 - tanh(r[i]/eps)^2)/eps + tanh(r[i]/eps)))
+        score[!i] <- -((1 - p) * (r[!i] * (1 - tanh(r[!i]/eps)^2)/eps + tanh(r[!i]/eps)))
         return(score)
       }
     ),
@@ -4195,18 +4212,19 @@ ALD_bamlss <- function(..., p = 0.5, const = 1e-03)
       "mu" = function(y, par, ...) {
         r <- y - par$mu
         hess <- rep(0, length(r))
-        i <- r < 0
-        r2 <- r^2 + const
-        rt <- (0.5 * (2 * r * (-0.5 * (2 * r * r2^-1.5)) + 2 * r2^-0.5))
-        hess[!i] <- p * rt[!i]
-        hess[i] <- (1 - p) * rt[i]
-        return(hess)
+        i <- r > 0
+        hess[i] <- -(p * (2 - (2 * (r[i] * (1 - tanh(r[i]/eps)^2)/eps) + 2 * tanh(r[i]/eps)) * tanh(r[i]/eps))/eps)
+        hess[!i] <- -((1 - p) * (2 - (2 * (r[!i] * (1 - tanh(r[!i]/eps)^2)/eps) + 2 * tanh(r[!i]/eps)) * tanh(r[!i]/eps))/eps)
+        return(-hess)
       }
     ),
     "initialize" = list(
       "mu"    = function(y, ...) { (y + median(y)) / 2 }
     )
   )
+
+  rval$score <- NULL
+  rval$hess <- NULL
 
   class(rval) <- "family.bamlss"
   rval
