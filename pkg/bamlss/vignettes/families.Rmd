@@ -132,7 +132,7 @@ mygauss <- function(...) {
 ## simulate some data
 d <- GAMart()
 
-## set formula
+## specify formula
 f <- ~ s(x1) + s(x2) + s(x3) + s(lon, lat)
 f <- list(mu = update(f, num ~ .), sigma = f)
 
@@ -263,11 +263,39 @@ $$
 
 ### Interval responses
 
-* `beta_bamlss`
+#### Beta distribution
+
+The beta distribution, with density
+$$
+f_{Beta}(y\,|\,\alpha,\beta)=\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\cdot\Gamma(\beta)}
+\cdot y^{\alpha-1} \cdot (1-y)^{\beta-1}
+$$
+is implemented using the Balding-Nichols parameterization
+[@bamlss:Balding+Nichols:1995].
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma)=f_{Beta}\left(y\,\middle|\,\alpha = \mu \cdot \frac{1-\sigma}{\sigma},
+\beta = (1-\mu) \cdot \frac{1-\sigma}{\sigma} \right),
+$$
+with $0 < \mu < 1$ and $0 < \sigma < 1$.
+
+**Function**: `beta_bamlss(...)`
 
 ### Discrete responses
 
-* `binomial_bamlss(link = "logit", ...)`
+#### Bernoulli distribution
+
+Often called _binomial_, though the Bernoulli is a special case of the binomial
+distribution.
+
+**Density**:
+$$
+f(y\,|\,\pi) = \pi^y \cdot (1-\pi)^{1-y}
+$$
+
+**Function**: `binomial_bamlss(link = "logit", ...)`
+
 * `multinomial_bamlss(...)`
 
 ### Count data responses
