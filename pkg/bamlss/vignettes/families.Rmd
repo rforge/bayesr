@@ -28,7 +28,12 @@ respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.
 predictors (the score function), and (optionally) second-order derivatives of
 the log-likelihood w.r.t. predictors _or_ their expectation (the Hessian).
 
-## How to build a BAMLSS family
+BAMLSS can be easily extended by [constructing families](#build) for specific
+tasks, i.e. problems for which a likelihood can be formulated.
+However, the most important distributions are [shipped with BAMLSS](#avail).
+Finally, it is also possible to employ [GAMLSS families](#gamlss).
+
+## How to build a BAMLSS family {#build}
 
 We illustrate how to build a BAMLSS family _by hand_ along the Gaussian
 distribution, with density
@@ -92,10 +97,10 @@ argument a named list holding the evaluated parameters `par` of the
 distribution. 
 
 The implementation looks like this:
-```{r, mygauss1}
+```{r, mygauss}
 mygauss <- function(...) {
     f <- list(
-        "family" = "normal",
+        "family" = "mygauss",
         "names"  = c("mu", "sigma"),
         "links"  = c(mu = "identity", sigma = "log"),
         "d" = function(y, par, log = FALSE) {
@@ -121,14 +126,26 @@ mygauss <- function(...) {
     class(f) <- "family.bamlss"
     return(f)
 }
+```
 
-### ## simulate some data
-### d <- GAMart()
-### b <- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d, family = mygauss, verbose = FALSE)
-### par(mfrow = c(1, 3))   ## TODO: Wie kann man den Schaaasss nebenenander plotten???
-### plot(b, model = "mu", term = "s(x1)")
-### plot(b, model = "mu", term = "s(x2)")
-### plot(b, model = "mu", term = "s(x3)")
+```{r, mygauss2, eval=FALSE}
+## simulate some data
+d <- GAMart()
+
+## set formula
+f <- ~ s(x1) + s(x2) + s(x3) + s(lon, lat)
+f <- list(mu = update(f, num ~ .), sigma = f)
+
+## model
+b <- bamlss(f, data = d, family = mygauss)
+```
+
+```{r, mygauss3, eval=FALSE, include=FALSE}
+par(mfrow = c(1, 3))   ## TODO: Wie kann man den Schaaasss nebenenander plotten???
+plot(b, model = "mu", term = "s(x1)")
+plot(b, model = "mu", term = "s(x2)")
+plot(b, model = "mu", term = "s(x3)")
+plot(b, model = "mu", term = "s(lon,lat)")
 ```
 
 Optionally, the `family.bamlss` object can be extended by functions for
@@ -142,11 +159,13 @@ Optionally, the `family.bamlss` object can be extended by functions for
   function for each parameter,
 * ...
 
+which can help to speed up optimization, or be convenient for
+predictions and simulations.
 
-## Available families
+## Available families {#avail}
 
 There are some families implemented:
-```{r}
+```{r, eval=FALSE, include=FALSE}
 x <- scan("../NAMESPACE", what = character(0))
 x <- x[seq(which(x == "families,") + 1, length(x))]
 x <- x[1:which(x == "##")[1] - 1]
@@ -156,14 +175,87 @@ x
 
 ### Continuous response
 
-* `gaussian_bamlss`
+#### Gaussian distribution
+
+**Other common names**: normal distribution.
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
+\left( \frac{-(y-\mu)^2}{2\sigma^2} \right),
+$$
+
+**Function**: `gaussian_bamlss(...)`
+
+**Functionality**:
+
+**Alternative parameterizations**:
+
+* `gaussian2_bamlss(...)` models inverse `sigma` with a log link.
+* `Gaussian_bamlss(...)` one parametric family modelling only `mu`.
+
+#### Generalized logistic distribution
+
+**Other common names**: skewed-logistic distribution.
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma,\alpha)=\frac{\alpha\cdot\exp\left(-\frac{y-\mu}{\sigma}\right)}
+{\sigma\cdot\left(1+\exp\left(-\frac{y-\mu}{\sigma}\right)\right)^{2\alpha}}
+$$
+
+**Function**: `glogis_bamlss(...)`
+
+**Functionality**:
 
 ### Positive continuous response
 
-* `gpareto_bamlss`
-* `weibull_bamlss`
-* `gamma_bamlss`
-* `lognormal_bamlss`
+#### Gamma distribution
+
+Two-parameter distribution with `mu` for the expectation of the
+distribution and `sigma` for its shape.
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma)=\frac{y^{\sigma-1}\cdot\exp\left(-\frac{\sigma\cdot y}{\mu}\right)}
+{\left(\frac{\mu}{\sigma}\right)^\sigma\cdot\Gamma(\sigma)}
+$$
+
+**Function**: `gamma_bamlss(...)`
+
+**Functionality**:
+
+#### Generalized Pareto distribution
+
+**Density**:
+$$
+f(y\,|\,\xi,\sigma)=\frac{1}{\sigma}\cdot\left(1+\frac{\xi\cdot y}{\sigma}
+\right)^{-\left(1+1/\xi\right)}
+$$
+
+**Function**: `gpareto_bamlss(...)`
+
+**Functionality**:
+
+#### Weibull distribution
+
+**Density**:
+$$
+f(y\,|\,\lambda,\alpha)=\frac{\alpha}{\lambda}\cdot\left(\frac{y}{\lambda}\right)^{\alpha-1}
+\cdot\exp\left(-\left(\frac{y}{\lambda}\right)^\alpha\right)
+$$
+
+**Function**: `weibull_bamlss(...)`
+
+#### Lognormal distribution
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
+\left( \frac{-(\log(y)-\mu)^2}{2\sigma^2} \right),
+$$
+
+**Function**: `lognormal_bamlss(...)`
 
 ### Censored continuous responses
 
@@ -175,20 +267,39 @@ x
 
 ### Discrete responses
 
-* `binomial_bamlss`
-* `mlt_bamlss`
+* `binomial_bamlss(link = "logit", ...)`
+* `multinomial_bamlss(...)`
 
 ### Count data responses
 
-* `poisson_bamlss`
-* `negbin_bamlss`
+* `poisson_bamlss(...)`
+* `ztnbinom_bamlss(...)`
 
 ### Multivariate responses
 
-* `bivnorm_bamlss`
-* `mvnorm_bamlss`
+* `mvnorm_bamlss(k = 2, ...)`
+* `mvnormAR1_bamlss(k = 2, ...)`
+
+### Survival
+
+* `cox_bamlss(...)`
 
 ### Others
+
+* `AR1_bamlss(ar.start = NULL, ...)`
+* `beta1_bamlss(ar.start, ...)`
+
+## GAMLSS support {#gamlss}
+
+BAMLSS supports
+[GAMLSS families](https://cran.r-project.org/package=gamlss.dist "CRAN gamlss.dist")
+via a transfer function that build the `bamlss.family` object from a GAMLSS
+distribution funciton [@bamlss:Stasinopoulos:Rigby:2007], e.g. `NO()`, internally:
+
+```{r, gamlss-family, eval=FALSE}
+library("gamlss.dist")
+g <- bamlss(f, data = d, family = NO)
+```
 
 ## References
 

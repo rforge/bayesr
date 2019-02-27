@@ -99,6 +99,7 @@ export(
   "glogis_bamlss",
   "ztnbinom_bamlss",
   "lognormal_bamlss",
+  "weibull_bamlss",
   "gF",
 
   ## extractor functions

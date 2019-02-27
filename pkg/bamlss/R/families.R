@@ -2444,6 +2444,9 @@ mvnorm_bamlss <- function(k = 2, ...)
   if(k == 1)
     return(gaussian_bamlss())
 
+  if(k == 1)
+    return(bivnorm_bamlss())
+
   mu <- paste("mu", 1:k, sep = "")
   sigma <- paste("sigma", 1:k, sep = "")
 
@@ -3690,6 +3693,9 @@ mvnormAR1_bamlss <- function(k = 2, ...)
 {
   if(k == 1)
     return(gaussian_bamlss())
+
+  if(k == 2)
+    return(bivnorm_bamlss())
 
   mu <- paste("mu", 1:k, sep = "")
   sigma <- paste("sigma", 1:k, sep = "")
