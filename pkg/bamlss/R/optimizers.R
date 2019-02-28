@@ -5100,3 +5100,209 @@ predict.boost.net <- function(object, newdata, model = NULL,
   return(fit)
 }
 
+
+################################################################################
+####                     STOCHASTIC GRADIENT DESCENT                        ####
+################################################################################
+
+####  ## sgd fitter
+####  sgdfit <- function(x, y, gammaFun = function(i) 1/i, shuffle = TRUE,
+####                     CFun = function(beta) diag(length(beta)),
+####                     start = rep(0, ncol(x)), i.state = 0, link = function(x) x) {
+####  
+####      N <- length(y)
+####      
+####      ## shuffle observations
+####      shuffle <- if(shuffle) sample(1L:N) else 1L:N
+####      
+####      ## Explicit SVG
+####      beta     <- start
+####      betaXVec <- matrix(0, nrow = N, ncol = length(beta))
+####      
+####      for (i in seq.int(N)) {
+####         mu   <- drop(link(beta %*% x[shuffle[i],]))
+####         grad <- (y[shuffle[i]] - mu)
+####         beta <- beta + gammaFun(i + i.state) * grad * drop(x[shuffle[i],] %*% CFun(beta))
+####         betaXVec[i,] <- beta
+####      }
+####  
+####      rval <- list()
+####      rval$shuffle <- shuffle
+####      rval$coef    <- beta
+####      rval$y       <- y
+####      rval$x       <- x
+####      rval$i.state <- i
+####      rval$diagnostics <- list("betaMat" = betaXVec)
+####      class(rval) <- "sgdfit"
+####  
+####      rval
+####  }
+####  
+
+## Implicit SGD
+isgd <- function(x, y, family, weights = NULL, offset = NULL,
+                 gammaFun = function(i) 1/(1+i), shuffle = TRUE,
+                 CFun = function(beta) diag(length(beta)),
+                 start = NULL, i.state = 0) {
+
+    ## constants
+    nx <- family$names
+    if(!all(nx %in% names(x)))
+        stop("parameter names mismatch with family names!")
+
+    N  <- nrow(y)
+    y  <- as.matrix(y[[1]])
+
+    ## shuffle observations
+    shuffle <- if(shuffle) sample(1L:N) else 1L:N
+   
+    ## grep design matrices
+    X <- _sgd_grep_X(x)
+    m <- sapply(X, ncol)
+    rng <- list()
+    for(j in 1:length(m)) { rng[[j]] <- (c(0, m[-length(m)]) + 1)[j]:cumsum(m)[j] }
+    names(rng) <- names(m)
+
+    ## Implicit SVG
+    beta        <- if(is.null(start)) rep(0, sum(m)) else start
+    names(beta) <- do.call("c", lapply(X, colnames))
+    betaXVec    <- matrix(0, nrow = N, ncol = length(beta))
+    colnames(betaXVec) <- names(beta)
+
+    ## grad and link functions
+    gfun <- family$score
+    lfun <- lapply(family$links, make.link)
+    
+    zetaVec <- list()
+    for(nxi in nx) zetaVec[[nxi]] <- numeric(N)
+    ptm <- proc.time()
+    for(i in seq.int(N)) {
+        cat(sprintf("   * no. obs %i\r", i))
+
+        ## evaluate gammaFun for current iteration
+        gamma <- gammaFun(i + i.state) 
+
+        ## predictor
+        eta <- list()
+        for(nxi in nx) {
+            eta[[nxi]] <- drop(beta[rng[[nxi]]] %*% X[[nxi]][shuffle[i],])
+        } 
+
+        for(nxi in nx) {
+            ## find zeta: see slide 110 (Ioannis Big Data Course)
+            XCX <- c(X[[nxi]][shuffle[i],, drop = FALSE] %*%
+                   CFun(beta[rng[[nxi]]]) %*%
+                   t(X[[nxi]][shuffle[i],, drop = FALSE]))
+           
+            zeta_fun <- _make_zeta_fun(y = y[shuffle[i], , drop = FALSE],
+                                       eta = eta, XCX = XCX, gfun = gfun,
+                                       lfun = lfun, gamma = gamma, parname = nxi)
+            upper <- .1
+            lower <- -upper 
+            root     <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root,
+                                 error = function(e) e)
+            ## if the first try fails, the interval is enlarged 3 times,
+            ##    if no root is found zeta/root is set to 0.
+            ierror <- 0
+            while(inherits(root, "error")) {
+                ierror <- ierror + 1
+                if(ierror > 3) {
+                    root <- 0
+                } else {
+                    lower <- lower * 10
+                    upper <- upper * 10
+                    root  <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root,
+                                      error = function(e) e)
+                }
+            }
+            zetaVec[[nxi]][i] <- root
+
+            ## update beta, eta
+            beta[rng[[nxi]]] <- beta[rng[[nxi]]] + c(root) * c(X[[nxi]][shuffle[i],] %*%
+                                CFun(beta[rng[[nxi]]]))
+            eta[[nxi]] <- eta[[nxi]] + root * XCX
+        }
+
+        ## keep betapath
+        betaXVec[i,] <- beta
+    }
+    elapsed <- c(proc.time() - ptm)[3]
+    cat(sprintf("\n   * runtime = %.3f\n", elapsed))
+
+    rval <- list()
+    rval$parameters <- betaXVec
+    
+    ## fitted values
+    rval$fitted.values <- eta
+
+    ## summary
+    sgdsum <- list()
+    sgdsum$shuffle <- shuffle
+    sgdsum$coef    <- beta
+    sgdsum$y       <- y
+    sgdsum$x       <- x
+    sgdsum$i.state <- i
+    sgdsum$nobs    <- N
+    sgdsum$runtime <- elapsed
+    sgdsum$zeta    <- zetaVec
+
+    class(sgdsum) <- "sgd.summary"
+
+    rval$sgd.summary <- sgdsum
+
+    rval
+}
+
+
+print.sgdfit <- function(x, ...) {
+    print(x$coef)
+    invisible(x)
+}
+
+plot.sgdfit <- function(x, ..., betaref = NULL) {
+    ## Does not work why???
+
+    k <- length(x$beta)
+
+    ## coef paths
+    matplot(x$diagnostics$betaMat, type = "l", col = colorspace::rainbow_hcl(k), lty = 1)
+    if(!is.null(betaref))
+        abline(h = betaref, col = colorspace::rainbow_hcl(3), lty = 3)
+
+    invisible(x)
+}
+
+### helper functions
+_make_zeta_fun <- function(y, eta, XCX, gfun, lfun, gamma, parname) {
+
+    rfun <- function(zeta) {
+        eta[[parname]] <- eta[[parname]] + zeta * XCX
+
+        par <- list()
+        for(nxi in names(eta)) { par[[nxi]] <- lfun[[nxi]]$linkinv(eta[[nxi]]) }
+
+        rval <- gamma * gfun[[parname]](y, par) - zeta
+
+        rval
+    }
+
+    rfun
+}
+
+_sgd_grep_X <- function(x) {
+    
+    X <- list()
+    for(nxi in names(x)) {
+        X[[nxi]] <- x[[nxi]]$model.matrix
+        colnames(X[[nxi]]) <- paste(nxi, "p", colnames(X[[nxi]]), sep = ".")
+        for(sci in names(x[[nxi]]$smooth.construct)) {
+            xx <- x[[nxi]]$smooth.construct[[sci]]$X
+            colnames(xx) <- paste(nxi, "s", sci, 1L:ncol(xx), sep = ".")
+            X[[nxi]] <- cbind(X[[nxi]], xx)
+        }
+    }
+
+    return(X)
+}
+
+
