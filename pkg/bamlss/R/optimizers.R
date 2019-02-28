@@ -5157,7 +5157,7 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
     shuffle <- if(shuffle) sample(1L:N) else 1L:N
    
     ## grep design matrices
-    X <- _sgd_grep_X(x)
+    X <- sgd_grep_X(x)
     m <- sapply(X, ncol)
     rng <- list()
     for(j in 1:length(m)) { rng[[j]] <- (c(0, m[-length(m)]) + 1)[j]:cumsum(m)[j] }
@@ -5194,9 +5194,9 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
                    CFun(beta[rng[[nxi]]]) %*%
                    t(X[[nxi]][shuffle[i],, drop = FALSE]))
            
-            zeta_fun <- _make_zeta_fun(y = y[shuffle[i], , drop = FALSE],
-                                       eta = eta, XCX = XCX, gfun = gfun,
-                                       lfun = lfun, gamma = gamma, parname = nxi)
+            zeta_fun <- make_zeta_fun(y = y[shuffle[i], , drop = FALSE],
+                                      eta = eta, XCX = XCX, gfun = gfun,
+                                      lfun = lfun, gamma = gamma, parname = nxi)
             upper <- .1
             lower <- -upper 
             root     <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root,
@@ -5273,7 +5273,7 @@ plot.sgdfit <- function(x, ..., betaref = NULL) {
 }
 
 ### helper functions
-_make_zeta_fun <- function(y, eta, XCX, gfun, lfun, gamma, parname) {
+make_zeta_fun <- function(y, eta, XCX, gfun, lfun, gamma, parname) {
 
     rfun <- function(zeta) {
         eta[[parname]] <- eta[[parname]] + zeta * XCX
@@ -5289,7 +5289,7 @@ _make_zeta_fun <- function(y, eta, XCX, gfun, lfun, gamma, parname) {
     rfun
 }
 
-_sgd_grep_X <- function(x) {
+sgd_grep_X <- function(x) {
     
     X <- list()
     for(nxi in names(x)) {
