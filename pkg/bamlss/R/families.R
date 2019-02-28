@@ -4292,3 +4292,63 @@ ELF_bamlss <- function(..., tau = 0.5)
   rval
 }
 
+nbinom_bamlss <- function(...) {
+### neg bin
+### Author: Thorsten Simon
+### Date:   2019 Feb
+  rval <- list(
+    "family" = "nbinom",
+    "names" = c("mu", "theta"),
+    "links" = c(mu = "log", theta = "log"),
+    "mu" = function(par, ...) { par$mu },
+    "loglik" = function(y, par, ...) {
+      sum(stats::dnbinom(y, mu = par$mu, size = par$theta, log = TRUE))
+    },
+    "d" = function(y, par, log = FALSE) {
+      stats::dnbinom(y, mu = par$mu, size = par$theta, log = log)
+    },
+    "p" = function(y, par, ...) {
+      stats::pnbinom(y, mu = par$mu, size = par$theta)
+    },
+    "q" = function(p, par, ...) {
+      stats::qnbinom(p, mu = par$mu, size = par$theta)
+    },
+    "r" = function(n, par, ...) {
+      stats::rnbinom(n, mu = par$mu, size = par$theta)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        y - (y + par$theta)*par$mu/(par$mu + par$theta)
+      },
+      "theta" = function(y, par, ...) {
+        (digamma(y + par$theta) - digamma(par$theta) + log(par$theta) + 1 -
+          log(par$mu + par$theta) - (y + par$theta)/(par$mu + par$theta)) *
+          par$theta
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        par$mu * par$theta / (par$mu + par$theta)
+      },
+      "theta" = function(y, par, ...) {
+        (digamma(y + par$theta) - digamma(par$theta) + log(par$theta) + 1 -
+          log(par$mu + par$theta) - (y + par$theta)/(par$mu + par$theta)) *
+          -par$theta - (trigamma(y + par$theta) - trigamma(par$theta) +
+          1/par$theta - 2/(par$mu + par$theta) + (y + par$theta) /
+          (par$mu + par$theta)^2) * par$theta^2
+      }
+    ),
+    "initialize" = list(
+      "mu" = function(y, ...) { (y + mean(y)) / 2 },
+      "theta" = function(y, ...) {
+        rep( min( mean(y)^2 / (var(y) - mean(y)), 10), length(y))
+      }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+

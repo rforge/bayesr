@@ -259,7 +259,19 @@ $$
 
 ### Censored continuous responses
 
-* `cnorm_bamlss`
+#### Zero-censored normal distribution
+
+**Density**:
+$$
+f(y\,|\,\mu,\sigma)= \begin{cases} 
+  \frac{1}{\sigma} \phi\left(\frac{y-\mu}{\sigma} \right) & y > 0 \\
+  \Phi\left(\frac{-\mu}{\sigma} \right) & \mbox{else,}
+\end{cases}
+$$
+where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
+standard normal distribution.
+
+**Function**: `cnorm_bamlss(...)`
 
 ### Interval responses
 
@@ -296,11 +308,40 @@ $$
 
 **Function**: `binomial_bamlss(link = "logit", ...)`
 
-* `multinomial_bamlss(...)`
+#### Multinomial model
+
+Say, $y$ is a categorial response with $c+1$ nomial categories,
+and $y_{1}^{\star}, \dots, y_{c+1}^{\star}$ are associated
+dummy variables. $p_1, \dots, p_{c+1}$ are probabilities
+for an observation falling in one of the categories.
+Category $c+1$ serves as reference, i.e.
+$p_{c+1} = 1 - p_1 - \dots - p_{c}$.
+
+**Density**:
+$$
+f(y\,|\,\pi_1,\dots,\pi_c) = \prod_{s=1}^{c+1} p_{s}^{y_{s}^{\star}}, \quad
+\text{where} \quad p_r = \frac{\pi_r}{1 + \pi_1 + \dots + \pi_c},
+$$
+the parameters are linked to predictors using the logarithm:
+$$
+\log(\pi_r) = \log\left(\frac{p_r}{p_{c+1}}\right) = \eta_r,
+$$
+where $\eta_r$ specifies the log-odds between category $r$ and
+the reference category $c+1$.
+
+**Function**: `multinomial_bamlss(...)`
 
 ### Count data responses
 
-* `poisson_bamlss(...)`
+#### Poisson distribution
+
+**Density**:
+$$
+f(y\,|\,\lambda) = \frac{\lambda^y \cdot \exp(-\lambda)}{y!}
+$$
+
+**Function**: `poisson_bamlss(...)`
+
 * `ztnbinom_bamlss(...)`
 
 ### Multivariate responses

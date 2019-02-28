@@ -97,6 +97,7 @@ export(
   "quant_bamlss",
   "gpareto_bamlss",
   "glogis_bamlss",
+  "nbinom_bamlss",
   "ztnbinom_bamlss",
   "lognormal_bamlss",
   "weibull_bamlss",
