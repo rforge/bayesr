@@ -177,17 +177,21 @@ x
 
 #### Gaussian distribution
 
-**Other common names**: normal distribution.
+Or normal distribution.
 
 **Density**:
 $$
 f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
 \left( \frac{-(y-\mu)^2}{2\sigma^2} \right),
 $$
+with $\sigma > 0$.
+
+**Links**:
+
+* $\mu = \eta_\mu$
+* $\log(\sigma) = \eta_\sigma$
 
 **Function**: `gaussian_bamlss(...)`
-
-**Functionality**:
 
 **Alternative parameterizations**:
 
@@ -196,54 +200,72 @@ $$
 
 #### Generalized logistic distribution
 
-**Other common names**: skewed-logistic distribution.
+Or skewed-logistic distribution.
 
 **Density**:
 $$
 f(y\,|\,\mu,\sigma,\alpha)=\frac{\alpha\cdot\exp\left(-\frac{y-\mu}{\sigma}\right)}
-{\sigma\cdot\left(1+\exp\left(-\frac{y-\mu}{\sigma}\right)\right)^{2\alpha}}
+{\sigma\cdot\left(1+\exp\left(-\frac{y-\mu}{\sigma}\right)\right)^{2\alpha}},
 $$
+with $\sigma, \alpha > 0$.
+
+**Links**:
+
+* $\mu = \eta_\mu$
+* $\log(\sigma) = \eta_\sigma$
+* $\log(\alpha) = \eta_\alpha$
 
 **Function**: `glogis_bamlss(...)`
-
-**Functionality**:
 
 ### Positive continuous response
 
 #### Gamma distribution
 
-Two-parameter distribution with `mu` for the expectation of the
-distribution and `sigma` for its shape.
+Two-parameter distribution with $\mu > 0$ for the expectation of the
+distribution and $\sigma > 0$ for its shape.
 
 **Density**:
 $$
 f(y\,|\,\mu,\sigma)=\frac{y^{\sigma-1}\cdot\exp\left(-\frac{\sigma\cdot y}{\mu}\right)}
-{\left(\frac{\mu}{\sigma}\right)^\sigma\cdot\Gamma(\sigma)}
+{\left(\frac{\mu}{\sigma}\right)^\sigma\cdot\Gamma(\sigma)}.
 $$
 
-**Function**: `gamma_bamlss(...)`
+**Links**:
 
-**Functionality**:
+* $\log(\mu) = \eta_\mu$
+* $\log(\sigma) = \eta_\sigma$
+
+**Function**: `gamma_bamlss(...)`
 
 #### Generalized Pareto distribution
 
 **Density**:
 $$
 f(y\,|\,\xi,\sigma)=\frac{1}{\sigma}\cdot\left(1+\frac{\xi\cdot y}{\sigma}
-\right)^{-\left(1+1/\xi\right)}
+\right)^{-\left(1+1/\xi\right)},
 $$
+with $\xi, \sigma > 0$.
+
+**Links**:
+
+* $\log(\xi) = \eta_\xi$
+* $\log(\sigma) = \eta_\sigma$
 
 **Function**: `gpareto_bamlss(...)`
-
-**Functionality**:
 
 #### Weibull distribution
 
 **Density**:
 $$
 f(y\,|\,\lambda,\alpha)=\frac{\alpha}{\lambda}\cdot\left(\frac{y}{\lambda}\right)^{\alpha-1}
-\cdot\exp\left(-\left(\frac{y}{\lambda}\right)^\alpha\right)
+\cdot\exp\left(-\left(\frac{y}{\lambda}\right)^\alpha\right),
 $$
+with $\lambda, \alpha > 0$.
+
+**Links**:
+
+* $\log(\lambda) = \eta_\lambda$
+* $\log(\alpha) = \eta_\alpha$
 
 **Function**: `weibull_bamlss(...)`
 
@@ -254,6 +276,12 @@ $$
 f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
 \left( \frac{-(\log(y)-\mu)^2}{2\sigma^2} \right),
 $$
+with $\sigma > 0$.
+
+**Links**:
+
+* $\mu = \eta_\mu$
+* $\log(\sigma) = \eta_\sigma$
 
 **Function**: `lognormal_bamlss(...)`
 
@@ -270,6 +298,11 @@ f(y\,|\,\mu,\sigma)= \begin{cases}
 $$
 where $\phi$ is the probability density and $\Phi$ the cumulative distribution function of the
 standard normal distribution.
+
+**Links**:
+
+* $\mu = \eta_\mu$
+* $\log(\sigma) = \eta_\sigma$
 
 **Function**: `cnorm_bamlss(...)`
 
@@ -292,6 +325,11 @@ f(y\,|\,\mu,\sigma)=f_{Beta}\left(y\,\middle|\,\alpha = \mu \cdot \frac{1-\sigma
 $$
 with $0 < \mu < 1$ and $0 < \sigma < 1$.
 
+**Links**:
+
+* $\mathrm{logit}(\mu)=\eta_\mu$
+* $\mathrm{logit}(\sigma)=\eta_\sigma$
+
 **Function**: `beta_bamlss(...)`
 
 ### Discrete responses
@@ -303,8 +341,13 @@ distribution.
 
 **Density**:
 $$
-f(y\,|\,\pi) = \pi^y \cdot (1-\pi)^{1-y}
+f(y\,|\,\pi) = \pi^y \cdot (1-\pi)^{1-y},
 $$
+where $\pi$ is a probability.
+
+**Links**:
+
+* $\mathrm{logit}(\pi)=\eta_\pi$
 
 **Function**: `binomial_bamlss(link = "logit", ...)`
 
@@ -322,10 +365,11 @@ $$
 f(y\,|\,\pi_1,\dots,\pi_c) = \prod_{s=1}^{c+1} p_{s}^{y_{s}^{\star}}, \quad
 \text{where} \quad p_r = \frac{\pi_r}{1 + \pi_1 + \dots + \pi_c},
 $$
-the parameters are linked to predictors using the logarithm:
-$$
-\log(\pi_r) = \log\left(\frac{p_r}{p_{c+1}}\right) = \eta_r,
-$$
+
+**Links**:
+
+* $\log(\pi_r) = \log\left(\frac{p_r}{p_{c+1}}\right) = \eta_r,$
+
 where $\eta_r$ specifies the log-odds between category $r$ and
 the reference category $c+1$.
 
@@ -337,17 +381,102 @@ the reference category $c+1$.
 
 **Density**:
 $$
-f(y\,|\,\lambda) = \frac{\lambda^y \cdot \exp(-\lambda)}{y!}
+f(y\,|\,\lambda) = \frac{\lambda^y \cdot \exp(-\lambda)}{y!},
 $$
+with $\lambda > 0$.
+
+**Link**:
+
+* $\log(\lambda) = \eta_\lambda$
 
 **Function**: `poisson_bamlss(...)`
 
-* `ztnbinom_bamlss(...)`
+#### Negative binomial (type II)
+
+**Density**:
+$$
+f(y\, |\, \mu, \theta) =
+\frac{\Gamma(\theta + y)}{\Gamma({\theta}) \cdot y!} \cdot
+\frac{\mu^y \cdot \theta^\theta}{(\mu + \theta)^{\theta + y}},
+$$
+with $\mu,\theta > 0$.
+
+**Links**:
+
+* $\log(\mu) = \eta_\mu$
+* $\log(\theta) = \eta_\theta$
+
+**Function**: `nbinom_bamlss(...)`
+
+#### Zero-truncated negative binomial
+
+**Density**:
+$$
+f(y\,|\,\mu,\theta)=\frac{f_{\mathrm{NB}}(y\,|\,\mu,\theta)}
+{1-f_{\mathrm{NB}}(0\,|\,\mu,\theta)},
+$$
+where $f_{\mathrm{NB}}$ is the density of the negative
+binomial.
+
+**Links**:
+
+* $\log(\mu) = \eta_\mu$
+* $\log(\theta) = \eta_\theta$
+
+**Function**: `ztnbinom_bamlss(...)`
 
 ### Multivariate responses
 
-* `mvnorm_bamlss(k = 2, ...)`
-* `mvnormAR1_bamlss(k = 2, ...)`
+#### Multivariate normal distribution
+
+Say $y$ is a $k$ dimensional observation.
+
+**Density**:
+$$
+f(y\,|\,\mu,\Sigma) = \frac{1}{\sqrt{(2\pi)^{k} |\Sigma|}} \cdot
+\exp \left(-\frac{1}{2} (y-\mu)^\top \Sigma^{-1} (y-\mu) \right),
+$$
+where $\Sigma$ can be decomposed into $\Sigma = D \Omega D$ with
+$$
+D=
+ \begin{pmatrix}
+  \sigma_1 & 0 & \cdots & 0 \\
+  0 & \sigma_2 & \cdots & 0 \\
+  \vdots  & \vdots  & \ddots & \vdots  \\
+  0 & 0 & \cdots & \sigma_k
+ \end{pmatrix},
+ \qquad \text{and} \qquad
+\Omega=
+ \begin{pmatrix}
+  1 & \rho_{12} & \cdots & \rho_{1k} \\
+  \rho_{12} & 1 & \cdots & \rho_{2k} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  \rho_{1k} & \rho_{2k} & \cdots & 1
+ \end{pmatrix}.
+$$
+
+**Links**:
+
+* $\mu_j = \eta_{\mu_j}$
+* $\log(\sigma_j) = \eta_{\sigma_j}$
+* $\mathrm{rhogit}(\rho_{jl}) = \eta_{\rho_{jl}}$
+
+**Function**: `mvnorm_bamlss(k = 2, ...)`
+
+**Alternative parameterizations**:
+
+* `mvnormAR1_bamlss(k = 2, ...)` with
+$$
+\Omega=
+ \begin{pmatrix}
+  1 & \rho & \rho^2 & \cdots & \rho^{k-1} \\
+  \rho & 1 & \rho & \cdots & \rho^{k-2} \\
+  \rho^2 & \rho & 1 & \cdots & \rho^{k-3} \\
+  \vdots & \vdots & \vdots & \ddots & \vdots \\
+  \rho^{k-1} & \rho^{k-2} & \rho^{k-3} & \cdots & 1
+ \end{pmatrix},
+$$
+and $\mathrm{rhogit}(\rho) = \eta_{\rho}$.
 
 ### Survival
 
@@ -362,7 +491,7 @@ $$
 
 BAMLSS supports
 [GAMLSS families](https://cran.r-project.org/package=gamlss.dist "CRAN gamlss.dist")
-via a transfer function that build the `bamlss.family` object from a GAMLSS
+via a transfer function that builds the `bamlss.family` object from a GAMLSS
 distribution funciton [@bamlss:Stasinopoulos:Rigby:2007], e.g. `NO()`, internally:
 
 ```{r, gamlss-family, eval=FALSE}
