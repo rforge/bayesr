@@ -92,6 +92,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/families.html">BAMLSS Families</a>
+    </li>
+    <li>
       <a href="../articles/glm.html">Generalized Linear Models (+)</a>
     </li>
     <li>
@@ -142,6 +145,7 @@
     </div>
 
     <pre class="usage"><span class='co'>## Family objects in bamlss:</span>
+<span class='fu'>ALD_bamlss</span>(<span class='no'>...</span>, <span class='kw'>p</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>const</span> <span class='kw'>=</span> <span class='fl'>1e-03</span>)
 <span class='fu'>beta_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>binomial_bamlss</span>(<span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"logit"</span>, <span class='no'>...</span>)
 <span class='fu'>cnorm_bamlss</span>(<span class='no'>...</span>)
@@ -190,6 +194,14 @@
     <tr>
       <th>link</th>
       <td><p>Possible link functions.</p></td>
+    </tr>
+    <tr>
+      <th>const</th>
+      <td><p>Constant to be used for the approximation of the absolute function.</p></td>
+    </tr>
+    <tr>
+      <th>p</th>
+      <td><p>The quantile the should be fitted.</p></td>
     </tr>
     <tr>
       <th>&#8230;</th>

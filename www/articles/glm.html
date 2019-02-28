@@ -53,6 +53,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/families.html">BAMLSS Families</a>
+    </li>
+    <li>
       <a href="../articles/glm.html">Generalized Linear Models (+)</a>
     </li>
     <li>
@@ -294,13 +297,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 35958.86 logLik = -17975.52 pd = 7.813
-## runtime = 28.575
+## runtime = 32.577
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 35959.26 converged = 1 edf = 8
 ## logLik = -17971.61 logPost = -18034.23 nobs = 4406
-## runtime = 0.18
+## runtime = 0.247
 ## ---</code></pre>
 <p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
@@ -492,7 +495,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2017. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em>. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
-<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
+<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em><strong>Bamlss</strong>: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+Mayr+Messner:2012">
 <p>Umlauf, Nikolaus, Georg Mayr, Jakob Messner, and Achim Zeileis. 2012. “Why Does It Always Rain on Me? A Spatio-Temporal Analysis of Precipitation in Austria.” <em>Austrian Journal of Statistics</em> 41 (1): 81–92. doi:<a href="https://doi.org/10.1002/joc.4913">10.1002/joc.4913</a>.</p>
