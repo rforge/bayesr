@@ -4151,27 +4151,36 @@ library(numDeriv)
 numDeriv::grad(foo3, -0.01)
 foo3prime(-0.01)
 
-n <- 2000
+n <- 500
 x <- runif(n, -3, 3)
 y <- sin(x) + rnorm(n, sd = exp(-1 + 0.5 * x))
 
 data("mcycle", package = "MASS")
 x <- mcycle$times
-y <- mcycle$accel
+y <- scale(mcycle$accel)
 
-b0.1 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.1), optimizer = boost, sampler = F)
-b0.5 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.5), optimizer = boost, sampler = F)
-b0.9 <- bamlss(y ~ s(x), family = gF("ALD", p = 0.9), optimizer = boost, sampler = F)
+f <- list(
+  y ~ s(x,k=20),
+  sigma ~ s(x,k=20),
+  lambda ~ s(x,k=20)
+)
 
-p0.1 <- predict(b0.1, mstop = 400)
-p0.5 <- predict(b0.5, mstop = 400)
-p0.9 <- predict(b0.9, mstop = 400)
+
+maxit <- 2000
+
+b1 <- bamlss(f, family = gF("ELF", tau = 0.1), optimizer = boost, maxit = maxit)
+b2 <- bamlss(f, family = gF("ELF", tau = 0.5), optimizer = boost, maxit = maxit)
+b3 <- bamlss(f, family = gF("ELF", tau = 0.9), optimizer = boost, maxit = maxit)
+
+p1 <- predict(b1, mstop = maxit, model = "mu")
+p2 <- predict(b2, mstop = maxit, model = "mu")
+p3 <- predict(b3, mstop = maxit, model = "mu")
 
 plot(x, y)
-plot2d(cbind(p0.1, p0.5, p0.9) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
+plot2d(cbind(p1, p2, p3) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
 }
 
-ALD_bamlss <- function(..., p = 0.5, eps = 1e-02)
+ALD_bamlss <- function(..., p = 0.5, eps = 1e-10)
 {
   if(p < 0.001 | p > (1 - 0.001))
     stop("p must be between 0 and 1!")
@@ -4220,6 +4229,59 @@ ALD_bamlss <- function(..., p = 0.5, eps = 1e-02)
     ),
     "initialize" = list(
       "mu"    = function(y, ...) { (y + median(y)) / 2 }
+    )
+  )
+
+  rval$score <- NULL
+  rval$hess <- NULL
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+log1pexp <- function(x)
+{
+  indx <- .bincode(x, c(-Inf, -37, 18, 33.3, Inf), T)
+  
+  kk <- which(indx==1)
+  if( length(kk) ){  x[kk] <- exp(x[kk])  }
+  
+  kk <- which(indx==2)
+  if( length(kk) ){  x[kk] <- log1p( exp(x[kk]) ) }
+  
+  kk <- which(indx==3)
+  if( length(kk) ){  x[kk] <- x[kk] + exp(-x[kk]) }
+  
+  return(x)
+}
+
+ELF_bamlss <- function(..., tau = 0.5)
+{
+  if(tau < 0.001 | tau > (1 - 0.001))
+    stop("p must be between 0 and 1!")
+
+  rval <- list(
+    "family" = "Elf density",
+    "names" = c("mu", "sigma", "lambda"),
+    "links" = c(mu = "identity", sigma = "log", lambda = "log"),
+    "d" = function(y, par, log = FALSE) {
+      r <- y - par$mu
+#      d <- (1 - tau) * r/par$sigma - par$lambda * log(1 + exp(r/(par$lambda * par$sigma))) -
+#        log(par$lambda * par$sigma * beta(par$lambda *(1 - tau), par$lambda*tau))
+
+      d <- (1 - tau) * r/par$sigma - par$lambda * log1pexp(r/(par$lambda * par$sigma)) -
+        log(par$lambda * par$sigma * beta(par$lambda *(1 - tau), par$lambda*tau))
+
+      if(!log)
+        d <- exp(d)
+
+      return(d)
+    },
+    "initialize" = list(
+      "mu"    = function(y, ...) { (y + quantile(y, prob = tau)) / 2 },
+      "sigma"    = function(y, ...) { sd((y - quantile(y, prob = tau)) / 2) },
+      "lambda"    = function(y, ...) { rep(4, length(y)) }
     )
   )
 

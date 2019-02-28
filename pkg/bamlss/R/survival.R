@@ -23,7 +23,6 @@ cox_bamlss <- function(...)
   rval
 }
 
-
 ## Posterior mode estimation.
 cox.mode <- function(x, y, start, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, update.nu = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
