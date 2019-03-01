@@ -2190,7 +2190,9 @@ lognormal_bamlss <- function(...)
     "initialize" = list(
       "mu"    = function(y, ...) { (log(y) + mean(log(y))) / 2 },
       "sigma" = function(y, ...) { rep(sd(log(y)), length(y)) }
-    )
+    ),
+    "mean" = function(par) exp(par$mu + 0.5 * par$sigma^2),
+    "variance" = function(par) exp(2 * par$mu + par$sigma^2) * (exp(par$sigma^2) - 1)
   )
 
   class(rval) <- "family.bamlss"
