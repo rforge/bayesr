@@ -5239,6 +5239,7 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
     sgdsum <- list()
     sgdsum$shuffle <- shuffle
     sgdsum$coef    <- beta
+    sgdsum$path    <- betaXVec
     sgdsum$y       <- y
     sgdsum$x       <- x
     sgdsum$i.state <- i
@@ -5254,20 +5255,18 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
 }
 
 
-print.sgdfit <- function(x, ...) {
+print.sgd.summary <- function(x, ...) {
     print(x$coef)
     invisible(x)
 }
 
-plot.sgdfit <- function(x, ..., betaref = NULL) {
-    ## Does not work why???
-
+plot.sgd.summary <- function(x, ...) {
     k <- length(x$beta)
 
     ## coef paths
-    matplot(x$diagnostics$betaMat, type = "l", col = colorspace::rainbow_hcl(k), lty = 1)
-    if(!is.null(betaref))
-        abline(h = betaref, col = colorspace::rainbow_hcl(3), lty = 3)
+    matplot(x$path, type = "l", col = colorspace::rainbow_hcl(k), lty = 1)
+###    if(!is.null(betaref))
+###        abline(h = betaref, col = colorspace::rainbow_hcl(3), lty = 3)
 
     invisible(x)
 }
