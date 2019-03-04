@@ -1,0 +1,127 @@
+---
+title: "Visualization with distreg.vis"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Visualizing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, visualization}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+library("ggplot2")
+options(width = 90, prompt = "R> ", continue = "+  ")
+set.seed(123)
+```
+
+## R package distreg.vis
+
+The [_distreg.vis_](https://github.com/Stan125/distreg.vis) [@bamlss:distreg.vis] package for R
+allows us to interactively explore the predicted response distribution using different
+covariate scenarios.
+
+## Example: ISLR::Wage dataset
+As a short introduction to distributional regression, we are going to take a look at a dataset on
+the wage of 3000 male workers in the Mid-Atlantic Region of the US. The dataset is contained in the
+[_ISLR_](https://cran.r-project.org/package=ISLR) [@bamlss:ISLR] package for R. We may output the
+first 6 rows of the dataset with the following R command:
+
+```{r}
+head(ISLR::Wage)
+```
+
+The variable names and factor labels are mostly self-explanatory, but we can look up the details by
+running `?ISLR::Wage`. Our goal is to link wage to a number of relevant explanatory variables. One
+main driver of wage should be education, so let us start by descriptively investigating the
+relationship between these two variables. This R code plots the distribution of wage across the
+different education levels:
+
+```{r, fig.width = 8.5, fig.height = 4, fig.align = "center", dev = "png"}
+library("ggplot2")
+
+ggplot(ISLR::Wage, aes(x = wage, y = ..density.., fill = education)) +
+  geom_density(alpha = 0.8) +
+  theme_classic() +
+  ggtitle("Wages by education level")
+```
+
+The graph shows that education does have a big influence on wage. A higher education level
+shifts the wage distribution to the right, but it also increases the variance and changes the
+shape of the distribution. One striking feature of the empirical wage distribution is its bump
+between 250 and 300. There is no explanation for this bump in the dataset or its help page, so we
+have to assume it is a anomaly of the sample.
+
+## Setting up an appropriate model
+
+When modeling wage, we need to take into account its special characteristics as a random variable:
+It is positive (or non-negative, but our dataset does not contain any zeros) and its distribution
+is right-skewed. These characteristics make distributional regression an appropriate tool for the
+task at hand.
+
+Based on the characteristics of wage, we choose the
+[log-normal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) for our model.
+The log-normal distribution has positive support, it is right-skewed, and it has a location
+parameter $\mu$ and a scale parameter $\sigma$. The idea of distributional regression is to link all
+parameters of the response distribution to explanatory variables. In our case, these will be
+education, age, race, and year.
+
+The following R code specifies and estimates our model using the `LOGNO` family of the 
+_gamlss_ package [@bamlss:Stasinopoulos+Rigby:2018]:
+
+```{r, echo=FALSE, message=FALSE, results='hide'}
+library("gamlss")
+
+f <- list(
+  wage ~ s(age) + race + year + education,
+  sigma ~ s(age) + race + year + education
+)
+
+if(!file.exists("figures/distregvis.rda")) {
+  set.seed(123)
+  b <- bamlss(f, data = ISLR::Wage, family = LOGNO)
+  save(b, file = "figures/distregvis.rda")
+} else {
+  load("figures/distregvis.rda")
+}
+```
+```{r, eval=FALSE}
+library("gamlss")
+
+f <- list(
+  wage ~ s(age) + race + year + education,
+  sigma ~ s(age) + race + year + education
+)
+
+b <- bamlss(f, data = ISLR::Wage, family = LOGNO)
+```
+
+We may take a look at the estimation results with this R command:
+
+```{r}
+summary(b)
+```
+
+The output is similar to the summary of a linear model. For each parameter of the response
+distribution, we get a regression table with slope coefficients, etc. Unfortunately, the
+coefficients are hard to interpret because they are related to different aspects of the
+response distribution. Moreover, the scale parameter $\sigma$ is transformed with a log-link.
+
+## Explore the model with _distreg.vis_
+
+One way to understand the meaning of the coefficients is to define different "covariate scenarios"
+and take a look at the corresponding predicted response distributions. The
+[_distreg.vis_](https://github.com/Stan125/distreg.vis) [@bamlss:distreg.vis] package
+for R allows us to do so interactively:
+
+<a target="_blank" class="btn btn-primary" href="http://141.5.104.49:3838/distreg_app/" role="button">Explore the model with distreg.vis</a>
+
+## References
+
