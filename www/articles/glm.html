@@ -53,6 +53,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/distregvis.html">Visualization with distreg.vis</a>
+    </li>
+    <li>
       <a href="../articles/families.html">BAMLSS Families</a>
     </li>
     <li>
@@ -297,13 +300,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 35958.86 logLik = -17975.52 pd = 7.813
-## runtime = 32.577
+## runtime = 31.709
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 35959.26 converged = 1 edf = 8
 ## logLik = -17971.61 logPost = -18034.23 nobs = 4406
-## runtime = 0.247
+## runtime = 0.291
 ## ---</code></pre>
 <p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
