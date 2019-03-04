@@ -4153,89 +4153,103 @@ library(numDeriv)
 numDeriv::grad(foo3, -0.01)
 foo3prime(-0.01)
 
-n <- 500
+n <- 300
 x <- runif(n, -3, 3)
 y <- sin(x) + rnorm(n, sd = exp(-1 + 0.5 * x))
 
 data("mcycle", package = "MASS")
 x <- mcycle$times
-y <- scale(mcycle$accel)
+y <- mcycle$accel / max(abs(mcycle$accel))
 
 f <- list(
-  y ~ s(x,k=20),
-  sigma ~ s(x,k=20),
-  lambda ~ s(x,k=20)
+  y ~ s(x),
+  sigma ~ s(x),
+  lambda ~ s(x)
 )
 
+maxit = 500
 
-maxit <- 2000
+b1 <- bamlss(f, family = gF("ELF", tau = 0.1), optimizer = boost, initialize = FALSE)
+b2 <- bamlss(f, family = gF("ELF", tau = 0.5), optimizer = boost, initialize = FALSE)
+b3 <- bamlss(f, family = gF("ELF", tau = 0.9), optimizer = boost, initialize = FALSE)
 
-b1 <- bamlss(f, family = gF("ELF", tau = 0.1), optimizer = boost, maxit = maxit)
-b2 <- bamlss(f, family = gF("ELF", tau = 0.5), optimizer = boost, maxit = maxit)
-b3 <- bamlss(f, family = gF("ELF", tau = 0.9), optimizer = boost, maxit = maxit)
-
-p1 <- predict(b1, mstop = maxit, model = "mu")
-p2 <- predict(b2, mstop = maxit, model = "mu")
-p3 <- predict(b3, mstop = maxit, model = "mu")
+p1 <- predict(b1, model = "mu")
+p2 <- predict(b2, model = "mu")
+p3 <- predict(b3, model = "mu")
 
 plot(x, y)
 plot2d(cbind(p1, p2, p3) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
 }
 
-ALD_bamlss <- function(..., p = 0.5, eps = 1e-10)
+ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
 {
-  if(p < 0.001 | p > (1 - 0.001))
-    stop("p must be between 0 and 1!")
+  if(tau < 0.001 | tau > (1 - 0.001))
+    stop("tau must be between 0 and 1!")
 
-  absx <- function(x) { x * tanh(x/eps) }
-  logpc <- log(p * (1 - p))
+  absx <- function(x) { sqrt(x^2 + eps) }
 
   rval <- list(
     "family" = "Asymmetric Laplace",
-    "names" = "mu",
-    "links" = c(mu = "identity"),
+    "names" = c("mu", "sigma"),
+    "links" = c(mu = "identity", sigma = "log"),
     "d" = function(y, par, log = FALSE) {
+      ## d <- logpc - r * (p - 1 * (r < 0))
+      ## e1 <- expression(  -2 * log(s) - tau * sqrt((y-mu)^2)/s^2  )
+      ## e2 <- expression(  -2 * log(s) - (1-tau) * sqrt((y-mu)^2)/s^2  )
+      ## Deriv(e1, cache.exp = FALSE, "mu")
       r <- y - par$mu
-      ##d <- logpc - r * (p - 1 * (r < 0))
-
       i <- r > 0
       d <- rep(0, length(r))
-      d[i] <- p * abs(r[i])
-      d[!i] <- (1 - p) * abs(r[!i])
-
-      d <- logpc - d
-
+      d[i] <- tau * abs(r[i]) / par$sigma[i]^2
+      d[!i] <- (1 - tau) * abs(r[!i]) / par$sigma[!i]^2
+      d <- log(tau * (1 - tau)) - 2 * log(par$sigma) - d
       if(!log)
         d <- exp(d)
       return(d)
     },
     "score" = list(
       "mu" = function(y, par, ...) {
-        r <- y - par$mu
-        score <- rep(0, length(r))
+        r <- (y - par$mu)
         i <- r > 0
-        score[i] <- -(p * (r[i] * (1 - tanh(r[i]/eps)^2)/eps + tanh(r[i]/eps)))
-        score[!i] <- -((1 - p) * (r[!i] * (1 - tanh(r[!i]/eps)^2)/eps + tanh(r[!i]/eps)))
+        score <- r/(par$sigma^2 * abs(r))
+        score[i] <- tau * score[i]
+        score[!i] <- (1 - tau) * score[!i]
+        return(score)
+      },
+      "sigma" = function(y, par, ...) {
+        r <- (y - par$mu)
+        i <- r > 0
+        score <- rep(0, length(r))
+        score[i] <- (2 * (tau * abs(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]
+        score[!i] <- (2 * ((1 - tau) * abs(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]
         return(score)
       }
     ),
     "hess" = list(
       "mu" = function(y, par, ...) {
-        r <- y - par$mu
-        hess <- rep(0, length(r))
+        r <- (y - par$mu)
         i <- r > 0
-        hess[i] <- -(p * (2 - (2 * (r[i] * (1 - tanh(r[i]/eps)^2)/eps) + 2 * tanh(r[i]/eps)) * tanh(r[i]/eps))/eps)
-        hess[!i] <- -((1 - p) * (2 - (2 * (r[!i] * (1 - tanh(r[!i]/eps)^2)/eps) + 2 * tanh(r[!i]/eps)) * tanh(r[!i]/eps))/eps)
+        hess <- rep(0, length(r))
+        hess[i] <- tau * (par$sigma[i]^2 * sign(r[i]) * r[i]/(par$sigma[i]^2 * abs(r[i]))^2 -
+          1/(par$sigma[i]^2 * abs(r[i])))
+        hess[!i] <- (1 - tau) * (par$sigma[!i]^2 * sign(r[!i]) * (r[!i])/(par$sigma[!i]^2 * abs(r[!i]))^2 -
+          1/(par$sigma[!i]^2 * abs(r[!i])))
+        return(-hess)
+      },
+      "sigma" = function(y, par, ...) {
+        r <- (y - par$mu)
+        i <- r > 0
+        hess <- rep(0, length(r))
+        hess[i] <- -((6 * (tau * abs(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]^2)
+        hess[!i] <- -((6 * ((1 - tau) * abs(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]^2)
         return(-hess)
       }
     ),
     "initialize" = list(
-      "mu"    = function(y, ...) { (y + median(y)) / 2 }
+      "mu"    = function(y, ...) { (y + quantile(y, prob = tau)) / 2 },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) }
     )
   )
-
-  rval$score <- NULL
-  rval$hess <- NULL
 
   class(rval) <- "family.bamlss"
   rval
@@ -4261,7 +4275,7 @@ log1pexp <- function(x)
 ELF_bamlss <- function(..., tau = 0.5)
 {
   if(tau < 0.001 | tau > (1 - 0.001))
-    stop("p must be between 0 and 1!")
+    stop("tau must be between 0 and 1!")
 
   rval <- list(
     "family" = "Elf density",
@@ -4272,6 +4286,10 @@ ELF_bamlss <- function(..., tau = 0.5)
 #      d <- (1 - tau) * r/par$sigma - par$lambda * log(1 + exp(r/(par$lambda * par$sigma))) -
 #        log(par$lambda * par$sigma * beta(par$lambda *(1 - tau), par$lambda*tau))
 
+## library("Deriv")
+## e <- expression((1 - tau) * (y-mu)/s - lam * log(1 + exp((y-mu)/(lam*s))) - log(lam * s * beta(lam*(1 - tau), lam*tau)))
+## Deriv(e, cache.exp = FALSE, "mu")
+
       d <- (1 - tau) * r/par$sigma - par$lambda * log1pexp(r/(par$lambda * par$sigma)) -
         log(par$lambda * par$sigma * beta(par$lambda *(1 - tau), par$lambda*tau))
 
@@ -4280,15 +4298,70 @@ ELF_bamlss <- function(..., tau = 0.5)
 
       return(d)
     },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        .e2 <- exp((y - par$mu)/(par$lambda * par$sigma))
+        score <- (.e2/(1 + .e2) + tau - 1)/par$sigma
+        return(score)
+      },
+      "sigma" = function(y, par, ...) {
+        .e1 <- par$lambda * par$sigma
+        .e2 <- y - par$mu
+        .e4 <- exp(.e2/.e1)
+        score <- (par$lambda^2 * .e4/((1 + .e4) * .e1^2) - (1 - tau)/par$sigma^2) * .e2 - 1/par$sigma
+        return(score)
+      },
+      "lambda" = function(y, par, ...) {
+        .e1 <- par$lambda * par$sigma
+        .e2 <- y - par$mu
+        .e4 <- exp(.e2/.e1)
+        .e5 <- 1 - tau
+        .e6 <- digamma(par$lambda)
+        score <- -((1 + par$lambda * (.e5 * (digamma(par$lambda * .e5) - .e6) + tau * (digamma(par$lambda * tau) - .e6)))/par$lambda + log1p(.e4) - .e1 * .e4 * .e2/((1 + .e4) * .e1^2))
+        return(score)
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        .e2 <- exp((y - par$mu)/(par$lambda * par$sigma))
+        .e3 <- 1 + .e2
+        hess <- .e2 * (.e2/.e3 - 1)/(par$lambda * par$sigma^2 * .e3)
+        return(-hess)
+      },
+      "sigma" = function(y, par, ...) {
+        .e1 <- par$lambda * par$sigma
+        .e2 <- y - par$mu
+        .e4 <- exp(.e2/.e1)
+        .e5 <- 1 + .e4
+        hess <- (2 * ((1 - tau)/par$sigma^3) - par$lambda^3 * ((2 * (.e1 * .e5) - .e4 * .e2)/(.e5 * .e1^2)^2 + .e2/(.e5 * .e1^4)) * .e4) * .e2 + 1/par$sigma^2
+        return(-hess)
+      },
+      "lambda" = function(y, par, ...) {
+        .e1 <- par$lambda * par$sigma
+        .e2 <- y - par$mu
+        .e3 <- 1 - tau
+        .e5 <- exp(.e2/.e1)
+        .e6 <- digamma(par$lambda)
+        .e7 <- .e1^2
+        .e8 <- 1 + .e5
+        .e9 <- par$lambda * .e3
+        .e10 <- par$lambda * tau
+        .e11 <- .e3 * (digamma(.e9) - .e6)
+        .e12 <- .e8 * .e7
+        .e15 <- tau * (digamma(.e10) - .e6)
+        .e16 <- trigamma(par$lambda)
+        hess <- -((.e11 + par$lambda * ((.e3 * trigamma(.e9) - .e16) * .e3 + tau * 
+          (tau * trigamma(.e10) - .e16)) + .e15 - (1 + par$lambda * (.e11 + .e15))/par$lambda)/par$lambda -
+          par$sigma * ((2 - .e1 * .e2/.e7)/.e12 - .e1 * (2 * (.e1 * .e8) - .e5 * .e2)/.e12^2) * .e5 * .e2)
+        return(-hess)
+      }
+    ),
     "initialize" = list(
       "mu"    = function(y, ...) { (y + quantile(y, prob = tau)) / 2 },
       "sigma"    = function(y, ...) { sd((y - quantile(y, prob = tau)) / 2) },
       "lambda"    = function(y, ...) { rep(4, length(y)) }
     )
   )
-
-  rval$score <- NULL
-  rval$hess <- NULL
 
   class(rval) <- "family.bamlss"
   rval

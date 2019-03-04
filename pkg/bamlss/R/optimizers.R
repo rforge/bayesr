@@ -1540,7 +1540,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
       if(!is.null(x$doCmat))
         fit <- fit - mean(fit, na.rm = TRUE)
-
       edf <- sum_diag(XWX %*% P)
 
       eta2[[id]] <- eta2[[id]] + fit
