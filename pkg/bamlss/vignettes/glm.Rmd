@@ -303,7 +303,7 @@ if(!file.exists("figures/homstart.rda")) {
   owd <- getwd()
   setwd("figures")
   homstart_data(load = TRUE)
-  save(homstart, file = "homstart.rda")
+  save(homstart, file = "figures/homstart.rda")
   setwd(owd)
 } else {
   load("figures/homstart.rda")
