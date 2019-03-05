@@ -41,7 +41,7 @@ just passing them to the `family` argument in the `bamlss()` function (see also 
 First, we illustrate how  to fit standard GLMs and how to do inference using the _bamlss_ 
 framework. Aftwards, we show how to estimate GLMs using very large data set.
 
-## Logit Model
+## Logit model
 
 This example is taken from the _AER_ package
 [@bamlss:Kleiber+Zeileis:2018; @bamlss:Kleiber+Zeileis:2008] and is about labor force 
@@ -162,7 +162,7 @@ legend("topright", c("foreign yes", "foreign no"), lwd = 1,
 The plot nicely depicts the nonlinear effect of variable `age` for the two levels
 of `foreign`.
 
-## Models for Count Data {#countreg}
+## Models for count data {#countreg}
 
 This example is taken from @bamlss:Zeileis+Kleiber+Jackman:2008. The application is about
 modeling the demand for medical care by elderly and was first analyzed by @bamlss:Deb+Trivedi:1997. The data can be downloaded on loaded into R with
@@ -191,7 +191,7 @@ plot(table(DebTrivedi$ofp),
 which shows very large counts and also a large number of zero counts. Our first model is a
 Poisson regression, which can be estimated with
 ```{r, echo=FALSE, message=FALSE, results='hide'}
-if(!file.exists("figures/Poisson.rda")) {
+if(!file.exists("figures/Poisson1.rda")) {
   f <- ofp ~ hosp + health + numchron + gender + school + privins
   set.seed(123)
   b1 <- bamlss(f, family = "poisson", data = DebTrivedi,
@@ -285,7 +285,7 @@ DIC(b1, b2)
 ```
 which also state that the zero-inflated negative binomial model is better than the Poisson model.
 
-## Large Data Sets
+## Large data sets
 
 The R package _bamlss_ provides infrastructures to estimate models using large data sets. The default
 algorithms for posterior mode estimation (see function `bfit()`) and MCMC simulation

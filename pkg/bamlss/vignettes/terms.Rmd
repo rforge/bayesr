@@ -228,7 +228,7 @@ st <- s(ID, bs= "mrf", xt = list("penalty" = P))
 str(smooth.construct(st, data = d, knots = NULL))
 ```
 
-## Functional Random Intercepts
+## Functional random intercepts
 
 This type of model term is basically a random intercept and slope term, where the functional
 type might be nonlinear, e.g., this type of term is heavily used in joint models for longitudinal
