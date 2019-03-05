@@ -131,7 +131,9 @@
 ## 5            no 11.10847 4.4        12         0       2      no
 ## 6           yes 11.02825 4.2        12         0       1      no</code></pre>
 <p>The data frame contains of 872 observations on 7 variables, where some of them might have a nonlinear influence on the response labor <code>participation</code>. Now, a standard Bayesian binomial logit model can be fitted with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## First, set the seed for reproducibly.
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
+
+## First, set the seed for reproducibly.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
 ## Model formula.
@@ -300,13 +302,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 35958.86 logLik = -17975.52 pd = 7.813
-## runtime = 31.709
+## runtime = 28.116
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 35959.26 converged = 1 edf = 8
 ## logLik = -17971.61 logPost = -18034.23 nobs = 4406
-## runtime = 0.291
+## runtime = 0.241
 ## ---</code></pre>
 <p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
@@ -318,7 +320,8 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
   nu ~<span class="st"> </span><span class="dv">1</span>
 )</code></pre></div>
 <p>Note, for parameter <code>nu</code> an intercept only model would also be the default if the specification is omitted in the model formula. The model is estimated with (note, this can take some time)</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Get the gamlss families.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)
 
 ## Set the seed for reproducibly.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)

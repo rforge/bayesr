@@ -138,13 +138,18 @@
 <p>When modeling wage, we need to take into account its special characteristics as a random variable: It is positive (or non-negative, but our dataset does not contain any zeros) and its distribution is right-skewed. These characteristics make distributional regression an appropriate tool for the task at hand.</p>
 <p>Based on the characteristics of wage, we choose the <a href="https://en.wikipedia.org/wiki/Log-normal_distribution">log-normal distribution</a> for our model. The log-normal distribution has positive support, it is right-skewed, and it has a location parameter <span class="math inline">\(\mu\)</span> and a scale parameter <span class="math inline">\(\sigma\)</span>. The idea of distributional regression is to link all parameters of the response distribution to explanatory variables. In our case, these will be education, age, race, and year.</p>
 <p>The following R code specifies and estimates our model using the <code>LOGNO</code> family of the <em>gamlss</em> package <span class="citation">(Stasinopoulos and Rigby 2018)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
 
+## Get the gamlss families.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)
+
+## Model formula.
 f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
   wage ~<span class="st"> </span><span class="kw">s</span>(age) +<span class="st"> </span>race +<span class="st"> </span>year +<span class="st"> </span>education,
   sigma ~<span class="st"> </span><span class="kw">s</span>(age) +<span class="st"> </span>race +<span class="st"> </span>year +<span class="st"> </span>education
 )
 
+## Estimates model using full MCMC.
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ISLR::Wage, <span class="dt">family =</span> LOGNO)</code></pre></div>
 <p>We may take a look at the estimation results with this R command:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
@@ -218,6 +223,8 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 </h2>
 <p>One way to understand the meaning of the coefficients is to define different “covariate scenarios” and take a look at the corresponding predicted response distributions. The <a href="https://github.com/Stan125/distreg.vis"><em>distreg.vis</em></a> <span class="citation">(Stadlmann 2019)</span> package for R allows us to do so interactively:</p>
 <p><a target="_blank" class="btn btn-primary" href="http://141.5.104.49:3838/distreg_app/" role="button">Explore the model with distreg.vis</a></p>
+<p>The corresponding R code that starts the app locally is:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">distreg.vis::<span class="kw">vis</span>()</code></pre></div>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
