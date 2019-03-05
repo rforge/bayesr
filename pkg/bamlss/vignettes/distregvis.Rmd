@@ -122,12 +122,17 @@ response distribution. Moreover, the scale parameter $\sigma$ is transformed wit
 
 ## Explore the model with _distreg.vis_
 
-One way to understand the meaning of the coefficients is to define different "covariate scenarios"
-and take a look at the corresponding predicted response distributions. The
+One way to understand the meaning of the coefficients is to define different
+"covariate scenarios" and take a look at the corresponding predicted response distributions. The
 [_distreg.vis_](https://github.com/Stan125/distreg.vis) [@bamlss:distreg.vis] package
 for R allows us to do so interactively:
 
 <a target="_blank" class="btn btn-primary" href="http://141.5.104.49:3838/distreg_app/" role="button">Explore the model with distreg.vis</a>
+
+The corresponding R code that starts the app locally is:
+```{r, eval=FALSE}
+distreg.vis::vis()
+```
 
 ## References
 

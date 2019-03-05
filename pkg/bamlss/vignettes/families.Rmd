@@ -28,14 +28,14 @@ respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.
 predictors (the score function), and (optionally) second-order derivatives of
 the log-likelihood w.r.t. predictors _or_ their expectation (the Hessian).
 
-BAMLSS can be easily extended by [constructing families](#build) for specific
+The _bamlss_ package can be easily extended by [constructing families](#build) for specific
 tasks, i.e. problems for which a likelihood can be formulated.
-However, the most important distributions are [shipped with BAMLSS](#avail).
-Finally, it is also possible to employ [GAMLSS families](#gamlss).
+However, the most important distributions are [shipped with _bamlss_](#avail).
+Finally, it is also possible to employ [_gamlss_ families](#gamlss).
 
-## How to build a BAMLSS family {#build}
+## How to build a _bamlss_ family {#build}
 
-We illustrate how to build a BAMLSS family _by hand_ along the Gaussian
+We illustrate how to build a _bamlss_ family _by hand_ along the Gaussian
 distribution, with density
 $$
 f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
@@ -57,7 +57,7 @@ $$
 For the Gaussian $\mu$ and $\sigma$ are linked to $\eta_\mu$ and $\eta_\sigma$
 by the identity funciton and the logarithm, respectively.
 
-The score functions in BAMLSS are the first derivatives of the log-likelihood w.r.t.
+The score functions in _bamlss_ are the first derivatives of the log-likelihood w.r.t.
 the predictors:
 $$
 s_\mu = \frac{\partial\ell}{\partial\eta_\mu} = \frac{\partial\ell}{\partial\mu} \cdot
@@ -129,14 +129,16 @@ mygauss <- function(...) {
 ```
 
 ```{r, mygauss2, eval=FALSE}
-## simulate some data
+library("bamlss")
+
+## Simulate some data.
 d <- GAMart()
 
-## specify formula
+## Specify formula.
 f <- ~ s(x1) + s(x2) + s(x3) + s(lon, lat)
 f <- list(mu = update(f, num ~ .), sigma = f)
 
-## model
+## Model.
 b <- bamlss(f, data = d, family = mygauss)
 ```
 
@@ -487,16 +489,19 @@ and $\mathrm{rhogit}(\rho) = \eta_{\rho}$.
 * `AR1_bamlss(ar.start = NULL, ...)`
 * `beta1_bamlss(ar.start, ...)`
 
-## GAMLSS support {#gamlss}
+## R package _gamlss_ support {#gamlss}
 
-BAMLSS supports
-[GAMLSS families](https://cran.r-project.org/package=gamlss.dist "CRAN gamlss.dist")
+The _bamlss_ package supports
+[_gamlss_ families](https://cran.r-project.org/package=gamlss.dist "CRAN gamlss.dist")
 via a transfer function that builds the `bamlss.family` object from a GAMLSS
 distribution funciton [@bamlss:Stasinopoulos:Rigby:2007], e.g. `NO()`, internally:
 
 ```{r, gamlss-family, eval=FALSE}
+## Load the gamlss families.
 library("gamlss.dist")
-g <- bamlss(f, data = d, family = NO)
+
+## Estimate model.
+b <- bamlss(f, data = d, family = NO)
 ```
 
 ## References
