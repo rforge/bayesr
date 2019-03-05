@@ -119,7 +119,7 @@
 </div>
 <div id="logit-model" class="section level2">
 <h2 class="hasAnchor">
-<a href="#logit-model" class="anchor"></a>Logit Model</h2>
+<a href="#logit-model" class="anchor"></a>Logit model</h2>
 <p>This example is taken from the <em>AER</em> package <span class="citation">(Kleiber and Zeileis 2018; Kleiber and Zeileis 2008)</span> and is about labor force participation (yes/no) of women in Switzerland 1981. The data can be loaded with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"SwissLabor"</span>, <span class="dt">package =</span> <span class="st">"AER"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(SwissLabor))</code></pre></div>
@@ -237,7 +237,7 @@ nd$p.yes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
 </div>
 <div id="countreg" class="section level2">
 <h2 class="hasAnchor">
-<a href="#countreg" class="anchor"></a>Models for Count Data</h2>
+<a href="#countreg" class="anchor"></a>Models for count data</h2>
 <p>This example is taken from <span class="citation">Zeileis, Kleiber, and Jackman (2008)</span>. The application is about modeling the demand for medical care by elderly and was first analyzed by <span class="citation">Deb and Trivedi (1997)</span>. The data can be downloaded on loaded into R with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/download.file">download.file</a></span>(
   <span class="st">"https://www.jstatsoft.org/index.php/jss/article/downloadSuppFile/v027i08/DebTrivedi.rda.zip"</span>,
@@ -302,7 +302,7 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 35958.86 logLik = -17975.52 pd = 7.813
-## runtime = 28.116
+## runtime = 34.156
 ## ---
 ## Optimizer summary:
 ## -
@@ -399,7 +399,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 </div>
 <div id="large-data-sets" class="section level2">
 <h2 class="hasAnchor">
-<a href="#large-data-sets" class="anchor"></a>Large Data Sets</h2>
+<a href="#large-data-sets" class="anchor"></a>Large data sets</h2>
 <p>The R package <em>bamlss</em> provides infrastructures to estimate models using large data sets. The default algorithms for posterior mode estimation (see function <code><a href="../reference/bfit.html">bfit()</a></code>) and MCMC simulation (function <code><a href="../reference/GMCMC.html">GMCMC()</a></code>) can be utilized in these situations. More precisely, the algorithms make advantage of the fact that usually the number of unique observations is much smaller than the number of total observations in the data (for a detailed description of the algorithms see <span class="citation">Lang et al. (2014)</span>). For illustration, we load the precipitation data of the HOMSTART-project which was first analyzed in <span class="citation">Umlauf et al. (2012)</span> (note, an internet connection is required).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/homstart_data.html">homstart_data</a></span>(<span class="dt">load =</span> <span class="ot">TRUE</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(homstart))</code></pre></div>
@@ -465,13 +465,13 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## ---
 ## Sampler summary:
 ## -
-## runtime = 552.797
+## runtime = 532.388
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 1330320 converged = 1 edf = 7
 ## logLik = -665152.9 logPost = -665207.7 nobs = 980633
-## runtime = 1.711
+## runtime = 2.349
 ## ---</code></pre>
 <p>that the weekend effect is very little and since we did not account for any spatial correlations in this example, the effect is most probably not existing (at least in Austria). Note, because we set <code>light = TRUE</code> in the <code><a href="../reference/bamlss.html">bamlss()</a></code> call, there will be no real sampler summary except of the presented runtime of the sampler. The reason is, that computing the DIC from the posterior samples can take quite long and can lead to memory storage problems, too.</p>
 </div>
@@ -519,9 +519,9 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <a href="#tocnav" class="anchor"></a>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#intro">Intro</a></li>
-      <li><a href="#logit-model">Logit Model</a></li>
-      <li><a href="#countreg">Models for Count Data</a></li>
-      <li><a href="#large-data-sets">Large Data Sets</a></li>
+      <li><a href="#logit-model">Logit model</a></li>
+      <li><a href="#countreg">Models for count data</a></li>
+      <li><a href="#large-data-sets">Large data sets</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
