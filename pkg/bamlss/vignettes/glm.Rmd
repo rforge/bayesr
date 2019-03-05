@@ -65,6 +65,8 @@ if(!file.exists("figures/SwissLabor.rda")) {
 }
 ```
 ```{r, eval=FALSE}
+library("bamlss")
+
 ## First, set the seed for reproducibly.
 set.seed(123)
 
@@ -254,6 +256,7 @@ if(!file.exists("figures/Poisson2.rda")) {
 }
 ```
 ```{r, eval=FALSE}
+## Get the gamlss families.
 library("gamlss")
 
 ## Set the seed for reproducibly.

@@ -20,6 +20,7 @@ library("bamlss")
 library("ggplot2")
 options(width = 90, prompt = "R> ", continue = "+  ")
 set.seed(123)
+library("plotly")
 ```
 
 ## R package distreg.vis
@@ -93,13 +94,18 @@ if(!file.exists("figures/distregvis.rda")) {
 }
 ```
 ```{r, eval=FALSE}
+library("bamlss")
+
+## Get the gamlss families.
 library("gamlss")
 
+## Model formula.
 f <- list(
   wage ~ s(age) + race + year + education,
   sigma ~ s(age) + race + year + education
 )
 
+## Estimates model using full MCMC.
 b <- bamlss(f, data = ISLR::Wage, family = LOGNO)
 ```
 
