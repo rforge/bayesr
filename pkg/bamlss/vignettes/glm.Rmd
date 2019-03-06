@@ -279,7 +279,7 @@ par(mfrow = c(1, 2))
 plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
 The plots indicate a better model fit compared to the Poisson model, however, for very large counts
-the model performance could probably be improved further. The corresponding DIC values are
+the model performance could probably be improved further. The corresponding DIC values are 
 ```{r}
 DIC(b1, b2)
 ```

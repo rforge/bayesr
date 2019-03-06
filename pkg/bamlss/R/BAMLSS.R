@@ -6619,7 +6619,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
       for(w in which) {
         args2 <- args
         if(w == "hist-resid") {
-          rdens <- density(res)
+          rdens <- density(res, na.rm = TRUE)
           rh <- hist(res, plot = FALSE)
           args2$ylim <- c(0, max(c(rh$density, rdens$y)))
           args2$freq <- FALSE
@@ -8727,7 +8727,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
     for(w in which) {
       args <- list(...)
       if(w == "hist-resid") {
-        rdens <- density(as.numeric(x))
+        rdens <- density(as.numeric(x), na.rm = TRUE)
         rh <- hist(as.numeric(x), plot = FALSE)
         args$ylim <- c(0, max(c(rh$density, rdens$y)))
 #        if(is.null(args$xlim)) {
