@@ -8665,9 +8665,11 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
           "', cannot compute quantile residuals, computing response resdiuals instead!", sep = ""))
       } else {
         prob <- family$p(y, par)
-        prob[prob > 0.9999] <- 0.9999
-        prob[prob < 1e-10] <- 0.0001
         res <- qnorm(prob)
+        if(any(isnf <- !is.finite(res))) {
+          warning("non finite quantiles from probabilities, set to NA!")
+          res[isnf] <- NA
+        }
         attr(res, "type") <- "Quantile"
       }
     }
