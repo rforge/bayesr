@@ -601,6 +601,8 @@ init.eta <- function(eta, y, family, nobs)
         eta[[j]] <- ffdf_eval(y, function(x) { linkfun(family$initialize[[j]](x)) })
       } else {
         eta[[j]] <- linkfun(family$initialize[[j]](y))
+        if(length(eta[[j]]) < 2)
+          eta[[j]] <- rep(eta[[j]], nobs)
       }
     }
   }

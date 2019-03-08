@@ -4426,4 +4426,27 @@ nbinom_bamlss <- function(...) {
 }
 
 
+gpareto2_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "gpareto",
+    "names" = c("xi", "sigma", "lambda", "gamma"),
+    "links" = c(xi = "log", sigma = "log", lambda = "log", gamma = "logit"),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE) {
+      yt <- (y + par$lambda - 1)^(par$gamma)
+      d <- -log(par$sigma) - (1 / par$xi + 1) * log(1 + par$xi * yt / par$sigma)
+      if(!log)
+        d <- exp(d)
+      d
+    }
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
 

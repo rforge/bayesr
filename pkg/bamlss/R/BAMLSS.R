@@ -3574,7 +3574,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
         }
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
       } else {
-        sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        ## sn <- snames[grep2(paste(id, "p", j, sep = "."), snames, fixed = TRUE)]
+        sn <- paste(id, "p", j, sep = ".")
         if(!length(sn))
           sn <- snames[grep2(paste(id, "p.model.matrix", j, sep = "."), snames, fixed = TRUE)]
         if(length(sn))
