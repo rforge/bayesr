@@ -954,8 +954,13 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 
         } else z <- hess <- score <- NULL
         
-        if(iter < 2)
+        if(iter < 2) {
           eta[[nx[j]]] <- get.eta(x)[[nx[j]]]
+          if(!is.null(offset)) {
+            if(!is.null(offset[[nx[j]]]))
+              eta[[nx[j]]] <- eta[[nx[j]]] + offset[[nx[j]]]
+          }
+        }
         
         ## And all terms.
         if(inner) {
