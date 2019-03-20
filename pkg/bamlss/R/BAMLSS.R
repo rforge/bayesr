@@ -4332,6 +4332,13 @@ rs.plot <- function(x, model = NULL, term = NULL,
 ## Lasso smooth constructor.
 la <- function(formula, type = c("single", "multiple"), ...)
 {
+  env <- try(environment(formula), silent = TRUE)
+  if(inherits(env, "try-error")) {
+    if(grepl("not found", env)) {
+      formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
+      formula <- dynGet(formula)
+    }
+  }
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
   label <- NULL
