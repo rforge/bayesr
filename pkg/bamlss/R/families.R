@@ -1059,18 +1059,21 @@ gpareto_bamlss <- function(...)
       samps
     },
     "mean" = function(par) {
-      if (par$xi >= 1) {
-        return(NA)
-      } else {
-        return(par$sigma / (1 - par$xi))
-      }
+#      if (par$xi >= 1) {
+#        return(NA)
+#      } else {
+#        return(par$sigma / (1 - par$xi))
+#      }
+      ## TODO: NA vs Inf ???
+      ifelse(par$xi >= 1, NA, par$sigma / (1 - par$xi))
     },
     "variance" = function(par) {
-      if (par$xi >= 0.5) {
-        return(NA)
-      } else {
-        return((par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi))
-      }
+#      if (par$xi >= 0.5) {
+#        return(NA)
+#      } else {
+#        return((par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi))
+#      }
+      ifelse(par$xi >= 0.5, NA, (par$sigma^2) / (1 - par$xi)^2 * (1 - 2 * par$xi))
     }
   )
 
