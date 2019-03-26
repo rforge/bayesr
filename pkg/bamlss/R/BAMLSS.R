@@ -4343,6 +4343,7 @@ la <- function(formula, type = c("single", "multiple"), ...)
   }
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
   formula <- gsub("[[:space:]]", "", formula)
+  formula <- gsub('"', '', formula, fixed = TRUE)
   label <- NULL
   if(!grepl("+", formula, fixed = TRUE) & !grepl("-", formula, fixed = TRUE)) {
     if(formula %in% ls(envir = .GlobalEnv)) {
