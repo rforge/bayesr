@@ -4336,7 +4336,9 @@ la <- function(formula, type = c("single", "multiple"), ...)
   if(inherits(env, "try-error")) {
     if(grepl("not found", env)) {
       formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
-      formula <- dynGet(formula)
+      formula2 <- try(dynGet(formula), silent = TRUE)
+      if(!inherits(formula2, "try-error"))
+        formula <- formula2
     }
   }
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
