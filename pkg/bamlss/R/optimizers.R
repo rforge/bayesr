@@ -5164,9 +5164,14 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
    
     ## grep design matrices
     X <- sgd_grep_X(x)
-    m <- sapply(X, ncol)
+    m <- sapply(X, ncol)      ## number of columns in each design matrix
+    
+    ## make a list where each elements contains the indices for selecting the
+    ##   coefficients corresponding to a distributional parameter.
     rng <- list()
-    for(j in 1:length(m)) { rng[[j]] <- (c(0, m[-length(m)]) + 1)[j]:cumsum(m)[j] }
+    for(j in 1:length(m)) {
+        rng[[j]] <- seq(c(1, cumsum(m)[-length(m)] + 1)[j], cumsum(m)[j])
+    }
     names(rng) <- names(m)
 
     ## Implicit SVG
