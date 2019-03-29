@@ -228,16 +228,14 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       data <- as.data.frame(data)
   }
   if(is.character(data)) {
-    ## data <- read.table.ffdf(file = data,
-    ##   na.strings = "", header = TRUE, sep = ",")
-    ## FIXME: ff data.frames!
-    data <- read.table(file = data, header = TRUE, ...)
+    data <- ff::read.table.ffdf(file = data,
+      na.strings = "", header = TRUE, sep = ",")
   }
   if(inherits(data, "ffdf")) {
     before <- TRUE
     gam.side <- FALSE
     if(is.null(binning))
-      binning <- TRUE
+      binning <- FALSE
   }
   if(!is.null(model))
     formula <- model.terms(formula, model)
@@ -267,38 +265,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       } else {
         mm_terms <- drop.terms.bamlss(obj$terms,
           sterms = FALSE, keep.response = FALSE, data = NULL, specials = specials)
-        mm_intercept <- attr(mm_terms, "intercept") > 0
-        mm_vars <- all.vars.formula(mm_terms)
-        if(mm_intercept) {
-          ## FIXME: ff support!
-          ## obj$model.matrix <- ffdf("Intercept" = ff(1, length = nrow(data)))
-          obj$model.matrix <- cbind("Intercept" = rep(1, length = nrow(data)))
+        obj$model.matrix <- NULL
+        ff_mm <- function(x) {
+          model.matrix(mm_terms, data = x)
         }
-        if(!is.null(mm_vars)) {
-          if(!all(mm_vars %in% colnames(data)))
-            stop("variables missing in supplied data!")
-          if(mm_intercept) {
-            for(v in mm_vars)
-              obj$model.matrix[[v]] <- data[[v]]
-          } else {
-            obj$model.matrix <- data[mm_vars]
-          }
-          if(is.numeric(binning)) {
-            for(v in mm_vars) {
-              obj$model.matrix[[v]] <- round(obj$model.matrix[[v]], binning)
-            }
-          }
-        }
-        if(!is.null(obj$model.matrix)) {
-          bind <- match.index.ff(obj$model.matrix)
-          obj$model.matrix <- as.matrix(as.data.frame(obj$model.matrix[bind$nodups, , drop = FALSE]))
-          if(is.null(colnames(obj$model.matrix)) & ncol(obj$model.matrix) < 2) {
-            if(mm_intercept)
-              colnames(obj$model.matrix) <- "(Intercept)"
-            if(!is.null(mm_vars))
-              colnames(obj$model.matrix) <- mm_vars
-          }
-          attr(obj$model.matrix, "binning") <- bind
+        for(cff in bit::chunk(data)) {
+          obj$model.matrix <- ffbase::ffappend(obj$model.matrix, ff_mm(data[cff, ]))
         }
       }
     }
@@ -374,8 +346,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 tsm$binning$order <- order(tsm$binning$match.index)
                 tsm$binning$sorted.index <- tsm$binning$match.index[tsm$binning$order]
               } else {
-                tsm$binning <- match.index.ff(data[term.names])
-                attr(tsm, "ff") <- TRUE
+                stop('binning not allowd using data of class "ffdf"!')
               }
               if(!inherits(data, "ffdf")) {
                 if(!doCmat) {
@@ -389,20 +360,20 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 }
                 smooth <- c(smooth, smt)
               } else {
-                xdata <- as.data.frame(data[tsm$binning$nodups, term.names, drop = FALSE])
-                if(!inherits(xdata, "data.frame")) {
-                  xdata <- data.frame(xdata)
-                  names(xdata) <- term.names
-                }
-                smt <- smoothCon(tsm, xdata,
-                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
-                  sparse.cons = sparse.cons)
-                smooth <- c(smooth, smt)
+                smt <- smooth.construct_ff(tsm, data,
+                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons)
+                smooth <- c(smooth, list(smt))
               }
             } else {
-              smt <- smoothCon(tsm, data, knots,
-                absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
-                sparse.cons = sparse.cons)
+              if(inherits(data, "ffdf")) {
+                smt <- smooth.construct_ff(tsm, data,
+                  knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons)
+                smt <- list(smt)
+              } else {
+                smt <- smoothCon(tsm, data, knots,
+                  absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
+                  sparse.cons = sparse.cons)
+              }
               smooth <- c(smooth, smt)
             }
           } else {
@@ -643,6 +614,34 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   }
 
   return(formula)
+}
+
+
+## Package ff smooth constructors.
+smooth.construct_ff <- function(object, data, knots, ...)
+{
+  UseMethod("smooth.construct_ff")
+}
+
+smooth.construct_ff.default <- function(object, data, knots, ...)
+{
+  cl <- class(object)
+  bs <- gsub(".smooth.spec", "", cl, fixed = TRUE)
+  info <- if(cl == paste(bs, "smooth.spec", sep = ".")) {
+    paste("with basis", sQuote(bs))
+  } else {
+    paste("of class", sQuote(cl))
+  }
+  stop(paste("No support of smooth terms ", info,
+    " using 'ffdf' data frames!",
+    sep = ""))
+}
+
+smooth.construct_ff.ps.smooth.spec <- function(object, data, knots, ...)
+{
+  xr <- ffbase::range.ff(data[[object$term]])
+  print(xr)
+  stop()
 }
 
 
@@ -1926,13 +1925,16 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
     if(is.character(data)) {
       if(!file.exists(data))
         stop("data path is not existing!")
-      ## data <- read.table.ffdf(file = data,
-      ##   na.strings = "", header = TRUE, sep = ",")
-      ## return(data)
-      ## FIXME: ff data.frames!
-      data <- read.table(file = data, header = TRUE, ...)
+      data_ff <- ff::read.table.ffdf(file = data,
+        na.strings = "", header = TRUE, sep = ",")
+      if(!is.null(weights))
+        data_ff[["(weights)"]] <- ff::as.ff(weights)
+      if(!is.null(offset))
+        data_ff[["(offset)"]] <- ff::as.ff(offset)
+      return(data_ff)
     }
   } else data <- NULL
+
   if(inherits(formula, "bamlss.frame") | inherits(formula, "bamlss")) {
     if(!is.null(formula$model.frame))
       return(formula$model.frame)
@@ -2482,8 +2484,19 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   sid <- NULL
-  for(j in specials)
-    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  for(j in specials) {
+    i <- grep2(paste(j, "(", sep = ""), tl, fixed = TRUE)
+    if(length(i)) {
+      for(ii in i) {
+        s1 <- strsplit(tl[ii], "")[[1]]
+        s2 <- strsplit(paste(j, "(", sep = ""), "")[[1]]
+        s1 <- paste(s1[1:length(s2)], collapse = "")
+        s2 <- paste(s2, collapse = "")
+        if(s1 == s2)
+          sid <- c(sid, ii)
+      }
+    }
+  }
   if(length(sid))
     sid <- sort(unique(sid))
   vars <- NULL
@@ -2522,7 +2535,11 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
     vars <- c(vars[-i], dv)
   }
   vars <- unique(vars)
-  if(type == 1)
+  if(is.null(sid)) {
+    if(type == 2)
+      type <- 1
+  }
+  if((type == 1) & !is.null(vars))
     vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+")), env = NULL))
   unique(vars)
 }
@@ -2574,8 +2591,19 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
   ## sid <- unlist(attr(tf, "specials")) - attr(tf, "response")
   tl <- attr(tf, "term.labels")
   sid <- NULL
-  for(j in specials)
-    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  for(j in specials) {
+    i <- grep2(paste(j, "(", sep = ""), tl, fixed = TRUE)
+    if(length(i)) {
+      for(ii in i) {
+        s1 <- strsplit(tl[ii], "")[[1]]
+        s2 <- strsplit(paste(j, "(", sep = ""), "")[[1]]
+        s1 <- paste(s1[1:length(s2)], collapse = "")
+        s2 <- paste(s2, collapse = "")
+        if(s1 == s2)
+          sid <- c(sid, ii)
+      }
+    }
+  }
   if(length(sid))
     sid <- sort(unique(sid))
   labs <- NULL
@@ -7485,8 +7513,19 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   specials <- unique(c(names(attr(tx, "specials")), specials))
   tl <- attr(tx, "term.labels")
   sid <- NULL
-  for(j in specials)
-    sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+  for(j in specials) {
+    i <- grep2(paste(j, "(", sep = ""), tl, fixed = TRUE)
+    if(length(i)) {
+      for(ii in i) {
+        s1 <- strsplit(tl[ii], "")[[1]]
+        s2 <- strsplit(paste(j, "(", sep = ""), "")[[1]]
+        s1 <- paste(s1[1:length(s2)], collapse = "")
+        s2 <- paste(s2, collapse = "")
+        if(s1 == s2)
+          sid <- c(sid, ii)
+      }
+    }
+  }
   if(length(sid))
     sid <- sort(unique(sid))
   sub <- attr(tx, "response")
@@ -7505,8 +7544,19 @@ drop.terms.bamlss <- function(f, pterms = TRUE, sterms = TRUE,
   if(!pterms & length(pt)) {
     tl <- attr(tx, "term.labels")
     sid <- NULL
-    for(j in specials)
-      sid <- c(sid, grep2(paste(j, "(", sep = ""), tl, fixed = TRUE))
+    for(j in specials) {
+      i <- grep2(paste(j, "(", sep = ""), tl, fixed = TRUE)
+      if(length(i)) {
+        for(ii in i) {
+          s1 <- strsplit(tl[ii], "")[[1]]
+          s2 <- strsplit(paste(j, "(", sep = ""), "")[[1]]
+          s1 <- paste(s1[1:length(s2)], collapse = "")
+          s2 <- paste(s2, collapse = "")
+          if(s1 == s2)
+            sid <- c(sid, ii)
+        }
+      }
+    }
     if(length(sid))
       sid <- sort(unique(sid))
     if(length(sid)) {

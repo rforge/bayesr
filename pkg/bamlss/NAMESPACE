@@ -1,5 +1,5 @@
-## import("ffbase")
-## importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
+importFrom("ffbase", "ffappend", "range.ff")
+importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
 
 import("coda")
 import("mgcv")
