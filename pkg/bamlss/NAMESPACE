@@ -1,5 +1,6 @@
 importFrom("ffbase", "ffappend", "range.ff")
 importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff")
+importFrom("bit", "chunk", "chunk.default")
 
 import("coda")
 import("mgcv")

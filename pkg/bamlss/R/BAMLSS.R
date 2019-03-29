@@ -623,26 +623,151 @@ smooth.construct_ff <- function(object, data, knots, ...)
   UseMethod("smooth.construct_ff")
 }
 
+#QR <- qr(crossprod(s$Z, rep(1, length = nrow(s$Z))))
+#Q2 <- qr.Q(QR, complete = TRUE)[, -1]
+#s$Z.c <- s$Z %*% Q2
+#s$K.c <- crossprod(Q2, s$K) %*% Q2
+
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
-  cl <- class(object)
-  bs <- gsub(".smooth.spec", "", cl, fixed = TRUE)
-  info <- if(cl == paste(bs, "smooth.spec", sep = ".")) {
-    paste("with basis", sQuote(bs))
-  } else {
-    paste("of class", sQuote(cl))
+  object$xt$center <- FALSE
+  object$xt$nocenter <- TRUE
+  nd <- list()
+  for(j in object$term) {
+    xr <- ffbase::range.ff(data[[j]], na.rm = TRUE)
+    nd[[j]] <- sample(seq(xr[1], xr[2], length = 500))
   }
-  stop(paste("No support of smooth terms ", info,
-    " using 'ffdf' data frames!",
-    sep = ""))
+  nd <- as.data.frame(nd)
+  object <- smooth.construct(object, nd, knots)
+  object$X <- NULL
+  sX <- function(x) {
+    PredictMat(object, data = x)
+  }
+  for(ic in bit::chunk(data)) {
+    object$X <- ffbase::ffappend(object$X, sX(data[ic, ]))
+  }
+  csum <- 0
+  for(ic in chunk_mat(object$X)) {
+    csum <- csum + colSums(object$X[ic, ])
+  }
+  QR <- qr(matrix(csum, ncol = 1L))
+  object$Z <- qr.Q(QR, complete = TRUE)[, -1]
+  object$X <- ffmatrixmult(object$X, object$Z)
+  for(j in seq_along(object$S)) {
+    if(!is.function(object$S[[j]]))
+      object$S[[j]] <- crossprod(object$Z, object$S[[j]]) %*% object$Z
+  }
+  object$orig.class <- class(object)
+  class(object) <- "ff_smooth.smooth.spec"
+  return(object)
 }
 
-smooth.construct_ff.ps.smooth.spec <- function(object, data, knots, ...)
+Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 {
-  xr <- ffbase::range.ff(data[[object$term]])
-  print(xr)
-  stop()
+  class(object) <- object$orig.class
+  X <- Predict.matrix(object, data)
+  return(X %*% object$Z)
 }
+
+## Copy from bootSVD.
+ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.big.error=FALSE,...) {	
+	{i1<-NULL; i2<- NULL} #To avoid errors in R CMD check
+
+	dimx<-dim(x)
+	if(!is.null(y)) dimy<-dim(y)
+	if(is.null(y))  dimy<-dimx
+
+	p <- max(c(dimx,dimy))
+	n <- max(min(dimx),min(dimy))
+	outDim <-
+	inDim  <- rep(NA,2)
+	outDim[1] <- dimx[xt+1]
+	outDim[2] <- dimy[2-yt]
+	inDim[1] <- dimx[2-xt]
+	inDim[2] <- dimy[yt+1]
+	if(inDim[1]!=inDim[2]) stop('non-conformable arguments')
+
+	if(all(outDim>n) & (!override.big.error)) stop('Returned value is at risk of being extremely large. Both dimensions of output will be fairly large.')
+
+	if(xt & yt) stop('For ff matrix algebra, set only one of xt or yt to TRUE')
+
+
+	if(all(outDim==n) | (!'ff'%in% c(class(x),class(y)))|ram.output){ 
+		out <- matrix(0,outDim[1],outDim[2])
+	}else{
+		out <- ff(0,dim=outDim,...)
+	}
+
+	if(all(outDim==n)){
+		if( (xt) &(!yt)) ffapply({
+			out<-out+crossprod(x[i1:i2,], y[i1:i2,])
+			},X=x,MARGIN=1)
+		if((!xt) & (yt)) ffapply({
+			out<-out+tcrossprod(x[,i1:i2], y[,i1:i2])
+			},X=x,MARGIN=2)
+		if((!xt) &(!yt)) ffapply({
+			out<-out+x[,i1:i2]%*% y[i1:i2,]
+			},X=x,MARGIN=2)
+	}
+	if(outDim[1]>outDim[2] | (outDim[1]==p & outDim[2]==p)){
+		if( (xt) & (!yt)) ffapply({
+			out[i1:i2,]<-crossprod(x[,i1:i2], y)
+			},X=x,MARGIN=2)
+		if((!xt) &  (yt)) ffapply({
+			out[i1:i2,]<-tcrossprod(x[i1:i2,], y)
+			},X=x,MARGIN=1)
+		if((!xt) & (!yt)) ffapply({
+			out[i1:i2,]<-x[i1:i2,]%*% y
+			},X=x,MARGIN=1)
+	}
+	if(outDim[1]< outDim[2]){ 
+		if( (xt) & (!yt))  ffapply({
+			out[,i1:i2]<-crossprod(x, y[,i1:i2])
+			},X=y,MARGIN=2)
+		if((!xt) &  (yt))  ffapply({
+			out[,i1:i2]<-tcrossprod(x, y[i1:i2,])
+			},X=y,MARGIN=1)
+		if((!xt) & (!yt))  ffapply({
+			out[,i1:i2]<- x %*% y[,i1:i2]
+			},X=y,MARGIN=2)
+		#Here, if y=NULL, we would've already gotten an error
+	}
+	return(out)
+}
+
+chunk_mat <- function (x, RECORDBYTES = sum(ff::.rambytes[ff::vmode(x)]),
+  BATCHBYTES = getOption("ffbatchbytes"), ...) 
+{
+    n <- nrow(x)
+    if (n) {
+        l <- list(...)
+        if (is.null(l$from)) 
+            l$from <- 1L
+        if (is.null(l$to)) 
+            l$to <- n
+        if (is.null(l$by) && is.null(l$len)) {
+            b <- BATCHBYTES%/%RECORDBYTES
+            if (b == 0L) {
+                b <- 1L
+                warning("single record does not fit into BATCHBYTES")
+            }
+            l$by <- b
+        }
+        l$maxindex <- n
+        ret <- do.call("chunk.default", l)
+    }
+    else {
+        ret <- list()
+    }
+    ret
+}
+
+#smooth.construct_ff.ps.smooth.spec <- function(object, data, knots, ...)
+#{
+#  xr <- ffbase::range.ff(data[[object$term]])
+#  print(xr)
+#  stop()
+#}
 
 
 ## Functions for sparse matrices.
@@ -5214,8 +5339,12 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if("lasso" %in% pt) {
     object$S[[1]] <- function(parameters, ...) {
       b <- get.par(parameters, "b")
+      if(is.null(object$xt$nocenter))
+        b <- c(0, b)
       A <- df / sqrt(b^2 + const)
       A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+      if(is.null(object$xt$nocenter))
+        A <- crossprod(object$QR, A) %*% object$QR
       A
     }
     attr(object$S[[k]], "npar") <- ncol(object$X)
@@ -5224,15 +5353,27 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(("enet" %in% pt) | ("elasticnet" %in% pt)) {
     object$S[[1]] <- function(parameters, ...) {
       b <- get.par(parameters, "b")
+      if(is.null(object$xt$nocenter))
+        b <- c(0, b)
       A <- df / sqrt(b^2 + const)
       A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
-      alpha * A + diag(1 - alpha, ncol(A))
+      A <- alpha * A + diag(1 - alpha, ncol(A))
+      if(is.null(object$xt$nocenter))
+        A <- crossprod(object$QR, A) %*% object$QR
+      A
     }
     attr(object$S[[k]], "npar") <- ncol(object$X)
     k <- k + 1
   }
-  if("ridge" %in% pt)
-    object$S[[k]] <- diag(1, ncol(object$X))
+  if("ridge" %in% pt) {
+    if(is.null(object$xt$nocenter)) {
+      A <- diag(1, ncol(object$X) + 1L)
+      A <- crossprod(object$QR, A) %*% object$QR
+    } else {
+      diag(1, ncol(object$X))
+    }
+    object$S[[k]] <- A
+  }
 
   object$xt$center <- if(is.null(object$xt$center)) FALSE else object$xt$center
   object$by <- "NA"
