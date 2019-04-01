@@ -623,11 +623,6 @@ smooth.construct_ff <- function(object, data, knots, ...)
   UseMethod("smooth.construct_ff")
 }
 
-#QR <- qr(crossprod(s$Z, rep(1, length = nrow(s$Z))))
-#Q2 <- qr.Q(QR, complete = TRUE)[, -1]
-#s$Z.c <- s$Z %*% Q2
-#s$K.c <- crossprod(Q2, s$K) %*% Q2
-
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
   object$xt$center <- FALSE
@@ -639,23 +634,23 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   }
   nd <- as.data.frame(nd)
   object <- smooth.construct(object, nd, knots)
-  object$X <- NULL
+  object[["X"]] <- NULL
   sX <- function(x) {
     PredictMat(object, data = x)
   }
   for(ic in bit::chunk(data)) {
-    object$X <- ffbase::ffappend(object$X, sX(data[ic, ]))
+    object[["X"]] <- ffbase::ffappend(object[["X"]], sX(data[ic, ]))
   }
   csum <- 0
-  for(ic in chunk_mat(object$X)) {
-    csum <- csum + colSums(object$X[ic, ])
+  for(ic in chunk_mat(object[["X"]])) {
+    csum <- csum + colSums(object[["X"]][ic, ])
   }
   QR <- qr(matrix(csum, ncol = 1L))
-  object$Z <- qr.Q(QR, complete = TRUE)[, -1]
-  object$X <- ffmatrixmult(object$X, object$Z)
-  for(j in seq_along(object$S)) {
-    if(!is.function(object$S[[j]]))
-      object$S[[j]] <- crossprod(object$Z, object$S[[j]]) %*% object$Z
+  object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
+  object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
+  for(j in seq_along(object[["S"]])) {
+    if(!is.function(object[["S"]][[j]]))
+      object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
   }
   object$orig.class <- class(object)
   class(object) <- "ff_smooth.smooth.spec"
@@ -666,7 +661,7 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 {
   class(object) <- object$orig.class
   X <- Predict.matrix(object, data)
-  return(X %*% object$Z)
+  return(X %*% object[["Z"]])
 }
 
 ## Copy from bootSVD.
@@ -695,7 +690,7 @@ ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.b
 	if(all(outDim==n) | (!'ff'%in% c(class(x),class(y)))|ram.output){ 
 		out <- matrix(0,outDim[1],outDim[2])
 	}else{
-		out <- ff(0,dim=outDim,...)
+		out <- ff::ff(0,dim=outDim,...)
 	}
 
 	if(all(outDim==n)){
@@ -5665,7 +5660,7 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FAL
   names(par) <- paste0("bb", 1:nodes)
   par <- c(par, unlist(w))
 
-  ff <- function(X, par) {
+  ffn <- function(X, par) {
     fit <- 0
     for(j in 1:nodes) {
       z <- drop(X %*% par[paste0("bw", j, "_w", 0:nc)])
@@ -5691,7 +5686,7 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FAL
     par <- coef(b)
     names(par) <- nw0
     rval <- list(
-      "fitted.values" = ff(X, par),
+      "fitted.values" = ffn(X, par),
       "coefficients" = par,
       "nodes" = nodes,
       "converged" = TRUE
@@ -5702,7 +5697,7 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FAL
 
   if(random) {
     rval <- list(
-      "fitted.values" = ff(X, par),
+      "fitted.values" = ffn(X, par),
       "coefficients" = par,
       "nodes" = nodes,
       "converged" = TRUE
@@ -5717,7 +5712,7 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FAL
     gr2 <- matrix(0, nrow = nrow(X), ncol = nodes * (nc + 1))
     colnames(gr2) <- nw
     k <- 1
-    e <- y - ff(X, par)
+    e <- y - ffn(X, par)
     for(j in 1:nodes) {
       z <- drop(X %*% par[paste0("bw", j, "_w", 0:nc)])
       b1 <- par[paste0("bb", j)]
@@ -5739,13 +5734,13 @@ nnet.fit <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL, nls = FAL
   }
 
   objfun <- function(par, X, y) {
-    return(sum((y - ff(X, par))^2))
+    return(sum((y - ffn(X, par))^2))
   }
 
   opt <- optim(par = par, fn = objfun, gr = gradfun, method = "BFGS", X = X, y = y)
 
   rval <- list(
-    "fitted.values" = ff(X, opt$par),
+    "fitted.values" = ffn(X, opt$par),
     "coefficients" = opt$par,
     "nodes" = nodes,
     "converged" = opt$convergence == 1L
@@ -5771,7 +5766,7 @@ nnet.fit.w <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
 
   names(par) <- paste0("bb", 1:nodes)
 
-  ff <- function(X, par, w) {
+  ffn <- function(X, par, w) {
     fit <- 0
     for(j in 1:nodes) {
       z <- drop(X %*% w[paste0("bw", j, "_w", 0:nc)])
@@ -5782,7 +5777,7 @@ nnet.fit.w <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
 
   if(random) {
     rval <- list(
-      "fitted.values" = ff(X, par, w),
+      "fitted.values" = ffn(X, par, w),
       "coefficients" = par,
       "nodes" = nodes,
       "converged" = TRUE
@@ -5831,7 +5826,7 @@ nnet.fit.w <- function(X, y, nodes = 100, ..., random = FALSE, w = NULL)
   names(par) <- paste0("bb", 1:nodes)
 
   rval <- list(
-    "fitted.values" = ff(X, par, opt$par),
+    "fitted.values" = ffn(X, par, opt$par),
     "coefficients" = c(par, opt$par),
     "nodes" = nodes,
     "converged" = opt$convergence == 1L

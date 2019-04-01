@@ -5197,7 +5197,7 @@ isgd <- function(x, y, family, weights = NULL, offset = NULL,
         eta <- list()
         for(nxi in nx) {
             eta[[nxi]] <- drop(beta[rng[[nxi]]] %*% X[[nxi]][shuffle[i],])
-        } 
+        }
 
         for(nxi in nx) {
             ## find zeta: see slide 110 (Ioannis Big Data Course)
@@ -5315,4 +5315,158 @@ sgd_grep_X <- function(x) {
     return(X)
 }
 
+sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
+  gammaFun = function(i) { 1/(1+i) }, shuffle = TRUE,
+  CFun = function(beta) diag(length(beta)),
+  start = NULL, i.state = 0, light = FALSE)
+{
+  nx <- family$names
+  if(!all(nx %in% names(x)))
+    stop("parameter names mismatch with family names!")
+
+  N  <- nrow(y)
+  y  <- y[[1]]
+
+  ## Shuffle observations.
+  shuffle_id <- NULL
+  for(i in bit::chunk(y)) {
+    ind <- i[1]:i[2]
+    shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+  }
+
+  if(!is.null(start))
+    start <- unlist(start)
+
+  beta <- list()
+  for(i in nx) {
+    beta[[i]] <- list()
+    if(!is.null(x[[i]]$model.matrix)) {
+      if(!is.null(start)) {
+        beta[[i]][["p"]] <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
+      } else {
+        beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
+        names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
+      }
+    }
+    if(!is.null(x[[i]]$smooth.construct)) {
+      for(j in names(x[[i]]$smooth.construct)) {
+        ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        if(is.null(start)) {
+          beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
+          names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+        } else {
+          beta[[i]][[paste0("s.", j)]] <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+        }
+      }
+    }
+  }
+
+  ## Grad and link functions.
+  gfun <- family$score
+  lfun <- lapply(family$links, make.link)
+  eta <- list(); k <- 1L
+
+  ptm <- proc.time()
+  while(k <= N) {
+    cat(sprintf("   * no. obs %i\r", k))
+
+    ## Evaluate gammaFun for current iteration.
+    gamma <- gammaFun(k + i.state)
+
+    ## Initialize predictor.
+    for(i in nx) {
+      eta[[i]] <- 0
+      if(!is.null(x[[i]]$model.matrix))
+        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in names(x[[i]]$smooth.construct)) {
+          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
+        }
+      }
+    }
+
+    for(i in nx) {
+      ## Linear part.
+      if(!is.null(x[[i]]$model.matrix)) {
+        XCX <- c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*%
+          CFun(beta[[i]][["p"]]) %*%
+          t(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE]))
+
+        zeta_fun <- make_zeta_fun(y = y[shuffle_id[k]],
+          eta = eta, XCX = XCX, gfun = gfun,
+          lfun = lfun, gamma = gamma, parname = i)
+
+        upper <- .1
+        lower <- -upper 
+        root <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root, error = function(e) e)
+
+        ## If the first try fails, the interval is enlarged 3 times,
+        ## if no root is found zeta/root is set to 0.
+        ierror <- 0
+        while(inherits(root, "error")) {
+          ierror <- ierror + 1
+          if(ierror > 3) {
+            root <- 0
+          } else {
+            lower <- lower * 10
+            upper <- upper * 10
+            root  <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root, error = function(e) e)
+          }
+        }
+
+        ## Update beta, eta.
+        beta[[i]][["p"]] <- beta[[i]][["p"]] + c(root) * c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][["p"]]))
+        eta[[i]] <- eta[[i]] + root * XCX
+      }
+
+      ## Nonlinear.
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in names(x[[i]]$smooth.construct)) {
+          XCX <- c(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE] %*%
+            CFun(beta[[i]][[paste0("s.", j)]]) %*%
+            t(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE]))
+
+          zeta_fun <- make_zeta_fun(y = y[shuffle_id[k]],
+            eta = eta, XCX = XCX, gfun = gfun,
+            lfun = lfun, gamma = gamma, parname = i)
+
+          upper <- .1
+          lower <- -upper 
+          root <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root, error = function(e) e)
+
+          ## If the first try fails, the interval is enlarged 3 times,
+          ## if no root is found zeta/root is set to 0.
+          ierror <- 0
+          while(inherits(root, "error")) {
+            ierror <- ierror + 1
+            if(ierror > 3) {
+              root <- 0
+            } else {
+              lower <- lower * 10
+              upper <- upper * 10
+              root  <- tryCatch(uniroot(zeta_fun, c(lower, upper))$root, error = function(e) e)
+            }
+          }
+
+          ## Update beta, eta.
+          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + c(root) * c(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][[paste0("s.", j)]]))
+          eta[[i]] <- eta[[i]] + root * XCX
+        }
+      }
+    }
+
+    k <- k + 1L
+  }
+
+  elapsed <- c(proc.time() - ptm)[3]
+  cat(sprintf("\n   * runtime = %.3f\n", elapsed))
+
+  rval <- list()
+  rval$parameters <- unlist(beta)
+  rval$fitted.values <- eta
+  rval$shuffle <- shuffle
+  rval$runtime <- elapsed
+
+  rval
+}
 
