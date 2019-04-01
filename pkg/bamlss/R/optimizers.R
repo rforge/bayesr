@@ -5345,18 +5345,18 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
         beta[[i]][["p"]] <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
       } else {
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
-        names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
       }
+      names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
-          names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
         } else {
           beta[[i]][[paste0("s.", j)]] <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
         }
+        names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
       }
     }
   }
@@ -5373,7 +5373,6 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
     ## Evaluate gammaFun for current iteration.
     gamma <- gammaFun(k + i.state)
 
-    ## Initialize predictor.
     for(i in nx) {
       eta[[i]] <- 0
       if(!is.null(x[[i]]$model.matrix))
@@ -5383,9 +5382,7 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
           eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
         }
       }
-    }
 
-    for(i in nx) {
       ## Linear part.
       if(!is.null(x[[i]]$model.matrix)) {
         XCX <- c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*%
@@ -5416,7 +5413,16 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
         ## Update beta, eta.
         beta[[i]][["p"]] <- beta[[i]][["p"]] + c(root) * c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][["p"]]))
-        eta[[i]] <- eta[[i]] + root * XCX
+        #eta[[i]] <- eta[[i]] + root * XCX
+      }
+
+      eta[[i]] <- 0
+      if(!is.null(x[[i]]$model.matrix))
+        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in names(x[[i]]$smooth.construct)) {
+          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
+        }
       }
 
       ## Nonlinear.
@@ -5450,7 +5456,17 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
           ## Update beta, eta.
           beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + c(root) * c(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][[paste0("s.", j)]]))
-          eta[[i]] <- eta[[i]] + root * XCX
+          #eta[[i]] <- eta[[i]] + root * XCX
+
+      eta[[i]] <- 0
+      if(!is.null(x[[i]]$model.matrix))
+        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+      if(!is.null(x[[i]]$smooth.construct)) {
+        for(j in names(x[[i]]$smooth.construct)) {
+          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
+        }
+      }
+
         }
       }
     }
