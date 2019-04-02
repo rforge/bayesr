@@ -5315,9 +5315,164 @@ sgd_grep_X <- function(x) {
     return(X)
 }
 
-sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) 1/(1+i),
-  shuffle = TRUE, start = NULL, i.state = 0, light = FALSE,
+#sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
+#  gammaFun = function(i) 1/(1+i),
+#  shuffle = TRUE, start = NULL, i.state = 0,
+#  batch = 1L)
+#{
+#  nx <- family$names
+#  if(!all(nx %in% names(x)))
+#    stop("parameter names mismatch with family names!")
+
+#  N  <- nrow(y)
+#  y  <- y[[1]]
+
+#  ## Shuffle observations.
+#  shuffle_id <- NULL
+#  for(i in bit::chunk(y)) {
+#    ind <- i[1]:i[2]
+#    shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+#  }
+
+#  if(!is.null(start))
+#    start <- unlist(start)
+
+#  beta <- list()
+#  for(i in nx) {
+#    beta[[i]] <- list()
+#    if(!is.null(x[[i]]$model.matrix)) {
+#      if(!is.null(start)) {
+#        beta[[i]][["p"]] <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
+#      } else {
+#        beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
+#      }
+#      names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
+#    }
+#    if(!is.null(x[[i]]$smooth.construct)) {
+#      for(j in names(x[[i]]$smooth.construct)) {
+#        ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+#        if(is.null(start)) {
+#          beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
+#        } else {
+#          beta[[i]][[paste0("s.", j)]] <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+#        }
+#        names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+#      }
+#    }
+#  }
+
+#  ## Init eta.
+#  k <- batch
+#  eta <- list()
+#  for(i in nx) {
+#    eta[[i]] <- 0
+#    if(!is.null(x[[i]]$model.matrix))
+#      eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[1:k], ])
+#    if(!is.null(x[[i]]$smooth.construct)) {
+#      for(j in names(x[[i]]$smooth.construct)) {
+#        eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[1:k], ])
+#      }
+#    }
+#  }
+
+#  iter <- 1L
+
+#  ptm <- proc.time()
+#  while(k <= N) {
+#    cat(sprintf("   * no. obs %i\r", k))
+
+#    take <- (k - batch + 1L):k
+
+#    ## Evaluate gammaFun for current iteration.
+#    gamma <- gammaFun(iter + i.state)
+
+#    ## Extract response.
+#    yn <- y[shuffle_id[take]]
+
+#    for(i in nx) {
+#      eta[[i]] <- 0
+#      if(!is.null(x[[i]]$model.matrix))
+#        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[take], ])
+#      if(!is.null(x[[i]]$smooth.construct)) {
+#        for(j in names(x[[i]]$smooth.construct)) {
+#          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], ])
+#        }
+#      }
+
+#      ## Linear part.
+#      if(!is.null(x[[i]]$model.matrix)) {
+#        Xn <- x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE]
+
+#        rn <- gamma * family$score[[i]](yn, family$map2par(eta))
+
+#        foo <- function(zeta) {
+#          eta[[i]] <- eta[[i]] + drop(Xn %*% (t(Xn) %*% zeta))
+#          rval <- gamma * family$score[[i]](yn, family$map2par(eta)) - zeta
+#          rval
+#        }
+
+#        zeta <- multiroot(foo, start = rn)
+#        zeta <- zeta$root
+
+#        beta[[i]][["p"]] <- beta[[i]][["p"]] + drop(t(Xn) %*% zeta)
+
+#        eta[[i]] <- drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
+#        if(!is.null(x[[i]]$smooth.construct)) {
+#          for(j in names(x[[i]]$smooth.construct)) {
+#            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
+#          }
+#        }
+#      }
+
+#      ## Nonlinear.
+#      if(!is.null(x[[i]]$smooth.construct)) {
+#        for(j in names(x[[i]]$smooth.construct)) {
+#          Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
+
+#          rn <- gamma * family$score[[i]](yn, family$map2par(eta))
+
+#          foo <- function(zeta) {
+#            eta[[i]] <- eta[[i]] + drop(Xn %*% (t(Xn) %*% zeta))
+#            rval <- gamma * family$score[[i]](yn, family$map2par(eta)) - zeta
+#            rval
+#          }
+
+#          zeta <- multiroot(foo, start = rn)
+#          zeta <- zeta$root
+
+#          ## Update beta, eta.
+#          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + drop(t(Xn) %*% zeta)
+
+#          eta[[i]] <- 0
+#          if(!is.null(x[[i]]$model.matrix))
+#            eta[[i]] <- eta[[i]] + drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
+#          for(jj in names(x[[i]]$smooth.construct)) {
+#            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[jj]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", jj)]])
+#          }
+#        }
+#      }
+#    }
+
+#    k <- k + batch
+#    iter <- iter + 1L
+#  }
+
+#  elapsed <- c(proc.time() - ptm)[3]
+#  cat(sprintf("\n   * runtime = %.3f\n", elapsed))
+
+#  rval <- list()
+#  rval$parameters <- unlist(beta)
+#  rval$fitted.values <- eta
+#  rval$shuffle <- shuffle
+#  rval$runtime <- elapsed
+
+#  rval
+#}
+
+
+adagrad <- function(x, y, family, weights = NULL, offset = NULL,
+  gammaFun = function(i) 0.05,
+  shuffle = TRUE, start = NULL, i.state = 0,
   batch = 1L)
 {
   nx <- family$names
@@ -5363,14 +5518,18 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
   ## Init eta.
   k <- batch
-  eta <- list()
+  eta <- A <- list()
   for(i in nx) {
     eta[[i]] <- 0
-    if(!is.null(x[[i]]$model.matrix))
+    A[[i]] <- list()
+    if(!is.null(x[[i]]$model.matrix)) {
       eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[1:k], ])
+      A[[i]]$model.matrix <- rep(1, length(eta[[i]]))
+    }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
         eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[1:k], ])
+        A[[i]][[j]] <- rep(1, length(eta[[i]]))
       }
     }
   }
@@ -5403,18 +5562,11 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
       if(!is.null(x[[i]]$model.matrix)) {
         Xn <- x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE]
 
-        rn <- gamma * family$score[[i]](yn, family$map2par(eta))
+        sj <- drop(t(Xn) %*% family$score[[i]](yn, family$map2par(eta)))
 
-        foo <- function(zeta) {
-          eta[[i]] <- eta[[i]] + drop(Xn %*% (t(Xn) %*% zeta))
-          rval <- (gamma * family$score[[i]](yn, family$map2par(eta)) - zeta)^2
-          rval
-        }
+        A[[i]]$model.matrix <- A[[i]]$model.matrix + sj^2
 
-        zeta <- multiroot(foo, start = rn)
-        zeta <- zeta$root
-
-        beta[[i]][["p"]] <- beta[[i]][["p"]] + gamma * drop(t(Xn) %*% zeta)
+        beta[[i]][["p"]] <- beta[[i]][["p"]] + gamma * A[[i]]$model.matrix^(-0.5) * sj
 
         eta[[i]] <- drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
         if(!is.null(x[[i]]$smooth.construct)) {
@@ -5429,19 +5581,11 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
         for(j in names(x[[i]]$smooth.construct)) {
           Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
 
-          rn <- gamma * family$score[[i]](yn, family$map2par(eta))
+          sj <- drop(t(Xn) %*% family$score[[i]](yn, family$map2par(eta)))
 
-          foo <- function(zeta) {
-            eta[[i]] <- eta[[i]] + drop(Xn %*% (t(Xn) %*% zeta))
-            rval <- (gamma * family$score[[i]](yn, family$map2par(eta)) - zeta)^2
-            rval
-          }
+          A[[i]][[j]] <- A[[i]][[j]] + sj^2
 
-          zeta <- multiroot(foo, start = rn)
-          zeta <- zeta$root
-
-          ## Update beta, eta.
-          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + gamma * drop(t(Xn) %*% zeta)
+          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + gamma * A[[i]][[j]]^(-0.5) * sj
 
           eta[[i]] <- 0
           if(!is.null(x[[i]]$model.matrix))
@@ -5468,4 +5612,3 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
   rval
 }
-
