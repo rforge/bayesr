@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 adagrad <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) 0.05,
+  gammaFun = function(i) 0.1,
   shuffle = TRUE, start = NULL, i.state = 0,
   batch = 1L)
 {
@@ -5543,7 +5543,7 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
     take <- (k - batch + 1L):k
 
     ## Evaluate gammaFun for current iteration.
-    gamma <- gammaFun(iter + i.state)
+    gamma <- gammaFun(k + i.state)
 
     ## Extract response.
     yn <- y[shuffle_id[take]]
