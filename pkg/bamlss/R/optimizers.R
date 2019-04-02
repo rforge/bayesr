@@ -5316,9 +5316,8 @@ sgd_grep_X <- function(x) {
 }
 
 sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) { 1/(1+i) }, shuffle = TRUE,
-  CFun = function(beta) diag(length(beta)),
-  start = NULL, i.state = 0, light = FALSE)
+  gammaFun = function(i) { 1/(1+i) },
+  shuffle = TRUE, start = NULL, i.state = 0, light = FALSE)
 {
   nx <- family$names
   if(!all(nx %in% names(x)))
@@ -5337,9 +5336,9 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- list()
+  beta <- Cmat <- list()
   for(i in nx) {
-    beta[[i]] <- list()
+    beta[[i]] <- Cmat[[i]] <- list()
     if(!is.null(x[[i]]$model.matrix)) {
       if(!is.null(start)) {
         beta[[i]][["p"]] <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
@@ -5347,6 +5346,7 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
       }
       names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
+      Cmat[[i]]$model.matrix <- rep(1, length(beta[[i]][["p"]]))
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
@@ -5357,6 +5357,21 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
           beta[[i]][[paste0("s.", j)]] <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+        Cmat[[i]][[j]] <- rep(1, ncX)
+      }
+    }
+  }
+
+  ## Init eta.
+  k <- 1L
+  eta <- list()
+  for(i in nx) {
+    eta[[i]] <- 0
+    if(!is.null(x[[i]]$model.matrix))
+      eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+    if(!is.null(x[[i]]$smooth.construct)) {
+      for(j in names(x[[i]]$smooth.construct)) {
+        eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
       }
     }
   }
@@ -5364,7 +5379,6 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
   ## Grad and link functions.
   gfun <- family$score
   lfun <- lapply(family$links, make.link)
-  eta <- list(); k <- 1L
 
   ptm <- proc.time()
   while(k <= N) {
@@ -5372,6 +5386,9 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
     ## Evaluate gammaFun for current iteration.
     gamma <- gammaFun(k + i.state)
+
+    ## Extract response.
+    yn <- y[shuffle_id[k]]
 
     for(i in nx) {
       eta[[i]] <- 0
@@ -5385,11 +5402,19 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 
       ## Linear part.
       if(!is.null(x[[i]]$model.matrix)) {
-        XCX <- c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*%
-          CFun(beta[[i]][["p"]]) %*%
-          t(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE]))
+        Xn <- x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE]
 
-        zeta_fun <- make_zeta_fun(y = y[shuffle_id[k]],
+        gr <- gfun[[i]](yn, family$map2par(eta)) * Xn
+
+        ## Cmat[[i]]$model.matrix <- drop(Cmat[[i]]$model.matrix + gr^2)
+
+        if(length(beta[[i]][["p"]]) < 2) {
+          XCX <- c(Xn %*% matrix((1/Cmat[[i]]$model.matrix)^0.5, 1, 1) %*% t(Xn))
+        } else {
+          XCX <- c(Xn %*% diag((1/Cmat[[i]]$model.matrix)^0.5) %*% t(Xn))
+        }
+
+        zeta_fun <- make_zeta_fun(y = yn,
           eta = eta, XCX = XCX, gfun = gfun,
           lfun = lfun, gamma = gamma, parname = i)
 
@@ -5412,27 +5437,32 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
         }
 
         ## Update beta, eta.
-        beta[[i]][["p"]] <- beta[[i]][["p"]] + c(root) * c(x[[i]]$model.matrix[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][["p"]]))
-        #eta[[i]] <- eta[[i]] + root * XCX
-      }
+        if(length(beta[[i]][["p"]]) < 2) {
+          beta[[i]][["p"]] <- beta[[i]][["p"]] + c(root) * c(Xn %*% matrix((1/Cmat[[i]]$model.matrix)^0.5, 1, 1))
+        } else {
+          beta[[i]][["p"]] <- beta[[i]][["p"]] + c(root) * c(Xn %*% diag((1/Cmat[[i]]$model.matrix)^0.5))
+        }
 
-      eta[[i]] <- 0
-      if(!is.null(x[[i]]$model.matrix))
-        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
-      if(!is.null(x[[i]]$smooth.construct)) {
-        for(j in names(x[[i]]$smooth.construct)) {
-          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
+        eta[[i]] <- sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+        if(!is.null(x[[i]]$smooth.construct)) {
+          for(j in names(x[[i]]$smooth.construct)) {
+            eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
+          }
         }
       }
 
       ## Nonlinear.
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in names(x[[i]]$smooth.construct)) {
-          XCX <- c(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE] %*%
-            CFun(beta[[i]][[paste0("s.", j)]]) %*%
-            t(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE]))
+          Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE]
 
-          zeta_fun <- make_zeta_fun(y = y[shuffle_id[k]],
+          gr <- gfun[[i]](yn, family$map2par(eta)) * Xn
+
+          ## Cmat[[i]][[j]] <- drop(Cmat[[i]][[j]] + gr^2)
+
+          XCX <- c(Xn %*% diag((1/Cmat[[i]][[j]])^0.5) %*% t(Xn))
+
+          zeta_fun <- make_zeta_fun(y = yn,
             eta = eta, XCX = XCX, gfun = gfun,
             lfun = lfun, gamma = gamma, parname = i)
 
@@ -5455,18 +5485,14 @@ sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
           }
 
           ## Update beta, eta.
-          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + c(root) * c(x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], , drop = FALSE] %*% CFun(beta[[i]][[paste0("s.", j)]]))
-          #eta[[i]] <- eta[[i]] + root * XCX
+          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + c(root) * c(Xn %*% diag((1/Cmat[[i]][[j]])^0.5))
 
-      eta[[i]] <- 0
-      if(!is.null(x[[i]]$model.matrix))
-        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
-      if(!is.null(x[[i]]$smooth.construct)) {
-        for(j in names(x[[i]]$smooth.construct)) {
-          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[k], ])
-        }
-      }
-
+          eta[[i]] <- 0
+          if(!is.null(x[[i]]$model.matrix))
+            eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[k], ])
+          for(jj in names(x[[i]]$smooth.construct)) {
+            eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", jj)]] * x[[i]]$smooth.construct[[jj]]$X[shuffle_id[k], ])
+          }
         }
       }
     }
