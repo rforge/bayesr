@@ -647,7 +647,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   }
   QR <- qr(matrix(csum, ncol = 1L))
   object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
-  object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
+  ## object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
   for(j in seq_along(object[["S"]])) {
     if(!is.function(object[["S"]][[j]]))
       object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
@@ -661,7 +661,7 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 {
   class(object) <- object$orig.class
   X <- Predict.matrix(object, data)
-  return(X %*% object[["Z"]])
+  ##return(X %*% object[["Z"]])
   return(X)
 }
 
@@ -5368,7 +5368,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       A <- diag(1, ncol(object$X) + 1L)
       A <- crossprod(object$QR, A) %*% object$QR
     } else {
-      diag(1, ncol(object$X))
+      A <- diag(1, ncol(object$X))
     }
     object$S[[k]] <- A
   }

@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 adagrad <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) 1 / (1 + i),
+  gammaFun = function(i) 0.01, ##1 / (1 + i),
   shuffle = TRUE, start = NULL, i.state = 0,
   batch = 1L)
 {
