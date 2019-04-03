@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 adagrad <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) 0.1,
+  gammaFun = function(i) 1 / (1 + i),
   shuffle = TRUE, start = NULL, i.state = 0,
   batch = 1L)
 {
@@ -5524,12 +5524,12 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
     A[[i]] <- list()
     if(!is.null(x[[i]]$model.matrix)) {
       eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[1:k], ])
-      A[[i]]$model.matrix <- rep(1, length(eta[[i]]))
+      A[[i]]$model.matrix <- rep(0, length(eta[[i]]))
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
         eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[1:k], ])
-        A[[i]][[j]] <- rep(1, length(eta[[i]]))
+        A[[i]][[j]] <- rep(0, length(eta[[i]]))
       }
     }
   }
@@ -5543,7 +5543,7 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
     take <- (k - batch + 1L):k
 
     ## Evaluate gammaFun for current iteration.
-    gamma <- gammaFun(k + i.state)
+    gamma <- gammaFun(iter + i.state)
 
     ## Extract response.
     yn <- y[shuffle_id[take]]
@@ -5551,29 +5551,28 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
     for(i in nx) {
       eta[[i]] <- 0
       if(!is.null(x[[i]]$model.matrix))
-        eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[take], ])
+        eta[[i]] <- eta[[i]] + drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in names(x[[i]]$smooth.construct)) {
-          eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], ])
+          eta[[i]] <- eta[[i]] + x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]]
         }
       }
+    }
 
+    for(i in nx) {
       ## Linear part.
       if(!is.null(x[[i]]$model.matrix)) {
         Xn <- x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE]
 
-        sj <- drop(t(Xn) %*% family$score[[i]](yn, family$map2par(eta)))
+        sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
 
-        A[[i]]$model.matrix <- A[[i]]$model.matrix + sj^2
+        A[[i]]$model.matrix <- (A[[i]]$model.matrix + sj^2) / 2
 
-        beta[[i]][["p"]] <- beta[[i]][["p"]] + gamma * A[[i]]$model.matrix^(-0.5) * sj
+        cj <- 1 / (sqrt(A[[i]]$model.matrix) + 0.00001) * gamma * sj
 
-        eta[[i]] <- drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
-        if(!is.null(x[[i]]$smooth.construct)) {
-          for(j in names(x[[i]]$smooth.construct)) {
-            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
-          }
-        }
+        beta[[i]][["p"]] <- beta[[i]][["p"]] + cj
+
+        eta[[i]] <- eta[[i]] + drop(Xn %*% cj)
       }
 
       ## Nonlinear.
@@ -5581,18 +5580,15 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
         for(j in names(x[[i]]$smooth.construct)) {
           Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
 
-          sj <- drop(t(Xn) %*% family$score[[i]](yn, family$map2par(eta)))
+          sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
 
-          A[[i]][[j]] <- A[[i]][[j]] + sj^2
+          A[[i]][[j]] <- (A[[i]][[j]] + sj^2) / 2
 
-          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + gamma * A[[i]][[j]]^(-0.5) * sj
+          cj <- 1 / (sqrt(A[[i]][[j]]) + 0.00001) * gamma * sj
 
-          eta[[i]] <- 0
-          if(!is.null(x[[i]]$model.matrix))
-            eta[[i]] <- eta[[i]] + drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
-          for(jj in names(x[[i]]$smooth.construct)) {
-            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[jj]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", jj)]])
-          }
+          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + cj
+
+          eta[[i]] <- eta[[i]] + drop(Xn %*% cj)
         }
       }
     }

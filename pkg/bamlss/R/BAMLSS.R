@@ -662,6 +662,7 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
   class(object) <- object$orig.class
   X <- Predict.matrix(object, data)
   return(X %*% object[["Z"]])
+  return(X)
 }
 
 ## Copy from bootSVD.
@@ -3467,7 +3468,9 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   })
   if(all(is.null(unlist(enames))))
     stop("argument term is specified wrong!")
-  ff <- as.formula(paste("~", paste(unique(unlist(enames)), collapse = "+")), env = NULL)
+  uenames <- unique(unlist(enames))
+  uenames <- gsub("splines::", "", uenames, fixed = TRUE)
+  ff <- as.formula(paste("~", paste(uenames, collapse = "+")), env = NULL)
   vars <- all.vars.formula(ff)
   if(!all(vars[vars != "Intercept"] %in% nn))
     stop("cannot compute prediction, variables missing in newdata!")
