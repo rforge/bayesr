@@ -5471,10 +5471,12 @@ sgd_grep_X <- function(x) {
 
 
 adagrad <- function(x, y, family, weights = NULL, offset = NULL,
-  gammaFun = function(i) 0.01, ##1 / (1 + i),
+  gammaFun = function(i) 1 / (1 + i),
   shuffle = TRUE, start = NULL, i.state = 0,
-  batch = 1L)
+  batch = 1L, p1 = 0.9, p2 = 0.1)
 {
+  ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
+
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -5518,18 +5520,22 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
 
   ## Init eta.
   k <- batch
-  eta <- A <- list()
+  eta <- V <- m <- list()
   for(i in nx) {
     eta[[i]] <- 0
-    A[[i]] <- list()
+    V[[i]] <- m[[i]] <- list()
     if(!is.null(x[[i]]$model.matrix)) {
       eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[1:k], ])
-      A[[i]]$model.matrix <- rep(0, length(eta[[i]]))
+      ncX <- ncol(x[[i]]$model.matrix)
+      V[[i]]$model.matrix <- rep(0, ncX)
+      m[[i]]$model.matrix <- rep(0, ncX)
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
         eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[1:k], ])
-        A[[i]][[j]] <- rep(0, length(eta[[i]]))
+        ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        V[[i]][[j]] <- rep(0, ncX)
+        m[[i]][[j]] <- rep(0, ncX)
       }
     }
   }
@@ -5566,9 +5572,12 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
 
         sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
 
-        A[[i]]$model.matrix <- (A[[i]]$model.matrix + sj^2) / 2
+        m[[i]]$model.matrix <- p1 * m[[i]]$model.matrix + (1 - p1) * sj
+        Vt <- p2 * V[[i]]$model.matrix + (1 - p2) * sj^2
 
-        cj <- 1 / (sqrt(A[[i]]$model.matrix) + 0.00001) * gamma * sj
+        V[[i]]$model.matrix <- pmax(V[[i]]$model.matrix, Vt)
+
+        cj <- 1 / (sqrt(V[[i]]$model.matrix) + 0.00001) * gamma * m[[i]]$model.matrix
 
         beta[[i]][["p"]] <- beta[[i]][["p"]] + cj
 
@@ -5580,11 +5589,17 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
         for(j in names(x[[i]]$smooth.construct)) {
           Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
 
+          if(nrow(Xn) > 1)
+            Xn <- t(t(Xn) - colMeans(Xn))
+
           sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
 
-          A[[i]][[j]] <- (A[[i]][[j]] + sj^2) / 2
+          m[[i]][[j]] <- p1 * m[[i]][[j]] + (1 - p1) * sj
+          Vt <- p2 * V[[i]][[j]] + (1 - p2) * sj^2
 
-          cj <- 1 / (sqrt(A[[i]][[j]]) + 0.00001) * gamma * sj
+          V[[i]][[j]] <- pmax(V[[i]][[j]], Vt)
+
+          cj <- 1 / (sqrt(V[[i]][[j]]) + 0.00001) * gamma * m[[i]][[j]]
 
           beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + cj
 
