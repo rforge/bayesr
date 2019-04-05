@@ -5472,8 +5472,8 @@ sgd_grep_X <- function(x) {
 
 adagrad <- function(x, y, family, weights = NULL, offset = NULL,
   gammaFun = function(i) 1 / (1 + i),
-  shuffle = TRUE, start = NULL, i.state = 0,
-  batch = 1L, p1 = 0.9, p2 = 0.1)
+  shuffle = TRUE, start = NULL,
+  epochs = 10, batch = 1L, p1 = 0.9, p2 = 0.1)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
 
@@ -5484,22 +5484,17 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
   N  <- nrow(y)
   y  <- y[[1]]
 
-  ## Shuffle observations.
-  shuffle_id <- NULL
-  for(i in bit::chunk(y)) {
-    ind <- i[1]:i[2]
-    shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
-  }
-
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- list()
+  beta <- eta <- etas <- list()
   for(i in nx) {
     beta[[i]] <- list()
+    eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
       if(!is.null(start)) {
-        beta[[i]][["p"]] <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
+        start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
+        beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
       } else {
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
       }
@@ -5511,109 +5506,159 @@ adagrad <- function(x, y, family, weights = NULL, offset = NULL,
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
         } else {
-          beta[[i]][[paste0("s.", j)]] <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+          start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+          beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
       }
     }
   }
 
-  ## Init eta.
-  k <- batch
-  eta <- V <- m <- list()
-  for(i in nx) {
-    eta[[i]] <- 0
-    V[[i]] <- m[[i]] <- list()
-    if(!is.null(x[[i]]$model.matrix)) {
-      eta[[i]] <- eta[[i]] + sum(beta[[i]][["p"]] * x[[i]]$model.matrix[shuffle_id[1:k], ])
-      ncX <- ncol(x[[i]]$model.matrix)
-      V[[i]]$model.matrix <- rep(0, ncX)
-      m[[i]]$model.matrix <- rep(0, ncX)
-    }
-    if(!is.null(x[[i]]$smooth.construct)) {
-      for(j in names(x[[i]]$smooth.construct)) {
-        eta[[i]] <- eta[[i]] + sum(beta[[i]][[paste0("s.", j)]] * x[[i]]$smooth.construct[[j]]$X[shuffle_id[1:k], ])
-        ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
-        V[[i]][[j]] <- rep(0, ncX)
-        m[[i]][[j]] <- rep(0, ncX)
-      }
-    }
-  }
-
-  iter <- 1L
-
   ptm <- proc.time()
-  while(k <= N) {
-    cat(sprintf("   * no. obs %i\r", k))
+  for(ej in 1:epochs) {
+    cat("starting epoch", ej, "\n")
 
-    take <- (k - batch + 1L):k
+    ## Shuffle observations.
+    shuffle_id <- NULL
+    for(ii in bit::chunk(y)) {
+      ind <- ii[1]:ii[2]
+      shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+    }
 
-    ## Evaluate gammaFun for current iteration.
-    gamma <- gammaFun(iter + i.state)
+    k <- batch
+    iter <- 1L
 
-    ## Extract response.
-    yn <- y[shuffle_id[take]]
-
+    ## Initialize.
+    V <- m <- tau2 <- list()
     for(i in nx) {
-      eta[[i]] <- 0
-      if(!is.null(x[[i]]$model.matrix))
-        eta[[i]] <- eta[[i]] + drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
+      V[[i]] <- m[[i]] <- tau2[[i]] <- list()
+      if(!is.null(x[[i]]$model.matrix)) {
+        ncX <- ncol(x[[i]]$model.matrix)
+        V[[i]]$model.matrix <- rep(0, ncX)
+        m[[i]]$model.matrix <- rep(0, ncX)
+      }
       if(!is.null(x[[i]]$smooth.construct)) {
         for(j in names(x[[i]]$smooth.construct)) {
-          eta[[i]] <- eta[[i]] + x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]]
+          ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+          V[[i]][[j]] <- rep(0, ncX)
+          m[[i]][[j]] <- rep(0, ncX)
+          tau2[[i]][[j]] <- 0.0001
         }
       }
     }
 
-    for(i in nx) {
-      ## Linear part.
-      if(!is.null(x[[i]]$model.matrix)) {
-        Xn <- x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE]
+    while(k <= N) {
+      cat(sprintf("   * no. obs %i\r", k))
 
-        sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
+      take <- (k - batch + 1L):k
 
-        m[[i]]$model.matrix <- p1 * m[[i]]$model.matrix + (1 - p1) * sj
-        Vt <- p2 * V[[i]]$model.matrix + (1 - p2) * sj^2
+      ## Evaluate gammaFun for current iteration.
+      gamma <- gammaFun(iter)
 
-        V[[i]]$model.matrix <- pmax(V[[i]]$model.matrix, Vt)
+      ## Extract response.
+      yn <- y[shuffle_id[take]]
 
-        cj <- 1 / (sqrt(V[[i]]$model.matrix) + 0.00001) * gamma * m[[i]]$model.matrix
-
-        beta[[i]][["p"]] <- beta[[i]][["p"]] + cj
-
-        eta[[i]] <- eta[[i]] + drop(Xn %*% cj)
+      for(i in nx) {
+        eta[[i]] <- 0
+        if(!is.null(x[[i]]$model.matrix))
+          eta[[i]] <- eta[[i]] + drop(x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE] %*% beta[[i]][["p"]])
+        if(!is.null(x[[i]]$smooth.construct)) {
+          for(j in names(x[[i]]$smooth.construct)) {
+            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
+          }
+        }
       }
 
-      ## Nonlinear.
-      if(!is.null(x[[i]]$smooth.construct)) {
-        for(j in names(x[[i]]$smooth.construct)) {
-          Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
-
-          if(nrow(Xn) > 1)
-            Xn <- t(t(Xn) - colMeans(Xn))
+      for(i in nx) {
+        ## Linear part.
+        if(!is.null(x[[i]]$model.matrix)) {
+          Xn <- x[[i]]$model.matrix[shuffle_id[take], , drop = FALSE]
 
           sj <- colMeans(Xn * (family$score[[i]](yn, family$map2par(eta))))
 
-          m[[i]][[j]] <- p1 * m[[i]][[j]] + (1 - p1) * sj
-          Vt <- p2 * V[[i]][[j]] + (1 - p2) * sj^2
+          m[[i]]$model.matrix <- p1 * m[[i]]$model.matrix + (1 - p1) * sj
+          Vt <- p2 * V[[i]]$model.matrix + (1 - p2) * sj^2
 
-          V[[i]][[j]] <- pmax(V[[i]][[j]], Vt)
+          V[[i]]$model.matrix <- pmax(V[[i]]$model.matrix, Vt)
 
-          cj <- 1 / (sqrt(V[[i]][[j]]) + 0.00001) * gamma * m[[i]][[j]]
+          cj <- 1 / (sqrt(V[[i]]$model.matrix) + 0.00001) * gamma * m[[i]]$model.matrix
 
-          beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + cj
+          beta[[i]][["p"]] <- beta[[i]][["p"]] + cj
 
           eta[[i]] <- eta[[i]] + drop(Xn %*% cj)
         }
+
+        ## Nonlinear.
+        if(!is.null(x[[i]]$smooth.construct)) {
+          for(j in names(x[[i]]$smooth.construct)) {
+            Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
+
+            take2 <- if(iter < 2) {
+              take + batch
+            } else {
+              take - batch
+            }
+
+            Xt <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE]
+            yt <- y[shuffle_id[take2]]
+
+            for(ii in nx) {
+              etas[[ii]] <- 0
+              if(!is.null(x[[ii]]$model.matrix))
+                etas[[ii]] <- etas[[ii]] + drop(x[[ii]]$model.matrix[shuffle_id[take2], , drop = FALSE] %*% beta[[ii]][["p"]])
+              if(!is.null(x[[ii]]$smooth.construct)) {
+                for(jj in names(x[[ii]]$smooth.construct)) {
+                  etas[[ii]] <- etas[[ii]] + drop(x[[ii]]$smooth.construct[[jj]]$X[shuffle_id[take2], , drop = FALSE] %*% beta[[ii]][[paste0("s.", jj)]])
+                }
+              }
+            }
+
+            sj0 <- colSums(Xn * (family$score[[i]](yn, family$map2par(eta))))
+
+            objfun <- function(tau2) {
+              sj <- sj0 - 1/tau2 * drop(x[[i]]$smooth.construct[[j]]$S[[1]] %*% beta[[i]][[paste0("s.", j)]])
+
+              m[[i]][[j]] <- p1 * m[[i]][[j]] + (1 - p1) * sj
+              Vt <- p2 * V[[i]][[j]] + (1 - p2) * sj^2
+
+              V[[i]][[j]] <- pmax(V[[i]][[j]], Vt)
+
+              P <- sqrt(V[[i]][[j]]) + 0.00001 + 1/tau2*diag(x[[i]]$smooth.construct[[j]]$S[[1]])
+              cj <- 1 / P * gamma * m[[i]][[j]]
+
+              etas[[i]] <- etas[[i]] + drop(Xt %*% cj)
+
+              return(-2 * family$loglik(yt, family$map2par(etas)) + 1/length(yt) * sum(1/P))
+            }
+
+            tau2[[i]][[j]] <- tau2.optim(objfun, start = tau2[[i]][[j]], scale = 10, maxit = 100)
+
+            sj <- sj0 - 1/tau2[[i]][[j]] * drop(x[[i]]$smooth.construct[[j]]$S[[1]] %*% beta[[i]][[paste0("s.", j)]])
+
+            m[[i]][[j]] <- p1 * m[[i]][[j]] + (1 - p1) * sj
+            Vt <- p2 * V[[i]][[j]] + (1 - p2) * sj^2
+
+            V[[i]][[j]] <- pmax(V[[i]][[j]], Vt)
+
+            P <- sqrt(V[[i]][[j]]) + 0.00001 +  1/tau2[[i]][[j]]*diag(x[[i]]$smooth.construct[[j]]$S[[1]])
+            cj <- 1 / P * gamma * m[[i]][[j]]
+
+            eta[[i]] <- eta[[i]] + drop(Xn %*% cj)
+
+            beta[[i]][[paste0("s.", j)]] <- beta[[i]][[paste0("s.", j)]] + cj
+          }
+        }
       }
+
+      k <- k + batch
+      iter <- iter + 1L
     }
 
-    k <- k + batch
-    iter <- iter + 1L
+    cat("\n")
   }
 
   elapsed <- c(proc.time() - ptm)[3]
-  cat(sprintf("\n   * runtime = %.3f\n", elapsed))
+  cat(sprintf("   * runtime = %.3f\n", elapsed))
 
   rval <- list()
   rval$parameters <- unlist(beta)
