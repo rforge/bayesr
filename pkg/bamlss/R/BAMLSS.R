@@ -267,10 +267,10 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           sterms = FALSE, keep.response = FALSE, data = NULL, specials = specials)
         obj$model.matrix <- NULL
         ff_mm <- function(x) {
-          ff::as.ffdf(model.matrix(mm_terms, data = x))
+          model.matrix(mm_terms, data = x)
         }
         for(cff in bit::chunk(data)) {
-          obj$model.matrix <- ffbase::ffdfappend(obj$model.matrix, ff_mm(data[cff, ]))
+          obj$model.matrix <- ffbase::ffappend(obj$model.matrix, ff_mm(data[cff, ]), adjustvmode = FALSE)
         }
       }
     }

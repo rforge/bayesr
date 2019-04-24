@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch = 1L,
-  maxit = Inf, ...)
+  maxit = Inf, nu = 1, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
 
@@ -5615,14 +5615,14 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
           P <- matrix_inv(XWX)
 
           objfun <- function(gamma) {
-            b <- gamma * (drop(P %*% crossprod(Xn * hess, e)) + b0) / 2
+            b <- gamma * (drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu))
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
             mean((es - etas[[i]])^2)
           }
 
           gamma <- optimize(objfun, c(0.0001, 0.9999))$minimum
 
-          beta[[i]][["p"]] <- gamma * (drop(P %*% crossprod(Xn * hess, e)) + b0) / 2
+          beta[[i]][["p"]] <- gamma * (drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu))
           eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
         }
 
@@ -5674,13 +5674,13 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
                 }
               }
               P <- matrix_inv(XWX + S)
-              b <- (drop(P %*% crossprod(Xn * hess, e)) + b0) / 2
+              b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + drop(Xt %*% b)
               rval <- mean((es - etas[[i]])^2)
               return(rval)
             }
 
-            tau2[[i]][[j]] <- tau2.optim(objfun, tau2[[i]][[j]])
+            tau2[[i]][[j]] <- tau2.optim(objfun, tau2[[i]][[j]]) * nu + tau2[[i]][[j]] * (1 - nu)
 
             S <- 0
             for(l in 1:length(tau2[[i]][[j]])) {
@@ -5693,7 +5693,7 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
 
             P <- matrix_inv(XWX + S)
 
-            beta[[i]][[paste0("s.", j)]] <- (drop(P %*% crossprod(Xn * hess, e)) + b0) / 2
+            beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
           }
         }
