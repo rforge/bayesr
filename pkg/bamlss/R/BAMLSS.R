@@ -3781,7 +3781,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
     }
     m
   }
-
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
       for(jj in grep3(j, names(x))) {
@@ -4525,8 +4524,10 @@ la <- function(formula, type = c("single", "multiple"), ...)
     if(grepl("not found", env)) {
       formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
       formula2 <- try(dynGet(formula), silent = TRUE)
-      if(!inherits(formula2, "try-error"))
-        formula <- formula2
+      if(!inherits(formula2, "try-error")) {
+        if(length(formula2) < 2L)
+          formula <- formula2
+      }
     }
   }
   formula <- deparse(substitute(formula), backtick = TRUE, width.cutoff = 500)
