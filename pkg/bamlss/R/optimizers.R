@@ -5470,8 +5470,8 @@ sgd_grep_X <- function(x) {
 #}
 
 
-bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch = 500,
-  maxit = Inf, nu = 1, ...)
+bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+  epochs = 1, batch = 500, maxit = Inf, nu = 0.1, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
 
@@ -5501,7 +5501,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch 
       } else {
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
-        if(!is.null(family$initialize)) {
+        if(!is.null(family$initialize) & is.null(offset)) {
           shuffle_id <- NULL
           for(ii in chunk(y)) {
             ind <- ii[1]:ii[2]
@@ -5570,6 +5570,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch 
             eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
           }
         }
+        if(!is.null(offset)) {
+          if(i %in% colnames(offset))
+            eta[[i]] <- eta[[i]] + offset[shuffle_id[take], i]
+        }
       }
 
       eta00 <- eta
@@ -5585,6 +5589,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch 
               for(jj in names(x[[ii]]$smooth.construct)) {
                 etas[[ii]] <- etas[[ii]] + drop(x[[ii]]$smooth.construct[[jj]]$X[shuffle_id[take2], , drop = FALSE] %*% beta[[ii]][[paste0("s.", jj)]])
               }
+            }
+            if(!is.null(offset)) {
+              if(ii %in% colnames(offset))
+                etas[[ii]] <- etas[[ii]] + offset[shuffle_id[take2], ii]
             }
           }
 
@@ -5637,6 +5645,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch 
                 for(jj in names(x[[ii]]$smooth.construct)) {
                   etas[[ii]] <- etas[[ii]] + drop(x[[ii]]$smooth.construct[[jj]]$X[shuffle_id[take2], , drop = FALSE] %*% beta[[ii]][[paste0("s.", jj)]])
                 }
+              }
+              if(!is.null(offset)) {
+                if(ii %in% colnames(offset))
+                  etas[[ii]] <- etas[[ii]] + offset[shuffle_id[take2], ii]
               }
             }
 

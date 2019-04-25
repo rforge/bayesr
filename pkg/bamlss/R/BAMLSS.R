@@ -1692,7 +1692,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
   if(is.function(functions$optimizer)) {
     opt <- functions$optimizer(x = bf$x, y = bf$y, family = bf$family,
       start = start, weights = model.weights(bf$model.frame),
-      offset = model.offset(bf$model.frame), ...)
+      offset = bf$model.frame[["(offset)"]], ...)
     if(!is.list(opt)) {
       if(inherits(opt, "numeric")) {
         opt <- list("parameters" = drop(opt))
@@ -2087,8 +2087,14 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
         na.strings = "", header = TRUE, sep = ",")
       if(!is.null(weights))
         data_ff[["(weights)"]] <- ff::as.ff(weights)
-      if(!is.null(offset))
-        data_ff[["(offset)"]] <- ff::as.ff(offset)
+      if(!is.null(offset)) {
+        noff <- names(offset)
+        offset <- do.call("cbind", offset)
+        if(is.null(dim(offset)))
+          offset <- matrix(offset, ncol = 1)
+        data_ff[["(offset)"]] <- ff::as.ff(offset, dim = dim(offset))
+        colnames(data_ff[["(offset)"]]) <- noff
+      }
       return(data_ff)
     }
   } else data <- NULL
