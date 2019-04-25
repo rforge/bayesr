@@ -1,5 +1,6 @@
 importFrom("ffbase", "ffappend", "range.ff")
-importFrom("ff", "read.table.ffdf", "ff", "ffdf", "fforder", "as.ff", "ffapply")
+importFrom("ff", "chunk.ff_vector", "chunk.ffdf", "chunk.bit", "read.table.ffdf",
+  "ff", "ffdf", "fforder", "as.ff", "ffapply", "nrow<-", "hi")
 importFrom("bit", "chunk", "chunk.default")
 
 import("coda")
@@ -52,6 +53,7 @@ export(
   "bamlss.formula",
   "bamlss.family",
   "bfit",
+  "bbfit",
   "bfit_iwls",
   "bfit_iwls_Matrix",
   "bfit_lm",

@@ -5470,7 +5470,7 @@ sgd_grep_X <- function(x) {
 #}
 
 
-sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch = 1L,
+bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 1, batch = 500,
   maxit = Inf, nu = 1, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
@@ -5503,7 +5503,7 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
         if(!is.null(family$initialize)) {
           shuffle_id <- NULL
-          for(ii in bit::chunk(y)) {
+          for(ii in chunk(y)) {
             ind <- ii[1]:ii[2]
             shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
           }
@@ -5540,7 +5540,7 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
 
     ## Shuffle observations.
     shuffle_id <- NULL
-    for(ii in bit::chunk(y)) {
+    for(ii in chunk(y)) {
       ind <- ii[1]:ii[2]
       shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
     }
@@ -5709,7 +5709,11 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
 
       cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
 
-      k <- k + batch
+      if(k == N) {
+        k <- k + 1L
+      } else {
+        k <- min(c(k + batch, N))
+      }
       iter <- iter + 1L
       iter2 <- iter2 + 1L
     }
@@ -5728,3 +5732,4 @@ sgd <- function(x, y, family, shuffle = TRUE, start = NULL, epochs = 10, batch =
 
   rval
 }
+

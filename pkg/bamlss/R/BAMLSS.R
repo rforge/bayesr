@@ -267,10 +267,14 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           sterms = FALSE, keep.response = FALSE, data = NULL, specials = specials)
         obj$model.matrix <- NULL
         ff_mm <- function(x) {
-          model.matrix(mm_terms, data = x)
+          X <- model.matrix(mm_terms, data = x)
+          cn <- colnames(X)
+          X <- ff(X, dim = dim(X), dimorder = c(2, 1))
+          colnames(X) <- cn
+          return(X)
         }
-        for(cff in bit::chunk(data)) {
-          obj$model.matrix <- ffbase::ffappend(obj$model.matrix, ff_mm(data[cff, ]), adjustvmode = FALSE)
+        for(cff in chunk(data)) {
+          obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
         }
       }
     }
@@ -406,9 +410,13 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 }
               }
             } else {
-              smt2 <- smooth.construct(tsm, data, knots)
+              if(!inherits(data, "ffdf")) {
+                smt2 <- smooth.construct(tsm, data, knots)
+              } else {
+                smt2 <- smooth.construct_ff(tsm, data, knots)
+              }
               if(inherits(tsm, "no.mgcv") | inherits(smt2, "no.mgcv")) {
-                no.mgcv <- c(no.mgcv, if(!inherits(smt2, "smooth.list")) list(smt2) else smt2)
+                  no.mgcv <- c(no.mgcv, if(!inherits(smt2, "smooth.list")) list(smt2) else smt2)
               } else {
                 class(smt2) <- c(class(smt2), "mgcv.smooth")
                 smt <- if(!inherits(smt2, "smooth.list")) list(smt2) else smt2
@@ -623,6 +631,32 @@ smooth.construct_ff <- function(object, data, knots, ...)
   UseMethod("smooth.construct_ff")
 }
 
+
+ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...) 
+{
+  w <- getOption("warn")
+  options("warn" = -1)
+  if(is.null(x))
+    return(dat)
+  n <- nrow(dat)
+  nff <- nrow(x)
+  cn <- colnames(x)
+  nrow(x) <- nff + n
+  if(!identical(colnames(x), colnames(dat))) {
+    warning("column names are not identical")
+  }
+  if(ncol(x) != ncol(dat)) {
+    stop("Number of columns does not match")
+  }
+  i <- hi(nff + 1, nff + n)
+  colnames(x) <- NULL
+  colnames(dat) <- NULL
+  x[i, ] <- dat[,]
+  colnames(x) <- cn
+  options("warn" = w)
+  x
+}
+
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
   object$xt$center <- FALSE
@@ -636,10 +670,14 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   object <- smooth.construct(object, nd, knots)
   object[["X"]] <- NULL
   sX <- function(x) {
-    PredictMat(object, data = x)
+    X <- PredictMat(object, data = x)
+    cn <- colnames(X)
+    X <- ff(X, dim = dim(X), dimorder = c(2, 1))
+    colnames(X) <- cn
+    return(X)
   }
-  for(ic in bit::chunk(data)) {
-    object[["X"]] <- ffbase::ffappend(object[["X"]], sX(data[ic, ]))
+  for(ic in chunk(data)) {
+    object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
   }
   csum <- 0
   for(ic in chunk_mat(object[["X"]])) {
