@@ -1,0 +1,153 @@
+---
+title: "Munich Rent Model"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Model Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, Munich rent data}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+
+if(!file.exists("figures/rent99.rda")) {
+  rent99 <- read.table("http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw",
+    header = TRUE)
+  save(rent99, file = "figures/rent99.rda")
+} else {
+  load("figures/rent99.rda")
+}
+
+if(!file.exists("figures/rentmodels.rda")) {
+  f1 <- rent ~ area + yearc
+
+  b1 <- bamlss(rent ~ area + yearc, data = rent99, family = "gaussian",
+    n.iter = 12000, burnin = 2000, thin = 10)
+
+  f2 <- list(
+    rent ~ s(area,k=20) + s(yearc,k=20),
+    sigma ~ s(area,k=20) + s(yearc,k=20)
+  )
+
+  b2 <- bamlss(f2, data = rent99, family = "gaussian",
+    n.iter = 12000, burnin = 2000, thin = 10)
+
+  save(b1, b2, file = "figures/rentmodels.rda")
+} else {
+  load("figures/rentmodels.rda")
+}
+```
+
+In this example we analyze rent index data from Munich, Germany. The data is provided in the
+supplemental materials of the Regression book [@bamlss:Fahrmeir+Kneib+Lang+Marx:2013] and can be
+loaded into R with
+```{r}
+file_url <- "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"
+rent99 <- read.table(file_url, header = TRUE)
+```
+
+The aim of this analysis is to find a model explaining the rent or rent per square meter of an
+apartment. We first assume a linear relationship with homoscedastic Gaussian errors:
+
+$$
+\texttt{rent} = \mu = \beta_0 + \beta_1 \cdot \texttt{area} + \beta_2 \cdot \texttt{yearc},
+$$
+i.e., $\texttt{rent} \sim N(\mu, \sigma^2)$. The model can be estimated with: 
+
+```{r, eval=FALSE}
+## Model formula.
+f1 <- rent ~ area + yearc
+
+## Estimate model.
+b1 <- bamlss(f1, data = rent99, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
+```
+This first starts a backfitting algorithm to find posterior mode estimates and afterwards the MCMC
+simulation is started using the parameters from the backfitting step as starting values.
+Note that we use 12000 iterations with a burnin of 2000 and only keep every 10th sample of
+the MCMC simulation. The model summary gives
+```{r}
+summary(b1)
+```
+However, the assumption of homoscedastic errors is not appropriate in this case.
+```{r, eval=FALSE}
+plot(rent ~ area, data = rent99)
+```
+```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5))
+plot(rent ~ area, data = rent99)
+```
+As can be seen in this scatter plot, the data is heteroscedastic and the exact model might not even
+be linear. This is also indicated in the quantile residual plots.
+```{r, eval=FALSE}
+plot(b1, which = c("hist-resid", "qq-resid"))
+```
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+par(mfrow = c(1, 2))
+plot(b1, which = c("hist-resid", "qq-resid"), spar = FALSE)
+```
+The residuals seem to be a bit skew and for the lower and higher values of `rent`, the model
+fit is not satisfactorily according the Q-Q plot.
+
+A non-parametric model can be useful here. Therefore, we estimate a more flexible model
+with
+$$
+\mu = \beta_0 + f_1(\texttt{area}) + f_2(\texttt{yearc})
+$$
+and
+$$
+\sigma = \exp\{\alpha_0 + g_1(\texttt{area}) + g_2(\texttt{yearc})\}
+$$
+where functions $f_1( \cdot ), f_2( \cdot ), g_1( \cdot ), g_2( \cdot )$ are modeled using regression
+splines. The exponential function assures that the we estimate a positive standard deviation. This way,
+we allow for covariates and loose the hard assumptions of a constant standard deviation. 
+
+The model is estimated with: 
+```{r, eval=FALSE}
+## List of formulae to estimate
+## heteroskedastic Gaussian model.
+f2 <- list(
+  rent ~ s(area,k=20) + s(yearc,k=20),
+  sigma ~ s(area,k=20) + s(yearc,k=20)
+)
+
+b2 <- bamlss(f2, data = rent99, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
+```
+```{r}
+summary(b2)
+```
+The summary statistics indicate that the more flexible model is more appropriate since the
+DIC of model `b2` is much lower than the DIC of model `b1`.
+
+The estimated effects are visualized with
+```{r, eval=FALSE}
+plot(b2, ask = FALSE)
+```
+```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
+plot(b2, ask = FALSE)
+```
+By looking at the effect plots, we can conclude that in the case of the variable `area` an
+assumption of linear dependency might be justified, where in the case of `yearc` this is not so clear.
+Moreover, our estimated `sigma` is for neither of the variables constant.
+```{r, eval=FALSE}
+plot(b2, which = c("hist-resid", "qq-resid"))
+```
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+par(mfrow = c(1, 2))
+plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
+```
+The quantile residual plots indicate a quite good model fit already, however, the assumption
+of Gaussian errors could be refined as rents can only be positive. Hence, distributions
+accounting for this fact should be exploited further, e.g., the Gamma distribution.
+
