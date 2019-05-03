@@ -15,9 +15,9 @@
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
         Nadja Klein\\Universit\"at G\"ottingen \AND
-        Stefan Lang\\Universit\"at Innsbruck \And
+        Thorsten Simon\\Universit\"at Innsbruck \And
         Achim Zeileis\\Universit\"at Innsbruck}
-\Plainauthor{Nikolaus Umlauf, Nadja Klein, Stefan Lang, Achim Zeileis}
+\Plainauthor{Nikolaus Umlauf, Nadja Klein, Thorsten Simon, Achim Zeileis}
 
 \title{Bayesian distributional regression in \proglang{R}}
 \Plaintitle{Bayesian distributional regression in R}
@@ -30,25 +30,25 @@
 }
 
 \Address{
-  Nikolaus Umlauf, Stefan Lang, Achim Zeileis\\
+  Nikolaus Umlauf, Thorsten Simon, Achim Zeileis\\
   Department of Statistics\\
   Faculty of Economics and Statistics\\
   Universit\"at Innsbruck\\
   Universit\"atsstr.~15\\
   6020 Innsbruck, Austria\\
-  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Stefan.Lang@uibk.ac.at},\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at}, \email{Thorsten.Simon@uibk.ac.at},\\
   \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
   URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
-  \phantom{URL: }\url{http://www.uibk.ac.at/statistics/personal/lang/},\\
   \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
-  Chair of Statistics and Econometrics\\
-  Georg-August-Universit\"at G\"ottingen\\
-  Platz der G\"ottinger Sieben 5 (MZG)\\
-  37073 G\"ottingen, Germany \\
-  E-mail: \email{nklein@uni-goettingen.de}\\
-  URL: \url{http://www.uni-goettingen.de/en/325353.html}
+  Humboldt-University of Berlin\\
+  School of Business and Economics\\
+  Applied Statistics\\
+  Unter den Linden 6\\
+  10099 Berlin, Germany\\
+  E-mail: \email{Nadja.Klein@hu-berlin.de}\\
+  URL: \url{https://www.wiwi.hu-berlin.de/en/professuren/vwl/statistik/team/kleinadj}
 }
 
 %% Sweave/vignette information and metadata
@@ -68,8 +68,6 @@ options("use.akima" = TRUE)
 
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
-
 
 \section{Introduction} \label{sec:intro}
 
