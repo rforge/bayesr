@@ -65,6 +65,9 @@
       <a href="../articles/misc.html">Miscellaneous Topics</a>
     </li>
     <li>
+      <a href="../articles/rent.html">Munich Rent Model</a>
+    </li>
+    <li>
       <a href="../articles/terms.html">Available Model Terms</a>
     </li>
   </ul>
@@ -125,10 +128,10 @@
 <p>The variable names and factor labels are mostly self-explanatory, but we can look up the details by running <code><a href="https://www.rdocumentation.org/packages/ISLR/topics/Wage">?ISLR::Wage</a></code>. Our goal is to link wage to a number of relevant explanatory variables. One main driver of wage should be education, so let us start by descriptively investigating the relationship between these two variables. This R code plots the distribution of wage across the different education levels:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"ggplot2"</span>)
 
-<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span>(ISLR::Wage, <span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x =</span> wage, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> education)) +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html">geom_density</a></span>(<span class="dt">alpha =</span> <span class="fl">0.8</span>) +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_classic</a></span>() +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ggtitle</a></span>(<span class="st">"Wages by education level"</span>)</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/ggplot">ggplot</a></span>(ISLR::Wage, <span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/aes">aes</a></span>(<span class="dt">x =</span> wage, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> education)) +
+<span class="st">  </span><span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/geom_density">geom_density</a></span>(<span class="dt">alpha =</span> <span class="fl">0.8</span>) +
+<span class="st">  </span><span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/ggtheme">theme_classic</a></span>() +
+<span class="st">  </span><span class="kw"><a href="https://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="st">"Wages by education level"</span>)</code></pre></div>
 <p><img src="distregvis_files/figure-html/unnamed-chunk-2-1.png" width="816" style="display: block; margin: auto;"></p>
 <p>The graph shows that education does have a big influence on wage. A higher education level shifts the wage distribution to the right, but it also increases the variance and changes the shape of the distribution. One striking feature of the empirical wage distribution is its bump between 250 and 300. There is no explanation for this bump in the dataset or its help page, so we have to assume it is a anomaly of the sample.</p>
 </div>

@@ -104,6 +104,9 @@
       <a href="../articles/misc.html">Miscellaneous Topics</a>
     </li>
     <li>
+      <a href="../articles/rent.html">Munich Rent Model</a>
+    </li>
+    <li>
       <a href="../articles/terms.html">Available Model Terms</a>
     </li>
   </ul>
@@ -148,7 +151,7 @@
     </div>
 
     <pre class="usage"><span class='co'>## Family objects in bamlss:</span>
-<span class='fu'>ALD_bamlss</span>(<span class='no'>...</span>, <span class='kw'>p</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>const</span> <span class='kw'>=</span> <span class='fl'>1e-03</span>)
+<span class='fu'>ALD_bamlss</span>(<span class='no'>...</span>, <span class='kw'>p</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>eps</span> <span class='kw'>=</span> <span class='fl'>1e-10</span>)
 <span class='fu'>beta_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>binomial_bamlss</span>(<span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"logit"</span>, <span class='no'>...</span>)
 <span class='fu'>cnorm_bamlss</span>(<span class='no'>...</span>)
@@ -165,8 +168,10 @@
 <span class='fu'>glogis_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>AR1_bamlss</span>(<span class='kw'>ar.start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
 <span class='fu'>beta1_bamlss</span>(<span class='no'>ar.start</span>, <span class='no'>...</span>)
+<span class='fu'>nbinom_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>ztnbinom_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>lognormal_bamlss</span>(<span class='no'>...</span>)
+<span class='fu'>weibull_bamlss</span>(<span class='no'>...</span>)
 
 <span class='co'>## Extractor functions:</span>
 <span class='co'># S3 method for bamlss</span>
@@ -199,7 +204,7 @@
       <td><p>Possible link functions.</p></td>
     </tr>
     <tr>
-      <th>const</th>
+      <th>eps</th>
       <td><p>Constant to be used for the approximation of the absolute function.</p></td>
     </tr>
     <tr>
