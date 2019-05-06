@@ -5578,9 +5578,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
         }
         if(!is.null(offset)) {
-          if(i %in% colnames(offset))
+          if(i %in% colnames(offset)) {
             eta[[i]] <- eta[[i]] + offset[shuffle_id[take], i]
             etas[[i]] <- etas[[i]] + offset[shuffle_id[take2], i]
+          }
         }
       }
 
