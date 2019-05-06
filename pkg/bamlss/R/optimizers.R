@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
-  epochs = 1, batch = 500, maxit = Inf, nu = 0.5, ...)
+  epochs = 1, batch = 10, maxit = Inf, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
 
@@ -5480,6 +5480,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
+  batch <- floor(N/batch)
 
   if(batch > N/2)
     stop("The batch size may not exceed half the number of observations!")
@@ -5538,6 +5539,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   ptm <- proc.time()
   for(ej in 1:epochs) {
     cat("starting epoch", ej, "\n")
+
+    nu <- 1/(1 + iter2)
 
     ## Shuffle observations.
     shuffle_id <- NULL
@@ -5612,16 +5615,17 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           objfun <- function(tau2) {
             P <- matrix_inv(XWX + 1/tau2f * I)
-            b <- drop(P %*% crossprod(Xn * hess, e))
+            b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-            mean((zs - etas[[i]])^2)
+            mean((zs - etas[[i]])^2, na.rm = TRUE)
           }
 
-          tau2f <- tau2.optim(objfun, tau2f)
-          P <- matrix_inv(XWX + 1/tau2f * I)
-
-          beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
-
+          tau2fe <- try(tau2.optim(objfun, tau2f), silent = TRUE)
+          if(!inherits(tau2fe, "try-error")) {
+            tau2f <- tau2f
+            P <- matrix_inv(XWX + 1/tau2f * I)
+            beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+          }
           eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
           etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
         }
@@ -5664,23 +5668,26 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               P <- matrix_inv(XWX + S)
               b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-              mean((zs - etas[[i]])^2)
+              mean((zs - etas[[i]])^2, na.rm = TRUE)
             }
 
-            tau2[[i]][[j]] <- tau2.optim(objfun, tau2[[i]][[j]])
+            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
 
-            S <- 0
-            for(l in 1:length(tau2[[i]][[j]])) {
-              S <- S + 1/tau2[[i]][[j]][l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
-                x[[i]]$smooth.construct[[j]]$S[[l]](c(b0, x[[i]]$smooth.construct[[j]]$fixed.hyper))
-              } else {
-                x[[i]]$smooth.construct[[j]]$S[[l]]
+            if(!inherits(tau2s, "try-error")) {
+              tau2[[i]][[j]] <- tau2s
+              S <- 0
+              for(l in 1:length(tau2[[i]][[j]])) {
+                S <- S + 1/tau2[[i]][[j]][l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
+                  x[[i]]$smooth.construct[[j]]$S[[l]](c(b0, x[[i]]$smooth.construct[[j]]$fixed.hyper))
+                } else {
+                  x[[i]]$smooth.construct[[j]]$S[[l]]
+                }
               }
+
+              P <- matrix_inv(XWX + S)
+              beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             }
 
-            P <- matrix_inv(XWX + S)
-
-            beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
             etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][[paste0("s.", j)]])
           }
