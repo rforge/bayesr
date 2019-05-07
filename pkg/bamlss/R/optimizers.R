@@ -5487,6 +5487,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
   y  <- y[[1]]
 
+  noff <- !inherits(y, "ff")
+
   if(!is.null(start))
     start <- unlist(start)
 
@@ -5503,10 +5505,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
         if(!is.null(family$initialize) & is.null(offset)) {
-          shuffle_id <- NULL
-          for(ii in chunk(y)) {
-            ind <- ii[1]:ii[2]
-            shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+          if(noff) {
+            shuffle_id <- sample(1:N)
+          } else {
+            shuffle_id <- NULL
+            for(ii in chunk(y)) {
+              ind <- ii[1]:ii[2]
+              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+            }
           }
           take <- 1L:batch
           yn <- y[shuffle_id[take]]
@@ -5543,10 +5549,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     nu <- 1/(1 + iter2)
 
     ## Shuffle observations.
-    shuffle_id <- NULL
-    for(ii in chunk(y)) {
-      ind <- ii[1]:ii[2]
-      shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+    if(noff) {
+      shuffle_id <- sample(1:N)
+    } else {
+      shuffle_id <- NULL
+      for(ii in chunk(y)) {
+        ind <- ii[1]:ii[2]
+        shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+      }
     }
 
     k <- batch
@@ -5703,7 +5713,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       eps <- mean(abs((eta01 - eta00) / eta00), na.rm = TRUE)
 
-      cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
+      if(iter2 < 2) {
+        cat(sprintf("   * no. obs %i\r", k))
+      } else {
+        cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
+      }
 
       if(k == N) {
         k <- k + 1L
