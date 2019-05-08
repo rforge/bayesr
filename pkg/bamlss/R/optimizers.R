@@ -5471,7 +5471,7 @@ sgd_grep_X <- function(x) {
 
 
 bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
-  epochs = 1, batch = 10, maxit = Inf, ...)
+  epochs = 1, batch = 10, maxit = Inf, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
 
@@ -5544,7 +5544,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
   ptm <- proc.time()
   for(ej in 1:epochs) {
-    cat("starting epoch", ej, "\n")
+    if(verbose)
+      cat("starting epoch", ej, "\n")
 
     nu <- 1/(1 + iter2)
 
@@ -5713,10 +5714,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       eps <- mean(abs((eta01 - eta00) / eta00), na.rm = TRUE)
 
-      if(iter2 < 2) {
-        cat(sprintf("   * no. obs %i\r", k))
-      } else {
-        cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
+      if(verbose) {
+        if(iter2 < 2) {
+          cat(sprintf("   * no. obs %i\r", k))
+        } else {
+          cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
+        }
       }
 
       if(k == N) {
@@ -5732,7 +5735,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   }
 
   elapsed <- c(proc.time() - ptm)[3]
-  cat(sprintf("   * runtime = %.3f\n", elapsed))
+
+  if(verbose) {
+    cat("\n")
+    et <- if(elapsed > 60) {
+      paste(formatC(format(round(elapsed / 60, 2), nsmall = 2), width = 5), "min", sep = "")
+    } else paste(formatC(format(round(elapsed, 2), nsmall = 2), width = 5), "sec", sep = "")
+    cat("elapsed time: ", et, "\n", sep = "")
+  }
 
   rval <- list()
   rval$parameters <- unlist(beta)
