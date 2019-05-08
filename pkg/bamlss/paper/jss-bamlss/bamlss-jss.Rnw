@@ -74,4 +74,13 @@ well as neural network distributional regression models.
 
 \begin{document}
 
+\section{Introduction}
+
+\section{Distributional regression}
+
+\section{User interface}
+
+\section{Application}
+
 \end{document}
+
