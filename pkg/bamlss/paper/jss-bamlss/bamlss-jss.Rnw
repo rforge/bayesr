@@ -78,7 +78,7 @@ well as neural network distributional regression models.
 \section{Introduction}
 
 Generalized additive models for location, scale and shape
-(GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also called distributional regression models
+(GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as distributional regression models
 \citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, provide a very
 flexible framework that enables modeling all parameters of a response distribution in terms of
 covariates. While most common model specifications (linear models, generalized linear models [GLMs],
@@ -90,13 +90,38 @@ The \proglang{R} package \pkg{gamlss}
 \citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}
 \citep{bamlss:Yee:2009, bamlss:Yee:2019} were the first packages
 to follow the distributional regression approach and comprise a quite flexible framework for
-implementing response distributions. Variable selection algorithms based on gradient boosting
-were then introduced in the \pkg{gamboostLSS} package
+implementing response distributions. Variable selection algorithms for GAMLSS based on gradient
+boosting were then introduced by the \pkg{gamboostLSS} package
 \citep{bamlss:Hofner+Mayr+Schmid:2014, bamlss:Hofner:2018} and more recently, the contributed
 base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2018} provides a
 fitting routine for the estimation of general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}.
-The inferential frameowrk of the packages mentioned is based on maximum likelihood, if taken into
-account at all.
+The inferential framework of the packages mentioned is based on maximum likelihood, however, if
+taken into account at all. For complex models, e.g., with response
+distributions outside the exponential family or when multiple predictors contain several smooth
+effects \citep{bamlss:Klein+Kneib+Lang:2015}, the maximum likelihood estimators based on
+asymptotic properties might fail. In such situations the fully Bayesian approach using Markov chain
+Monte Carlo (MCMC) simulation techniques is particularly attractive since valid credible intervals
+are easily obtained from the posterior samples. While Bayesian distributional regression models
+can in principle be estimated using general purpose MCMC software like
+\pkg{JAGS}~\citep{bamlss:Plummer:2013}, \pkg{Stan}~\citep{bamlss:stan-software:2016} or
+\pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}, they all have the drawback
+that sampling time is usually quite long, or it is even impossible to estimate distributional
+regression models with GAM-type predictors, e.g., when using large data sets or modeling complex
+higher-order interactions. The first software capable of estimating such GAM-type distributional
+regression models using MCMC is the standalone package
+\pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017}, which provides highly
+efficient sampling schemes for very large data sets as well as multilevel models. However,
+the implementation of new response distributions in \pkg{BayesX} is not straightforward and users
+usually have to ask the maintainers to do so.
+
+In this paper, we present the \proglang{R} package \pkg{bamlss}, a flexible ``Lego toolbox''
+for Bayesian distributional regression models (and beyond). The main contributions of \pkg{bamlss}
+are the following:
+\begin{itemize}
+\item Easy implementation of (new) models and algorithms,
+\item comparison of existing optimization algorithms and samplers,
+\item or integration of existing implementations.
+\end{itemize}
 
 \section{Motivating example}
 
