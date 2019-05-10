@@ -76,9 +76,11 @@ well as neural network distributional regression models.
 
 \section{Introduction}
 
+\section{Motivating example}
+
 \section{Distributional regression}
 
-\section{User interface}
+\section{The bamlss package}
 
 \section{Application}
 
