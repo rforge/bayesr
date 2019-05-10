@@ -106,11 +106,11 @@ can in principle be estimated using general purpose MCMC software like
 \pkg{JAGS}~\citep{bamlss:Plummer:2013}, \pkg{Stan}~\citep{bamlss:stan-software:2016} or
 \pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}, they all have the drawback
 that sampling time is usually quite long, or it is even impossible to estimate distributional
-regression models with GAM-type predictors, e.g., when using large data sets or modeling complex
-higher-order interactions. The first software capable of estimating such GAM-type distributional
-regression models using MCMC is the standalone package
+regression models with GAM-type predictors, e.g., when using large data sets, modeling spatial
+effects or complex higher-order interactions. The first software capable of estimating such
+GAM-type distributional regression models using MCMC is the standalone package
 \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017}, which provides highly
-efficient sampling schemes for very large data sets as well as multilevel models. However,
+efficient sampling schemes for very large data sets as well as (spatial) multilevel models. However,
 the implementation of new response distributions in \pkg{BayesX} is not straightforward and users
 usually have to ask the maintainers to do so.
 
