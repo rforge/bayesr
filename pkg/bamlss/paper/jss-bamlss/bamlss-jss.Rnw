@@ -23,7 +23,8 @@
   Location Scale and Shape (and Beyond)}
 \Plaintitle{bamlss: A Lego Toolbox for Bayesian Additive
   Models for Location Scale and Shape (and Beyond)}
-
+\Shorttitle{A Lego Toolbox for BAMLSS (and Beyond)}
+	
 \Keywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO,
   MCMC, neural networks, \proglang{R}}
 \Plainkeywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO,
@@ -76,6 +77,27 @@ well as neural network distributional regression models.
 
 \section{Introduction}
 
+Generalized additive models for location, scale and shape
+(GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also called distributional regression models
+\citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, provide a very
+flexible framework that enables modeling all parameters of a response distribution in terms of
+covariates. While most common model specifications (linear models, generalized linear models [GLMs],
+generalized additive models [GAMs], etc.) ignore the fact that the distribution of any quantity is
+not well characterized by the mean alone, GAMLSS has the clear advantage to minimize the risk of
+model misspecification and therefore provides much more reliable probabilistic forecasts.
+
+The \proglang{R} package \pkg{gamlss}
+\citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}
+\citep{bamlss:Yee:2009, bamlss:Yee:2019} were the first packages
+to follow the distributional regression approach and comprise a quite flexible framework for
+implementing response distributions. Variable selection algorithms based on gradient boosting
+were then introduced in the \pkg{gamboostLSS} package
+\citep{bamlss:Hofner+Mayr+Schmid:2014, bamlss:Hofner:2018} and more recently, the contributed
+base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2018} provides a
+fitting routine for the estimation of general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}.
+The inferential frameowrk of the packages mentioned is based on maximum likelihood, if taken into
+account at all.
+
 \section{Motivating example}
 
 \section{Distributional regression}
@@ -83,6 +105,8 @@ well as neural network distributional regression models.
 \section{The bamlss package}
 
 \section{Application}
+
+\bibliography{bamlss}
 
 \end{document}
 
