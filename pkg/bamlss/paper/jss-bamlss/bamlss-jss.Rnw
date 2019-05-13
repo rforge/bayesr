@@ -127,7 +127,8 @@ are the following:
 The package builds on the well-established \pkg{mgcv} infrastructures using
 \proglang{R}'s formula syntax for model specification. Moreover, the package provides
 commonly used extractor functions like \fct{summary}, \fct{plot}, \fct{predict}, etc., such
-that users interested in developing new models or algorithms can really concentrate on it.
+that users interested in developing new models or algorithms (Bayesian or frequentist) can
+really concentrate on it.
 The package is made available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
