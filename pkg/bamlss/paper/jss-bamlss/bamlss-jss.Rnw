@@ -111,25 +111,41 @@ effects or complex higher-order interactions. The first software capable of esti
 GAM-type distributional regression models using MCMC is the standalone package
 \pkg{BayesX}~\citep{bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017}, which provides highly
 efficient sampling schemes for very large data sets as well as (spatial) multilevel models. However,
-the implementation of new response distributions in \pkg{BayesX} is not straightforward and users
+the implementation of new response distributions (models) in \pkg{BayesX} is not straightforward and users
 usually have to ask the maintainers to do so.
 
 In this paper, we present the \proglang{R} package \pkg{bamlss}, a flexible ``Lego toolbox''
 for Bayesian distributional regression models (and beyond). The main contributions of \pkg{bamlss}
 are the following:
+%
 \begin{itemize}
 \item Easy implementation of (new) models and algorithms,
 \item comparison of existing optimization algorithms and samplers,
 \item or integration of existing implementations.
 \end{itemize}
+%
+The package builds on the well-established \pkg{mgcv} infrastructures using
+\proglang{R}'s formula syntax for model specification. Moreover, the package provides
+commonly used extractor functions like \fct{summary}, \fct{plot}, \fct{predict}, etc., such
+that users interested in developing new models or algorithms can really concentrate on it.
+The package is made available from the Comprehensive
+\proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
-\section{Motivating example}
+The remainder of this paper is as follows. In Section~\ref{sec:motivation} a first
+motivating example is presented. Section~\ref{sec:distreg} introduces distributional
+regression models in more detail. A thorough introduction of the \proglang{R} package
+\pkg{bamlss} describing the most important infrastructures and building blocks is given
+in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
+unified modeling approach using a complex distributional regression model for predicting
+flash counts.
 
-\section{Distributional regression}
+\section{Motivating example} \label{sec:motivation}
 
-\section{The bamlss package}
+\section{Distributional regression} \label{sec:distreg}
 
-\section{Application}
+\section{The bamlss package} \label{sec:package}
+
+\section{Application} \label{sec:application}
 
 \bibliography{bamlss}
 
