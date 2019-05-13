@@ -3,10 +3,10 @@ stabsel <- function(formula, data, family = "gaussian",
                     thr = .9, ...) {
 
     ## Scale data
-    for(i in seq(ncol(data))) {
-        if(inherits(data[,i], "numeric"))
-            data[,i] <- scale(data[,i])
-    }
+#    for(i in seq(ncol(data))) {
+#        if(inherits(data[,i], "numeric"))
+#            data[,i] <- scale(data[,i])
+#    }
 
     ## Stability Selection
     ## TODO: parallel option
@@ -49,8 +49,9 @@ StabStep <- function(formula, data, family = "gaussian", q, seed = NULL, ...) {
     d <- data[sample(nrow(data), size = round(nrow(data)/2)), ]
     b <- bamlss(formula, data = d, family = family, optimizer = boost,
                 sampler = FALSE,
-                binning = TRUE, maxq = q, scale.d = FALSE,
-                plot = FALSE, verbose = FALSE, ...)
+#                binning = TRUE, maxq = q, scale.d = FALSE,
+                binning = TRUE, maxq = q,
+                plot = FALSE, verbose = TRUE, ...)
 
     rval <- NULL
     for (model in b$family$names) {
