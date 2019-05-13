@@ -198,8 +198,30 @@ print.stabsel <- function(x, ...) {
     cat("---\n")
     cat("Selected formula:\n")
     print(x$formula.new)
+    invisible(x)
 }
 
-#summary.stabel <- function(x, ...) {}
-#print.summary.stabel <- function(x, ...) {}
+formula.stabsel <- function(x, env = parent.frame(), return_org = FALSE, ...) {
+    ff <- if(return_org) x$formula.org else x$formula.new
+    environment(ff) <- env
+    ff
+}
+
+family.stabsel <- function(object, ...) {
+    object$family
+}
+
+summary.stabsel <- function(object, ...) {
+    rval <- object[c("table", "parameter")]
+    class(rval) <- "summary.stabsel"
+    rval
+}
+
+print.summary.stabsel <- function(x, ...) {
+    xx <- sort(x$table, decreasing = TRUE)
+    nn <- names(xx)
+    cat("  term                 freq\n  -------------------------  \n")
+    cat(paste(sprintf("  %-20s  %3d\n", nn, xx), collapse = ""))
+    invisible(x)
+}
 

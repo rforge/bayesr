@@ -31,6 +31,7 @@ A object of class stabsel.
 \author{Thorsten Simon}
 \examples{
 \dontrun{## Simulate some data.
+set.seed(111)
 d <- GAMart()
 n <- nrow(d)
 
@@ -40,7 +41,7 @@ for(i in 4:9)
 
 f <- paste0("~ ", paste("s(x", 1:9, ")", collapse = "+", sep = ""))
 f <- paste(f, "+ te(lon,lat)")
-f <- eval(parse(text = f))
+f <- as.formula(f)
 f <- list(update(f, num ~ .), f)
 
 ## Run stability selection.
@@ -48,7 +49,8 @@ sel <- stabsel(f, data = d, q = 6, B = 10)
 plot(sel)
 
 ## Estimate selected model.
-b <- bamlss(sel$formula.new, data = d)
+nf <- formula(sel)
+b <- bamlss(nf, data = d)
 plot(b)
 }
 }
