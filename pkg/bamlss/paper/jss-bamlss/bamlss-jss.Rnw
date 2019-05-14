@@ -132,11 +132,11 @@ really concentrate on it.
 The package is made available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
-The remainder of this paper is as follows. In Section~\ref{sec:motivation} a first
-motivating example is presented. Section~\ref{sec:distreg} introduces distributional
-regression models in more detail. A thorough introduction of the \proglang{R} package
-\pkg{bamlss} describing the most important infrastructures and building blocks is given
-in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
+The remainder of this paper is as follows. In Section~\ref{sec:motivation} a
+motivating example illustrates the first steps using \pkg{bamlss}. Section~\ref{sec:distreg}
+introduces distributional regression models in more detail. A thorough introduction of the
+\proglang{R} package \pkg{bamlss} describing the most important infrastructures and building blocks
+is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
 unified modeling approach using a complex distributional regression model for predicting
 flash counts.
 
