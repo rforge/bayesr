@@ -1,56 +1,73 @@
 stabsel <- function(formula, data, family = "gaussian",
-                    q = ceiling(sqrt(ncol(data))), B = 100,
-                    thr = .9, ...) {
+                    q = NULL, maxit = NULL, B = 100,
+                    thr = .9, fraction = .5, ...) {
 
-    ## Scale data
-#    for(i in seq(ncol(data))) {
-#        if(inherits(data[,i], "numeric"))
-#            data[,i] <- scale(data[,i])
-#    }
+    ## --- Check parameters ---
+    if(is.null(q) & is.null(maxit)) {
+        q <- ceiling(sqrt(ncol(data)))
+    } else if(!is.null(q) & !is.null(maxit)) {
+        stop("Error: Define either q or maxit. Not both.")
+    }
+    if(is.null(maxit)){
+        ## Set maxit to a very large number that cant be reached.
+        maxit <- 10000
+    }
+    
+    if(fraction <= 0 | fraction >= 1) {
+        stop("Error: fraction must be between 0 and 1.")
+    }
 
-    ## Stability Selection
+    if(thr <= 0 | thr >= 1) {
+        stop("Error: Threshold (thr) must be between 0 and 1.")
+    }
+
+
+    ## --- Stability Selection ---
     ## TODO: parallel option
     stabselection <- NULL
     for(i in seq(B)) {
         cat(sprintf("Stability selection boosting run %d / %d \r", i, B))
         xx <- StabStep(formula = formula, data = data,
-                       family  = family, q = q, seed = i, ...)
+                       family  = family, q = q, maxit = maxit, seed = i,
+                       fraction = fraction, ...)
         stabselection <- c(stabselection, xx$sel)
     }
     cat("\n")
     formula <- xx$formula
     family  <- xx$family
 
-    ## Re-build formula
+    ## --- Re-build formula ---
     tabsel <- sort(table(stabselection), decreasing = FALSE)
     f <- StabFormula(tabsel, formula, family, thr, B)
 
-    ## Comupte per-family-error-rate
+    ## --- Comupte per-family-error-rate ---
     p <- 0
     for(i in seq(length(formula))) {
         p <- p + length(attr(terms(formula[[i]]$formula), "term.labels"))
     }
     PFER <- (q^2) / ((2*thr - 1)*p)
 
-    ## Return
+    ## --- Return ---
     rval <- list("table"       = tabsel, "raw" = stabselection,
                  "formula.org" = formula,
                  "formula.new" = f,
                  "family"      = family,
-                 "parameter"   = list("q" = q, "B" = B, "thr" = thr,
-                                      "p" = p, "PFER" = PFER))
+                 "parameter"   = list("q" = q, "maxit" = if(is.null(q)) maxit else NULL,
+                                      "B" = B, "thr" = thr, "p" = p, "PFER" = PFER,
+                                      "fraction" = fraction))
     class(rval) <- c("stabsel", "list")
     return(rval)
 }
 
-StabStep <- function(formula, data, family = "gaussian", q, seed = NULL, ...) {
-    if(!is.null(seed))
+StabStep <- function(formula, data, family = "gaussian", q, maxit, seed = NULL,
+                     fraction = fraction, ...) {
+    if(!is.null(seed)) {
         set.seed(seed)
-    d <- data[sample(nrow(data), size = round(nrow(data)/2)), ]
-    b <- bamlss(formula, data = d, family = family, optimizer = boost,
-                sampler = FALSE,
-#                binning = TRUE, maxq = q, scale.d = FALSE,
-                binning = TRUE, maxq = q,
+    }
+    d <- data[sample(nrow(data), size = round(nrow(data) * fraction)), ]
+    b <- bamlss(formula, data = d, family = family,
+                optimizer = boost, maxit = maxit, maxq = q,
+                sampler = FALSE, binning = TRUE,
                 plot = FALSE, verbose = TRUE, ...)
 
     rval <- NULL
