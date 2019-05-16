@@ -34,8 +34,8 @@ b <- bamlss(newf, data = d_train,             # standard interface
   thin = 5, burnin = 1000, n.iter = 6000      # sampler arguments
 )
 
-fit <- as.data.frame(predict(b, newdata = d_eval, type = "parameter"))
-d_eval <- cbind(d_eval, fit)
+fit <- predict(b, newdata = d_eval, type = "parameter")
+d_eval <- cbind(d_eval, as.data.frame(fit))
 
 save(b, d_eval, fam, sel, file = "full_model.rda")
 

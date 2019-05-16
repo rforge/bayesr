@@ -1,0 +1,45 @@
+---
+title: "Analyze lightning model"
+author: Thorsten Simon
+date: May 2019
+output: html_document
+---
+
+```{r setup}
+library("bamlss")
+load("full_model.rda")
+ls()
+```
+
+```{r plot-stabsel, fig.width = 7, fig.height = 11, out.width = "100%"}
+plot(sel, 25)
+```
+
+```{r plot-boost-summary, out.width = "100%"}
+boost.plot(b, "loglik.contrib")
+```
+
+```{r plot-mu-effects, fig.width = 10, fig.height = 15, out.width = "100%"}
+plot(b, model = "mu", scale = 0)
+```
+
+```{r plot-theta-effects, out.width = "100%"}
+plot(b, model = "theta", scale = 0)
+```
+
+```{r plot-trace, fig.width = 10, fig.height = 15, out.width = "100%"}
+plot(b, model = "mu", term = "sqrt_cape", which = "samples",
+     parameter = TRUE)
+```
+
+```{r plot-rooto, out.width = "100%"}
+y <- d_eval$counts
+par <- subset(d_eval, select = c("mu", "theta"))
+obsrvd <- table(y)[1:50]
+expect <- sapply(1:50, function(j) sum(fam$d(j, par)))
+names(expect) <- 1:50
+expect <- as.table(expect)
+countreg::rootogram(obsrvd, expect, breaks = c(.5, 50.5))
+```
+
+
