@@ -7,22 +7,21 @@ library("bamlss")
 ## --- data ---
 load("ALDIS_ERA5_subset.rda")
 
-## --- build formula ---
-p <- names(d_train)
-p <- p[p != "counts"]
-p <- paste0("s(",p ,", bs = 'ps')")
-p <- paste0(p, collapse = " + ")
-f <- as.formula(paste("~", p))
-f <- list(update(f, counts ~ .), f)
+## --- helper function to build formula ---
+make_formula <- function(x, y, prefix = "s(", suffix = ", bs = 'ps')",
+                         env = parent.frame()) {
+  x <- x[x != y]
+  x <- paste0(prefix, x, suffix)
+  x <- paste0(x, collapse = " + ")
+  f <- as.formula(paste("~", x))
+  f <- list(update(f, substitute(a ~ ., list(a = as.name(y)))), f)
+  environment(f) <- env
+  f
+}
 
 ## --- stability selection ---
+f <- make_formula(names(d_train), "counts")
 sel <- stabsel(f, data = d_train, family = "ztnbinom", q = 16, B = 100)
-
-pdf("stabsel.pdf")
-plot(sel, show = 25)
-dev.off()
-
-save(sel, file = "stabsel.rda")
 
 ## --- fit selected model ---
 newf <- formula(sel)
@@ -34,10 +33,12 @@ b <- bamlss(newf, data = d_train,             # standard interface
   thin = 5, burnin = 1000, n.iter = 6000      # sampler arguments
 )
 
+## --- out-of-sample prediciton ---
 fit <- predict(b, newdata = d_eval, type = "parameter")
 d_eval <- cbind(d_eval, as.data.frame(fit))
 
-save(b, d_eval, fam, sel, file = "full_model.rda")
+## --- save results ---
+save(b, d_eval, sel, file = "full_model.rda")
 
 
 
