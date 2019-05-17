@@ -46,7 +46,7 @@ using complex possibly nonlinear model terms of any type. The highlights of the 
 
 ## Installation
 
-The stable release version of _colorspace_ is hosted on the Comprehensive R Archive Network
+The stable release version of _bamlss_ is hosted on the Comprehensive R Archive Network
 (CRAN) at <https://CRAN.R-project.org/package=bamlss> and can be installed via
 
 ```{r installation-cran, eval=FALSE}
