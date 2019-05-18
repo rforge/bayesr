@@ -153,10 +153,11 @@ $$p(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK}\equiv p_i.$$
 
 \paragraph{Examples of distributions}
 
-\paragraph{How does this work?}
+
 The basic idea to implicitely model the entire distribution is to link each parameter $\vartheta_{ik}$ $k=1,\ldots,K$ of $p_i$ to a semiparametric structured additive predictor $\eta_{ik}$ formed of the covariates with the help of monotone, twice differentiable response functions $h_k$, such that $\vartheta_{ik}=h_k(\eta_{ik})$ and $\eta_{ik}=h_k^{-1}(\vartheta_{ik})$. Note, that  each predictor and each distribution parameter can be summarised in vectors of length $n$, $\etavec_k=(\eta_{1k},\ldots,\eta_{nk})'$, $\varthetavec_k=(\vartheta_{1k},\ldots\vartheta_{nk})'$, and that the subscript $k$ in the predictor is a notation to indicate which parameter the predictor belongs to.  The response function is usually chosen to maintain restrictions on the parameter space, like the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis, the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$, which is e.g.~the case for the correlation between two variables.
 
-For any parameter of the multivariate distributions discussed in the previous section, the semiparametric predictor has the general form
+\subsection{Structured predictors}
+For any parameter of the distribution $p_i$, the semiparametric predictor has the general form
 \begin{equation}\label{eq:predictor}
  \eta_{i}^{\vartheta_k} = \sum_{j=1}^{J_k}f_{j}^{\vartheta_k}(\nuvec_i)
 \end{equation}
