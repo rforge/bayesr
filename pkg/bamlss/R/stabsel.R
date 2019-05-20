@@ -1,6 +1,6 @@
 stabsel <- function(formula, data, family = "gaussian",
                     q = NULL, maxit = NULL, B = 100,
-                    thr = .9, fraction = .5, ...) {
+                    thr = .9, fraction = .5, seed = NULL, ...) {
 
     ## --- Check parameters ---
     if(is.null(q) & is.null(maxit)) {
@@ -21,6 +21,12 @@ stabsel <- function(formula, data, family = "gaussian",
         stop("Error: Threshold (thr) must be between 0 and 1.")
     }
 
+    ## --- set array of seeds ---
+    if(is.null(seed)) {
+        seeds <- NULL
+    } else {
+        seeds <- as.integer(seed) + seq(B)
+    }
 
     ## --- Stability Selection ---
     ## TODO: parallel option
@@ -28,7 +34,7 @@ stabsel <- function(formula, data, family = "gaussian",
     for(i in seq(B)) {
         cat(sprintf("Stability selection boosting run %d / %d \r", i, B))
         xx <- StabStep(formula = formula, data = data,
-                       family  = family, q = q, maxit = maxit, seed = i,
+                       family  = family, q = q, maxit = maxit, seed = seeds[i],
                        fraction = fraction, ...)
         stabselection <- c(stabselection, xx$sel)
     }

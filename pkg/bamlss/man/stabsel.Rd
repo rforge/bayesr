@@ -7,7 +7,7 @@ Performs stability selection based on gradient boosting.
 }
 \usage{
 stabsel(formula, data, family = "gaussian",
-  q, maxit, B = 100, thr = .9, fraction = 0.5, ...)
+  q, maxit, B = 100, thr = .9, fraction = 0.5, seed = NULL, ...)
 
 ## Plot selection frequencies.
 \method{plot}{stabsel}(x, show = NULL,
@@ -25,6 +25,7 @@ stabsel(formula, data, family = "gaussian",
 \item{thr}{ Cut-off threshold of relative frequencies (between 0 and 1) for selection. }
 \item{fraction}{ Numeric between 0 and 1. The fraction of data to be used in each
   boosting run. }
+\item{seed}{A seed to be set before the stability selection.}
 \item{x}{ A object of class stabsel. }
 \item{show}{ Number of terms to be shown. }
 \item{pal}{ Color palette for different model terms. }
@@ -45,7 +46,11 @@ Terms with a relative selection frequency larger then \code{thr}
 are suggested for a final regression model.
 
 If neither \code{q} nor \code{maxit} has been specified, \code{q}
-will be set to the square root of the number of columns in \code{data}. 
+will be set to the square root of the number of columns in \code{data}.
+
+Gradient boosting does not depend on random numbers. Thus, the
+individual boosting runs differ only in the subset of data which
+is used.
 }
 \author{Thorsten Simon}
 \examples{
