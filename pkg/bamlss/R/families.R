@@ -2446,25 +2446,29 @@ bivnorm_bamlss <- function(...)
 
 mvnorm_bamlss <- function(k = 2, ...)
 {
+  ## --- jump to univariate gaussian for k = 1 ---
   if(k == 1)
     return(gaussian_bamlss())
 
-  if(k == 1)
+  ## --- jump to bivariate gaussion for k = 2 ---
+  if(k == 2)
     return(bivnorm_bamlss())
 
-  mu <- paste("mu", 1:k, sep = "")
-  sigma <- paste("sigma", 1:k, sep = "")
+  ## --- set names of distributional  parameters ---
+  mu <- paste0("mu", seq_len(k))
+  sigma <- paste0("sigma", seq_len(k))
+  rho <- combn(seq_len(k), 2, function(x) paste0("rho", x[1], x[2]))
+  k_rho <- k * (k-1) / 2    ## number of rho parameters
 
-  rho <- NULL
-  for(i in 1:k) {
-    for(j in 1:k) {
-      if(i < j)
-        rho <- c(rho, paste("rho", i, j, sep = ""))
-    }
-  }
-  links <- c(rep("identity", length(mu)), rep("log", length(sigma)), rep("rhogit", length(rho)))
+  ## --- set names of link functions ---
+  links <- c(
+    rep("identity", k),
+    rep("log", k),
+    rep("rhogit", k_rho)
+  )
   names(links) <- c(mu, sigma, rho)
 
+  ## --- family list ---
   rval <- list(
     "family" = "mvnorm",
     "names" = c(mu, sigma, rho),
@@ -2490,33 +2494,38 @@ mvnorm_bamlss <- function(k = 2, ...)
     }
   )
 
-  mu_score_calls <- sigma_score_calls <- rho_score_calls <- NULL
-  for(j in seq_along(mu))
-    mu_score_calls <- c(mu_score_calls, paste("function(y, par, ...) {mu_score_mvnorm(y, par, j=",j,")}", sep=""))
-  for(j in seq_along(sigma))
-    sigma_score_calls <- c(sigma_score_calls, paste("function(y, par, ...) {sigma_score_mvnorm(y, par, j=",j,")}", sep=""))
-  for(i in 1:k) {
-    for(j in 1:k) {
-      if(i < j)
-        rho_score_calls <- c(rho_score_calls, paste("function(y, par, ...) {rho_score_mvnorm(y, par, i=",i,", j=",j,")}", sep=""))
-    }
-  }
+  ## --- score functions ---
+  mu_score_calls <- paste0(
+    "function(y, par, ...) {mu_score_mvnorm(y, par, j = ", seq_len(k),")}"
+  )
+  sigma_score_calls <- paste0(
+    "function(y, par, ...) {sigma_score_mvnorm(y, par, j = ", seq_len(k),")}"
+  )
+  rho_score_calls <- combn(seq_len(k), 2, function(x) {paste0(
+    "function(y, par, ...) {rho_score_mvnorm(y, par, i = ", x[1],", j = ", x[2],")}"
+  )})
+
   scores <- list()
-  for(j in seq_along(mu))
+  for(j in seq_along(mu)) {
     scores[[mu[j]]] <- eval(parse(text = mu_score_calls[j]))
-  for(j in seq_along(sigma))
+  }
+  for(j in seq_along(sigma)) {
     scores[[sigma[j]]] <- eval(parse(text = sigma_score_calls[j]))
-  for(j in seq_along(rho))
+  }
+  for(j in seq_along(rho)) {
     scores[[rho[j]]] <- eval(parse(text = rho_score_calls[j]))
+  }
   rval$score <- scores
 
-  mu_calls <- sigma_calls <- rho_calls <- NULL
-  for(j in seq_along(mu))
-    mu_calls <- c(mu_calls, paste("function(y, ...) { (y[,", j, "] + mean(y[,", j , "])) / 2 }"))
-  for(j in seq_along(sigma))
-    sigma_calls <- c(sigma_calls, paste("function(y, ...) { rep(sd(y[,", j , "]), length(y[,", j, "])) }"))
-  for(j in seq_along(rho))
-    rho_calls <- c(rho_calls, "function(y, ...) { rep(0, length(y[, 1])) }")
+  ## --- initialize function ---
+  mu_calls <- paste0(
+    "function(y, ...) {(y[,", seq_len(k), "] + mean(y[,", seq_len(k), "])) / 2}"
+  )
+  sigma_calls <- paste0(
+    "function(y, ...) {rep(sd(y[,", seq_len(k), "]), length(y[,", seq_len(k), "]))}"
+  )
+  rho_calls <- rep("function(y, ...) { rep(0, length(y[,1])) }", k_rho)
+
   init <- list()
   for(j in seq_along(mu))
     init[[mu[j]]] <- eval(parse(text = mu_calls[j]))
@@ -2531,8 +2540,7 @@ mvnorm_bamlss <- function(k = 2, ...)
 }
 
 
-log_dmvnorm <- function(y, par)
-{
+log_dmvnorm <- function(y, par) {
   par <- do.call("cbind", par)
   y <- as.matrix(y)
   cn <- colnames(par)
@@ -2542,8 +2550,7 @@ log_dmvnorm <- function(y, par)
   return(.Call("log_dmvnorm", y, par, nrow(y), ncol(y), mj, sj, rj, PACKAGE = "bamlss"))
 }
 
-mu_score_mvnorm <- function(y, par, j)
-{
+mu_score_mvnorm <- function(y, par, j) {
   par <- do.call("cbind", par)
   y <- as.matrix(y)
   cn <- colnames(par)
@@ -2554,8 +2561,7 @@ mu_score_mvnorm <- function(y, par, j)
   return(.Call("mu_score_mvnorm", y, par, nrow(y), ncol(y), mj, sj, rj, kj, PACKAGE = "bamlss"))
 }
 
-mu_score_mvnormR <- function(y, par, j)
-{
+mu_score_mvnormR <- function(y, par, j) {
   n <- nrow(y)
   k <- ncol(y)
   par <- do.call("cbind", par)
@@ -2590,8 +2596,7 @@ mu_score_mvnormR <- function(y, par, j)
   return(rval)
 }
 
-sigma_score_mvnorm <- function(y, par, j)
-{
+sigma_score_mvnorm <- function(y, par, j) {
   par <- do.call("cbind", par)
   y <- as.matrix(y)
   cn <- colnames(par)
@@ -2602,8 +2607,7 @@ sigma_score_mvnorm <- function(y, par, j)
   return(.Call("sigma_score_mvnorm", y, par, nrow(y), ncol(y), mj, sj, rj, kj, PACKAGE = "bamlss"))
 }
 
-sigma_score_mvnormR <- function(y, par, j)
-{
+sigma_score_mvnormR <- function(y, par, j) {
  n <- nrow(y)
  k <- ncol(y)
  par <- do.call("cbind", par)
