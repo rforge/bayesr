@@ -139,7 +139,7 @@
     </div>
 
     <pre class="usage"><span class='fu'>stabsel</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>,
-  <span class='no'>q</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>thr</span> <span class='kw'>=</span> <span class='fl'>.9</span>, <span class='no'>...</span>)
+  <span class='no'>q</span>, <span class='no'>maxit</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>thr</span> <span class='kw'>=</span> <span class='fl'>.9</span>, <span class='kw'>fraction</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
 
 <span class='co'>## Plot selection frequencies.</span>
 <span class='co'># S3 method for stabsel</span>
@@ -166,12 +166,27 @@
       <td><p>An integer specifying how many terms to select in each boosting run.</p></td>
     </tr>
     <tr>
+      <th>maxit</th>
+      <td><p>An integer specifying the maximum number of boosting iterations.
+  See <code><a href='boost.html'>boost</a></code>. Either choose <code>q</code> or <code>maxit</code> as hyper-parameter
+  for regularization.</p></td>
+    </tr>
+    <tr>
       <th>B</th>
       <td><p>An integer. The boosting is run B times.</p></td>
     </tr>
     <tr>
       <th>thr</th>
-      <td><p>Cut-off threshold for selection.</p></td>
+      <td><p>Cut-off threshold of relative frequencies (between 0 and 1) for selection.</p></td>
+    </tr>
+    <tr>
+      <th>fraction</th>
+      <td><p>Numeric between 0 and 1. The fraction of data to be used in each
+  boosting run.</p></td>
+    </tr>
+    <tr>
+      <th>seed</th>
+      <td><p>A seed to be set before the stability selection.</p></td>
     </tr>
     <tr>
       <th>x</th>
@@ -195,10 +210,28 @@
 
     <p>A object of class stabsel.</p>
     
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p><code>stabsel</code> performs stability selection based on gradient
+boosting (<code><a href='boost.html'>boost</a></code>): The boosting algorithm is run
+<code>B</code> times on a randomly drawn <code>fraction</code> of the <code>data</code>.
+Each boosting run is stopped either when <code>q</code> terms have been selected,
+or when <code>maxit</code> iterations have been performed, i.e. either <code>q</code>
+or <code>maxit</code> can be used to tune the regularization of the boosting.
+After the boosting the relative selection frequencies are evaluated.
+Terms with a relative selection frequency larger then <code>thr</code>
+are suggested for a final regression model.</p>
+<p>If neither <code>q</code> nor <code>maxit</code> has been specified, <code>q</code>
+will be set to the square root of the number of columns in <code>data</code>.</p>
+<p>Gradient boosting does not depend on random numbers. Thus, the
+individual boosting runs differ only in the subset of data which
+is used.</p>
+    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
 <span class='co'>## Simulate some data.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>111</span>)
 <span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='GAMart.html'>GAMart</a></span>()
 <span class='no'>n</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/nrow'>nrow</a></span>(<span class='no'>d</span>)
 
@@ -208,7 +241,7 @@
 
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/paste'>paste0</a></span>(<span class='st'>"~ "</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/paste'>paste</a></span>(<span class='st'>"s(x"</span>, <span class='fl'>1</span>:<span class='fl'>9</span>, <span class='st'>")"</span>, <span class='kw'>collapse</span> <span class='kw'>=</span> <span class='st'>"+"</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>""</span>))
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/paste'>paste</a></span>(<span class='no'>f</span>, <span class='st'>"+ te(lon,lat)"</span>)
-<span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/eval'>eval</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/parse'>parse</a></span>(<span class='kw'>text</span> <span class='kw'>=</span> <span class='no'>f</span>))
+<span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/formula'>as.formula</a></span>(<span class='no'>f</span>)
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/update'>update</a></span>(<span class='no'>f</span>, <span class='no'>num</span> ~ <span class='no'>.</span>), <span class='no'>f</span>)
 
 <span class='co'>## Run stability selection.</span>
@@ -216,7 +249,8 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>sel</span>)
 
 <span class='co'>## Estimate selected model.</span>
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>sel</span>$<span class='no'>formula.new</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
+<span class='no'>nf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></span>(<span class='no'>sel</span>)
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>nf</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 <span class='co'># }</span></pre>
   </div>
@@ -226,6 +260,8 @@
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
+
+      <li><a href="#details">Details</a></li>
       
       <li><a href="#examples">Examples</a></li>
     </ul>
@@ -241,7 +277,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.2.0.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
       </footer>
    </div>
