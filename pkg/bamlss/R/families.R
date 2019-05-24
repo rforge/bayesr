@@ -2443,6 +2443,123 @@ bivnorm_bamlss <- function(...)
   rval
 }
 
+################################################################################
+##  MULTIVARIATE NORMAL
+################################################################################
+
+dev_mvnorm_bamlss <- function(k = 2, cov_type = "cor", geo_fun = NULL,
+                              dist_mat = NULL, ...)
+{
+  ## --- jump to univariate gaussian for k = 1 ---
+  if(k == 1)
+    return(gaussian_bamlss())
+
+  ## --- jump to bivariate gaussion for k = 2 ---
+  if(k == 2)
+    return(bivnorm_bamlss())
+
+  ## --- Set up family w/o correlations ---  
+
+  ## --- set names of distributional  parameters ---
+  mu <- paste0("mu", seq_len(k))
+  sigma <- paste0("sigma", seq_len(k))
+
+  ## --- set names of link functions ---
+  links <- c(
+    rep("identity", k),
+    rep("log", k)
+  )
+  names(links) <- c(mu, sigma)
+
+  ## --- family list ---
+  rval <- list(
+    "family" = "mvnorm",
+    "names" = c(mu, sigma),
+    "links" = links,
+    "d" = function(y, par, log = FALSE) {     ## This density needs all correlation
+      d <- log_dmvnorm(y, par)                ##   parameters
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      p <- NULL
+      for(j in 1:k) {
+        p <- cbind(p, pnorm(y[, j],
+          mean = par[[paste("mu", j, sep = "")]],
+          sd = par[[paste("sigma", j , sep = "")]], ...))
+      }
+      colnames(p) <- colnames(y)
+      p
+    },
+    "mu" = function(y, par, ...) {
+      do.call("cbind", par[grep("mu", names(par))])
+    }
+  )
+
+  ## --- score functions ---
+  mu_score_calls <- paste0(
+    "function(y, par, ...) {mu_score_mvnorm(y, par, j = ", seq_len(k),")}"
+  )
+  sigma_score_calls <- paste0(
+    "function(y, par, ...) {sigma_score_mvnorm(y, par, j = ", seq_len(k),")}"
+  )
+
+  scores <- list()
+  for(j in seq_along(mu)) {
+    scores[[mu[j]]] <- eval(parse(text = mu_score_calls[j]))
+  }
+  for(j in seq_along(sigma)) {
+    scores[[sigma[j]]] <- eval(parse(text = sigma_score_calls[j]))
+  }
+  rval$score <- scores
+
+  ## --- initialize function ---
+  mu_calls <- paste0(
+    "function(y, ...) {(y[,", seq_len(k), "] + mean(y[,", seq_len(k), "])) / 2}"
+  )
+  sigma_calls <- paste0(
+    "function(y, ...) {rep(sd(y[,", seq_len(k), "]), length(y[,", seq_len(k), "]))}"
+  )
+
+  init <- list()
+  for(j in seq_along(mu))
+    init[[mu[j]]] <- eval(parse(text = mu_calls[j]))
+  for(j in seq_along(sigma))
+    init[[sigma[j]]] <- eval(parse(text = sigma_calls[j]))
+  rval$initialize <- init
+
+  class(rval) <- "family.bamlss"
+
+  ## --- add correlation model ---
+  if(cov_type == "cor") {
+    ## --- names ---
+    rho <- combn(seq_len(k), 2, function(x) paste0("rho", x[1], x[2]))
+    k_rho <- k * (k-1) / 2    ## number of rho parameters
+    
+    ## --- links ---
+    nl <- names(rval$links)
+    rval$links <- c(rval$links, rep("rhogit", k_rho))
+    names(rval$links) <- c(nl, rho)
+  
+    ## --- add score functions ---
+    rho_score_calls <- combn(seq_len(k), 2, function(x) {paste0(
+      "function(y, par, ...) {rho_score_mvnorm(y, par, i = ", x[1],", j = ", x[2],")}"
+    )})
+    for(j in seq_along(rho)) {
+      rval$score[[rho[j]]] <- eval(parse(text = rho_score_calls[j]))
+    }
+
+    ## --- init functions ---
+    rho_calls <- rep("function(y, ...) { rep(0, length(y[,1])) }", k_rho)
+    for(j in seq_along(rho)) {
+      rval$initialize[[rho[j]]] <- eval(parse(text = rho_calls[j]))
+    }
+
+  }
+
+  rval
+}
 
 mvnorm_bamlss <- function(k = 2, ...)
 {
@@ -2527,12 +2644,15 @@ mvnorm_bamlss <- function(k = 2, ...)
   rho_calls <- rep("function(y, ...) { rep(0, length(y[,1])) }", k_rho)
 
   init <- list()
-  for(j in seq_along(mu))
+  for(j in seq_along(mu)) {
     init[[mu[j]]] <- eval(parse(text = mu_calls[j]))
-  for(j in seq_along(sigma))
+  }
+  for(j in seq_along(sigma)) {
     init[[sigma[j]]] <- eval(parse(text = sigma_calls[j]))
-  for(j in seq_along(rho))
+  }
+  for(j in seq_along(rho)) {
     init[[rho[j]]] <- eval(parse(text = rho_calls[j]))
+  }
   rval$initialize <- init
 
   class(rval) <- "family.bamlss"

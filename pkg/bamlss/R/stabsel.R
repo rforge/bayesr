@@ -138,7 +138,7 @@ StabFormula <- function(tabsel, formula, family, thr, B) {
     ## Select terms
     p <- names(tabsel)[tabsel > (thr*B)]
     ## grep model identifier
-    modelID <- substring(p, regexpr("\\.[a-z0-9]+$", p) + 1)
+    modelID <- substring(p, regexpr("(?<=\\.)[a-z0-9]+$", p, perl = TRUE))
     ## skip model identifier
     p <- gsub("\\.[a-z0-9]+$", "", p)
 
