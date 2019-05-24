@@ -147,16 +147,36 @@ flash counts.
 
 \section{Distributional regression} \label{sec:distreg}
 
-In structured additive distributional regression we assume that the distribution of a $D$-dimensional random variable $(y_{i1},\ldots,y_{iD})'$, $i=1,\ldots,n$ given some covariates $\xvec_i$  has a parametric densit
+\subsection{Model structure}
 
-$$p(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK}\equiv p_i.$$ 
+\subsubsection{Response distribution}
+In structured additive distributional regression we assume that the distribution of a $D$-dimensional random variable $(y_{i1},\ldots,y_{iD})'$, $i=1,\ldots,n$ given some covariates $\xvec_i$  has a parametric density
 
-\paragraph{Examples of distributions}
+$$p(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_i.$$ 
+
+% \paragraph{Examples:}
+% 
+% \textbf{maybe add here the distribution from the intro and introduce \texttt{familyname_bamlss()}?}
+% 
+
+The basic idea to implicitely model the entire distribution is to link each parameter $\vartheta_{ik}$ $k=1,\ldots,K$ of $p_i$ to a semiparametric structured additive predictor $\eta_{ik}$ formed of the covariates with the help of monotone, twice differentiable response functions $h_k$, such that 
+$$\vartheta_{ik}=h_k(\eta_{ik})\mbox{} and }\eta_{ik}=h_k^{-1}(\vartheta_{ik}).$$ 
+Note, that  each predictor and each distribution parameter can be summarised in vectors of length $n$, $\etavec_k=(\eta_{1k},\ldots,\eta_{nk})'$, $\varthetavec_k=(\vartheta_{1k},\ldots\vartheta_{nk})'$, and that the subscript $k$ in the predictor is a notation to indicate which parameter the predictor belongs to.
+
+% \paragraph{Example:}
+% 
+% \textbf{something in R code here?}
 
 
-The basic idea to implicitely model the entire distribution is to link each parameter $\vartheta_{ik}$ $k=1,\ldots,K$ of $p_i$ to a semiparametric structured additive predictor $\eta_{ik}$ formed of the covariates with the help of monotone, twice differentiable response functions $h_k$, such that $\vartheta_{ik}=h_k(\eta_{ik})$ and $\eta_{ik}=h_k^{-1}(\vartheta_{ik})$. Note, that  each predictor and each distribution parameter can be summarised in vectors of length $n$, $\etavec_k=(\eta_{1k},\ldots,\eta_{nk})'$, $\varthetavec_k=(\vartheta_{1k},\ldots\vartheta_{nk})'$, and that the subscript $k$ in the predictor is a notation to indicate which parameter the predictor belongs to.  The response function is usually chosen to maintain restrictions on the parameter space, like the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis, the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$, which is e.g.~the case for the correlation between two variables.
+The response function is usually chosen to maintain restrictions on the parameter space, like 
+\begin{itemize}
+\item the identity function $\vartheta_{ik}=\exp(\eta_{ik})$ if $\vartheta_{ik}\in\mathds{R}$,
+\item the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis, 
+\item the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$,
+\item the logit or probit link for $\vartheta_{ik}\in [0,1]$
+\end{itemize}
 
-\subsection{Structured predictors}
+\subsubsection{Structured predictors}
 For any parameter of the distribution $p_i$, the semiparametric predictor has the general form
 \begin{equation}\label{eq:predictor}
  \eta_{i}^{\vartheta_k} = \sum_{j=1}^{J_k}f_{j}^{\vartheta_k}(\nuvec_i)
@@ -180,12 +200,13 @@ Specific properties of the basis coefficients such as smoothness are regularised
 \begin{eqnarray}\label{eq:priorspec}
 p\left(\betavec_j^{\vartheta_k}\bigg|(\tau_j^{\vartheta_k})^2\right) \propto \left(\frac{1}{(\tau_j^{\vartheta_k})^2}\right)^{\rank\left(\mK_j^{\vartheta_k}\right)/2}\exp\left(-\frac{1}{2(\tau_j^{\vartheta_k})^2}\left(\betavec_j^{\vartheta_k}\right)'\mK_j^{\vartheta_k}\betavec_j^{\vartheta_k}\right)
 \end{eqnarray}
-where $\mK_j^{\vartheta_k}$ is a prior precision matrix and $(\tau_j^{\vartheta_k})^2$ are smoothing variances. The latter are supplemented with inverse gamma hyperpriors, i.e. $(\tau_j^{\vartheta_k})^2~\sim\IGD(a_j^{\vartheta_k},b_j^{\vartheta_k})$ in order to obtain a data-driven amount of smoothness with $a_j^{\vartheta_k}=b_j^{\vartheta_k}=0.001$ as default values for practical analyses.
+where $\mK_j^{\vartheta_k}$ is a prior precision matrix and $(\tau_j^{\vartheta_k})^2$ are smoothing variances. \textbf{discuss different choices of hyperpriors here?} %The latter are supplemented with inverse gamma hyperpriors, i.e. $(\tau_j^{\vartheta_k})^2~\sim\IGD(a_j^{\vartheta_k},b_j^{\vartheta_k})$ in order to obtain a data-driven amount of smoothness with $a_j^{\vartheta_k}=b_j^{\vartheta_k}=0.001$ as default values for practical analyses.
 %Specific examples will be given in Section~\ref{sec:CM}.
 
-As a result, each term $\fvec_j^{\vartheta_k}=(f_j^{\vartheta_k}(\nuvec_1),\ldots,f_j^{\vartheta_k}(\nuvec_n))'=\mZ_j^{\vartheta_k}\betavec_j^{\vartheta_k}$ is determined by a design matrix $\mZ_j^{\vartheta_k}$ and a prior precision or penalty matrix $\mK_j^{\vartheta_k}$. We give specific examples in the following (suppressing the index $j$ and superscript $\vartheta_k$):
+As a result, each term $\fvec_j^{\vartheta_k}=(f_j^{\vartheta_k}(\nuvec_1),\ldots,f_j^{\vartheta_k}(\nuvec_n))'=\mZ_j^{\vartheta_k}\betavec_j^{\vartheta_k}$ is determined by a design matrix $\mZ_j^{\vartheta_k}$ and a prior precision or penalty matrix $\mK_j^{\vartheta_k}$. We give two specific examples in the following (suppressing the index $j$ and superscript $\vartheta_k$):
 
-\paragraph*{Continuous Covariates}
+\begin{itemize}
+\item {Continuous Covariates:}
 To approximate potentially nonlinear effects, we use Bayesian P-splines, compare \citet{eilers} and \citet{BreLan2006} for detailed explanations. The $n\times S$ design matrix $\mZ$ in this setting is composed of $S$ B-spline basis functions evaluated at observed covariates $x_i$. Assuming equidistant knots for the spline expansion, a first or second order random walk is a sensible choice for the prior of $\betavec$, i.e.
 \begin{eqnarray*}
 \beta_s|\beta_{s-1},\tau^2&\sim&\ND\left(\beta_{s-1},\tau^2\right),\quad s=2,\ldots,S\\
@@ -194,7 +215,7 @@ To approximate potentially nonlinear effects, we use Bayesian P-splines, compare
 \end{eqnarray*}
 with noninformative priors for initial values. This prior structure yields the penalty matrix $\mK = \mD'\mD$ where $\mD$ is a difference matrix of first or second order.
 
-\paragraph*{Spatial Effects}
+\item {Spatial Effects:}
 For discrete spatial effects observed on a lattice or regions, we consider Markov random fields, see \citet{RueHel2005}. Let $s_i\in\lbrace 1,\ldots,S\rbrace$ denote the index or region observation $i$ belongs to. Then $f(s_i) = \beta_{s_i}$ is assumed such that we estimate separate parameters $\beta_1,\ldots,\beta_S$ for each region. As a consequence, the $n\times S$ design matrix is an incidence matrix, i.e. $\mZ[i,s]=1$ if observation $i$ belongs to location $s$ and zero otherwise. The simplest Markov random field prior for the coefficients $\beta_s$ is defined by
 \begin{equation*}
 \beta_{s}|\beta_{r},\;r\neq s,\;\tau^2\sim\ND\left(\sum_{r\in\partial_s}\frac{1}{N_s}\beta_{r},\frac{\tau^2}{N_s}\right),
@@ -207,9 +228,92 @@ where $\partial_s$ denotes the set of neighbours of region $s$ and $N_s$ is the 
  N_s& s=r.
  \end{cases}
 \end{eqnarray*}
+\end{itemize}
 
 For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{fahkne13}.
 
+\subsection{Posterior Estimation}
+
+\subsubsection{The posterior distribution}
+
+
+\subsubsection{Maximising the posterior mode}
+
+\subsubsection{Posterior sampling}
+\begin{itemize}
+\item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
+  Probably the most important algorithm, because of its generality and ease of implementation, is
+  random-walk Metropolis. The sampler proceeds by drawing a candidate
+  $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
+  distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$ which is 
+  commonly a normal distribution
+  $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current 
+  iterate. However, in complex settings this sampling scheme is usually not efficient and tuning
+  the covariance matrix $\boldsymbol{\Sigma}_{jk}$ in an adaptive phase is difficult and does not
+  necessarily result in i.i.d.\ behavior of the Markov chain. Therefore, a commonly-used
+  alternative for the covariance matrix of the jumping distribution is to use the local curvature
+  information
+  $\boldsymbol{\Sigma}_{jk} = -\left( \partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) /
+    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top \right)^{-1}$,
+  or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$,
+  requiring building blocks \ref{item:7a} and \ref{item:8}.
+  However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
+  behavior of the Markov chain especially when parameter samples move into regions with low
+  probability mass of the posterior distribution. A solution with good mixing properties is to
+  construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
+  second order Taylor series expansion of the log-posterior centered at the last state 
+  \citep{bamlss:Gamerman:1997, bamlss:Klein+Kneib+Lang:2015}.
+  The resulting proposal density $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})$
+  is again normal (see supplements Section~4) with precision matrix and mean given by
+  $$
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \qquad
+  \boldsymbol{\mu}_{jk}^{(t)} =  \boldsymbol{\beta}_{jk}^{(t)} -
+  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
+  $$
+  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can again
+  be build using blocks \ref{item:7a} and \ref{item:8}.
+  Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
+  the current step.
+
+  Again, assuming a basis function approach for $f_{jk}( \cdot )$ the precision and mean are
+  $$
+  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
+    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})
+  \qquad
+  \boldsymbol{\mu}_{jk}^{(t)} =
+    \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
+      \boldsymbol{\eta}^{(t)}_{k,-j}\right)
+  $$
+  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
+  as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}, with
+  working observations
+  $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
+  (see also the supplemental material Section~4 for a detailed derivation). Note again,
+  the computation of the mean is equivalent to a full Newton step as given in updating function
+  (\ref{eqn:blockblocknewton}), or Fisher scoring when using
+  $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+    \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
+  in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS). If
+  the computation of the weights is expensive, one simple strategy is to update
+  $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
+
+\item \emph{Slice sampling}: \label{sec:smcmc}
+  Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
+  samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
+  slice sampling is especially useful for automated general purpose MCMC implementations that allow
+  for sampling from many distributions.  Updates for the $i$-th parameter in $\boldsymbol{\beta}_{jk}$ are
+  generated by:
+  \begin{enumerate}
+  \item Sample $h \sim \mathcal{U}(0, \pi(\beta_{ijk}^{(t)} | \, \cdot))$.
+  \item Sample $\beta_{ijk}^{(t+1)} \sim \mathcal{U}(S)$ from the horizontal slice
+    $S = \{\beta_{ijk}: h < \pi(\beta_{ijk} | \, \cdot)\}$.
+  \end{enumerate}
+\end{itemize}
+
+
+\subsubsection{Boosting}
 
 \section{The bamlss package} \label{sec:package}
 
