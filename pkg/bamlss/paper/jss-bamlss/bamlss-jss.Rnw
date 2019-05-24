@@ -315,6 +315,24 @@ For detailed explanations on structured additive regression with further example
 
 \subsubsection{Boosting}
 
+\subsection{Model evaluation}
+
+\subsubsection{Model Choice and measures of performance}
+
+\begin{itemize}
+\item information criteria
+\item Quantile residuals
+\item scoring rules
+\end{itemize}
+
+\subsubsection{Model evaluation}
+\begin{itemize}
+\item plotting
+\item Quantile residuals
+\item scoring rules
+\end{itemize}
+
+
 \section{The bamlss package} \label{sec:package}
 
 \section{Application} \label{sec:application}
