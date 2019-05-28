@@ -40,6 +40,7 @@ stabsel <- function(formula, data, family = "gaussian",
     }
     cat("\n")
     formula <- xx$formula
+    environment(formula) <- NULL
     family  <- xx$family
 
     ## --- Re-build formula ---
