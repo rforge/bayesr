@@ -160,7 +160,7 @@ $$p(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_i.$$
 % 
 
 The basic idea to implicitely model the entire distribution is to link each parameter $\vartheta_{ik}$ $k=1,\ldots,K$ of $p_i$ to a semiparametric structured additive predictor $\eta_{ik}$ formed of the covariates with the help of monotone, twice differentiable response functions $h_k$, such that 
-$$\vartheta_{ik}=h_k(\eta_{ik})\mbox{} and }\eta_{ik}=h_k^{-1}(\vartheta_{ik}).$$ 
+$$\vartheta_{ik}=h_k(\eta_{ik})\mbox{ and }\eta_{ik}=h_k^{-1}(\vartheta_{ik}).$$ 
 Note, that  each predictor and each distribution parameter can be summarised in vectors of length $n$, $\etavec_k=(\eta_{1k},\ldots,\eta_{nk})'$, $\varthetavec_k=(\vartheta_{1k},\ldots\vartheta_{nk})'$, and that the subscript $k$ in the predictor is a notation to indicate which parameter the predictor belongs to.
 
 % \paragraph{Example:}
