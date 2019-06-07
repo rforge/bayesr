@@ -42,4 +42,26 @@ expect <- as.table(expect)
 countreg::rootogram(obsrvd, expect, breaks = c(.5, 50.5))
 ```
 
+```{r plot-case, out.width = "100%"}
+library("sf")
+nd <- readRDS("case.rds")
+fit <- predict(b, newdata = nd, type = "parameter")
+nd$P10 <- 1 - fam$p(9, fit)
+
+pal <- function(n) {
+  colorspace::sequential_hcl(n, "Inferno", rev = TRUE)
+}
+
+x <- readRDS(url("https://biogeo.ucdavis.edu/data/gadm3.6/Rsf/gadm36_AUT_0_sf.rds"))
+
+plot(nd["P10"], pal = pal, nbreaks = 100)
+plot(st_geometry(x), border = "white", add = TRUE)
+
+```
+
+```{r dynmap, out.width = "100%", eval = TRUE}
+library("mapview")
+mapview(nd["P10"], col.regions = pal(100))
+```
+
 
