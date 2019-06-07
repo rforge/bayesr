@@ -61,7 +61,7 @@ plot(st_geometry(x), border = "white", add = TRUE)
 
 ```{r dynmap, out.width = "100%", eval = TRUE}
 library("mapview")
-mapview(nd["P10"], col.regions = pal(100))
+mapview(nd["P10"], col.regions = pal)
 ```
 
 
