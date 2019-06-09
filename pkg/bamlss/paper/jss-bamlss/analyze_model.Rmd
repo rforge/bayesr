@@ -39,14 +39,14 @@ obsrvd <- table(y)[1:50]
 expect <- sapply(1:50, function(j) sum(fam$d(j, par)))
 names(expect) <- 1:50
 expect <- as.table(expect)
-countreg::rootogram(obsrvd, expect, breaks = c(.5, 50.5))
+countreg::rootogram(obsrvd, expect)
 ```
 
 ```{r plot-case, out.width = "100%"}
 library("sf")
-nd <- readRDS("case.rds")
-fit <- predict(b, newdata = nd, type = "parameter")
-nd$P10 <- 1 - fam$p(9, fit)
+d_case <- readRDS("case.rds")
+fit <- predict(b, newdata = d_case, type = "parameter")
+d_case$P10 <- 1 - fam$p(9, fit)
 
 pal <- function(n) {
   colorspace::sequential_hcl(n, "Inferno", rev = TRUE)
@@ -61,11 +61,11 @@ iso3 <- c("AUT", "CHE", "CZE", "DEU", "HRV", "ITA", "SVN")
 gadm <- lapply(iso3, get_gadm)
 gadm <- do.call(rbind, gadm)
 
-st_crs(nd) <- st_crs(gadm)
-xx <- st_difference(st_union(nd), gadm)
+st_crs(gadm) <- st_crs(d_case)
+gadm_countries <- st_intersection(st_union(d_case), gadm)
 
-plot(nd["P10"], pal = pal, nbreaks = 100)
-plot(st_geometry(gadm), border = "white", add = TRUE)
+plot(d_case["P10"], pal = pal, nbreaks = 100)
+plot(st_geometry(gadm_countries), border = "white", add = TRUE)
 
 ```
 
@@ -73,15 +73,20 @@ plot(st_geometry(gadm), border = "white", add = TRUE)
 library("ggplot2")
 library("colorspace")
 ggplot() +
-  geom_sf(aes(fill = P10), data = nd) +
+  geom_sf(aes(fill = P10), data = d_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   theme_minimal() +
-  geom_sf(data = xx, col = "white", fill = NA)
+  geom_sf(data = gadm_countries, col = "white", fill = NA)
 ```
 
 ```{r dynmap, out.width = "100%", eval = TRUE}
 library("mapview")
-mapview(nd["P10"], col.regions = pal)
+mapview(d_case["P10"], col.regions = pal)
 ```
+
+```{r save_workspace}
+save(b, fam, sel, d_eval, d_case, gadm_countries, file = "application.rda")
+```
+
 
 

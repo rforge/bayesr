@@ -337,6 +337,120 @@ For detailed explanations on structured additive regression with further example
 
 \section{Application} \label{sec:application}
 
+<<application-load-model, echo=FALSE>>=
+library("bamlss")
+load("application.rda")
+f <- formula(sel)
+@
+
+<<application-model, eval=FALSE>>=
+library("bamlss")
+
+## --- data ---
+load("ALDIS_ERA5_subset.rda")
+
+## --- specify formula ---
+f <- list(
+  mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+    s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+    s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
+  theta = ~s(sqrt_lsp, bs = "ps")
+)
+
+## --- fit model ---
+b <- bamlss(f, data = d_train,                # standard interface
+  family = "ztnbinom", binning = TRUE,        # general arguments
+  optimizer = boost, maxit = 1000,            # boosting arguments
+  thin = 5, burnin = 1000, n.iter = 6000      # sampler arguments
+)
+@
+
+\begin{figure}
+\begin{center}
+<<app-plot-boost, fig = TRUE>>=
+boost.plot(b, "loglik.contrib")
+@
+\end{center}
+\caption{Contribution to the log-likelihood of individual terms during
+gradient boosting.}
+\label{fig:appboost}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+<<app-plot-effect1, fig = TRUE>>=
+plot(b, model = "mu", term = "s(sqrt_cape)", rug = TRUE)
+@
+\end{center}
+\caption{Effect of the term \code{s(sqrt\_cape)} from the model \code{mu}.
+Credible intervals derived from MCMC samples.}
+\label{fig:appeffect}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+<<app-plot-trace, fig = FALSE>>=
+plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
+## How to display only one trace acf pair?
+@
+\end{center}
+\caption{MCMC trace (left panel) and auto-correlation (right panel) for a
+single spline from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
+\label{fig:apptrace}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+<<app-plot-rootogram, fig = TRUE>>=
+library("countreg")
+
+## --- out-of-sample prediciton ---
+fit <- predict(b, newdata = d_eval, type = "parameter")
+d_eval <- cbind(d_eval, as.data.frame(fit))
+
+## --- compute quantities for rootogram ---
+obsrvd <- table(d_eval$counts)[1:50]
+
+fam <- family(b)
+par <- subset(d_eval, select = c("mu", "theta"))
+expect <- sapply(1:50, function(j) sum(fam$d(j, par)))
+names(expect) <- 1:50
+expect <- as.table(expect)
+
+## --- plot rootogram ---
+rootogram(obsrvd, expect)
+@
+\end{center}
+\caption{Hanging rootogram for evaluating calibration of count data model
+on out-of-sample data. Red line indicates the expected frequencies on the
+square root scale. Gray bars indicate observed frequencies on square root
+scale hanging from the red line.}
+\label{fig:approoto}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+<<app-plot-case, fig = TRUE>>=
+library("sf")
+library("ggplot2")
+library("colorspace")
+
+fit <- predict(b, newdata = d_case, type = "parameter")
+d_case$P10 <- 1 - fam$p(9, fit)
+
+ggplot() + geom_sf(aes(fill = P10), data = d_case) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = gadm_countries, col = "white", fill = NA) +
+  theme_minimal()
+@
+\end{center}
+\caption{A probabilistic reconstruction of lightning counts occured on June 25
+2007 between 18 and 19~UTC, i.e., the probability of having observed $10$ or
+more counts within one gird box.}
+\label{fig:appcase}
+\end{figure}
+
+
 \bibliography{bamlss}
 
 \end{document}
