@@ -84,6 +84,20 @@ library("mapview")
 mapview(d_case["P10"], col.regions = pal)
 ```
 
+```{r case2, out.width = "100%"}
+d_case <- readRDS("case_2001-09-16.rds")
+d_case <- subset(d_case, hh %in% c(4, 16))
+
+fit <- predict(b, newdata = d_case, type = "parameter")
+d_case$P10 <- 1 - fam$p(9, fit)
+label_fun <- as_labeller(function(x) sprintf("2001-09-16 %s UTC", x))
+
+ggplot() + geom_sf(aes(fill = P10), data = d_case) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = gadm_countries, col = "white", fill = NA) +
+  facet_wrap(~hh, labeller = label_fun) + theme_minimal()
+```
+
 ```{r save_workspace}
 save(b, fam, sel, d_eval, d_case, gadm_countries, file = "application.rda")
 ```
