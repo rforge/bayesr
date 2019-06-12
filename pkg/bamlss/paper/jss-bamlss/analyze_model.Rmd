@@ -9,6 +9,10 @@ output: html_document
 library("bamlss")
 load("full_model.rda")
 ls()
+vars <- c("d2m", "q_prof_PC1", "cswc_prof_PC4", "t_prof_PC1", "v_prof_PC2",
+          "sqrt_cape", "sqrt_lsp")
+d_eval <- subset(d_eval, select = c("counts", vars, "mu", "theta"))
+b <- bamlss:::light_bamlss(b)
 ```
 
 ```{r plot-stabsel, fig.width = 7, fig.height = 11, out.width = "100%"}
@@ -85,17 +89,27 @@ mapview(d_case["P10"], col.regions = pal)
 ```
 
 ```{r case2, out.width = "100%"}
-d_case <- readRDS("case_2001-09-16.rds")
-d_case <- subset(d_case, hh %in% c(4, 16))
+d_case <- readRDS("case_2001-09.rds")
+times <- as.POSIXct(c(
+  "2001-09-15 08:00:00 UTC",
+  "2001-09-15 19:00:00 UTC",
+  "2001-09-16 01:00:00 UTC",
+  "2001-09-16 15:00:00 UTC"
+))
+
+d_case <- subset(d_case, time %in% times)
+d_case <- subset(d_case, select = c("time", vars))
+rownames(d_case) <- NULL
 
 fit <- predict(b, newdata = d_case, type = "parameter")
 d_case$P10 <- 1 - fam$p(9, fit)
-label_fun <- as_labeller(function(x) sprintf("2001-09-16 %s UTC", x))
+# label_fun <- as_labeller(function(x) sprintf("2001-09-16 %s UTC", x))
 
 ggplot() + geom_sf(aes(fill = P10), data = d_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = gadm_countries, col = "white", fill = NA) +
-  facet_wrap(~hh, labeller = label_fun) + theme_minimal()
+  facet_wrap(~time, nrow = 1) + theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ```{r save_workspace}

@@ -460,7 +460,7 @@ d_case$P10 <- 1 - fam$p(9, fit)
 ggplot() + geom_sf(aes(fill = P10), data = d_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = gadm_countries, col = "white", fill = NA) +
-  facet_wrap(~hh) + theme_minimal()
+  facet_wrap(~time) + theme_minimal()
 @
 <<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
 library("sf")
@@ -470,17 +470,17 @@ library("colorspace")
 fit <- predict(b, newdata = d_case, type = "parameter")
 d_case$P10 <- 1 - fam$p(9, fit)
   
-label_fun <- as_labeller(function(x) sprintf("2001-09-16, %s UTC", x))
-
 ggplot() + geom_sf(aes(fill = P10), data = d_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = gadm_countries, col = "white", fill = NA) +
-  facet_wrap(~hh, labeller = label_fun) + theme_minimal()
+  facet_wrap(~time, nrow = 2) + theme_minimal() # +
+#  theme(legend.position = "bottom")
 @
 \end{center}
-\caption{A probabilistic reconstruction of lightning counts occured on September 16
-2001 at 4~UTC and 16~UTC, i.e., the probability of having observed $10$ or
-more counts within one gird box.}
+\caption{A probabilistic reconstruction of lightning counts occured on
+September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
+13~UTC, i.e., the probability of having observed $10$ or more counts within one
+gird box.}
 \label{fig:appcase}
 \end{figure}
 
