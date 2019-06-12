@@ -437,7 +437,7 @@ names(expect) <- 1:50
 expect <- as.table(expect)
 
 ## --- plot rootogram ---
-rootogram(obsrvd, expect)
+rootogram(obsrvd, expect, xlab = "#Counts", main = "Rootogram")
 @
 \end{center}
 \caption{Hanging rootogram for evaluating calibration of count data model
