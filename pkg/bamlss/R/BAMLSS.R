@@ -6735,10 +6735,12 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         devAskNewPage(ask)
         tx <- as.vector(time(samps))
         for(j in 1:np) {
-          traceplot2(samps[, j, drop = FALSE], main = paste("Trace of", snames[j]))
+          traceplot2(samps[, j, drop = FALSE], main = "")
+          mtext(paste("Trace of", snames[j]), side = 3, line = 1)
           lines(lowess(tx, samps[, j]), col = "red")
           nu <- length(unique(samps[, j, drop = FALSE]))
-          acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = paste("ACF of", snames[j]), ...)
+          acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = "", ...)
+          mtext(paste("ACF of", snames[j]), side = 3, line = 1)
         }
       } else {
         snames <- snames[!grepl(".edf", snames, fixed = TRUE)]
