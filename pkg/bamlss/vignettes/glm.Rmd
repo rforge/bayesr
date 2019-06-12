@@ -88,7 +88,9 @@ the MCMC chains using traceplots.
 plot(b, which = "samples")
 ```
 ```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
-plot(b$samples[, c("pi.p.(Intercept)", "pi.p.income")])
+bsp <- b
+bsp$samples <- bsp$samples[, c("pi.p.(Intercept)", "pi.p.income")]
+plot(bsp, which = "samples")
 ```
 The plots indicate convergence of the MCMC chains, i.e., there is no visible trend in the
 MCMC chains and very low autocorrelation suggest i.i.d. sampling from the posterior
