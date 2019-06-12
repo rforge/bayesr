@@ -6720,8 +6720,12 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   if(length(which) > 1 | ok) {
     which <- which[which %in% c("hist-resid", "qq-resid")]
-    res <- residuals.bamlss(x, ...)
-    plot(res, which = which, spar = spar, ...)
+    if(length(which)) {
+      res <- residuals.bamlss(x, ...)
+      plot(res, which = which, spar = spar, ...)
+    } else {
+      stop("argument which is specified wrong!")
+    }
   } else {
     if(which %in% c("samples", "max-acf")) {
       par <- if(parameters) {
@@ -6735,7 +6739,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
       samps <- samps[, snames, drop = FALSE]
       if(which == "samples") {
         np <- ncol(samps)
-        par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
+        if(spar)
+          par(mfrow = if(np <= 4) c(np, 2) else c(4, 2))
         devAskNewPage(ask)
         tx <- as.vector(time(samps))
         for(j in 1:np) {
@@ -6756,13 +6761,14 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         acfx$acf <- array(apply(do.call("rbind", lapply(macf, function(x) { x$acf })), 2, max, na.rm = TRUE), dim = c(length(acfx$acf), 1L, 1L))
         args <- list(...)
         if(is.null(args$main))
-          args$main <- "Maximum ACF of samples"
+          args$main <- ""
         if(is.null(args$xlab))
           args$xlab <- "Lag"
         if(is.null(args$ylab))
           args$ylab <- "ACF"
         getS3method("plot", class = "acf")(acfx, main = args$main, xlab = args$xlab,
           ylab = args$ylab, xlim = args$xlim, ylim = args$ylim)
+        mtext("Maximum ACF of samples", side = 3, line = 1, font = 2)
       }
     }
 
