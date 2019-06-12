@@ -6671,7 +6671,7 @@ traceplot2 <- function(theta, n.plot=100, ylab = "", ...) {
     as.numeric(quantile(x[1:n],c(.025,.5,.975)))
   }, vectorize.args = "n")
   n.rep <- length(theta)
-  plot(1:n.rep, theta, col = "lightgrey", xlab = "iter",
+  plot(1:n.rep, theta, col = "lightgrey", xlab = "Iteration",
     ylab = ylab, type = "l", ...)
   iter <- round(seq(1, n.rep, length = n.plot + 1)[-1])
   tq <- cuq(iter,theta)
