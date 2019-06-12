@@ -76,6 +76,7 @@ well as neural network distributional regression models.
 <<preliminaries, echo=FALSE, results=hide>>=
 options(width = 70, prompt = "R> ", continue = "+  ",
   SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 1, 1))))
+library("bamlss")
 @
 
 \input{defs}
@@ -149,6 +150,58 @@ unified modeling approach using a complex distributional regression model for pr
 flash counts.
 
 \section{Motivating example} \label{sec:motivation}
+
+In this section we would like to introduce the R package to the reader using two introductory
+examples. Readers more interested in advanced topics using \pkg{bamlss} could skip this section
+and move to Section~\ref{sec:application} directly. The first example demonstrates that the usual
+look and feel when using well-established model fitting functions like \fct{glm} is an elementary
+part of \pkg{bamlss}, i.e., first steps and basic handling should be relatively simple. The second
+example then explains how full distributional regression models can be estimated.
+
+\subsection{Logit model}
+
+This example is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
+labor force participation (yes/no) of women in Switzerland 1981. The data can be loaded with
+<<>>=
+data("SwissLabor", package = "AER")
+@
+The data frame contains of 872 observations on 7 variables, where some of them might have
+a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
+binomial logit model using the default MCMC algorithm can be fitted with
+<<echo = FALSE, results = hide>>=
+if(!file.exists("SwissLaborModel.rda")) {
+  f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
+  set.seed(123)
+  b <- bamlss(f, family = "binomial", data = SwissLabor,
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b, file = "SwissLaborModel.rda")
+} else {
+  load("SwissLaborModel.rda")
+}
+@
+<<eval = FALSE>>=
+library("bamlss")
+
+## First, set the seed for reproducibly.
+set.seed(123)
+
+## Model formula.
+f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
+
+## Estimate model.
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  n.iter = 12000, burnin = 2000, thin = 10)
+@
+using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. 
+Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to the model.
+The model summary gives
+<<>>=
+summary(b)
+@
+which suggests ``significant'' effects for all covariates, since there are no zeros within
+the 95\% credible intervals.
+
+\subsection{Normal location-scale model}
 
 \section{Distributional regression} \label{sec:distreg}
 
@@ -343,14 +396,11 @@ For detailed explanations on structured additive regression with further example
 \section{Application} \label{sec:application}
 
 <<application-load-model, echo=FALSE>>=
-library("bamlss")
 load("application.rda")
 f <- formula(sel)
 @
 
 <<application-model, eval=FALSE>>=
-library("bamlss")
-
 ## --- data ---
 load("ALDIS_ERA5_subset.rda")
 

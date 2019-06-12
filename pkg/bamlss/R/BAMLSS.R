@@ -256,8 +256,12 @@ design.construct <- function(formula, data = NULL, knots = NULL,
       return(obj)
     if(model.matrix) {
       if(!inherits(data, "ffdf")) {
+        drop_terms_attr <- function(x) {
+          attr(x, "terms") <- NULL
+          return(x)
+        }
         obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
-          sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = data)
+          sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = drop_terms_attr(data))
         if(ncol(obj$model.matrix) > 0) {
           if(scale.x)
             obj$model.matrix <- scale.model.matrix(obj$model.matrix)
