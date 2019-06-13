@@ -195,22 +195,20 @@ set.seed(123)
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 12000, burnin = 2000, thin = 10)
 @
-using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. 
-Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to the model.
-The resulting object \code{b} is of class \code{"bamlss"} for which standard extractor functions
-like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\ are available.
-The model summary output is printed by
+using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Prior
+the MCMC sampling a backfitting algorithm for posterior mode estimation is performed. The
+posterior mode estimates are then used as starting values for MCMC. Using
+the main model fitting function \fct{bamlss} all model fitting engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the application
+Section~\ref{sec:application}.
+
+Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
+the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
+extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
+are available. The model summary output is printed by
 <<>>=
 summary(b)
 @
-which suggests ``significant'' effects for all covariates, except for variable \code{education},
-since the 95\% credible interval contains zero. Before proceeding the analysis, users usually do
-some convergence checks of the MCMC chains by looking at traceplots and auto-correlation.
-<<eval = FALSE>>=
-plot(b, which = "samples")
-plot(b, which = "max-acf")
-@
-\begin{figure}[!ht]
+\begin{figure}[!b]
 \centering
 \setkeys{Gin}{width=1\textwidth}
 <<echo = FALSE, fig = TRUE, height = 2.5, width = 8>>=
@@ -224,6 +222,12 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
   auto-correlation for the intercept (middle panel), maximum auto-correlation for all
   parameters (right panel).}
 \end{figure}
+which suggests ``significant'' effects for all covariates, except for variable \code{education},
+since the 95\% credible interval contains zero. Before proceeding the analysis, users usually do
+some convergence checks of the MCMC chains by looking at traceplots and auto-correlation.
+<<eval = FALSE>>=
+plot(b, which = c("samples", "max-acf"))
+@
 These are visualized in Figure~\ref{fig:logit_traceplots} and indicate convergence of the MCMC
 chains, i.e., there is no visible trend in the MCMC chains and the very low auto-correlation shown
 for the intercept and the maximum auto-correlation of all parameters suggests
@@ -253,9 +257,9 @@ plot2d(p.no ~ age, data = nd, ylab = "participation",
 plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
   lty = c(2, 1, 2))
 @
-\begin{figure}[!t]
+\begin{figure}[!h]
 \centering
-\setkeys{Gin}{width=0.5\textwidth}
+\setkeys{Gin}{width=0.47\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
@@ -269,8 +273,8 @@ legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   probabilities for both cases, \code{foreign} \code{"yes"} and \code{"no"}. The solid lines
   represent mean estimates, dashed lines represent the 95\% credible interval.}
 \end{figure}
-The estimates are shown in Figure~\ref{fig:logit_effects} and suggests a clear difference in the
-effect of \code{age} between both cases of factor variable \code{foreign}.
+The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
+for the effect of \code{age} between both cases of factor variable \code{foreign}.
 
 \subsection{Normal location-scale model}
 
