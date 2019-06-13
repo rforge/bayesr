@@ -3737,6 +3737,22 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
     for(j in enames2[i]) {
       if(j != "(Intercept)") {
         f <- as.formula(paste("~", if(has_intercept) "1" else "-1", "+", j))
+        if(is.character(data[[j]]))
+          data[[j]] <- as.factor(data[[j]])
+        if(is.factor(data[[j]])) {
+          if(nlevels(data[[j]]) < 2) {
+            xlev <- levels(data[[j]])
+            if(!any(grepl(paste0(j, xlev), snames, fixed = TRUE))) {
+              xlev2 <- grep(j, snames, fixed = TRUE, value = TRUE)
+              xlev2 <- gsub(paste0(id, ".p.", j), "", xlev2, fixed = TRUE)
+              levels(data[[j]]) <- c(xlev, xlev2)
+              data[[j]] <- relevel(data[[j]], ref = xlev)
+            } else {
+              levels(data[[j]]) <- c(xlev, "NA")
+              data[[j]] <- relevel(data[[j]], ref = "NA")
+            }
+          }
+        }
         X <- model.matrix(f, data = data)
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
