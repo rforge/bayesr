@@ -158,8 +158,9 @@ examples. Readers more interested in advanced examples using \pkg{bamlss} could 
 section and move to Section~\ref{sec:application} directly. The first example
 demonstrates that the usual look and feel when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
-basic handling should be relatively simple. The second example then explains how full
-distributional regression models can be estimated.
+basic handling of the package should be relatively simple. The second example then
+explains how full distributional regression models can be estimated and show
+cases the flexibility of the provided infrastructures.
 
 \subsection{Logit model}
 
