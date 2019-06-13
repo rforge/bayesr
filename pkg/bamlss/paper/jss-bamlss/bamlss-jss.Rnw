@@ -154,7 +154,7 @@ flash counts.
 \section{Motivating examples} \label{sec:motivation}
 
 In this section we introduce the \proglang{R} package to the reader using two motivating
-examples. Readers more interested in advanced topics using \pkg{bamlss} could skip this
+examples. Readers more interested in advanced examples using \pkg{bamlss} could skip this
 section and move to Section~\ref{sec:application} directly. The first example
 demonstrates that the usual look and feel when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
