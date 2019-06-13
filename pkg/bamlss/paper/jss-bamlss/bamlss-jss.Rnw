@@ -261,7 +261,7 @@ plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
 @
 \begin{figure}[!h]
 \centering
-\setkeys{Gin}{width=0.47\textwidth}
+\setkeys{Gin}{width=0.5\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
