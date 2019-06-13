@@ -217,8 +217,8 @@ In addition, the acceptance probabilities \code{alpha} are reported and indicate
 proper behavior of the MCMC algorithm.
 The column \code{parameters} shows respective posterior mode estimates of the regression
 coefficients, which are calculated by the upstream backfitting algorithm. Before 
-proceeding the analysis, users usually perform convergence checks of the MCMC chains by 
-looking at traceplots and auto-correlation.
+proceeding the analysis, users usually perform additional convergence checks of the
+MCMC chains by looking at traceplots and auto-correlation.
 <<eval = FALSE>>=
 plot(b, which = c("samples", "max-acf"))
 @
@@ -257,7 +257,7 @@ to visualize the effect of covariate \code{age} on the probability we can do the
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1, foreign = "no")
 
-## Predict for both cases.
+## Predict for both cases of variable foreign.
 nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
 nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
@@ -274,7 +274,7 @@ plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
 @
 \begin{figure}[!h]
 \centering
-\setkeys{Gin}{width=0.48\textwidth}
+\setkeys{Gin}{width=0.4\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
@@ -303,19 +303,22 @@ The data set contains measurements of the head acceleration
 (in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after
 impact (variable \code{times}). To estimate a normal location-scale model with
 $$
-\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
+\texttt{accel} \sim \mathcal{N}(\mu = f_{\mu}(\texttt{times}),
+  \log(\sigma) = f_{\sigma}(\texttt{times}))
 $$
-we use the following model formula
+where functions $f_{\mu}( \cdot )$ and $f_{\sigma}( \cdot )$ are unspecified smooth
+functions, which are estimated using regression splines. The log-link for parameter
+$\sigma$ ensures positivity. We can use the following model formula for estimation
 <<>>=
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 @
 where function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
-\citep{bamlss:Wood:2019}.
-Note, that model formulae are provided as lists of formulae, i.e., each list entry represents one
-parameter of the response distribution. Also note that all smooth terms, i.e.,
-\fct{te}, \fct{ti()}, etc., are supported by \pkg{bamlss}. This way, it is also possible to
-incorporate user defined model terms. A full Bayesian semi-parametric distributional regression
-model can be estimated with
+\citep{bamlss:Wood:2019}, the default of \fct{s} are thin-plate regression splines.
+Note, that model formulae are provided as lists of formulae, i.e., each list entry
+represents one parameter of the response distribution. Moreover, note that all smooth
+terms, i.e., \fct{te}, \fct{ti}, etc., are supported by \pkg{bamlss}. This way, it is
+also possible to incorporate user defined model terms. A full Bayesian semi-parametric 
+distributional regression model can be estimated with
 <<echo = FALSE, results = hide>>=
 if(!file.exists("toymodel.rda")) {
   set.seed(456)
@@ -342,7 +345,7 @@ plot(b, model = c("mu", "sigma"))
 @
 \begin{figure}[!h]
 \centering
-\setkeys{Gin}{width=0.48\textwidth}
+\setkeys{Gin}{width=0.4\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "mu", spar = FALSE, scheme = 2, grid = 200)
@@ -358,15 +361,15 @@ The estimated effects are shown in Figure~\ref{fig:toy_effects} depicting a clea
 relationship for parameter $\mu$ and $\sigma$.
 
 For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn:Smyth:1996} using histograms or quantile-quantile plots. Residuals
-can be extracted using function \fct{residuals} and has a plotting method. Alternatively,
-residuals can be investigated with
+residuals \citep{bamlss:Dunn:Smyth:1996} using histograms or quantile-quantile plots. 
+Residuals can be extracted using function \fct{residuals} and has a plotting method. 
+Alternatively, residuals can be investigated with
 <<eval = FALSE>>=
 plot(b, which = c("hist-resid", "qq-resid"))
 @
-\begin{figure}[!h]
+\begin{figure}[!b]
 \centering
-\setkeys{Gin}{width=0.48\textwidth}
+\setkeys{Gin}{width=0.4\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 4.5>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
@@ -378,6 +381,11 @@ plot(b, which = "qq-resid", spar = FALSE)
 \caption{\label{fig:toy_resids} Histogram and quantile-quantile plot of the
   resulting randomized quantile residuals of the normal location-scale model.}
 \end{figure}
+According the histogram and the quantile-quantile plot of the resulting randomized
+quantile residuals in Figure~\ref{fig:toy_resids}, the model seems to fit relatively well. 
+Only for very low and very high values of \code{accel} the fitted distributions seems
+to be less appropriate.
+
 
 \section{Distributional regression} \label{sec:distreg}
 
