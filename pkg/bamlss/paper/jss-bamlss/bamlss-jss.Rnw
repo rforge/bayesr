@@ -128,7 +128,7 @@ for Bayesian distributional regression models (and beyond). The main contributio
 are the following:
 %
 \begin{itemize}
-\item Easy implementation of (new) models and algorithms,
+\item Easy implementation of (new) models and algorithms (Bayesian or frequentist),
 \item comparison of existing optimization algorithms and samplers,
 \item or integration of existing implementations.
 \end{itemize}
@@ -211,8 +211,10 @@ are available. The model summary output is printed by
 <<>>=
 summary(b)
 @
-which suggests ``significant'' effects for all covariates, except for variable \code{education},
-since the 95\% credible interval contains zero. Before proceeding the analysis, users usually perform
+and is based on MCMC samples, which suggest ``significant'' effects for all covariates, except for variable \code{education},
+since the 95\% credible interval contains zero. The column \code{parameters} shows
+respective posterior mode estimates that are calculated by the upstream backfitting
+algorithm. Before proceeding the analysis, users usually perform
 convergence checks of the MCMC chains by looking at traceplots and auto-correlation.
 <<eval = FALSE>>=
 plot(b, which = c("samples", "max-acf"))
@@ -231,16 +233,17 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
   auto-correlation for the intercept (middle panel), maximum auto-correlation for all
   parameters (right panel).}
 \end{figure}
-These are visualized in Figure~\ref{fig:logit_traceplots} and indicate convergence of the MCMC
-chains, i.e., there is no visible trend in the MCMC chains and the very low auto-correlation shown
-for the intercept and the maximum auto-correlation of all parameters suggests
-i.i.d.\ sampling from the posterior distribution. Note that the function call would show all
-trace- and auto-correlation plots, however, for convenience we only show plots for the intercept.
-In addition, samples can also be extracted using function \fct{samples}, which returns an object
-of class \code{"mcmc"}, a class provided by the \pkg{coda} package
-\citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
-This package includes a rich infrastructure for further convergence diagnostic checks, e.g.,
-Gelman and Rubin's convergence diagnostic \citep{bamlss:Gelman+Rubin:1992, bamlss:Brooks+Gelman:1998} or
+These are visualized in Figure~\ref{fig:logit_traceplots} and indicate convergence of
+the MCMC chains, i.e., there is no visible trend in the MCMC chains and the very low
+auto-correlation shown for the intercept and the maximum auto-correlation of all
+parameters suggests i.i.d.\ samples from the posterior distribution.
+Note that the function call would show all trace- and auto-correlation plots, however,
+for convenience we only show plots for the intercept. In addition, samples can also be
+extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},
+a class provided by the \pkg{coda} package \citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
+This package includes a rich infrastructure for further convergence diagnostic checks,
+e.g., Gelman and Rubin's convergence diagnostic
+\citep{bamlss:Gelman+Rubin:1992, bamlss:Brooks+Gelman:1998} or
 Heidelberger and Welch's convergence diagnostic
 \citep{bamlss:Heidelberger+Welch:1981, bamlss:Heidelberger+Welch:1983}.
 

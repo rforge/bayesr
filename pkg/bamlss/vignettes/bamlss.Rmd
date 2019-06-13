@@ -89,7 +89,7 @@ b <- bamlss(f, data = mcycle, family = "gaussian",
   n.iter = 12000, burnin = 2000, thin = 10)
 ```
 using `12000` iterations for the MCMC chain, a burnin of `2000` (dropped samples) and a thinning
-of `10`, i.e., only every 10th sample is saved. Note that per defaul `bamlss()` uses a bachfitting
+of `10`, i.e., only every 10th sample is saved. Note that per defaul `bamlss()` uses a backfitting
 algorithm to compute posterior mode estimates, afterwards these estimates are used as starting
 values for the MCMC chains.
 The returned object is of class `"bamlss"` for which generic extractor functions like

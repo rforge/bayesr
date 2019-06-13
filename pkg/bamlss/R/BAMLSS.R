@@ -8425,7 +8425,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     }
   } else {
     drop <- c(".tau2", ".lambda", ".edf", ".accepted",
-      ".alpha", "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
+      "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
     if(is.null(FUN))
       FUN <- function(x) { mean(x, na.rm = TRUE) }
   }
