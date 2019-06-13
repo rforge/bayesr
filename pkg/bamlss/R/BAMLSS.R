@@ -6719,12 +6719,15 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   x$formula <- as.formula(x$formula)
 
   if(length(which) > 1 | ok) {
-    which <- which[which %in% c("hist-resid", "qq-resid")]
-    if(length(which)) {
+    which2 <- which[which %in% c("hist-resid", "qq-resid")]
+    if(length(which2)) {
       res <- residuals.bamlss(x, ...)
-      plot(res, which = which, spar = spar, ...)
+      plot(res, which = which2, spar = spar, ...)
     } else {
-      stop("argument which is specified wrong!")
+      for(w in which) {
+        plot.bamlss(x, model = model, term = term, which = w,
+          parameters = parameters, ask = ask, spar = spar, ...)
+      }
     }
   } else {
     if(which %in% c("samples", "max-acf")) {
