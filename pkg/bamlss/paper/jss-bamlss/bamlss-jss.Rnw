@@ -153,8 +153,8 @@ flash counts.
 
 \section{Motivating examples} \label{sec:motivation}
 
-In this section we introduce the \proglang{R} package to the reader using two motivating
-examples. Readers more interested in advanced examples using \pkg{bamlss} could skip this
+This section gives a first quick overview of the basic functionality of the package.
+Readers more interested in advanced examples using \pkg{bamlss} could skip this
 section and move to Section~\ref{sec:application} directly. The first example
 demonstrates that the usual look and feel when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
@@ -165,7 +165,8 @@ cases the flexibility of the provided infrastructures.
 \subsection{Logit model}
 
 This example is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
-labor force participation (yes/no) of women in Switzerland 1981. The data can be loaded with
+labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
+The data can be loaded with
 <<>>=
 data("SwissLabor", package = "AER")
 @
@@ -210,7 +211,13 @@ are available. The model summary output is printed by
 <<>>=
 summary(b)
 @
-\begin{figure}[!b]
+which suggests ``significant'' effects for all covariates, except for variable \code{education},
+since the 95\% credible interval contains zero. Before proceeding the analysis, users usually perform
+convergence checks of the MCMC chains by looking at traceplots and auto-correlation.
+<<eval = FALSE>>=
+plot(b, which = c("samples", "max-acf"))
+@
+\begin{figure}[!h]
 \centering
 \setkeys{Gin}{width=1\textwidth}
 <<echo = FALSE, fig = TRUE, height = 2.5, width = 8>>=
@@ -224,17 +231,18 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
   auto-correlation for the intercept (middle panel), maximum auto-correlation for all
   parameters (right panel).}
 \end{figure}
-which suggests ``significant'' effects for all covariates, except for variable \code{education},
-since the 95\% credible interval contains zero. Before proceeding the analysis, users usually do
-some convergence checks of the MCMC chains by looking at traceplots and auto-correlation.
-<<eval = FALSE>>=
-plot(b, which = c("samples", "max-acf"))
-@
 These are visualized in Figure~\ref{fig:logit_traceplots} and indicate convergence of the MCMC
 chains, i.e., there is no visible trend in the MCMC chains and the very low auto-correlation shown
 for the intercept and the maximum auto-correlation of all parameters suggests
 i.i.d.\ sampling from the posterior distribution. Note that the function call would show all
 trace- and auto-correlation plots, however, for convenience we only show plots for the intercept.
+In addition, samples can also be extracted using function \fct{samples}, which returns an object
+of class \code{"mcmc"}, a class provided by the \pkg{coda} package
+\citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
+This package includes a rich infrastructure for further convergence diagnostic checks, e.g.,
+Gelman and Rubin's convergence diagnostic \citep{bamlss:Gelman+Rubin:1992, bamlss:Brooks+Gelman:1998} or
+Heidelberger and Welch's convergence diagnostic
+\citep{bamlss:Heidelberger+Welch:1981, bamlss:Heidelberger+Welch:1983}.
 
 Model predictions on the probability scale can be obtained by the predict method, e.g.,
 to visualize the effect of covariate \code{age} on the probability we can do the following:
@@ -261,9 +269,9 @@ plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
 @
 \begin{figure}[!h]
 \centering
-\setkeys{Gin}{width=0.5\textwidth}
+\setkeys{Gin}{width=0.48\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 0.1))
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
 plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
@@ -279,6 +287,92 @@ The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear di
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
 
 \subsection{Normal location-scale model}
+
+In this example we will now extend the framework and estimate a complete distributional regression
+model using a small textbook example of the well-known simulated motorcycle accident data
+\citep{bamlss:Silverman:1985}.
+<<>>=
+data("mcycle", package = "MASS")
+@
+The data set contains measurements of the head acceleration
+(in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after
+impact (variable \code{times}). To estimate a normal location-scale model with
+$$
+\texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
+$$
+we use the following model formula
+<<>>=
+f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
+@
+where function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
+\citep{bamlss:Wood:2019}.
+Note, that model formulae are provided as lists of formulae, i.e., each list entry represents one
+parameter of the response distribution. Also note that all smooth terms, i.e.,
+\fct{te}, \fct{ti()}, etc., are supported by \pkg{bamlss}. This way, it is also possible to
+incorporate user defined model terms. A full Bayesian semi-parametric distributional regression
+model can be estimated with
+<<echo = FALSE, results = hide>>=
+if(!file.exists("toymodel.rda")) {
+  set.seed(456)
+  b <- bamlss(f, data = mcycle, family = "gaussian",
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b, file = "toymodel.rda")
+} else {
+  load("toymodel.rda")
+}
+@
+<<eval = FALSE>>=
+## Set the seed for reproducibility.
+set.seed(456)
+
+## Estimate normal location-scale model.
+b <- bamlss(f, data = mcycle, family = "gaussian",
+  n.iter = 12000, burnin = 2000, thin = 10)
+@
+again using 12000 iterations for the MCMC chain, a burnin of 2000 and a thinning
+of parameter of 10. After the estimation algorithms are finished, the estimated effects can be
+visualized instantly using the plotting method.
+<<eval = FALSE>>=
+plot(b, model = c("mu", "sigma"))
+@
+\begin{figure}[!h]
+\centering
+\setkeys{Gin}{width=0.48\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, model = "mu", spar = FALSE, scheme = 2, grid = 200)
+@
+<<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, model = "sigma", spar = FALSE, scheme = 2, grid = 200)
+@
+\caption{\label{fig:toy_effects} Estimated effects of \code{times} on parameter
+  $\mu$ and $\sigma$ of the normal location-scale model.}
+\end{figure}
+The estimated effects are shown in Figure~\ref{fig:toy_effects} depicting a clear nonlinear
+relationship for parameter $\mu$ and $\sigma$.
+
+For judging how well the model fits to the data the user can inspect randomized quantile
+residuals \citep{bamlss:Dunn:Smyth:1996} using histograms or quantile-quantile plots. Residuals
+can be extracted using function \fct{residuals} and has a plotting method. Alternatively,
+residuals can be investigated with
+<<eval = FALSE>>=
+plot(b, which = c("hist-resid", "qq-resid"))
+@
+\begin{figure}[!h]
+\centering
+\setkeys{Gin}{width=0.48\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4.3, height = 4.5>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
+@
+<<echo = FALSE, fig = TRUE, width = 4.3, height = 4.5>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "qq-resid", spar = FALSE)
+@
+\caption{\label{fig:toy_resids} Histogram and quantile-quantile plot of the
+  resulting randomized quantile residuals of the normal location-scale model.}
+\end{figure}
 
 \section{Distributional regression} \label{sec:distreg}
 
