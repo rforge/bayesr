@@ -1859,7 +1859,11 @@ as.character.bamlss.formula <- as.character.bamlss.terms <- function(x, ...)
     if(!is.null(names(x[[i]]))) {
       if(all(c("formula", "fake.formula") %in% names(x[[i]]))) {
         x[[i]]$formula <- deparse(x[[i]]$formula)
+        if(length(x[[i]]$formula) > 1)
+          x[[i]]$formula <- paste(x[[i]]$formula, collapse = " ")
         x[[i]]$fake.formula <- deparse(x[[i]]$fake.formula)
+        if(length(x[[i]]$fake.formula) > 1)
+          x[[i]]$fake.formula <- paste(x[[i]]$fake.formula, collapse = " ")
       } else {
         x[[i]] <- as.character.bamlss.formula(x[[i]])
       }
@@ -1879,7 +1883,11 @@ formula.bamlss.formula.character <- function(x, ...)
   for(i in seq_along(x)) {
     if(!is.null(names(x[[i]]))) {
       if(all(c("formula", "fake.formula") %in% names(x[[i]]))) {
+        if(length(x[[i]]$formula) > 1)
+          x[[i]]$formula <- paste(x[[i]]$formula, collapse = " ")
         x[[i]]$formula <- as.formula(x[[i]]$formula, env = env)
+        if(length(x[[i]]$fake.formula) > 1)
+          x[[i]]$fake.formula <- paste(x[[i]]$fake.formula, collapse = " ")
         x[[i]]$fake.formula <- as.formula(x[[i]]$fake.formula)
       } else {
         x[[i]] <- formula.bamlss.formula.character(x[[i]], ...)
