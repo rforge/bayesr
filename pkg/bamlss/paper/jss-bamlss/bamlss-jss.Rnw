@@ -128,8 +128,8 @@ for Bayesian distributional regression models (and beyond). The main contributio
 are the following:
 %
 \begin{itemize}
-\item Look \& feel of well-established model fitting functions like \fct{glm}.
-\item Easy implementation of (new) models and algorithms (Bayesian or frequentist),
+\item Look \& feel of well-established model fitting functions like \fct{glm},
+\item easy implementation of (new) models and algorithms (Bayesian or frequentist),
 \item comparison of existing optimization algorithms and samplers,
 \item or integration of existing implementations.
 \end{itemize}
