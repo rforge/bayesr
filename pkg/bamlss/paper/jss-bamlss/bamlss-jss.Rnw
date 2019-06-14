@@ -389,7 +389,7 @@ plot(b, which = "qq-resid", spar = FALSE)
 \end{figure}
 According the histogram and the quantile-quantile plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:toy_resids}, the model seems to fit relatively well. 
-Only for very low and very high values of \code{accel} the fitted distributions seems
+Only for very low and very high values of \code{accel} the fitted distributions seem
 to be less appropriate.
 
 Besides residuals, users can evaluate the model performance, e.g., based on the deviance
