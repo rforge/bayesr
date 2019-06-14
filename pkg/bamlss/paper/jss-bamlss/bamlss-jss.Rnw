@@ -512,7 +512,7 @@ All of these rely on the posterior distribution which is proptional to the likel
 
 The first option to obtain point estimates for $\betavec,\tauvec$ is to compute the mode of Eq.~\eqref{eq:post} which is a solution of 
 \[
-\argmax_{\betavec,\tauvec} \pi(\betavec,\tauvec|\yvec).
+\mbox{argmax}_{\betavec,\tauvec} \pi(\betavec,\tauvec|\yvec).
 \]
 In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms can be used to solve the problem iteratvely and \texttt{bamlss} does so as well. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are dertermined base on information criteria such as BIC or AIC.
 
