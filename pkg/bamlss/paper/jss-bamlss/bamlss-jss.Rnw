@@ -503,84 +503,102 @@ Posterior estimation is implemented in \texttt{bamlss} based on different estima
 \subsubsection{The posterior distribution}
 
 All of these rely on the posterior distribution which is proptional to the likelihood time the priors of all involved model parameters. Let therefore be $\betavec=(\betavec_1',\ldots,\betavec_K')'$, where $\betavec_k=(\betavec_{1k}',\ldots,\betavec_{J_k k}')'$ all unknown regression coefficients and $\tauvec=(\tauvec_1',\ldots,\tauvec_K')'$, $\tauvec_k=(\tauvec_{1k},\ldots,\tauvec_{J_k k})'$ the hyperparameters from the previous section. Then, the posterior is up to constants gives by
-\[
+\begin{equation}\label{eq:post}
 \pi(\betavec,\tauvec|\yvec)\propto \prod_{i=1}^n p_{Y_i}\prod_{k=1}^K\prod_{j=1}^{J_k}p(\betavec_{jk},\tauvec_{jk}).
-\]
+\end{equation}
 
 
 \subsubsection{Maximising the posterior mode}
 
+The first option to obtain point estimates for $\betavec,\tauvec$ is to compute the mode of Eq.~\eqref{eq:post} which is a solution of 
+\[
+\argmax_{\betavec,\tauvec} \pi(\betavec,\tauvec|\yvec).
+\]
+In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms can be used to solve the problem iteratvely and \texttt{bamlss} does so as well. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are dertermined base on information criteria such as BIC or AIC.
+
 \subsubsection{Posterior sampling}
-\begin{itemize}
-\item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
-  Probably the most important algorithm, because of its generality and ease of implementation, is
-  random-walk Metropolis. The sampler proceeds by drawing a candidate
-  $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
-  distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$ which is 
-  commonly a normal distribution
-  $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current 
-  iterate. However, in complex settings this sampling scheme is usually not efficient and tuning
-  the covariance matrix $\boldsymbol{\Sigma}_{jk}$ in an adaptive phase is difficult and does not
-  necessarily result in i.i.d.\ behavior of the Markov chain. Therefore, a commonly-used
-  alternative for the covariance matrix of the jumping distribution is to use the local curvature
-  information
-  $\boldsymbol{\Sigma}_{jk} = -\left( \partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) /
-    \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top \right)^{-1}$,
-  or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$,
-  requiring building blocks \ref{item:7a} and \ref{item:8}.
-  However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
-  behavior of the Markov chain especially when parameter samples move into regions with low
-  probability mass of the posterior distribution. A solution with good mixing properties is to
-  construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
-  second order Taylor series expansion of the log-posterior centered at the last state 
-  \citep{bamlss:Gamerman:1997, bamlss:Klein+Kneib+Lang:2015}.
-  The resulting proposal density $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})$
-  is again normal (see supplements Section~4) with precision matrix and mean given by
-  $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \qquad
-  \boldsymbol{\mu}_{jk}^{(t)} =  \boldsymbol{\beta}_{jk}^{(t)} -
-  \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
-    \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
-  $$
-  which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can again
-  be build using blocks \ref{item:7a} and \ref{item:8}.
-  Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
-  the current step.
 
-  Again, assuming a basis function approach for $f_{jk}( \cdot )$ the precision and mean are
-  $$
-  \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
-    \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})
-  \qquad
-  \boldsymbol{\mu}_{jk}^{(t)} =
-    \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
-      \boldsymbol{\eta}^{(t)}_{k,-j}\right)
-  $$
-  with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-\partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
-  as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}, with
-  working observations
-  $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
-  (see also the supplemental material Section~4 for a detailed derivation). Note again,
-  the computation of the mean is equivalent to a full Newton step as given in updating function
-  (\ref{eqn:blockblocknewton}), or Fisher scoring when using
-  $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
-    \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
-  in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS). If
-  the computation of the weights is expensive, one simple strategy is to update
-  $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
-
-\item \emph{Slice sampling}: \label{sec:smcmc}
-  Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
-  samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
-  slice sampling is especially useful for automated general purpose MCMC implementations that allow
-  for sampling from many distributions.  Updates for the $i$-th parameter in $\boldsymbol{\beta}_{jk}$ are
-  generated by:
-  \begin{enumerate}
-  \item Sample $h \sim \mathcal{U}(0, \pi(\beta_{ijk}^{(t)} | \, \cdot))$.
-  \item Sample $\beta_{ijk}^{(t+1)} \sim \mathcal{U}(S)$ from the horizontal slice
-    $S = \{\beta_{ijk}: h < \pi(\beta_{ijk} | \, \cdot)\}$.
-  \end{enumerate}
+The mean of the posterior distribution is
+\[
+bla
+\]
+Clearly, the problem in deriving the expectation, and other quantities like the posterior
+median, relies on the computation of  high-dimensional integrals, which can be
+rarely solved analytically and thus need to be approximated by numerical techniques.
+MCMC simulation is commonly used in such situations as it provides an extensible
+framework that can adapt to almost any type of problem. In the following we summarize
+sampling techniques that are especially well-suited within the BAMLSS framework, i.e.,
+techniques that can be used for a highly modular and extensible system. 
+% \begin{itemize}
+% \item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
+%   Probably the most important algorithm, because of its generality and ease of implementation, is
+%   random-walk Metropolis. The sampler proceeds by drawing a candidate
+%   $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
+%   distribution $q(\boldsymbol{\beta}_{jk}^{\star}| \, \boldsymbol{\beta}_{jk}^{(t)})$ which is 
+%   commonly a normal distribution
+%   $\mathcal{N}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\Sigma}_{jk})$ centered at the current 
+%   iterate. However, in complex settings this sampling scheme is usually not efficient and tuning
+%   the covariance matrix $\boldsymbol{\Sigma}_{jk}$ in an adaptive phase is difficult and does not
+%   necessarily result in i.i.d.\ behavior of the Markov chain. Therefore, a commonly-used
+%   alternative for the covariance matrix of the jumping distribution is to use the local curvature
+%   information
+%   $\boldsymbol{\Sigma}_{jk} = -\left( \partial^2 \pi(\boldsymbol{\vartheta}; \mathbf{y}, \mathbf{X}) /
+%     \partial \boldsymbol{\beta}_{jk}\boldsymbol{\beta}_{jk}^\top \right)^{-1}$,
+%   or its expectation, computed at the posterior mode estimate $\hat{\boldsymbol{\beta}}_{jk}$,
+%   requiring building blocks \ref{item:7a} and \ref{item:8}.
+%   However, fixing $\boldsymbol{\Sigma}_{jk}$ during MCMC simulation might still lead to undesired
+%   behavior of the Markov chain especially when parameter samples move into regions with low
+%   probability mass of the posterior distribution. A solution with good mixing properties is to
+%   construct approximate full conditionals $\pi(\boldsymbol{\beta}_{jk} | \cdot)$ that are based on a
+%   second order Taylor series expansion of the log-posterior centered at the last state 
+%   \citep{bamlss:Gamerman:1997, bamlss:Klein+Kneib+Lang:2015}.
+%   The resulting proposal density $q(\boldsymbol{\beta}_{jk}^\star | \boldsymbol{\beta}_{jk}^{(t)})$
+%   is again normal (see supplements Section~4) with precision matrix and mean given by
+%   $$
+%   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} = -\mathbf{H}_{kk}\left(\boldsymbol{\beta}_{jk}^{(t)}\right) \qquad
+%   \boldsymbol{\mu}_{jk}^{(t)} =  \boldsymbol{\beta}_{jk}^{(t)} -
+%   \left[\mathbf{J}_{kk}\left( \boldsymbol{\beta}_{jk}^{(t)} \right) +
+%     \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})\right]^{-1}\mathbf{s}\left( \boldsymbol{\beta}_{jk}^{(t)} \right),
+%   $$
+%   which is equivalent to the updating function given in (\ref{eqn:blockblocknewton}) and can again
+%   be build using blocks \ref{item:7a} and \ref{item:8}.
+%   Hence, the mean is simply one Newton or Fisher scoring iteration towards the posterior mode at
+%   the current step.
+% 
+%   Again, assuming a basis function approach for $f_{jk}( \cdot )$ the precision and mean are
+%   $$
+%   \left(\boldsymbol{\Sigma}_{jk}^{(t)}\right)^{-1} =
+%     \mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} + \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})
+%   \qquad
+%   \boldsymbol{\mu}_{jk}^{(t)} =
+%     \boldsymbol{\Sigma}_{jk}^{(t)}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\left(\mathbf{z}_k  -
+%       \boldsymbol{\eta}^{(t)}_{k,-j}\right)
+%   $$
+%   with weights $\mathbf{W}_{kk} = -\mathrm{diag}(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+% \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$, or the corresponding expectation,
+%   as in posterior mode updating using building blocks \ref{item:7b} and \ref{item:8}, with
+%   working observations
+%   $\mathbf{z}_k = \boldsymbol{\eta}_k^{(t)} + \mathbf{W}_{kk}^{-1}\mathbf{u}_k^{(t)}$
+%   (see also the supplemental material Section~4 for a detailed derivation). Note again,
+%   the computation of the mean is equivalent to a full Newton step as given in updating function
+%   (\ref{eqn:blockblocknewton}), or Fisher scoring when using
+%   $-E(\partial^2 \ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X}) /
+%     \partial \boldsymbol{\eta}_k \partial \boldsymbol{\eta}_k^\top)$,
+%   in each iteration of the MCMC sampler using iteratively weighted least squares (IWLS). If
+%   the computation of the weights is expensive, one simple strategy is to update
+%   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
+% 
+% \item \emph{Slice sampling}: \label{sec:smcmc}
+%   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
+%   samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
+%   slice sampling is especially useful for automated general purpose MCMC implementations that allow
+%   for sampling from many distributions.  Updates for the $i$-th parameter in $\boldsymbol{\beta}_{jk}$ are
+%   generated by:
+%   \begin{enumerate}
+%   \item Sample $h \sim \mathcal{U}(0, \pi(\beta_{ijk}^{(t)} | \, \cdot))$.
+%   \item Sample $\beta_{ijk}^{(t+1)} \sim \mathcal{U}(S)$ from the horizontal slice
+%     $S = \{\beta_{ijk}: h < \pi(\beta_{ijk} | \, \cdot)\}$.
+%   \end{enumerate}
 \end{itemize}
 
 
