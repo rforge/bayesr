@@ -360,7 +360,8 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE, scheme = 2, grid = 200)
 @
 \caption{\label{fig:toy_effects} Estimated effects of \code{times} on parameter
-  $\mu$ and $\sigma$ of the normal location-scale model.}
+  $\mu$ and $\sigma$ of the normal location-scale model. The grey shaded areas represent
+  95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:toy_effects} depicting a clear nonlinear
 relationship for parameter $\mu$ and $\sigma$.
