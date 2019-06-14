@@ -2,7 +2,6 @@
 \documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
-\usepackage{tikz}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -12,16 +11,6 @@
 %% for internal use
 \newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
 \newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
-
-\definecolor{darkgray}{rgb}{0.1,0.1,0.1}
-\definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
-\definecolor{heat2}{rgb}{0.8823529, 0.4392157, 0.2980392}
-\definecolor{heat3}{rgb}{0.9137255, 0.6039216, 0.1725490}
-\definecolor{heat4}{rgb}{0.9098039, 0.7647059, 0.2352941}
-\definecolor{heat5}{rgb}{0.8862745, 0.9019608, 0.7411765}
-\definecolor{blue1}{RGB}{0, 126, 255}
-
-\usetikzlibrary{shapes.geometric,shapes.symbols,fit,positioning,shadows}
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
@@ -424,7 +413,7 @@ distributions.
 \subsubsection{Response distribution}
 In structured additive distributional regression we assume that the distribution of a $D$-dimensional random variable $(y_{i1},\ldots,y_{iD})'$, $i=1,\ldots,n$ given some covariates $\xvec_i$  has a parametric density
 
-$$p(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_i.$$ 
+$$p_Y(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_{Y_i}.$$ 
 
 % \paragraph{Examples:}
 % 
@@ -451,62 +440,72 @@ The response function is usually chosen to maintain restrictions on the paramete
 \subsubsection{Structured predictors}
 For any parameter of the distribution $p_i$, the semiparametric predictor has the general form
 \begin{equation}\label{eq:predictor}
- \eta_{i}^{\vartheta_k} = \sum_{j=1}^{J_k}f_{j}^{\vartheta_k}(\nuvec_i)
+ \eta_{ik} = \sum_{j=1}^{J_k}f_{jk}(\nuvec_i)
 \end{equation}
-comprising various functions $f_j^{\vartheta_k}(\nuvec_i)$ defined on the complete covariate information $\nuvec_i$. Specific components may for instance be given by
+comprising various functions $f_{jk}(\nuvec_i)$ defined on the complete covariate information $\nuvec_i$. Specific components may for instance be given by
 \begin{itemize}
-\item linear functions $f_{j}^{\vartheta_k}(\nuvec_i)=\xvec'_{i}\beta_j^{\vartheta_k}$, including the overall level of the predictor as an intercept $\beta_{0j}^{\vartheta_k}$  and  $\xvec_i$ is a subvector of  $\nuvec_i$. Note that $\xvec_i$ may be chosen specifically for each parameter $\vartheta_k$ but we suppress this potential dependency in our notation.
-\item continuous functions $f_{j}^{\vartheta_k}(\nuvec_i)=f_{j}^{\vartheta_k}(x_i)$, where $x_i$ is a single element of $\nuvec_i$ and $f_j$ is an appropriate smooth function to represent the effect of $x_i$ on $\vartheta_{ik}$.
-\item spatial variations $f_{j}^{\vartheta_k}(\nuvec_i)=f_{j}^{\vartheta_k}(s_i)$, where $s_i$ represents spatial information, e.g. coordinate information in terms of longitude and latitude or discrete spatial information representing a fixed set of (administrative) geographical units.
+\item linear functions $f_{jk}(\nuvec_i)=\xvec'_{i}\beta_{jk}$, including the overall level of the predictor as an intercept $\beta_{0jk}$  and  $\xvec_i$ is a subvector of  $\nuvec_i$. Note that $\xvec_i$ may be chosen specifically for each parameter $\vartheta_k$ but we suppress this potential dependency in our notation.
+\item continuous functions $f_{jk}=f_{jk}(x_i)$, where $x_i$ is a single element of $\nuvec_i$ and $f_j$ is an appropriate smooth function to represent the effect of $x_i$ on $\vartheta_{ik}$.
+\item spatial variations $f_{jk}(\nuvec_i)=f_{j}^{\vartheta_k}(s_i)$, where $s_i$ represents spatial information, e.g. coordinate information in terms of longitude and latitude or discrete spatial information representing a fixed set of (administrative) geographical units.
 \item random effects $f_{j}^{\vartheta_k}(\nuvec_i)=\beta_{j,g_i}^{\vartheta_k}$, where $g_i$ is a cluster variable that groups the observations.
 \end{itemize}
 
 
 We represent smooth terms in the models using basis functions, as a result of which the predictors can always be written in the generic matrix notation
 \[
- \etavec^{\vartheta_k} = \sum_{j=1}^{J_k}\mZ_{j}^{\vartheta_k}\betavec_j^{\vartheta_k}
+ \etavec_k = \sum_{j=1}^{J_k}\mZ_{jk}\betavec_{jk}
 \]
-where the design matrices $\mZ_{j}^{\vartheta_k}$ are obtained by evaluating the basis functions at observed covariate values  and  $\betavec_j^{\vartheta_k}$ are the vectors of basis coefficients to be estimated.
+where the design matrices $\mZ_{jk}$ are obtained by evaluating the basis functions at observed covariate values  and  $\betavec_{jk}$ are the vectors of basis coefficients to be estimated.
 
-Specific properties of the basis coefficients such as smoothness are regularised by assuming possibly improper Gaussian priors
+Specific properties of the basis coefficients such as smoothness are regularised by assuming possibly improper  priors
 \begin{eqnarray}\label{eq:priorspec}
-p\left(\betavec_j^{\vartheta_k}\bigg|(\tau_j^{\vartheta_k})^2\right) \propto \left(\frac{1}{(\tau_j^{\vartheta_k})^2}\right)^{\rank\left(\mK_j^{\vartheta_k}\right)/2}\exp\left(-\frac{1}{2(\tau_j^{\vartheta_k})^2}\left(\betavec_j^{\vartheta_k}\right)'\mK_j^{\vartheta_k}\betavec_j^{\vartheta_k}\right)
+p\left(\betavec_{jk}\bigg|\tauvec_{jk}^2\right) %\propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
 \end{eqnarray}
-where $\mK_j^{\vartheta_k}$ is a prior precision matrix and $(\tau_j^{\vartheta_k})^2$ are smoothing variances. \textbf{discuss different choices of hyperpriors here?} %The latter are supplemented with inverse gamma hyperpriors, i.e. $(\tau_j^{\vartheta_k})^2~\sim\IGD(a_j^{\vartheta_k},b_j^{\vartheta_k})$ in order to obtain a data-driven amount of smoothness with $a_j^{\vartheta_k}=b_j^{\vartheta_k}=0.001$ as default values for practical analyses.
+with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. 
+
+%where $\mK_{jk}$ is a prior precision matrix and $\tau_{jk}^2$ are smoothing variances. \textbf{discuss different choices of hyperpriors here?} %The latter are supplemented with inverse gamma hyperpriors, i.e. $(\tau_j^{\vartheta_k})^2~\sim\IGD(a_j^{\vartheta_k},b_j^{\vartheta_k})$ in order to obtain a data-driven amount of smoothness with $a_j^{\vartheta_k}=b_j^{\vartheta_k}=0.001$ as default values for practical analyses.
 %Specific examples will be given in Section~\ref{sec:CM}.
 
-As a result, each term $\fvec_j^{\vartheta_k}=(f_j^{\vartheta_k}(\nuvec_1),\ldots,f_j^{\vartheta_k}(\nuvec_n))'=\mZ_j^{\vartheta_k}\betavec_j^{\vartheta_k}$ is determined by a design matrix $\mZ_j^{\vartheta_k}$ and a prior precision or penalty matrix $\mK_j^{\vartheta_k}$. We give two specific examples in the following (suppressing the index $j$ and superscript $\vartheta_k$):
+%As a result, each term $\fvec_{jk}=(f_{jk}(\nuvec_1),\ldots,f_{jk}(\nuvec_n))'=\mZ_{jk}\betavec_{jk}$ is determined by a design matrix $\mZ_{jk}$ and a prior precision or penalty matrix $\mK_{jk}$. We give two specific examples in the following (suppressing the index $j$ and superscript $\vartheta_k$):
 
-\begin{itemize}
-\item {Continuous Covariates:}
-To approximate potentially nonlinear effects, we use Bayesian P-splines, compare \citet{eilers} and \citet{BreLan2006} for detailed explanations. The $n\times S$ design matrix $\mZ$ in this setting is composed of $S$ B-spline basis functions evaluated at observed covariates $x_i$. Assuming equidistant knots for the spline expansion, a first or second order random walk is a sensible choice for the prior of $\betavec$, i.e.
-\begin{eqnarray*}
-\beta_s|\beta_{s-1},\tau^2&\sim&\ND\left(\beta_{s-1},\tau^2\right),\quad s=2,\ldots,S\\
-\text{or}\quad\quad\quad\qquad\qquad\quad\qquad\\
-\beta_s|\beta_{s-1},\beta_{s-2},\tau^2&\sim&\ND\left(2\beta_{s-1}-\beta_{s-2},\tau^2\right),\quad s=3,\ldots,S
-\end{eqnarray*}
-with noninformative priors for initial values. This prior structure yields the penalty matrix $\mK = \mD'\mD$ where $\mD$ is a difference matrix of first or second order.
-
-\item {Spatial Effects:}
-For discrete spatial effects observed on a lattice or regions, we consider Markov random fields, see \citet{RueHel2005}. Let $s_i\in\lbrace 1,\ldots,S\rbrace$ denote the index or region observation $i$ belongs to. Then $f(s_i) = \beta_{s_i}$ is assumed such that we estimate separate parameters $\beta_1,\ldots,\beta_S$ for each region. As a consequence, the $n\times S$ design matrix is an incidence matrix, i.e. $\mZ[i,s]=1$ if observation $i$ belongs to location $s$ and zero otherwise. The simplest Markov random field prior for the coefficients $\beta_s$ is defined by
-\begin{equation*}
-\beta_{s}|\beta_{r},\;r\neq s,\;\tau^2\sim\ND\left(\sum_{r\in\partial_s}\frac{1}{N_s}\beta_{r},\frac{\tau^2}{N_s}\right),
-\end{equation*}
-where $\partial_s$ denotes the set of neighbours of region $s$ and $N_s$ is the number of regions in $\partial_s$. The penalty matrix is then given by
-\begin{eqnarray*}
- \mK[s,r] &=& \begin{cases}
- -1 & s\neq r,\quad r\in\partial_s\\
- 0 & s\neq r,\quad r\notin\partial_s\\
- N_s& s=r.
- \end{cases}
-\end{eqnarray*}
-\end{itemize}
+% \begin{itemize}
+% \item {Continuous Covariates:}
+% \item {Continuous Covariates:}
+% To approximate potentially nonlinear effects, we use Bayesian P-splines, compare \citet{eilers} and \citet{BreLan2006} for detailed explanations. The $n\times S$ design matrix $\mZ$ in this setting is composed of $S$ B-spline basis functions evaluated at observed covariates $x_i$. Assuming equidistant knots for the spline expansion, a first or second order random walk is a sensible choice for the prior of $\betavec$, i.e.
+% \begin{eqnarray*}
+% \beta_s|\beta_{s-1},\tau^2&\sim&\ND\left(\beta_{s-1},\tau^2\right),\quad s=2,\ldots,S\\
+% \text{or}\quad\quad\quad\qquad\qquad\quad\qquad\\
+% \beta_s|\beta_{s-1},\beta_{s-2},\tau^2&\sim&\ND\left(2\beta_{s-1}-\beta_{s-2},\tau^2\right),\quad s=3,\ldots,S
+% \end{eqnarray*}
+% with noninformative priors for initial values. This prior structure yields the penalty matrix $\mK = \mD'\mD$ where $\mD$ is a difference matrix of first or second order.
+% 
+% \item {Spatial Effects:}
+% For discrete spatial effects observed on a lattice or regions, we consider Markov random fields, see \citet{RueHel2005}. Let $s_i\in\lbrace 1,\ldots,S\rbrace$ denote the index or region observation $i$ belongs to. Then $f(s_i) = \beta_{s_i}$ is assumed such that we estimate separate parameters $\beta_1,\ldots,\beta_S$ for each region. As a consequence, the $n\times S$ design matrix is an incidence matrix, i.e. $\mZ[i,s]=1$ if observation $i$ belongs to location $s$ and zero otherwise. The simplest Markov random field prior for the coefficients $\beta_s$ is defined by
+% \begin{equation*}
+% \beta_{s}|\beta_{r},\;r\neq s,\;\tau^2\sim\ND\left(\sum_{r\in\partial_s}\frac{1}{N_s}\beta_{r},\frac{\tau^2}{N_s}\right),
+% \end{equation*}
+% where $\partial_s$ denotes the set of neighbours of region $s$ and $N_s$ is the number of regions in $\partial_s$. The penalty matrix is then given by
+% \begin{eqnarray*}
+%  \mK[s,r] &=& \begin{cases}
+%  -1 & s\neq r,\quad r\in\partial_s\\
+%  0 & s\neq r,\quad r\notin\partial_s\\
+%  N_s& s=r.
+%  \end{cases}
+% \end{eqnarray*}
+% \end{itemize}
 
 For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{fahkne13}.
 
 \subsection{Posterior Estimation}
 
+Posterior estimation is implemented in \texttt{bamlss} based on different estimation procedures.
+
 \subsubsection{The posterior distribution}
+
+All of these rely on the posterior distribution which is proptional to the likelihood time the priors of all involved model parameters. Let therefore be $\betavec=(\betavec_1',\ldots,\betavec_K')'$, where $\betavec_k=(\betavec_{1k}',\ldots,\betavec_{J_k k}')'$ all unknown regression coefficients and $\tauvec=(\tauvec_1',\ldots,\tauvec_K')'$, $\tauvec_k=(\tauvec_{1k},\ldots,\tauvec_{J_k k})'$ the hyperparameters from the previous section. Then, the posterior is up to constants gives by
+\[
+\pi(\betavec,\tauvec|\yvec)\propto \prod_{i=1}^n p_{Y_i}\prod_{k=1}^K\prod_{j=1}^{J_k}p(\betavec_{jk},\tauvec_{jk}).
+\]
 
 
 \subsubsection{Maximising the posterior mode}
@@ -606,33 +605,6 @@ For detailed explanations on structured additive regression with further example
 
 
 \section{The bamlss package} \label{sec:package}
-
-In order to depict the generic and flexible modeling possibilities in distributional regression (or
-general complex regression modeling), the \proglang{R} package \pkg{bamlss} attempts to follow
-a unified architecture made of ``Lego bricks'', such that implementation of new
-distributions and estimation algorithms is relatively straightforward. The architecture of the
-package is outlined in Figure~\ref{fig:blocks}.
-\begin{figure}[ht!]
-\centering
-\setlength{\unitlength}{1cm}
-\setlength{\fboxsep}{0pt}
-\begin{tikzpicture}
-\node (formula) at (0,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{formula} };
-\node (family) at (2.4,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{family} };
-\node (data) at (4.5,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{data} };
-\node[draw,dashed,rounded corners,fit=(formula) (family) (data),inner xsep=10pt,inner ysep=10pt,label={left:{Inputs\,\,}}](A){};
-
-\node (modelframe) at (0.4,-2) [draw,minimum height=0.7cm,rounded corners] { \texttt{model.frame} };
-\node (transformer) at (3.8,-2) [draw,minimum height=0.7cm,rounded corners] { \texttt{transformer} };
-\node[draw,dashed,rounded corners,fit=(modelframe) (transformer),inner xsep=10pt,inner ysep=10pt,label={left:{Model components\,\,}}](B){};
-
-\node (optimizer) at (0.4,-4) [draw,minimum height=0.7cm,rounded corners] { \texttt{optimizer} };
-\node (sampler) at (3.8,-4) [draw,minimum height=0.7cm,rounded corners] { \texttt{sampler} };
-\end{tikzpicture}
-\caption{\label{fig:blocks} Flexible BAMLSS architecture.}
-\end{figure}
-
-
 
 \section{Application} \label{sec:application}
 
