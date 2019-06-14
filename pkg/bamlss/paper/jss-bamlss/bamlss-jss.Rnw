@@ -150,7 +150,6 @@ is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we 
 unified modeling approach using a complex distributional regression model for predicting
 flash counts.
 
-\newpage
 
 \section{Motivating examples} \label{sec:motivation}
 
