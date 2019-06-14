@@ -2,6 +2,7 @@
 \documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
+\usepackage{tikz}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -11,6 +12,16 @@
 %% for internal use
 \newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
 \newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+\definecolor{darkgray}{rgb}{0.1,0.1,0.1}
+\definecolor{heat1}{rgb}{0.8274510, 0.2470588, 0.4156863}
+\definecolor{heat2}{rgb}{0.8823529, 0.4392157, 0.2980392}
+\definecolor{heat3}{rgb}{0.9137255, 0.6039216, 0.1725490}
+\definecolor{heat4}{rgb}{0.9098039, 0.7647059, 0.2352941}
+\definecolor{heat5}{rgb}{0.8862745, 0.9019608, 0.7411765}
+\definecolor{blue1}{RGB}{0, 126, 255}
+
+\usetikzlibrary{shapes.geometric,shapes.symbols,fit,positioning,shadows}
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
@@ -595,6 +606,33 @@ For detailed explanations on structured additive regression with further example
 
 
 \section{The bamlss package} \label{sec:package}
+
+In order to depict the generic and flexible modeling possibilities in distributional regression (or
+general complex regression modeling), the \proglang{R} package \pkg{bamlss} attempts to follow
+a unified architecture made of ``Lego bricks'', such that implementation of new
+distributions and estimation algorithms is relatively straightforward. The architecture of the
+package is outlined in Figure~\ref{fig:blocks}.
+\begin{figure}[ht!]
+\centering
+\setlength{\unitlength}{1cm}
+\setlength{\fboxsep}{0pt}
+\begin{tikzpicture}
+\node (formula) at (0,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{formula} };
+\node (family) at (2.4,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{family} };
+\node (data) at (4.5,0) [draw,minimum height=0.7cm,rounded corners] { \texttt{data} };
+\node[draw,dashed,rounded corners,fit=(formula) (family) (data),inner xsep=10pt,inner ysep=10pt,label={left:{Inputs\,\,}}](A){};
+
+\node (modelframe) at (0.4,-2) [draw,minimum height=0.7cm,rounded corners] { \texttt{model.frame} };
+\node (transformer) at (3.8,-2) [draw,minimum height=0.7cm,rounded corners] { \texttt{transformer} };
+\node[draw,dashed,rounded corners,fit=(modelframe) (transformer),inner xsep=10pt,inner ysep=10pt,label={left:{Model components\,\,}}](B){};
+
+\node (optimizer) at (0.4,-4) [draw,minimum height=0.7cm,rounded corners] { \texttt{optimizer} };
+\node (sampler) at (3.8,-4) [draw,minimum height=0.7cm,rounded corners] { \texttt{sampler} };
+\end{tikzpicture}
+\caption{\label{fig:blocks} Flexible BAMLSS architecture.}
+\end{figure}
+
+
 
 \section{Application} \label{sec:application}
 
