@@ -102,7 +102,7 @@ to follow the distributional regression approach and comprise a quite flexible f
 implementing response distributions. Variable selection algorithms for GAMLSS based on gradient
 boosting were then introduced by the \pkg{gamboostLSS} package
 \citep{bamlss:Hofner+Mayr+Schmid:2014, bamlss:Hofner:2018} and more recently, the contributed
-base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2018} provides a
+base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2019} provides a
 fitting routine for the estimation of general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}.
 The inferential framework of the packages mentioned is based on maximum likelihood, however, if
 taken into account at all. For complex models, e.g., with response
@@ -128,7 +128,7 @@ for Bayesian distributional regression models (and beyond). The main contributio
 are the following:
 %
 \begin{itemize}
-\item Look \& feel of well-established model fitting functions like \fct{glm},
+\item Estimate distributional regression models with usual \proglang{R} modeling ``look \& feel'',
 \item easy implementation of (new) models and algorithms (Bayesian or frequentist),
 \item comparison of existing optimization algorithms and samplers,
 \item or integration of existing implementations.
@@ -142,8 +142,8 @@ really concentrate on it.
 The package is made available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
-The remainder of this paper is as follows. In Section~\ref{sec:motivation}
-motivating examples illustrate the first steps using \pkg{bamlss}. Section~\ref{sec:distreg}
+The remainder of this paper is as follows. In Section~\ref{sec:motivation},
+two motivating examples illustrate the first steps using \pkg{bamlss}. Section~\ref{sec:distreg}
 introduces distributional regression models in more detail. A thorough introduction of the
 \proglang{R} package \pkg{bamlss}, describing the most important infrastructures and building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
@@ -156,11 +156,11 @@ flash counts.
 This section gives a first quick overview of the basic functionality of the package.
 Readers more interested in advanced examples using \pkg{bamlss} could skip this
 section and move to Section~\ref{sec:application} directly. The first example
-demonstrates that the usual look and feel when using well-established model fitting 
+demonstrates that the usual ``look \& feel'' when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
 basic handling of the package should be relatively simple. The second example then
 explains how full distributional regression models can be estimated and show
-cases the flexibility of the provided infrastructures.
+cases the flexibility of the provided modeling infrastructures.
 
 \subsection{Logit model}
 
@@ -205,7 +205,7 @@ the main model fitting function \fct{bamlss} all model fitting engines can be ex
 which is explained in detail in Section~\ref{sec:package} and the application
 Section~\ref{sec:application}. The default model fitting engines use family objects
 (see Section~\ref{sec:package}), similar to the families that can be used
-with the \fct{glm} function, which enables easy implementation of new distributions/models.
+with the \fct{glm} function, which enables easy implementation of new distributions (models).
 
 Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
 the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
@@ -225,10 +225,10 @@ MCMC chains by looking at traceplots and auto-correlation.
 <<eval = FALSE>>=
 plot(b, which = c("samples", "max-acf"))
 @
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=1\textwidth}
-<<echo = FALSE, fig = TRUE, height = 2.7, width = 8>>=
+<<echo = FALSE, fig = TRUE, height = 3, width = 8>>=
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 4.1, 1.1))
 bsp <- b
 bsp$samples <- bsp$samples[, c("pi.p.(Intercept)"), drop = FALSE]
@@ -277,10 +277,10 @@ plot2d(p.no ~ age, data = nd, ylab = "participation",
 plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
   lty = c(2, 1, 2))
 @
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot2d(p.no ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
@@ -348,14 +348,14 @@ visualized instantly using the plotting method.
 <<eval = FALSE>>=
 plot(b, model = c("mu", "sigma"))
 @
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "mu", spar = FALSE, scheme = 2, grid = 200)
 @
-<<echo = FALSE, fig = TRUE, width = 4.3, height = 3.8>>=
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE, scheme = 2, grid = 200)
 @
@@ -373,14 +373,14 @@ Alternatively, residuals can be investigated with
 <<eval = FALSE>>=
 plot(b, which = c("hist-resid", "qq-resid"))
 @
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.3, height = 4.5>>=
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 @
-<<echo = FALSE, fig = TRUE, width = 4.3, height = 4.5>>=
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE)
 @
@@ -392,13 +392,15 @@ quantile residuals in Figure~\ref{fig:toy_resids}, the model seems to fit relati
 Only for very low and very high values of \code{accel} the fitted distributions seem
 to be less appropriate.
 
-Besides residuals, users can evaluate the model performance, e.g., based on the deviance
-information criterion (DIC), which can be extracted using function \fct{DIC}
+Besides residuals, users can evaluate the model performance, e.g., for model selection 
+based on the deviance information criterion (DIC), which can be extracted using function 
+\fct{DIC}
 <<>>=
 DIC(b)
 @
-and is also reported in the model summary output. Furthermore, statistical calibration can
-be assessed by scoring rules \citep{bamlss:Gneiting+Balabdaoui+Raftery:2007}. For example, 
+and is also reported in the model summary output. Furthermore, statistical calibration
+of fitted models can be assessed by scoring rules
+\citep{bamlss:Gneiting+Balabdaoui+Raftery:2007}. For example, 
 the \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} 
 provides easy evaluation of the continuous rank probability score (CRPS) for a couple of 
 distributions.
