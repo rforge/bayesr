@@ -319,7 +319,7 @@ f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 @
 where function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
 \citep{bamlss:Wood:2019}, the default of \fct{s} are thin-plate regression splines.
-Note, that model formulae are provided as lists of formulae, i.e., each list entry
+Note that model formulae are provided as lists of formulae, i.e., each list entry
 represents one parameter of the response distribution. Moreover, note that all smooth
 terms, i.e., \fct{te}, \fct{ti}, etc., are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms. A full Bayesian semi-parametric 
