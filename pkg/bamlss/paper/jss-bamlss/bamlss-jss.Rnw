@@ -415,6 +415,7 @@ In structured additive distributional regression we assume that the distribution
 
 $$p_Y(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_{Y_i}.$$ 
 
+Available families in bamlss are listed in \textbf{CODE} and new families can be created via \textbf{CODE}
 % \paragraph{Examples:}
 % 
 % \textbf{maybe add here the distribution from the intro and introduce \texttt{familyname_bamlss()}?}
@@ -437,6 +438,8 @@ The response function is usually chosen to maintain restrictions on the paramete
 \item the logit or probit link for $\vartheta_{ik}\in [0,1]$
 \end{itemize}
 
+New link functions can be added via \textbf{CODE}
+
 \subsubsection{Structured predictors}
 For any parameter of the distribution $p_i$, the semiparametric predictor has the general form
 \begin{equation}\label{eq:predictor}
@@ -457,11 +460,15 @@ We represent smooth terms in the models using basis functions, as a result of wh
 \]
 where the design matrices $\mZ_{jk}$ are obtained by evaluating the basis functions at observed covariate values  and  $\betavec_{jk}$ are the vectors of basis coefficients to be estimated.
 
+Available smooth terms can be identified via \textbf{CODE} and new smooth terms can be constructed via \textbf{CODE}
+
 Specific properties of the basis coefficients such as smoothness are regularised by assuming possibly improper  priors
-\begin{eqnarray}\label{eq:priorspec}
-p\left(\betavec_{jk}\bigg|\tauvec_{jk}^2\right) %\propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
-\end{eqnarray}
-with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. 
+$
+p(\betavec_{jk}|\tauvec_{jk}) %\propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
+$
+with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. The default in distributional regression is multivariate Gaussian priors for $\betavec_{jk}|\tau_{jk}$ and inverse gamma priors for the smoothing variances $\tau_{jk}^2$.
+
+
 
 %where $\mK_{jk}$ is a prior precision matrix and $\tau_{jk}^2$ are smoothing variances. \textbf{discuss different choices of hyperpriors here?} %The latter are supplemented with inverse gamma hyperpriors, i.e. $(\tau_j^{\vartheta_k})^2~\sim\IGD(a_j^{\vartheta_k},b_j^{\vartheta_k})$ in order to obtain a data-driven amount of smoothness with $a_j^{\vartheta_k}=b_j^{\vartheta_k}=0.001$ as default values for practical analyses.
 %Specific examples will be given in Section~\ref{sec:CM}.
@@ -514,23 +521,22 @@ The first option to obtain point estimates for $\betavec,\tauvec$ is to compute 
 \[
 \mbox{argmax}_{\betavec,\tauvec} \pi(\betavec,\tauvec|\yvec).
 \]
-In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms can be used to solve the problem iteratvely and \texttt{bamlss} does so as well. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are dertermined base on information criteria such as BIC or AIC.
+In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms or backfitting algorithms are used to solve the problem iteratvely and \texttt{bamlss} offers the following options: \textbf{CODE}. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are dertermined base on information criteria such as BIC or AIC. \textbf{CODE}
 
 \subsubsection{Posterior sampling}
 
 The mean of the posterior distribution is
 \[
-bla
+E(\betavec,\tauvec|\yvec) = \int (\betavec,\tauvec)' \pi(\betavec,\tauvec|\yvec) d(\betavec,\tauvec) 
 \]
-Clearly, the problem in deriving the expectation, and other quantities like the posterior
-median, relies on the computation of  high-dimensional integrals, which can be
-rarely solved analytically and thus need to be approximated by numerical techniques.
-MCMC simulation is commonly used in such situations as it provides an extensible
-framework that can adapt to almost any type of problem. In the following we summarize
-sampling techniques that are especially well-suited within the BAMLSS framework, i.e.,
-techniques that can be used for a highly modular and extensible system. 
-% \begin{itemize}
-% \item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
+which can be
+rarely solved analytically. \texttt{bamlss} used MCMC simulation
+as it provides an extensible
+framework that can adapt to almost any type of problem in a modular system. In cases where possible. \texttt{bamlss} uses Gibbss-sampling, but in most cases the conditional posteriors are not of closed form and the package then implements 
+ \begin{itemize}
+ \item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
+ \textbf{CODE}
+ and 
 %   Probably the most important algorithm, because of its generality and ease of implementation, is
 %   random-walk Metropolis. The sampler proceeds by drawing a candidate
 %   $\boldsymbol{\beta}_{jk}^{\star}$ from a symmetric jumping
@@ -588,7 +594,8 @@ techniques that can be used for a highly modular and extensible system.
 %   the computation of the weights is expensive, one simple strategy is to update
 %   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 % 
-% \item \emph{Slice sampling}: \label{sec:smcmc}
+ \item \emph{Slice sampling}: \label{sec:smcmc}
+ \textbf{CODE}
 %   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
 %   samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
 %   slice sampling is especially useful for automated general purpose MCMC implementations that allow
@@ -604,22 +611,46 @@ techniques that can be used for a highly modular and extensible system.
 
 \subsubsection{Boosting}
 
-\subsection{Model evaluation}
+\textbf{soll das hier hin? passt ja nicht ganz, weil posterior?}
 
-\subsubsection{Model Choice and measures of performance}
+\subsection{Model Choice and Evaluation}
+
+\subsubsection{Measures of performance}
+
+Model choice and variable selection is important in distributional regression due to the large number of candidate models. \texttt{bamlss} offers a number of possible options to do so.
 
 \begin{itemize}
-\item information criteria
-\item Quantile residuals
-\item scoring rules
+\item {Information criteria} can be used to compare different model specifications.  
+For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
+AIC, as well as the Bayesian information criterion (BIC), are implemented in \texttt{bamlss}.  Estimation of model complexity
+is based on the so-called equivalent degrees of freedom (EDF). \textbf{CODE} 
+For MCMC based estimation, 
+\texttt{bamlss} mainly relies on the deviance information criterion (DIC). \textbf{CODE} \textbf{eventuell WAIC implementieren?}
+\item Quantile residuals:
+Quantile residuals can be used to evaluate the model fit and can be assessed in bamlss via \textbf{CODE}
+%defined as
+%$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
+%cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
+% $\mathbf{\mathcal{F}}( \cdot )$ the CDF of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
+%parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
+%plugged in, should at least approximately be standard normally distributed if the correct model has
+%been specified. Resulting residuals can
+%be assessed by quantile-quantile-plots or
+%probability integral transforms which consider
+%$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
+%process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
+%Graphically, histograms of the $u_i$ can be used for this purpose.
+\textbf{CODE}
+\item Scoring rules:
+Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scorings \cite{bamlss:Gneiting+Balabdaoui+Raftery:2007}. Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
 \end{itemize}
 
-\subsubsection{Model evaluation}
-\begin{itemize}
-\item plotting
-\item Quantile residuals
-\item scoring rules
-\end{itemize}
+\subsubsection{Evaluation}
+ \begin{itemize}
+\item Plotting: The default plotting function of a \texttt{bamlss} object \texttt{plot(b)} will return all effects centered around their mean. However, it can sometimes be useful in distributional regression to look at transformation of the original model parameters such as expected value or variance of the repsonse variable $\yvec$, we give examples for both in our application.
+\item Predictions:
+For obtaining such transformations the \texttt{predict} function is used. 
+ \end{itemize}
 
 
 \section{The bamlss package} \label{sec:package}

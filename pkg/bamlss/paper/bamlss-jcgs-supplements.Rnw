@@ -52,6 +52,7 @@
 \date{}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 %\bibliographystyle{natbib}
 
