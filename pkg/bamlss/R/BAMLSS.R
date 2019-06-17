@@ -10061,3 +10061,64 @@ smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
   return(object)
 }
 
+
+WAIC <- function(object, ..., newdata = NULL)
+{
+  object <- list(object, ...)
+  rval <- NULL
+  for(j in seq_along(object)) {
+    rval <- rbind(rval, compute_WAIC(object[[j]], newdata))
+  }
+  Call <- match.call()
+  row.names(rval) <- if(nrow(rval) > 1) as.character(Call[-1L]) else ""
+  rval
+}
+
+
+compute_WAIC <- function(object, newdata = NULL) {
+  if(is.null(object$samples) | is.null(object$y)) {
+    warning("cannot compute WAIC, return NULL!")
+    return(NULL)
+  }
+  fam <- family(object)
+  par <- predict.bamlss(object, newdata = newdata,
+    type = "parameter", FUN = function(x) { return(x) }, drop = FALSE)
+  y <- if(is.null(newdata)) {
+    model.response2(object)
+  } else {
+    newdata[, response.name(object)]
+  }
+  if(!is.null(dim(y))) {
+    if(ncol(y) < 2L)
+      y <- y[, 1L]
+  }
+  nsamps <- ncol(par[[1L]])
+  d <- matrix(NA, nrow(par[[1L]]), nsamps)
+  for(i in 1L:nsamps) {
+    tpar <- list()
+    for(j in names(par))
+      tpar[[j]] <- par[[j]][, i]
+    d[, i] <- fam$d(y, tpar)
+  }
+  dm <- rowMeans(d, na.rm = TRUE)
+  ldm <- sum(log(dm), na.rm = TRUE)
+
+  a <- log(dm)
+  b <- rowMeans(log(d), na.rm = TRUE)
+
+  p1 <- sum(2 * (a - b))
+  p2 <- sum(apply(log(d), 1, var))
+
+  waic1 <- -2 * (ldm - p1)
+  waic2 <- -2 * (ldm - p2)
+
+  rval <- data.frame(
+    "WAIC1" = waic1,
+    "WAIC2" = waic2,
+    "p1" = p1,
+    "p2" = p2
+  )
+
+  return(rval)
+}
+
