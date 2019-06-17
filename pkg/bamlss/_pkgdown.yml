@@ -133,4 +133,5 @@ reference:
     - '`summary.bamlss`'
     - '`surv.transform`'
     - '`terms.bamlss`'
+    - '`WAIC`'
 
