@@ -135,7 +135,7 @@
 
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
   <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
-<p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a bachfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
+<p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-4-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
@@ -154,6 +154,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## Parametric coefficients:
 ##               Mean   2.5%    50%  97.5% parameters
 ## (Intercept) -25.13 -29.34 -25.17 -21.24     -25.14
+## alpha         1.00   1.00   1.00   1.00         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
@@ -166,8 +167,9 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## sigma ~ s(times, k = 20)
 ## -
 ## Parametric coefficients:
-##              Mean  2.5%   50% 97.5% parameters
-## (Intercept) 2.686 2.555 2.684 2.830      2.581
+##               Mean   2.5%    50%  97.5% parameters
+## (Intercept) 2.6862 2.5552 2.6837 2.8299      2.581
+## alpha       0.9678 0.7675 0.9999 1.0000         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
