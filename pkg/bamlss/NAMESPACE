@@ -112,6 +112,7 @@ export(
   "samplestats",
   "results.bamlss.default",
   "parameters",
+  "WAIC",
 
   ## vis functions
   "plot2d",
