@@ -125,6 +125,8 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   }
   class(theta) <- c("gmcmc.theta", "list")
 
+  plot <- !is.null(list(...)$plot)
+
   parse_input <- function(input = NULL, default, type) {
     ninput <- deparse(substitute(input), backtick = TRUE, width.cutoff = 500)
     if(is.null(input))
@@ -340,6 +342,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
               ll[js] <- if(!is.null(logLik)) {
                 logLik(eta)
               } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
+
+              if(plot) {
+                if(js > 1) {
+                  plot(ll[1:js], type = "l",
+                    xlab = "Iterations", ylab = "logLik")
+                }
+              }
             }
           }
         } else {
@@ -378,6 +387,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
             ll[js] <- if(!is.null(logLik)) {
               logLik(eta)
             } else sum(do.call(fun, c(theta, list(...))[names(formals(fun))]), na.rm = TRUE)
+
+            if(plot) {
+              if(js > 1) {
+                plot(ll[1:js], type = "l",
+                  xlab = "Iterations", ylab = "logLik")
+              }
+            }
           }
         }
       }
