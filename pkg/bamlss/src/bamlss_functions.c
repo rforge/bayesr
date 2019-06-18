@@ -390,6 +390,8 @@ SEXP process_derivs(SEXP x, SEXP w)
     rvalptr[i] = xptr[i];
     if(ISNA(xptr[i]))
       rvalptr[i] = 1.490116e-08;
+    if(ISNAN(xptr[i]))
+      rvalptr[i] = 1.490116e-08;
     if(xptr[i] > 1e+10)
       rvalptr[i] = 1e+10;
     if(LOGICAL(w)[0]) {

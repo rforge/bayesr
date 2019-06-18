@@ -1548,7 +1548,6 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       if(!is.null(x$doCmat))
         fit <- fit - mean(fit, na.rm = TRUE)
       edf <- sum_diag(XWX %*% P)
-
       eta2[[id]] <- eta2[[id]] + fit
       ic <- get.ic(family, y, family$map2par(eta2), edf0 + edf, length(z), criterion, ...)
       if(!is.null(env$ic_val)) {

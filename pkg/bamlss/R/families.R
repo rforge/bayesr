@@ -2085,6 +2085,7 @@ dw_bamlss <- function(...)
       d <- exp(-(y / lambda)^alpha) - exp(-((y + 1) / lambda)^alpha)
       if(log)
         d <- log(d)
+      d[is.na(d) | !is.finite(d)] <- 1.490116e-08
       return(d)
     },
     "p" = function(y, par, log = FALSE) {
@@ -2178,7 +2179,7 @@ dw_bamlss <- function(...)
     ),
     "initialize" = list(
       "lambda" = function(y, ...) {
-        k <- 1.283 / var(log(y))
+        k <- 1.283 / var(log(y + 1e-04))
         exp(log(y + 1e-04) + 0.5772 / k)
       },
       "alpha" = function(y, ...) {

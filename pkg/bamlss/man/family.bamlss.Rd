@@ -4,6 +4,7 @@
 \alias{bamlss.family}
 \alias{beta_bamlss}
 \alias{binomial_bamlss}
+\alias{dw_bamlss}
 \alias{cnorm_bamlss}
 \alias{cox_bamlss}
 \alias{gaussian_bamlss}
@@ -45,6 +46,7 @@ beta_bamlss(...)
 binomial_bamlss(link = "logit", ...)
 cnorm_bamlss(...)
 cox_bamlss(...)
+dw_bamlss(...)
 gaussian_bamlss(...)
 gaussian2_bamlss(...)
 Gaussian_bamlss(...)
