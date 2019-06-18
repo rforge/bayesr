@@ -3246,6 +3246,69 @@ ztnbinom_bamlss <- function(...) {
   rval
 }
 
+ztnbinomVAR_bamlss <- function(...) {
+### Zero-truncated neg bin with alternative parameterization
+###   gamma models the VAR of the un-truncated neg-bin, and replaces theta
+### Author: Thorsten Simon
+### Date:   2018 Nov
+  theta_from_gamma <- function(par) {
+    par$mu / sqrt(par$gamma - par$mu)  ## Thus gamma has to be greater than mu! Do we have to enforce this?
+  }
+  rval <- list(
+    "family" = "ztnbinom",
+    "names"  = c("mu", "gamma"),
+    "links"  = c(mu = "log", gamma = "log"),
+    "mu" = function(par, ...) {
+        theta <- theta_from_gamma(par)
+        par$mu / stats::pnbinom(0, mu = par$mu, size = theta, lower.tail = FALSE)
+    },
+    "loglik" = function(y, par, ...) {
+        theta <- theta_from_gamma(par)
+        rval <- stats::dnbinom(y, mu = par$mu, size = theta, log = TRUE) -
+                stats::pnbinom(0, mu = par$mu, size = theta, lower.tail = FALSE, log.p = TRUE)
+        sum(rval) 
+    },
+    "d" = function(y, par, log = FALSE) {
+        theta <- theta_from_gamma(par)
+        rval <- stats::dnbinom(y, mu = par$mu, size = theta, log = TRUE) -
+                stats::pnbinom(0, mu = par$mu, size = theta, lower.tail = FALSE, log.p = TRUE)
+        if(log) rval else exp(rval)
+    },
+    "p" = function(y, par, ...) {
+        theta <- theta_from_gamma(par)
+        rval <- log(stats::pnbinom(y, mu = par$mu, size = theta,
+                                   lower.tail = TRUE, log.p = FALSE) -
+                    stats::dnbinom(0, mu = par$mu, size = theta)) -
+                    stats::pnbinom(0, mu = par$mu, size = theta,
+                                   lower.tail = FALSE, log.p = TRUE)
+        exp(rval)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        theta <- theta_from_gamma(par)
+        .Call("ztnbinom_score_mu", as.numeric(y), as.numeric(par$mu),
+              as.numeric(theta), PACKAGE = "bamlss")
+      },
+      "gamma" = function(y, par, ...) {
+        theta <- theta_from_gamma(par)
+        .Call("ztnbinom_score_theta", as.numeric(y), as.numeric(par$mu),
+              as.numeric(theta), PACKAGE = "bamlss")
+      }
+    ),
+    "initialize" = list(
+      "mu" = function(y, ...) {
+        (y + mean(y) - 1) / 2
+      },
+      "gamma" = function(y, ...) {
+        (y + mean(y) - 1) / 2
+      }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
 ## http://stats.stackexchange.com/questions/17672/quantile-regression-in-jags
 quant_bamlss <- function(prob = 0.5)
 {
