@@ -4,7 +4,7 @@
 ## Print method.
 print.family.bamlss <- function(x, full = TRUE, ...)
 {
-  cat("Family:", x$family, "\n")
+  cat("Family:", x$family, if(!is.null(x$full.name)) paste0("(", x$full.name, ")") else NULL,  "\n")
   links <- paste(names(x$links), x$links, sep = " = ")
   links <- paste(links, collapse = ", ")
   cat(if(length(links) > 1) "Link functions:" else "Link function:", links, sep = " ")
@@ -1143,6 +1143,35 @@ gpareto_bamlss <- function(...)
 }
 
 
+dpareto_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "dpareto",
+    "names" = c("alpha", "sigma"),
+    "links" = c(alpha = "log", sigma = "log"),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE) {
+      d <- log((1 / (1 + (y - 1) / par$sigma))^par$alpha - (1 / (1 + y/par$sigma))^par$alpha)
+      if(!log)
+        d <- exp(d)
+      d
+    }
+  )
+
+  rval$initialize <- list(
+    "alpha" = function(y, ...) { rep(mean(y) + 0.5, length(y)) },
+    "sigma" = function(y, ...) { rep(sd(y), length(y)) }
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 gaussian1_bamlss <- function(...)
 {
   links <- c(mu = "identity", sigma = "log")
@@ -2026,6 +2055,134 @@ weibull_bamlss <- function(...)
       },
       "alpha" = function(y, ...) {
         k <- 1.283 / var(log(y))
+        rep(k, length(y))
+      }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+dw_bamlss <- function(...)
+{
+  links <- c(lambda = "log", alpha = "log")
+
+  rval <- list(
+    "family" = "dw",
+    "full.name" = "Discrete Weibull",
+    "names" = c("lambda", "alpha"),
+    "links" = parse.links(links, c(lambda = "log", alpha = "log"), ...),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE) {
+      alpha <-  par$alpha
+      lambda <- par$lambda
+      d <- exp(-(y / lambda)^alpha) - exp(-((y + 1) / lambda)^alpha)
+      if(log)
+        d <- log(d)
+      return(d)
+    },
+    "p" = function(y, par, log = FALSE) {
+      alpha <-  par$alpha
+      lambda <- par$lambda
+      d <- 1 - exp( -((y + 1) / lambda)^alpha )
+      if(log)
+        d <- log(d)
+      return(d)
+    },
+    "score" = list(
+      "lambda" = function(y, par, ...) {
+        alpha <-  par$alpha
+        lambda <- par$lambda
+
+        yl <- y/lambda
+        a <- ((y + 1)/lambda)
+        b <- exp(-a^alpha)
+        l1 <- 1/lambda
+
+        sw <- (exp(-yl^alpha) * (yl^(alpha - 1) * (alpha * (y * l1))) -
+          b * (a^(alpha - 1) * (alpha * ((y + 1) * l1))))/(exp(-yl^alpha) - b)
+
+        return(sw)
+      },
+      "alpha" = function(y, par, ...) {
+        alpha <-  par$alpha
+        lambda <- par$lambda
+
+        yl <- y/lambda
+        y1 <- y + 1
+
+        a <- exp(-(y1/lambda)^alpha)
+
+        sw <- -((exp(-yl^alpha) * (yl^alpha * (log(yl) * alpha)) -
+          a * ((y1/lambda)^alpha * (log((y1/lambda)) * alpha)))/(exp(-yl^alpha) - a))
+
+        return(sw)
+      }
+    ),
+    "hess" = list(
+      "lambda" = function(y, par, ...) {
+        alpha <-  par$alpha
+        lambda <- par$lambda
+
+        yl <- y/lambda
+        y1 <- y + 1
+        ly1 <- y1/lambda
+        a <- yl^(alpha - 1)
+
+        hw <- (exp(-yl^alpha) * (a * (alpha * yl)) * (a * (alpha * yl)) + exp(-yl^alpha) * 
+          (a * (alpha * (yl - y * lambda * (2 * (lambda * lambda))/(lambda^2)^2)) - 
+          yl^((alpha - 1) - 1) * ((alpha - 1) * yl) * (alpha * yl)) - 
+          (exp(-ly1^alpha) * (ly1^(alpha - 1) * (alpha * ly1)) * 
+          (ly1^(alpha - 1) * (alpha * ly1)) + exp(-ly1^alpha) * 
+          (ly1^(alpha - 1) * (alpha * (ly1 - y1 * lambda * 
+          (2 * (lambda * lambda))/(lambda^2)^2)) - ly1^((alpha - 1) - 1) * ((alpha - 1) * ly1) * 
+          (alpha * ly1))))/(exp(-yl^alpha) - exp(-ly1^alpha)) - (exp(-yl^alpha) * 
+          (a * (alpha * yl)) - exp(-ly1^alpha) * (ly1^(alpha - 1) * (alpha * ly1))) * 
+          (exp(-yl^alpha) * (a * (alpha * yl)) - exp(-ly1^alpha) * (ly1^(alpha - 1) *
+          (alpha * ly1)))/(exp(-yl^alpha) - 
+          exp(-ly1^alpha))^2
+
+        return(-hw)
+      },
+      "alpha" = function(y, par, ...) {
+        alpha <-  par$alpha
+        lambda <- par$lambda
+
+        yl <- y / lambda
+        lyl <- log(yl)
+        yla <- yl^alpha
+        y1 <- y + 1
+        y1l <- (y1/lambda)
+        a <- (lyl * alpha)
+        y1la <- y1l^alpha
+        ly1l <- log(y1l)
+        ey1la <- exp(-y1la)
+        ylaa <- yla * a
+        b <- (ly1l * alpha)
+
+        hw <- -((exp(-yla) * (yla * (lyl * alpha) * a + ylaa) - exp(-yla) * 
+          (ylaa) * (ylaa) - (ey1la * (y1la * b^2 +
+          y1la * b) - ey1la * (y1la * b) * (y1la * b)))/(exp(-yla) - 
+          ey1la) + (exp(-yla) * (ylaa) - 
+          ey1la * (y1la * b)) * (exp(-yla) * (ylaa) - 
+          ey1la * (y1la * b))/(exp(-yla) - ey1la)^2)
+
+        return(-hw)
+      }
+    ),
+    "initialize" = list(
+      "lambda" = function(y, ...) {
+        k <- 1.283 / var(log(y))
+        exp(log(y + 1e-04) + 0.5772 / k)
+      },
+      "alpha" = function(y, ...) {
+        k <- 1.283 / var(log(y + 1e-04))
         rep(k, length(y))
       }
     )
