@@ -2080,7 +2080,7 @@ dw_bamlss <- function(...)
     "family" = "dw",
     "full.name" = "Discrete Weibull",
     "names" = c("lambda", "alpha"),
-    "links" = parse.links(links, c(lambda = "log", alpha = "log"), ...),
+    "links" = links,
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
