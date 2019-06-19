@@ -2067,7 +2067,10 @@ weibull_bamlss <- function(...)
 
 dw_bamlss <- function(...)
 {
-  links <- c(lambda = "log", alpha = "log")
+  links <- c(lambda = "logit", alpha = "log")
+
+  link_lambda <- make.link2(links["lambda"])
+  link_alpha <- make.link2(links["alpha"])
 
   rval <- list(
     "family" = "dw",
@@ -2080,111 +2083,108 @@ dw_bamlss <- function(...)
       ok
     },
     "d" = function(y, par, log = FALSE) {
-      alpha <-  par$alpha
-      lambda <- par$lambda
-      d <- exp(-(y / lambda)^alpha) - exp(-((y + 1) / lambda)^alpha)
+      d <- par$lambda^(y^par$alpha) - par$lambda^((y + 1)^par$alpha)
       if(log)
         d <- log(d)
       d[is.na(d) | !is.finite(d)] <- 1.490116e-08
       return(d)
     },
     "p" = function(y, par, log = FALSE) {
-      alpha <-  par$alpha
-      lambda <- par$lambda
-      d <- 1 - exp( -((y + 1) / lambda)^alpha )
+      d <- 1 - par$lambda^((y + 1)^par$alpha)
       if(log)
         d <- log(d)
       return(d)
     },
     "score" = list(
-      "lambda" = function(y, par, ...) {
-        alpha <-  par$alpha
-        lambda <- par$lambda
+      "lambda" = function(y, par, ...) {        
+        ya <- y^par$alpha
+        y1a <- ((y + 1)^par$alpha)
 
-        yl <- y/lambda
-        a <- ((y + 1)/lambda)
-        b <- exp(-a^alpha)
-        l1 <- 1/lambda
-
-        sw <- (exp(-yl^alpha) * (yl^(alpha - 1) * (alpha * (y * l1))) -
-          b * (a^(alpha - 1) * (alpha * ((y + 1) * l1))))/(exp(-yl^alpha) - b)
+        sw <- (par$lambda^(ya - 1) * ya - par$lambda^(y1a - 1) * y1a)/(par$lambda^ya - par$lambda^y1a)
+        sw <- sw * link_lambda$mu.eta(link_lambda$linkfun(par$lambda))
 
         return(sw)
       },
       "alpha" = function(y, par, ...) {
-        alpha <-  par$alpha
-        lambda <- par$lambda
-
-        yl <- y/lambda
+        ya <- y^par$alpha
         y1 <- y + 1
+        ll <- log(par$lambda)
+        lya <- par$lambda^(y1^par$alpha)
+        lya2 <- par$lambda^ya
 
-        a <- exp(-(y1/lambda)^alpha)
-
-        sw <- -((exp(-yl^alpha) * (yl^alpha * (log(yl) * alpha)) -
-          a * ((y1/lambda)^alpha * (log((y1/lambda)) * alpha)))/(exp(-yl^alpha) - a))
+        sw <- (lya2 * (ll * (ya * log(y))) - lya * (ll * (y1^par$alpha * log(y1))))/(lya2 - lya)
+        sw <- sw * link_alpha$mu.eta(link_alpha$linkfun(par$alpha))
 
         return(sw)
       }
     ),
     "hess" = list(
       "lambda" = function(y, par, ...) {
-        alpha <-  par$alpha
-        lambda <- par$lambda
+        d1 <- link_lambda$mu.eta(link_lambda$linkfun(par$lambda))
+        d2 <- link_lambda$mu.eta2(link_lambda$linkfun(par$lambda))
 
-        yl <- y/lambda
         y1 <- y + 1
-        ly1 <- y1/lambda
-        a <- yl^(alpha - 1)
+        ya <- y^par$alpha
+        y1a <- y1^par$alpha
+        ya1 <- (ya - 1)
+        ly1 <- par$lambda^ya1
+        ly1ya <- ly1 * ya
+        lya <- par$lambda^ya
+        lya1 <- par$lambda^y1a
+        y1a1 <- (y1a - 1)
+        lyalya1 <- (lya - lya1)
+        ly1a1 <- par$lambda^y1a1
+        a <- (ly1ya - ly1a1 * y1a)
 
-        hw <- (exp(-yl^alpha) * (a * (alpha * yl)) * (a * (alpha * yl)) + exp(-yl^alpha) * 
-          (a * (alpha * (yl - y * lambda * (2 * (lambda * lambda))/(lambda^2)^2)) - 
-          yl^((alpha - 1) - 1) * ((alpha - 1) * yl) * (alpha * yl)) - 
-          (exp(-ly1^alpha) * (ly1^(alpha - 1) * (alpha * ly1)) * 
-          (ly1^(alpha - 1) * (alpha * ly1)) + exp(-ly1^alpha) * 
-          (ly1^(alpha - 1) * (alpha * (ly1 - y1 * lambda * 
-          (2 * (lambda * lambda))/(lambda^2)^2)) - ly1^((alpha - 1) - 1) * ((alpha - 1) * ly1) * 
-          (alpha * ly1))))/(exp(-yl^alpha) - exp(-ly1^alpha)) - (exp(-yl^alpha) * 
-          (a * (alpha * yl)) - exp(-ly1^alpha) * (ly1^(alpha - 1) * (alpha * ly1))) * 
-          (exp(-yl^alpha) * (a * (alpha * yl)) - exp(-ly1^alpha) * (ly1^(alpha - 1) *
-          (alpha * ly1)))/(exp(-yl^alpha) - 
-          exp(-ly1^alpha))^2
+        dll1 <- a/lyalya1
+        dll2 <- (par$lambda^(ya1 - 1) * ya1 * ya - par$lambda^(y1a1 - 1) * y1a1 * y1a)/lyalya1 - a^2/lyalya1^2
+
+        hw <- d1^2 * dll2 + d2 * dll1
 
         return(-hw)
       },
       "alpha" = function(y, par, ...) {
-        alpha <-  par$alpha
         lambda <- par$lambda
+        alpha <- par$alpha
 
-        yl <- y / lambda
-        lyl <- log(yl)
-        yla <- yl^alpha
+        d1 <- link_alpha$mu.eta(link_alpha$linkfun(par$alpha))
+        d2 <- link_alpha$mu.eta2(link_alpha$linkfun(par$alpha))
+
+        ya <- y^par$alpha
+        lla <- log(par$lambda)
         y1 <- y + 1
-        y1l <- (y1/lambda)
-        a <- (lyl * alpha)
-        y1la <- y1l^alpha
-        ly1l <- log(y1l)
-        ey1la <- exp(-y1la)
-        ylaa <- yla * a
-        b <- (ly1l * alpha)
+        ly <- log(y)
+        ly1 <- log(y1)
+        y1a <- y1^par$alpha
+        ly1a <- par$lambda^y1a
+        y1aly1 <- y1a * ly1
+        yaly <- ya * ly
+        llayaly <- lla * yaly
+        lya <- lambda^ya
+        lyaly1a <- lya - ly1a
+        llay1aly1 <- lla * y1aly1
+        lyallayaly <- lya * llayaly
+        a <- ly1a * llay1aly1
+        b <- lyallayaly - a
 
-        hw <- -((exp(-yla) * (yla * (lyl * alpha) * a + ylaa) - exp(-yla) * 
-          (ylaa) * (ylaa) - (ey1la * (y1la * b^2 +
-          y1la * b) - ey1la * (y1la * b) * (y1la * b)))/(exp(-yla) - 
-          ey1la) + (exp(-yla) * (ylaa) - 
-          ey1la * (y1la * b)) * (exp(-yla) * (ylaa) - 
-          ey1la * (y1la * b))/(exp(-yla) - ey1la)^2)
+        dll1 <- b/lyaly1a
+
+        dll2 <- (lyallayaly * llayaly + lya * (lla * (yaly * ly)) -
+          (a * llay1aly1 + ly1a * (lla * (y1aly1 * ly1))))/lyaly1a - b^2/lyaly1a^2
+
+        hw <- d1^2 * dll2 + d2 * dll1
 
         return(-hw)
       }
     ),
     "initialize" = list(
       "lambda" = function(y, ...) {
-        k <- 1.283 / var(log(y + 1e-04))
-        exp(log(y + 1e-04) + 0.5772 / k)
+        m1 <- mean(y)
+        m2 <- mean(y^2)
+        rep(ifelse(any(y < 1), m1 / (m1 + 1), (m1 - 1) / m1), length(y))
       },
       "alpha" = function(y, ...) {
-        k <- 1.283 / var(log(y + 1e-04))
-        rep(k, length(y))
+        rep(1, length(y))
       }
     )
   )
