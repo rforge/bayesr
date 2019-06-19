@@ -2069,7 +2069,7 @@ dw_bamlss <- function(...)
 {
   links <- c(lambda = "logit", alpha = "log")
   
-  trunc <- list(..)$trunc
+  trunc <- list(...)$trunc
   if(is.null(trunc))
     trunc <- FALSE
 
