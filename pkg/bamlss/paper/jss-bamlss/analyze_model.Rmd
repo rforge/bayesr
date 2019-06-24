@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup}
 library("bamlss")
-load("full_model.rda")
+load("full_model2.rda")
 ls()
 vars <- c("d2m", "q_prof_PC1", "cswc_prof_PC4", "t_prof_PC1", "v_prof_PC2",
           "sqrt_cape", "sqrt_lsp")
@@ -16,27 +16,28 @@ b <- bamlss:::light_bamlss(b)
 ```
 
 ```{r plot-stabsel, fig.width = 7, fig.height = 11, out.width = "100%"}
-plot(sel, 25)
+#plot(sel, 25)
 ```
 
 ```{r plot-boost-summary, out.width = "100%"}
-boost.plot(b, "loglik.contrib")
+#boost.plot(b, "loglik.contrib")
 ```
 
 ```{r plot-mu-effects, fig.width = 10, fig.height = 15, out.width = "100%"}
-plot(b, model = "mu", scale = 0)
+#plot(b, model = "mu", scale = 0)
 ```
 
 ```{r plot-theta-effects, out.width = "100%"}
-plot(b, model = "theta", scale = 0)
+#plot(b, model = "theta", scale = 0)
 ```
 
 ```{r plot-trace, fig.width = 10, fig.height = 15, out.width = "100%"}
-plot(b, model = "mu", term = "sqrt_cape", which = "samples",
-     parameter = TRUE)
+#plot(b, model = "mu", term = "sqrt_cape", which = "samples",
+#     parameter = TRUE)
 ```
 
 ```{r plot-rooto, out.width = "100%"}
+fam <- family(b)
 y <- d_eval$counts
 par <- subset(d_eval, select = c("mu", "theta"))
 obsrvd <- table(y)[1:50]

@@ -765,26 +765,36 @@ scale hanging from the red line.}
 library("sf")
 library("ggplot2")
 library("colorspace")
+library("rnaturalearth")
+library("rnaturalearthdata")
   
-fit <- predict(b, newdata = d_case, type = "parameter")
-d_case$P10 <- 1 - fam$p(9, fit)
-  
-ggplot() + geom_sf(aes(fill = P10), data = d_case) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-  geom_sf(data = gadm_countries, col = "white", fill = NA) +
-  facet_wrap(~time) + theme_minimal()
-@
-<<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
-library("sf")
-library("ggplot2")
-library("colorspace")
+world <- ne_countries(scale = "medium", returnclass = "sf")
 
 fit <- predict(b, newdata = d_case, type = "parameter")
 d_case$P10 <- 1 - fam$p(9, fit)
   
 ggplot() + geom_sf(aes(fill = P10), data = d_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-  geom_sf(data = gadm_countries, col = "white", fill = NA) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
+  facet_wrap(~time) + theme_minimal()
+@
+<<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
+library("sf")
+library("ggplot2")
+library("colorspace")
+library("rnaturalearth")
+library("rnaturalearthdata")
+
+fit <- predict(b, newdata = d_case, type = "parameter")
+d_case$P10 <- 1 - fam$p(9, fit)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() + geom_sf(aes(fill = P10), data = d_case) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
   facet_wrap(~time, nrow = 2) + theme_minimal() # +
 #  theme(legend.position = "bottom")
 @
