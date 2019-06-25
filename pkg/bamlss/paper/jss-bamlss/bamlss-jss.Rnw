@@ -658,13 +658,22 @@ For obtaining such transformations the \texttt{predict} function is used.
 \section{Application} \label{sec:application}
 
 <<application-load-model, echo=FALSE>>=
-load("application.rda")
-f <- formula(sel)
+## --- data ---
+data("flash_austria", package = "FlashAustria")
+data("fitted_model", package = "FlashAustria")
+
+## --- specify formula ---
+f <- list(
+  mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+    s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+    s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
+  theta = ~s(sqrt_lsp, bs = "ps")
+)
 @
 
 <<application-model, eval=FALSE>>=
 ## --- data ---
-load("ALDIS_ERA5_subset.rda")
+data("flash_austria", package = "FlashAustria")
 
 ## --- specify formula ---
 f <- list(
