@@ -64,6 +64,7 @@ reference:
     - '`stabsel`'
     - '`boost2`'
     - '`bboost`'
+    - '`bbfit`'
   - title: Samplers
     desc: >
       Sampler functions that can be used for model fitting using `bamlss()`
