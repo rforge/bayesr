@@ -5638,8 +5638,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             P <- matrix_inv(XWX + 1/tau2f * I)
             b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-            ll <- if(aic) {
-              -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+            ll <- if(aic | loglik) {
+              if(aic) {
+                -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+              } else {
+                -1 * family$loglik(yt, family$map2par(etas))
+              }
             } else {
               mean((zs - etas[[i]])^2, na.rm = TRUE)
             }
@@ -5695,9 +5699,13 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               P <- matrix_inv(XWX + S)
               b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-              if(aic) {
-                iedf <- sum_diag(XWX %*% P)
-                ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
+              if(aic | loglik) {
+                if(aic) {
+                  iedf <- sum_diag(XWX %*% P)
+                  ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
+                } else {
+                  -1 * family$loglik(yt, family$map2par(etas))
+                }
               } else {
                 ll <- mean((zs - etas[[i]])^2, na.rm = TRUE)
               }
