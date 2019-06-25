@@ -5474,6 +5474,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
   aic <- list(...)$aic
+
+  loglik <- list(...)$aic
+  if(is.null(loglik))
+    loglik <- FALSE
+  if(loglik)
+    aic <- FALSE
   if(is.null(aic))
     aic <- FALSE
 
