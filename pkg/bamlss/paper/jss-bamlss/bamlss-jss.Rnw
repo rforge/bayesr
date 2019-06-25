@@ -429,16 +429,24 @@ Note, that  each predictor and each distribution parameter can be summarised in 
 % 
 % \textbf{something in R code here?}
 
+ \paragraph{Examples:} Examples of distributional models that fit well in this framework are the ones for
+ \begin{itemize}
+ \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as proposed in \citet{bamlss:Klein+Kneib+Lang:2015}, continuous responses with spikes, skewness, heavy tails or bounded support as in \citet{bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Klein+Denuit+Kneib+Lang:2014}, as well as responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}
+ \item multivariate responses such as multivariate normal, multivariate t or Dirichlet regression (for analysing compositional data) \citet{bamlss:Klein+Klasen+Kneib+Lang:2015}
+ \item multivariate responses with more complex dependence structures modelled through copulas \citet{bamlss:Klein+Kneib:2016b}
+ \item survival data and joint modelling \textbf{REFS}
+ \item \textbf{Anything else here?}
+\end{itemize}
 
 The response function is usually chosen to maintain restrictions on the parameter space, like 
 \begin{itemize}
 \item the identity function $\vartheta_{ik}=\exp(\eta_{ik})$ if $\vartheta_{ik}\in\mathds{R}$,
-\item the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis, 
-\item the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$,
-\item the logit or probit link for $\vartheta_{ik}\in [0,1]$
+\item the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis (such as variances), 
+\item the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$ (for correlation parameters for instance),
+\item the logit or probit link for $\vartheta_{ik}\in [0,1]$ for probabilities
 \end{itemize}
 
-New link functions can be added via \textbf{CODE}
+
 
 \subsubsection{Structured predictors}
 For any parameter of the distribution $p_i$, the semiparametric predictor has the general form
@@ -453,6 +461,8 @@ comprising various functions $f_{jk}(\nuvec_i)$ defined on the complete covariat
 \item random effects $f_{j}^{\vartheta_k}(\nuvec_i)=\beta_{j,g_i}^{\vartheta_k}$, where $g_i$ is a cluster variable that groups the observations.
 \end{itemize}
 
+For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013,bamlss:Wood:2016} and \citet{bamlss:Kneib+Klein+Lang+Umlauf:2019} for a special focus on general tensor product interactions.
+
 
 We represent smooth terms in the models using basis functions, as a result of which the predictors can always be written in the generic matrix notation
 \[
@@ -460,13 +470,20 @@ We represent smooth terms in the models using basis functions, as a result of wh
 \]
 where the design matrices $\mZ_{jk}$ are obtained by evaluating the basis functions at observed covariate values  and  $\betavec_{jk}$ are the vectors of basis coefficients to be estimated.
 
-Available smooth terms can be identified via \textbf{CODE} and new smooth terms can be constructed via \textbf{CODE}
+It is also possible to create new smooth terms in the bamlss package.
 
 Specific properties of the basis coefficients such as smoothness are regularised by assuming possibly improper  priors
 $
 p(\betavec_{jk}|\tauvec_{jk}) %\propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
 $
 with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. The default in distributional regression is multivariate Gaussian priors for $\betavec_{jk}|\tau_{jk}$ and inverse gamma priors for the smoothing variances $\tau_{jk}^2$.
+
+However, there is many more advanced options to include variable selection, shrinkage and prior elicitation. Specifically, we provide
+\begin{itemize}
+\item improved priors for the smoothing variances~\citep{bamlss:Klein+Kneib:2016},
+\item Lasso type regularization \citep{bamlss:Groll+Kneib+Umlauf:2019}
+\item Bayesian effect selection through spike-and-slab priors \citep{bamlss:Klein+Carlan+Kneib+Lang+Wagner:2019:arxiv}
+\end{itemize}
 
 
 
@@ -501,7 +518,6 @@ with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperpri
 % \end{eqnarray*}
 % \end{itemize}
 
-For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{fahkne13}.
 
 \subsection{Posterior Estimation}
 
