@@ -661,6 +661,7 @@ For obtaining such transformations the \texttt{predict} function is used.
 ## --- data ---
 data("flash_austria", package = "FlashAustria")
 data("fitted_model", package = "FlashAustria")
+b <- flash_austria_model
 
 ## --- specify formula ---
 f <- list(
@@ -684,7 +685,7 @@ f <- list(
 )
 
 ## --- fit model ---
-b <- bamlss(f, data = d_train,                # standard interface
+b <- bamlss(f, data = flash_austria_train,    # standard interface
   family = "ztnbinom", binning = TRUE,        # general arguments
   optimizer = boost, maxit = 1000,            # boosting arguments
   thin = 5, burnin = 1000, n.iter = 6000      # sampler arguments
@@ -745,15 +746,13 @@ splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
 library("countreg")
 
 ## --- out-of-sample prediciton ---
-fit <- predict(b, newdata = d_eval, type = "parameter")
-d_eval <- cbind(d_eval, as.data.frame(fit))
+fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
 
 ## --- compute quantities for rootogram ---
-obsrvd <- table(d_eval$counts)[1:50]
+obsrvd <- table(flash_austria_eval$counts)[1:50]
 
 fam <- family(b)
-par <- subset(d_eval, select = c("mu", "theta"))
-expect <- sapply(1:50, function(j) sum(fam$d(j, par)))
+expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 names(expect) <- 1:50
 expect <- as.table(expect)
 
@@ -779,10 +778,10 @@ library("rnaturalearthdata")
   
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-fit <- predict(b, newdata = d_case, type = "parameter")
+fit <- predict(b, newdata = flash_austria_case, type = "parameter")
 d_case$P10 <- 1 - fam$p(9, fit)
   
-ggplot() + geom_sf(aes(fill = P10), data = d_case) +
+ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
@@ -795,12 +794,12 @@ library("colorspace")
 library("rnaturalearth")
 library("rnaturalearthdata")
 
-fit <- predict(b, newdata = d_case, type = "parameter")
-d_case$P10 <- 1 - fam$p(9, fit)
+fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+flash_austria_case$P10 <- 1 - fam$p(9, fit)
 
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-ggplot() + geom_sf(aes(fill = P10), data = d_case) +
+ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
