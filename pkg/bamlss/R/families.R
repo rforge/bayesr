@@ -2088,8 +2088,9 @@ dw_bamlss <- function(...)
     },
     "d" = function(y, par, log = FALSE) {
       d <- par$lambda^(y^par$alpha) - par$lambda^((y + 1)^par$alpha)
-      if(trunc)
-        d / (1 - par$lambda)
+      if(trunc) {
+        d / par$lambda
+      }
       if(log)
         d <- log(d)
       d[is.na(d) | !is.finite(d)] <- 1.490116e-08
@@ -2110,7 +2111,7 @@ dw_bamlss <- function(...)
         sw <- sw * link_lambda$mu.eta(link_lambda$linkfun(par$lambda))
 
         if(trunc)
-          sw <- sw + 1 / (1 - par$lambda) * link_lambda$mu.eta(link_lambda$linkfun(par$lambda))
+          sw <- sw - 1/par$lambda * link_lambda$mu.eta(link_lambda$linkfun(par$lambda))
 
         return(sw)
       },
@@ -2151,8 +2152,7 @@ dw_bamlss <- function(...)
         hw <- d1^2 * dll2 + d2 * dll1
 
         if(trunc) {
-          ol <- (1 - par$lambda)
-          hw <- hw + d1^2 / ol^2 + d2 / ol
+          hw <- hw + d1^2 * 1 / par$lambda^2 - d2 * 1 / par$lambda
         }
 
         return(-hw)

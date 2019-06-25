@@ -21,27 +21,14 @@ isgd(x, y, family, weights = NULL, offset = NULL,
            \code{\link{bamlss.frame}}.}
   \item{family}{A \pkg{bamlss} family object, see
                 \code{\link{family.bamlss}}.}
-  \item{weights}{
-%%     ~~Describe \code{weights} here~~
-}
-  \item{offset}{
-%%     ~~Describe \code{offset} here~~
-}
-  \item{gammaFun}{
-%%     ~~Describe \code{gammaFun} here~~
-}
-  \item{shuffle}{
-%%     ~~Describe \code{shuffle} here~~
-}
-  \item{CFun}{
-%%     ~~Describe \code{CFun} here~~
-}
-  \item{start}{
-%%     ~~Describe \code{start} here~~
-}
-  \item{i.state}{
-%%     ~~Describe \code{i.state} here~~
-}
+  \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
+  \item{offset}{Can be used to supply model offsets for use in fitting,
+    returned from function \code{\link{bamlss.frame}}.}
+  \item{gammaFun}{Function specifying the step length.}
+  \item{shuffle}{Should the data be shuffled?}
+  \item{CFun}{Hessian approximating function.}
+  \item{start}{Vector of starting values.}
+  \item{i.state}{Added to \code{gammaFUN()}.}
 }
 \details{
 tpf
