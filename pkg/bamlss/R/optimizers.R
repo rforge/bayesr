@@ -5596,6 +5596,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       }
 
       eta00 <- eta
+      edf <- 0
 
       for(i in nx) {
         ## Linear part.
@@ -5628,7 +5629,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             P <- matrix_inv(XWX + 1/tau2f * I)
             b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-            mean((zs - etas[[i]])^2, na.rm = TRUE)
+            ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+            return(ll) ## mean((zs - etas[[i]])^2, na.rm = TRUE)
           }
 
           tau2fe <- try(tau2.optim(objfun, tau2f), silent = TRUE)
@@ -5639,6 +5641,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
           etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
+          edf <- edf + ncol(Xt)
         }
 
         ## Nonlinear.
@@ -5679,7 +5682,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               P <- matrix_inv(XWX + S)
               b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-              mean((zs - etas[[i]])^2, na.rm = TRUE)
+              iedf <- sum_diag(XWX %*% P)
+              ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
+              return(ll) ##mean((zs - etas[[i]])^2, na.rm = TRUE)
             }
 
             tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
@@ -5697,6 +5702,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
               P <- matrix_inv(XWX + S)
               beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+              edf <- edf + sum_diag(XWX %*% P)
             }
 
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
@@ -5715,9 +5721,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       if(verbose) {
         if(iter2 < 2) {
-          cat(sprintf("   * no. obs %i\r", k))
+          cat(sprintf("   * no. obs %i, edf %f\r", k, round(edf, 4)))
         } else {
-          cat(sprintf("   * no. obs %i, eps %f\r", k, round(eps, 4)))
+          cat(sprintf("   * no. obs %i, eps %f, edf %f\r", k, round(eps, 4), round(edf, 2)))
         }
       }
 
