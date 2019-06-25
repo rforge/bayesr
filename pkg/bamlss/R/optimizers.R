@@ -5470,16 +5470,19 @@ sgd_grep_X <- function(x) {
 
 
 bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
-  epochs = 1, batch = 10, maxit = Inf, verbose = TRUE, ...)
+  epochs = 1, nbatch = 10, maxit = Inf, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
+  aic <- list(...)$aic
+  if(is.null(aic))
+    aic <- FALSE
 
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
-  batch <- floor(N/batch)
+  batch <- floor(N/nbatch)
 
   if(batch > N/2)
     stop("The batch size may not exceed half the number of observations!")
@@ -5561,6 +5564,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
     k <- batch
     iter <- 1L
+    edf <- NA
 
     while((k <= N) & (iter2 <= maxit)) {
       take <- (k - batch + 1L):k
@@ -5629,8 +5633,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             P <- matrix_inv(XWX + 1/tau2f * I)
             b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-            ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
-            return(ll) ## mean((zs - etas[[i]])^2, na.rm = TRUE)
+            ll <- if(aic) {
+              -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+            } else {
+              mean((zs - etas[[i]])^2, na.rm = TRUE)
+            }
+            return(ll)
           }
 
           tau2fe <- try(tau2.optim(objfun, tau2f), silent = TRUE)
@@ -5682,9 +5690,13 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               P <- matrix_inv(XWX + S)
               b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-              iedf <- sum_diag(XWX %*% P)
-              ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
-              return(ll) ##mean((zs - etas[[i]])^2, na.rm = TRUE)
+              if(aic) {
+                iedf <- sum_diag(XWX %*% P)
+                ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
+              } else {
+                ll <- mean((zs - etas[[i]])^2, na.rm = TRUE)
+              }
+              return(ll)
             }
 
             tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
@@ -5754,6 +5766,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   rval$fitted.values <- eta
   rval$shuffle <- shuffle
   rval$runtime <- elapsed
+  rval$edf <- edf
+  rval$nbatch <- nbatch
 
   rval
 }

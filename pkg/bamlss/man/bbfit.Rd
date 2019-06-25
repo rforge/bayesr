@@ -9,7 +9,7 @@
 
 \usage{
 bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
-  epochs = 1, batch = 10, maxit = Inf, verbose = TRUE, ...)
+  epochs = 1, nbatch = 10, maxit = Inf, verbose = TRUE, ...)
 }
 
 \arguments{
@@ -25,7 +25,7 @@ bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   \item{offset}{Can be used to supply model offsets for use in fitting,
     returned from function \code{\link{bamlss.frame}}.}
   \item{epochs}{For how many epochs should the algorithm run?}
-  \item{batch}{Number of batches.}
+  \item{nbatch}{Number of batches.}
   \item{maxit}{Maximum number of iterations of the inner loop.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{\dots}{Not used.}
@@ -54,7 +54,7 @@ bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 \examples{
 \dontrun{## Simulate data.
 set.seed(123)
-d <- GAMart(n = 270000)
+d <- GAMart(n = 27000)
 
 ## Write data to disc.
 tf <- tempdir()
@@ -64,7 +64,7 @@ write.table(d, file.path(tf, "d.raw"), quote = FALSE, row.names = FALSE, sep = "
 f <- num ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
 
 b <- bamlss(f, data = file.path(tf, "d.raw"), optimizer = bbfit,
-  sampler = FALSE, batch = 100, epochs = 2)
+  sampler = FALSE, batch = 10, epochs = 2)
 
 ## Show estimated effects.
 plot(b)
