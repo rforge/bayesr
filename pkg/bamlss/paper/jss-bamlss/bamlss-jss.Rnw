@@ -785,20 +785,20 @@ R> b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
 \end{Sinput}
 \begin{Soutput}
 logLik -36924.3 eps 0.0007 iteration 1000 qsel 7
-
- elapsed time:  5.43min
+elapsed time:  5.43min
 Starting the sampler...
-
 |********************| 100%  0.00sec 27.73min
 \end{Soutput}
 \end{Schunk}
 
-
+The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
+on which the boosting took less than 6~minutes and the MCMC sampling took less the
+30~minutes. As a first diagnostic we check the loglikelihood contributions of the
+individual terms during the boosting optimization (Fig.~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
 boost.plot(b, c("loglik.contrib"), intercept = FALSE)
 @
-
 
 \setkeys{Gin}{width=.8\textwidth}
 \begin{figure}
@@ -813,6 +813,41 @@ boost.plot(b, c("loglik.contrib"), intercept = FALSE)
 \caption{Contribution to the log-likelihood of individual terms during
 gradient boosting.}
 \label{fig:appboost}
+\end{figure}
+
+After 1000~iterations the term \code{s(sqrt_cape).mu} has the highest contribution
+to the loglikelihood with %
+\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(sqrt_cape)",2])} %
+followed by \code{s(q_prof_PC1).mu} with %
+\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(q_prof_PC1)",2])}.
+The term of the parameter $\theta$ \code{s(sqrt_lsp).theta} has a relatively small
+contribution with %
+\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$theta["s(sqrt_lsp)",2])}.
+The overall message of this diagnostic is that the contributions to the
+loglikelihood at the end of the boosting procedure are very small and that
+the algorithm approached a stable state, which suggest that we retrieve
+reasonable initial values for the MCMC sampling.
+
+The MCMC chains are investigated by looking directly at the traces of the chains
+and with the auto-correlation function of the chains (Fig.~\ref{fig:apptrace})
+
+<<app-plot-trace, fig = FALSE, eval = FALSE>>=
+plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
+@
+
+\begin{figure}
+\begin{center}
+<<echo = FALSE, fig = TRUE>>=
+b2 <- b
+b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1]]), fixed = TRUE)][, 1:2]
+
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b2, which = "samples", ask = FALSE)
+@
+\end{center}
+\caption{MCMC trace (left panels) and auto-correlation (right panels) for two
+splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
+\label{fig:apptrace}
 \end{figure}
 
 \begin{figure}
@@ -834,27 +869,10 @@ Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
 
+\setkeys{Gin}{width=.7\textwidth}
 \begin{figure}
 \begin{center}
-<<app-plot-trace, fig = FALSE, eval = FALSE>>=
-plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
-@
-<<echo = FALSE, fig = TRUE>>=
-b2 <- b
-b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1]]), fixed = TRUE)][, 1:2]
-
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b2, which = "samples", ask = FALSE)
-@
-\end{center}
-\caption{MCMC trace (left panels) and auto-correlation (right panels) for two
-splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
-\label{fig:apptrace}
-\end{figure}
-
-\begin{figure}
-\begin{center}
-<<app-plot-rootogram, fig = TRUE>>=
+<<app-plot-rootogram, fig = TRUE, height = 5, width = 6>>=
 ## --- compute quantities for rootogram ---
 
 ## --- expected frequencies ---
@@ -871,7 +889,7 @@ obsrvd <- table(flash_austria_eval$counts)[1:50]
 
 ## --- plot rootogram ---
 library("countreg")
-rootogram(obsrvd, expect, xlab = "#Counts", main = "Rootogram")
+rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 @
 \end{center}
 \caption{Hanging rootogram for evaluating calibration of count data model
@@ -881,6 +899,7 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
+\setkeys{Gin}{width=1\textwidth}
 \begin{figure}
 \begin{center}
 <<app-plot-case, eval = FALSE>>=
