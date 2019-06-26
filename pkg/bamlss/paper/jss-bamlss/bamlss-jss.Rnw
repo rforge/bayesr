@@ -715,39 +715,67 @@ nrow(flash_austria_train)
 
 The motivation for this application is as follows: Lightning counts are not
 modelled within the atmospheric analysis. Lightning observations are only
-available for the period 2010--2018. With a statistical model on hand one
-could predict lightning counts for the time before 2010 and thus analyze
-lightning events in the past for which no observations are available.
+available for the period 2010--2018. With a statistical model on hand one could
+predict lightning counts for the time before 2010 and thus analyze lightning
+events in the past for which no observations are available.
 
-The response of our statistical model are positive counts, with a mean
-of \Sexpr{round(mean(flash_austria_train$counts), 2)}, and a variance of
+The response of our statistical model are positive counts, with a mean of
+\Sexpr{round(mean(flash_austria_train$counts), 2)}, and a variance of
 \Sexpr{round(var(flash_austria_train$counts), 2)}. Thus, we are facing a
-truncated count data distribution which is highly overdispersive.
-In order to capture the tuncation of the data and its overdispersion
-we employ a zero-truncated negative binomial distribution \citep{cameron2013count},
-which is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
+truncated count data distribution which is highly overdispersive.  In order to
+capture the tuncation of the data and its overdispersion we employ a
+zero-truncated negative binomial distribution \citep{cameron2013count}, which
+is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
 expectation of the underlying untruncated negative binomial, and $\theta$
 modifies the variance of the untruncated negative binomial by
 $\mathrm{VAR}(\tilde{Y}) = \mu + \mu^2/\theta$, where $\tilde{Y}$ is a latent
 random variable following the underlying untruncated negative binomial
 distribution.
 
-<<application-model, eval=FALSE>>=
+The zero-truncated negative binomial distribution is implemented as
+\code{ztnbinom_bamlss()} within \pkg{bamlss}.  In order to specify smooth terms
+form both distributional parameter, the formula has to be a \code{list}. The
+first element is named \code{mu} and specifies terms for the paramter $\mu$,
+but also specifies that \code{counts} is the response of the regression model.
+The second element is named \code{theta} and specifies a smooth term for the
+paramter $\theta$. Hence well known for their sampling properties, we are
+applying P-splines \citep{bamlss:Eilers+Marx:1996} for all terms. Specifying
+smooth terms within bamlss formulae builds on the \pkg{mgcv} infrastructure
+\citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
+specification of the model:
+
+<<application-model1, eval=FALSE>>=
 ## --- specify formula ---
 f <- list(
   mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
     s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
-  theta = ~s(sqrt_lsp, bs = "ps")
-)
-
-## --- fit model ---
-b <- bamlss(f, data = flash_austria_train,    # standard interface
-  family = "ztnbinom", binning = TRUE,        # general arguments
-  optimizer = boost, maxit = 1000,            # boosting arguments
-  thin = 5, burnin = 1000, n.iter = 6000      # sampler arguments
+  theta = ~ s(sqrt_lsp, bs = "ps")
 )
 @
+
+Now we have all ingedients on hand to feed the standard interface for
+statistical models in \proglang{R}: A formula \code{f}, a family
+\code{ztnbinom_bamlss()}, and a data set \code{flash_austria_train}. Within the
+\code{bamlss()} call we also provide arguments which are passed forward to the
+optimizer and the sampler. We choose the gradient boosting optimizer
+\code{boost()} in order to find initial values for the default sampler
+\code{GMCMC()}. Gradient boosting proved to offer a very stable method for
+finding regression coefficients that serve as initial values for a MCMC sampler.
+We set the number of iteration to $1000$. For the sampling we allow another $1000$
+iterations as burn-in phase, and apply a thinning of the resulting chain of $5$.
+Running \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples
+in the end:
+
+<<application-model2, eval=FALSE>>=
+## --- fit model ---
+b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
+  optimizer = boost, maxit = 1000,                  # boosting arguments
+  thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
+)
+@
+
+%%%%%%% HIER WEITER %%%%%%%%%%
 
 \begin{figure}
 \begin{center}
