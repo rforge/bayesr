@@ -767,20 +767,47 @@ iterations as burn-in phase, and apply a thinning of the resulting chain of $5$.
 Running \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples
 in the end:
 
-<<application-model2, eval=FALSE>>=
-## --- fit model ---
-b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
-  optimizer = boost, maxit = 1000,                  # boosting arguments
-  thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
-)
+%%% <<application-model2, eval=FALSE>>=
+%%% ## --- fit model ---
+%%% b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
+%%%   optimizer = boost, maxit = 1000,                  # boosting arguments
+%%%   thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
+%%% )
+%%% @
+%%% 
+\begin{Schunk}
+\begin{Sinput}
+R> ## --- fit model ---
+R> b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
++    optimizer = boost, maxit = 1000,                  # boosting arguments
++    thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
++  )
+\end{Sinput}
+\begin{Soutput}
+logLik -36924.3 eps 0.0007 iteration 1000 qsel 7
+
+ elapsed time:  5.43min
+Starting the sampler...
+
+|********************| 100%  0.00sec 27.73min
+\end{Soutput}
+\end{Schunk}
+
+
+
+<<app-plot-boost, eval = FALSE>>=
+boost.plot(b, c("loglik.contrib"), intercept = FALSE)
 @
 
-%%%%%%% HIER WEITER %%%%%%%%%%
 
+\setkeys{Gin}{width=.8\textwidth}
 \begin{figure}
 \begin{center}
-<<app-plot-boost, fig = TRUE>>=
-boost.plot(b, "loglik.contrib")
+<<app-plot-boost, fig = TRUE, height = 4, width = 6, echo = FALSE>>=
+boost.plot(b, c("loglik.contrib"), intercept = FALSE)
+# layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
+# boost.plot(b, "loglik")
+# boost.plot(b, "loglik.contrib")
 @
 \end{center}
 \caption{Contribution to the log-likelihood of individual terms during
