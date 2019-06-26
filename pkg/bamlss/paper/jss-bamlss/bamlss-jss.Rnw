@@ -673,9 +673,27 @@ For obtaining such transformations the \texttt{predict} function is used.
 
 \section{Application} \label{sec:application}
 
+This section illustrates the workflow with bamlss along an example application.
+We want to build a statistical model linking positive counts of cloud-to-ground
+lightning discharges to atmospheric quantities from a reanalysis dataset.
+
+The region we focus on are the European Eastern Alps. Cloud-to-ground lightning
+discharges---detected by the Austrian Lightning Detection and Information System
+\citep[ALDIS, ][]{schulz2005}---are counted on grids with a mesh size of $32~km$.
+The lightning observations are available for the period 2010--2018.
+The reanalysis data comes from the fifth generation of the ECMWF (European
+Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
+global climate \citep{era5}. ERA5 provides a globally complete and consistent
+pseudo-observations of the atmosphere using the laws of physics. The horizontal
+resolution is approx.\ $32~km$. The temporal resolution is hourly. The temporal
+coverage is from 1979 to present.
+In this example application we work only with a small subset of the data, which
+can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
+\citep{FlashAustria}.
+
 <<application-load-model, echo=FALSE>>=
 ## --- data ---
-data("flash_austria", package = "FlashAustria")
+# data("flash_austria", package = "FlashAustria")
 data("fitted_model", package = "FlashAustria")
 b <- flash_austria_model
 
@@ -688,10 +706,33 @@ f <- list(
 )
 @
 
-<<application-model, eval=FALSE>>=
+<<application-data>>=
 ## --- data ---
 data("flash_austria", package = "FlashAustria")
+head(flash_austria_train)
+nrow(flash_austria_train)
+@
 
+The motivation for this application is as follows: Lightning counts are not
+modelled within the atmospheric analysis. Lightning observations are only
+available for the period 2010--2018. With a statistical model on hand one
+could predict lightning counts for the time before 2010 and thus analyze
+lightning events in the past for which no observations are available.
+
+The response of our statistical model are positive counts, with a mean
+of \Sexpr{round(mean(flash_austria_train$counts), 2)}, and a variance of
+\Sexpr{round(var(flash_austria_train$counts), 2)}. Thus, we are facing a
+truncated count data distribution which is highly overdispersive.
+In order to capture the tuncation of the data and its overdispersion
+we employ a zero-truncated negative binomial distribution \citep{cameron2013count},
+which is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
+expectation of the underlying untruncated negative binomial, and $\theta$
+modifies the variance of the untruncated negative binomial by
+$\mathrm{VAR}(\tilde{Y}) = \mu + \mu^2/\theta$, where $\tilde{Y}$ is a latent
+random variable following the underlying untruncated negative binomial
+distribution.
+
+<<application-model, eval=FALSE>>=
 ## --- specify formula ---
 f <- list(
   mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
@@ -759,20 +800,22 @@ splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
 \begin{figure}
 \begin{center}
 <<app-plot-rootogram, fig = TRUE>>=
-library("countreg")
+## --- compute quantities for rootogram ---
 
+## --- expected frequencies ---
 ## --- out-of-sample prediciton ---
 fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
-
-## --- compute quantities for rootogram ---
-obsrvd <- table(flash_austria_eval$counts)[1:50]
 
 fam <- family(b)
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 names(expect) <- 1:50
 expect <- as.table(expect)
 
+## --- observed frequencies ---
+obsrvd <- table(flash_austria_eval$counts)[1:50]
+
 ## --- plot rootogram ---
+library("countreg")
 rootogram(obsrvd, expect, xlab = "#Counts", main = "Rootogram")
 @
 \end{center}
