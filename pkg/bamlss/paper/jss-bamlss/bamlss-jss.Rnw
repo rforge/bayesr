@@ -829,11 +829,19 @@ the algorithm approached a stable state, which suggest that we retrieve
 reasonable initial values for the MCMC sampling.
 
 The MCMC chains are investigated by looking directly at the traces of the chains
-and with the auto-correlation function of the chains (Fig.~\ref{fig:apptrace})
+and with the auto-correlation function of the chains.
 
 <<app-plot-trace, fig = FALSE, eval = FALSE>>=
 plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
 @
+
+Figure \ref{fig:apptrace} shows the traces and the auto-correlation functions
+for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
+reveal samples atound stables means. This suggests that the 1000 boosting
+iterations and the 1000 burn-in samples were sufficient in order to approach
+reasonable starting values for the sampling. The auto-correlation functions
+reveal that after the thinning hardly any correlation remains between
+consecutive samples.
 
 \begin{figure}
 \begin{center}
@@ -849,6 +857,16 @@ plot(b2, which = "samples", ask = FALSE)
 splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
 \label{fig:apptrace}
 \end{figure}
+
+As these diagnostics suggest that a reasonable initial state for the sampling
+has been found and the samples are independent draws from the posterior, one
+can go further and investigate the estimated effects. The boosting summary
+(Fig.~\ref{fig:appboost}) revealed that the terms \code{s(sqrt_cape)} and
+\code{s(q_prof_PC1)} had a large contribution for improving the fit. 
+Thus, looking at these effects good illustrate how the atmospheric parameters
+of the reanalyses are related to lightning events (Fig.~\ref{fig:appeffect}).
+The effects are presented on the scale of the linear predictor, i.e., the
+log scale. \code{s(sqrt_cape)} \dots and \code{s(q_prof_PC1)} \dots
 
 \begin{figure}
 \begin{center}
@@ -868,6 +886,9 @@ from the model \code{mu} and term \code{s(sqrt\_lsp)} from model \code{theta}.
 Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
+
+Another interesting effect to look at, is the one acting on the link scale of
+the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Fig.~\ref{fig:appeffect}).
 
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}
