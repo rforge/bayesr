@@ -414,8 +414,7 @@ distributions.
 In structured additive distributional regression we assume that the distribution of a $D$-dimensional random variable $(y_{i1},\ldots,y_{iD})'$, $i=1,\ldots,n$ given some covariates $\xvec_i$  has a parametric density
 
 $$p_Y(y_{i1},\ldots,y_{iD}|\vartheta_{i1},\ldots,\vartheta_{iK})\equiv p_{Y_i}.$$ 
-
-Available families in bamlss are listed in \textbf{CODE} and new families can be created via \textbf{CODE}
+There is a hugh number of avaiable families in \texttt{bamlss} and it is also possible to define new families as described later.
 % \paragraph{Examples:}
 % 
 % \textbf{maybe add here the distribution from the intro and introduce \texttt{familyname_bamlss()}?}
@@ -431,19 +430,19 @@ Note, that  each predictor and each distribution parameter can be summarised in 
 
  \paragraph{Examples:} Examples of distributional models that fit well in this framework are the ones for
  \begin{itemize}
- \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as proposed in \citet{bamlss:Klein+Kneib+Lang:2015}, continuous responses with spikes, skewness, heavy tails or bounded support as in \citet{bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Klein+Denuit+Kneib+Lang:2014}, as well as responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}
- \item multivariate responses such as multivariate normal, multivariate t or Dirichlet regression (for analysing compositional data) \citet{bamlss:Klein+Klasen+Kneib+Lang:2015}
+ \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as proposed in \citet{bamlss:Klein+Kneib+Lang:2015,bamlss:Herwartz:Klein+Strumann:2016}, continuous responses with spikes, skewness, heavy tails or bounded support as in \citet{bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Klein+Denuit+Kneib+Lang:2014}, as well as responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}
+ \item multivariate responses such as multivariate normal, multivariate t or Dirichlet regression (for analysing compositional data) \citet{bamlss:Klein+Kneib+Klasen+Lang:2015}
  \item multivariate responses with more complex dependence structures modelled through copulas \citet{bamlss:Klein+Kneib:2016b}
- \item survival data and joint modelling \textbf{REFS}
+ \item survival data and joint modelling~\citep{bamlss:Koehler+Umlauf+Greven:2016}.
  \item \textbf{Anything else here?}
 \end{itemize}
 
-The response function is usually chosen to maintain restrictions on the parameter space, like 
+The response function $h_k$ is usually chosen to maintain restrictions on the parameter space, like 
 \begin{itemize}
 \item the identity function $\vartheta_{ik}=\exp(\eta_{ik})$ if $\vartheta_{ik}\in\mathds{R}$,
 \item the exponential function $\vartheta_{ik}=\exp(\eta_{ik})$ to ensure a parameter with values on the positive real half axis (such as variances), 
 \item the identity function if the parameter space is unrestricted or $\vartheta_{ik}=\frac{\eta_{ik}}{\sqrt{1+(\eta_{ik})^2}}$ if $\vartheta_{ik}\in[-1,1]$ (for correlation parameters for instance),
-\item the logit or probit link for $\vartheta_{ik}\in [0,1]$ for probabilities
+\item the logit or probit link for $\vartheta_{ik}\in [0,1]$ for probabilities.
 \end{itemize}
 
 
@@ -457,11 +456,11 @@ comprising various functions $f_{jk}(\nuvec_i)$ defined on the complete covariat
 \begin{itemize}
 \item linear functions $f_{jk}(\nuvec_i)=\xvec'_{i}\beta_{jk}$, including the overall level of the predictor as an intercept $\beta_{0jk}$  and  $\xvec_i$ is a subvector of  $\nuvec_i$. Note that $\xvec_i$ may be chosen specifically for each parameter $\vartheta_k$ but we suppress this potential dependency in our notation.
 \item continuous functions $f_{jk}=f_{jk}(x_i)$, where $x_i$ is a single element of $\nuvec_i$ and $f_j$ is an appropriate smooth function to represent the effect of $x_i$ on $\vartheta_{ik}$.
-\item spatial variations $f_{jk}(\nuvec_i)=f_{j}^{\vartheta_k}(s_i)$, where $s_i$ represents spatial information, e.g. coordinate information in terms of longitude and latitude or discrete spatial information representing a fixed set of (administrative) geographical units.
-\item random effects $f_{j}^{\vartheta_k}(\nuvec_i)=\beta_{j,g_i}^{\vartheta_k}$, where $g_i$ is a cluster variable that groups the observations.
+\item spatial variations $f_{jk}(\nuvec_i)=f_{jk}(s_i)$, where $s_i$ represents spatial information, e.g. coordinate information in terms of longitude and latitude or discrete spatial information representing a fixed set of (administrative) geographical units.
+\item random effects $f_{jk}(\nuvec_i)=\beta_{jk,g_i}$, where $g_i$ is a cluster variable that groups the observations.
 \end{itemize}
 
-For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013,bamlss:Wood:2016} and \citet{bamlss:Kneib+Klein+Lang+Umlauf:2019} for a special focus on general tensor product interactions.
+For detailed explanations on structured additive regression with further examples we refer the reader to~\citet{bamlss:Fahrmeir+Kneib+Lang+Marx:2013,Woo2017} and \citet{bamlss:Kneib+Klein+Lang+Umlauf:2019} for a special focus on general tensor product interactions.
 
 
 We represent smooth terms in the models using basis functions, as a result of which the predictors can always be written in the generic matrix notation
@@ -470,19 +469,27 @@ We represent smooth terms in the models using basis functions, as a result of wh
 \]
 where the design matrices $\mZ_{jk}$ are obtained by evaluating the basis functions at observed covariate values  and  $\betavec_{jk}$ are the vectors of basis coefficients to be estimated.
 
-It is also possible to create new smooth terms in the bamlss package.
+
 
 Specific properties of the basis coefficients such as smoothness are regularised by assuming possibly improper  priors
-$
-p(\betavec_{jk}|\tauvec_{jk}) %\propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
-$
-with hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. The default in distributional regression is multivariate Gaussian priors for $\betavec_{jk}|\tau_{jk}$ and inverse gamma priors for the smoothing variances $\tau_{jk}^2$.
-
+$$
+p(\betavec_{jk}|\tauvec_{jk}) \propto \left(\frac{1}{\tau_{jk}^2}\right)^{\rank\left(\mK_{jk}\right)/2}\exp\left(-\frac{1}{2\tau_{jk}^2}\betavec_{jk}'\mK_{jk}\betavec_{jk}\right)
+$$
+with prior precision matrices $\mK_{jk}$ and hyperparameters $\tauvec_{jk}$ which we can also supplement with a hyperprior distribution $p(\tauvec_{jk}|\alphavec_{jk})$, and where we assume $\alphavec_{jk}$ to be fixed or elicited. The default in distributional regression is multivariate Gaussian priors for $\betavec_{jk}|\tau_{jk}$ and inverse gamma priors for the smoothing variances $\tau_{jk}^2$. 
 However, there is many more advanced options to include variable selection, shrinkage and prior elicitation. Specifically, we provide
 \begin{itemize}
 \item improved priors for the smoothing variances~\citep{bamlss:Klein+Kneib:2016},
 \item Lasso type regularization \citep{bamlss:Groll+Kneib+Umlauf:2019}
 \item Bayesian effect selection through spike-and-slab priors \citep{bamlss:Klein+Carlan+Kneib+Lang+Wagner:2019:arxiv}
+\end{itemize}
+
+
+For the examples above, possible choices for $\mK_{jk}$ would be
+\begin{itemize}
+\item linear functions: $\mK_{jk}=\nullvec$ or $\mK_{jk}=\mI$, corresponding to flat/ridge type priors.
+\item continuous functions: $\mK_{jk}=\mD_l'\mD_l$, where $\mD_l$ is a $l$-th order difference matrix.
+\item spatial variations: a Markov random field prior
+\item random effects: $\mK_{jk}=\mI$
 \end{itemize}
 
 
@@ -521,7 +528,7 @@ However, there is many more advanced options to include variable selection, shri
 
 \subsection{Posterior Estimation}
 
-Posterior estimation is implemented in \texttt{bamlss} based on different estimation procedures.
+Posterior estimation is implemented in \texttt{bamlss} based on different estimation procedures. The main focus is on Bayesian estimation which we describe below, while outlining further possiblities at the end of this section.
 
 \subsubsection{The posterior distribution}
 
@@ -537,7 +544,7 @@ The first option to obtain point estimates for $\betavec,\tauvec$ is to compute 
 \[
 \mbox{argmax}_{\betavec,\tauvec} \pi(\betavec,\tauvec|\yvec).
 \]
-In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms or backfitting algorithms are used to solve the problem iteratvely and \texttt{bamlss} offers the following options: \textbf{CODE}. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are dertermined base on information criteria such as BIC or AIC. \textbf{CODE}
+In case of flat priors for all involved parameters the latter optimization problem is equivalent to maximising the log-likelihood function. Typcially, Newton Raphson type algorithms or backfitting algorithms are used to solve the problem iteratvely and \texttt{bamlss} offers several optins. However, direct maximisation with respect to $\tauvec$ is usually hard such that these hyperparameters are determined base on information criteria such as BIC or AIC. 
 
 \subsubsection{Posterior sampling}
 
@@ -549,9 +556,7 @@ which can be
 rarely solved analytically. \texttt{bamlss} used MCMC simulation
 as it provides an extensible
 framework that can adapt to almost any type of problem in a modular system. In cases where possible. \texttt{bamlss} uses Gibbss-sampling, but in most cases the conditional posteriors are not of closed form and the package then implements 
- \begin{itemize}
- \item \emph{Derivative-based Metropolis-Hastings}: \label{sec:dmh}
- \textbf{CODE}
+\emph{Derivative-based Metropolis-Hastings}
  and 
 %   Probably the most important algorithm, because of its generality and ease of implementation, is
 %   random-walk Metropolis. The sampler proceeds by drawing a candidate
@@ -610,8 +615,7 @@ framework that can adapt to almost any type of problem in a modular system. In c
 %   the computation of the weights is expensive, one simple strategy is to update
 %   $\mathbf{W}_{kk}$ only after samples of all parameters of $\boldsymbol{\theta}_k$ are drawn.
 % 
- \item \emph{Slice sampling}: \label{sec:smcmc}
- \textbf{CODE}
+and \emph{slice sampling}, see~\cite{bamlss:Umlauf+Klein+Zeileis:2018} for details.
 %   Slice sampling \citep{bamlss:Neal:2003} is a gradient free MCMC sampling scheme that produces
 %   samples with $100\%$ acceptance rate. Therefore, and because of the simplicity of the algorithm,
 %   slice sampling is especially useful for automated general purpose MCMC implementations that allow
@@ -622,12 +626,9 @@ framework that can adapt to almost any type of problem in a modular system. In c
 %   \item Sample $\beta_{ijk}^{(t+1)} \sim \mathcal{U}(S)$ from the horizontal slice
 %     $S = \{\beta_{ijk}: h < \pi(\beta_{ijk} | \, \cdot)\}$.
 %   \end{enumerate}
-\end{itemize}
+%\end{itemize}
 
-
-\subsubsection{Boosting}
-
-\textbf{soll das hier hin? passt ja nicht ganz, weil posterior?}
+In addition, non-Bayesian procedures for estimating distributional models are available in the package, in particular backfitting~\cite{RigSta2005} for GAMLSS and component-wise gradient boosting~\cite{MayFenHofKneSch2012} for the same model class.
 
 \subsection{Model Choice and Evaluation}
 
@@ -639,11 +640,12 @@ Model choice and variable selection is important in distributional regression du
 \item {Information criteria} can be used to compare different model specifications.  
 For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
 AIC, as well as the Bayesian information criterion (BIC), are implemented in \texttt{bamlss}.  Estimation of model complexity
-is based on the so-called equivalent degrees of freedom (EDF). \textbf{CODE} 
+is based on the so-called equivalent degrees of freedom (EDF). 
+
 For MCMC based estimation, 
-\texttt{bamlss} mainly relies on the deviance information criterion (DIC). \textbf{CODE} \textbf{eventuell WAIC implementieren?}
+\texttt{bamlss} mainly relies on the deviance information criterion (DIC, \cite{SpiBesCarLin2002}) and widely applicable information criterion (WAIC, \cite{watanabe2010asymptotic}). 
 \item Quantile residuals:
-Quantile residuals can be used to evaluate the model fit and can be assessed in bamlss via \textbf{CODE}
+Quantile residuals \cite{bamlss:Dunn:Smyth:1996} can be used to evaluate the model fit.
 %defined as
 %$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
 %cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
@@ -656,12 +658,11 @@ Quantile residuals can be used to evaluate the model fit and can be assessed in 
 %$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
 %process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 %Graphically, histograms of the $u_i$ can be used for this purpose.
-\textbf{CODE}
 \item Scoring rules:
-Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scorings \cite{bamlss:Gneiting+Balabdaoui+Raftery:2007}. Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
+Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scoring rules \cite{bamlss:Gneiting+Balabdaoui+Raftery:2007}. %Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
 \end{itemize}
 
-\subsubsection{Evaluation}
+\subsubsection{Evaluation and Interpretation}
  \begin{itemize}
 \item Plotting: The default plotting function of a \texttt{bamlss} object \texttt{plot(b)} will return all effects centered around their mean. However, it can sometimes be useful in distributional regression to look at transformation of the original model parameters such as expected value or variance of the repsonse variable $\yvec$, we give examples for both in our application.
 \item Predictions:
@@ -920,53 +921,53 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
-\setkeys{Gin}{width=1\textwidth}
-\begin{figure}
-\begin{center}
-<<app-plot-case, eval = FALSE>>=
-library("sf")
-library("ggplot2")
-library("colorspace")
-library("rnaturalearth")
-library("rnaturalearthdata")
-  
-world <- ne_countries(scale = "medium", returnclass = "sf")
-
-fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-d_case$P10 <- 1 - fam$p(9, fit)
-  
-ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-  geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
-  facet_wrap(~time) + theme_minimal()
-@
-<<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
-library("sf")
-library("ggplot2")
-library("colorspace")
-library("rnaturalearth")
-library("rnaturalearthdata")
-
-fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-flash_austria_case$P10 <- 1 - fam$p(9, fit)
-
-world <- ne_countries(scale = "medium", returnclass = "sf")
-
-ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-  geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-  facet_wrap(~time, nrow = 2) + theme_minimal() # +
-#  theme(legend.position = "bottom")
-@
-\end{center}
-\caption{A probabilistic reconstruction of lightning counts occured on
-September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
-13~UTC, i.e., the probability of having observed $10$ or more counts within one
-grid box.}
-\label{fig:appcase}
-\end{figure}
+% \setkeys{Gin}{width=1\textwidth}
+% \begin{figure}
+% \begin{center}
+% <<app-plot-case, eval = FALSE>>=
+% library("sf")
+% library("ggplot2")
+% library("colorspace")
+% library("rnaturalearth")
+% library("rnaturalearthdata")
+%   
+% world <- ne_countries(scale = "medium", returnclass = "sf")
+% 
+% fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+% d_case$P10 <- 1 - fam$p(9, fit)
+%   
+% ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+%   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+%   geom_sf(data = world, col = "white", fill = NA) +
+%   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
+%   facet_wrap(~time) + theme_minimal()
+% @
+% <<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
+% library("sf")
+% library("ggplot2")
+% library("colorspace")
+% library("rnaturalearth")
+% library("rnaturalearthdata")
+% 
+% fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+% flash_austria_case$P10 <- 1 - fam$p(9, fit)
+% 
+% world <- ne_countries(scale = "medium", returnclass = "sf")
+% 
+% ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+%   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+%   geom_sf(data = world, col = "white", fill = NA) +
+%   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+%   facet_wrap(~time, nrow = 2) + theme_minimal() # +
+% #  theme(legend.position = "bottom")
+% @
+% \end{center}
+% \caption{A probabilistic reconstruction of lightning counts occured on
+% September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
+% 13~UTC, i.e., the probability of having observed $10$ or more counts within one
+% grid box.}
+% \label{fig:appcase}
+% \end{figure}
 
 
 \bibliography{bamlss}
