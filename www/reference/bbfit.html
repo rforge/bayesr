@@ -86,6 +86,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="../articles/bivnorm.html">Bivariate Gaussian models for wind vectors</a>
+    </li>
+    <li>
       <a href="../articles/distregvis.html">Visualization with distreg.vis</a>
     </li>
     <li>
@@ -139,7 +142,7 @@
     </div>
 
     <pre class="usage"><span class='fu'>bbfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>batch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>Inf</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>Inf</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -178,7 +181,7 @@
       <td><p>For how many epochs should the algorithm run?</p></td>
     </tr>
     <tr>
-      <th>batch</th>
+      <th>nbatch</th>
       <td><p>Number of batches.</p></td>
     </tr>
     <tr>
@@ -221,7 +224,7 @@
     <pre class="examples"><span class='co'># NOT RUN {</span>
 <span class='co'>## Simulate data.</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>123</span>)
-<span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='GAMart.html'>GAMart</a></span>(<span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>270000</span>)
+<span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='GAMart.html'>GAMart</a></span>(<span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>27000</span>)
 
 <span class='co'>## Write data to disc.</span>
 <span class='no'>tf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/tempfile'>tempdir</a></span>()
@@ -231,7 +234,7 @@
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>10</span>)
 
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/file.path'>file.path</a></span>(<span class='no'>tf</span>, <span class='st'>"d.raw"</span>), <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>bbfit</span>,
-  <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>batch</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+  <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>batch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>2</span>)
 
 <span class='co'>## Show estimated effects.</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)

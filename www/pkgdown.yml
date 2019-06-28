@@ -3,6 +3,7 @@ pkgdown: 1.3.0
 pkgdown_sha: ~
 articles:
   bamlss: bamlss.html
+  bivnorm: bivnorm.html
   distregvis: distregvis.html
   families: families.html
   glm: glm.html
