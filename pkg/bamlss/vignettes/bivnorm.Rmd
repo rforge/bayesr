@@ -1,0 +1,340 @@
+---
+title: "Bivariate Gaussian models for wind vectors"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Model Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{bivariate Gaussian distribution, distributional regression, 
+    wind vectors, ensemble forecasts}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, include=FALSE}
+library("zoo")
+library("bamlss")
+
+if (! dir.exists("figures")) dir.create("figures")
+
+if(!file.exists("figures/bivnorm_models.rda")) {
+
+  # -------------------------------------------------------------------
+  # Formulas
+  # -------------------------------------------------------------------
+  ## Baseline model BLM-0 (w/o correlation)
+  f_blm.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_mean),
+                    sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_sd.log))
+                    
+  f_blm.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_mean),
+                    sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_sd.log ))
+                    
+  ## Rotation allowing model RAM-0 (w/o correlation)
+  f_ram.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), 
+                                 bs = c('cc','cc'), by = u10m_mean) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean), 
+                    sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = u10m_sd.log) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log)) 
+                                 
+  f_ram.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = v10m_mean) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean), 
+                    sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = v10m_sd.log) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log)) 
+                                 
+  ## Rotation allowing model RAM-ADV (w/ correlation)
+  f_ram.adv <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = u10m_mean) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean), 
+                    v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = v10m_mean) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean), 
+                    sigma1   ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = u10m_sd.log) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log), 
+                    sigma2   ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'),
+                                 by = v10m_sd.log) +
+                                 te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log), 
+                    rho      ~   s(yday, bs = 'cc') + s(dd10m_mean, bs = 'cc') + s(dd10m_mean, bs = 'cc',
+                                 by = ff10m_mean))
+                    
+  # -------------------------------------------------------------------
+  # Fitting
+  # -------------------------------------------------------------------
+  ## Load data
+  dat <- readRDS("figures/bivnorm_data.rds")
+  dat <- dat[["Innsbruck"]]
+  
+  ## Baseline model BLM-0 (w/o correlation)
+  m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+                 
+  m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+                 
+  ## Rotation allowing model RAM-0 (w/o correlation)
+  m_ram.u.0 <- bamlss(f_ram.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+
+  m_ram.v.0 <- bamlss(f_ram.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+
+  ## Rotation allowing model RAM-ADV (w/ correlation)
+  m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat, optimizer = bfit,
+                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+
+  save(m_blm.u.0, m_blm.v.0, m_ram.u.0, m_ram.v.0, m_ram.adv, file = "figures/bivnorm_models.rda")
+} else {
+
+  load(file = "figures/bivnorm_models.rda")
+
+}
+
+```
+
+## Intro
+
+The article **Bivariate Gaussian models for wind vectors in a distributional
+regression framework** [@bamlss:Lang+Mayr+Stauffer+Zeileis:2019] presents a new
+probabilistic post-processing method for wind vectors employing the bivariate
+Gaussian distribution [@bamlss:Klein+Kneib+Klasen+Lang:2014]. In contrast to
+previous studies all parameters of the bivariate Gaussian distribution can be
+modeled simultaneously, namely the location and scale parameters for both wind
+components and also the correlation parameter between them employing flexible
+regression splines. The performance of the new method is tested in
+@bamlss:Lang+Mayr+Stauffer+Zeileis:2019 for stations located in plains,
+mountain foreland, and within an alpine valley employing European Centre for
+Medium-Range Weather Forecasts (ECMWF) ensemble forecasts as explanatory
+variables for all distribution parameters.
+
+This vignette provides example code how to set up the models employing the
+package BAMLSS as presented in the article.
+
+## Data
+
+The example code for the bivariate Gaussian models introduced in
+@bamlss:Lang+Mayr+Stauffer+Zeileis:2019 is illustrated based on the freely
+available EPS reforecasts of the NOAA’s second-generation global ensemble
+reforecast dataset [@bamlss:hamill+etal:2013] for the 12 hour forecast step
+bilinearly interpolated to the site of interest. As observational data wind
+measurement at the [Department of Atmospheric and Cryospheric
+Sciences](http://acinn.uibk.ac.at/current-weather) of the University of
+Innsbruck are used in this analysis ([CC BY-SA
+4.0](http://creativecommons.org/licenses/by-sa/4.0/)). In addition, wind
+measurements for Hamburg given by the Deutscher Wetterdienst
+([DWD](https://www.dwd.de)) and the corresponding ensemble forecasts are also
+provided but not analyzed in this vignette. At both sites, wind speed and
+direction measurements are reported for the 10m height level. The data are
+10-minute averages and contain the period from January 1, 2015 to December 31,
+2018.
+
+The data for Innsbruck and Hamburg is provided
+[here](http://bayesr.r-forge.r-project.org/misc/bivnorm_data.rds) and can be
+loaded into R with
+
+```{r, eval = FALSE}
+library("zoo")
+dat <- readRDS("bivnorm_data.rds")
+dat <- dat[["Innsbruck"]]
+```
+
+## Baseline model without correlation
+
+In a first step, we combine two univariate heteroscedastic regression models
+that post-process each wind component separately with correlation fixed at
+zero. Hence, for the location and scale part, it uses its direct counterparts
+of the EPS as covariates, namely EPS-forecasted zonal wind
+information ($\text{vec}_1$) to model the zonal component of the bivariate
+response, and EPS-forecasted meridional wind information ($\text{vec}_2$) to
+model the meridional component:
+
+\begin{align}
+  \begin{split}
+    \mu_{\star} &=
+      \underbrace{{\alpha_\star}_{0} + {f_\star}_{0}(\text{doy})}_\text{intercept} +
+      \underbrace{({\alpha_\star}_{1} + {f_\star}_{1}(\text{doy}))}_\text{slope coefficient}
+      \cdot \text{vec}_{\star, mean},\\[1ex]
+    \text{log}(\sigma_{\star}) &=
+      \underbrace{{\beta_\star}_{0} + {g_\star}_{0}(\text{doy})}_\text{intercept} +
+      \underbrace{({\beta_\star}_{1} + {g_\star}_{1}(\text{doy}))}_\text{slope coefficient}
+      \cdot \text{vec}_{\star, log.sd},\label{eq:gam:locsc:v1}
+  \end{split}
+\end{align}
+
+where, $\alpha_\bullet$ and $\beta_\bullet$ are regression coefficients, and
+$f_\bullet(\text{doy})$ and $g_\bullet(\text{doy})$ employ cyclic regression
+splines conditional on the day of the year (doy). The subscripts $mean$ and
+$log.sd$ refer to mean and log standard deviation of the ensemble wind
+components, respectively. The equation specifies a time-adaptive training
+scheme, where the linear predictors consist of a global intercept and slope
+coefficient plus a seasonally varying deviation. Thus, the intercept and slope
+coefficients can smoothly evolve over the year in case that the bias or the
+covariate's skill varies seasonally.
+
+The formulas, model fitting, and prediction are performed according to:
+
+```{r, eval=FALSE}
+## Formulas
+f_blm.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_mean),
+                  sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_sd.log))
+
+f_blm.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_mean),
+                  sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_sd.log ))
+
+## Model fitting
+m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+               
+m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
+               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+
+## Prediction
+p_blm.0 <- list("mu1" = predict(m_blm.u.0, type = "parameter")$mu,
+                "mu2" = predict(m_blm.v.0, type = "parameter")$mu,
+                "sigma1" = predict(m_blm.u.0, type = "parameter")$sigma,
+                "sigma2" = predict(m_blm.v.0, type = "parameter")$sigma,
+                "rho" = rep(0, unique(sapply(predict(m_blm.v.0, type = "parameter"), length))))
+```
+The estimated cyclic seasonal effects are visualized for the first wind component ($\text{vec}_1$) with
+
+```{r, eval=FALSE}
+plot(m_blm.u.0, pages = 1)
+```
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5))
+plot(m_blm.u.0, pages = 1)
+```
+
+For the second wind component ($\text{vec}_2$) the effects are illustrated accordingly: 
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5))
+plot(m_blm.v.0, pages = 1)
+```
+
+The estimated effects are on the scale of the additive predictor; i.e., on the
+linear scale for the location parameters $\mu_\star$ and on the log-scale for
+the scale parameters $\sigma_\star$. Each of the four distribution parameters
+is described by a (potentially) seasonally varying effect for the intercept and
+the slope coefficient.
+
+## Rotation-allowing model without correlation
+
+In a second step, we extend the setup by employing the zonal and meridional wind
+information of the ensemble for the linear predictors of all location and scale
+parameters. That means we use the ensemble information of both the zonal and
+meridional wind components for the two components of the response.
+We propose to employ seasonally varying effects depending on the ensemble
+wind direction, which allows the model to rotate the forecasted wind direction
+if necessary. To do so, we obtain a two-dimensional smooth function represented
+by a tensor product spline with a respective cyclic constraint for the day of
+the year (doy) and for the mean ensemble wind direction ($\text{dir}_{mean}$):
+
+\begin{equation}
+  \begin{split} 
+    \mu_{\star} = {\alpha_\star}_{0} + {f_\star}_{0}(\text{doy}) &+  
+      ({\alpha_\star}_{1} + {f_\star}_{1}(\text{doy}) \cdot {f_\star}_{2}(\text{dir}_{mean})) \cdot \text{vec}_{1, mean}\\
+      &+ ({\alpha_\star}_{2} + {f_\star}_{3}(\text{doy}) \cdot {f_\star}_{4}(\text{dir}_{mean})) \cdot \text{vec}_{2, mean},\\[1ex]
+    \text{log}(\sigma_{\star}) = {\beta_\star}_{0} + {g_\star}_{0}(\text{doy}) &+  
+      ({\beta_\star}_{1} + {g_\star}_{1}(\text{doy}) \cdot {g_\star}_{2}(\text{dir}_{mean})) \cdot \text{vec}_{1, log.sd}\\
+      &+ ({\beta_\star}_{2} + {g_\star}_{3}(\text{doy}) \cdot {g_\star}_{4}(\text{dir}_{mean})) \cdot \text{vec}_{2, log.sd},
+    \label{eq:gam:locsc:v2}
+  \end{split}
+\end{equation}
+
+where, as before, $\alpha_\bullet$ and $\beta_\bullet$ are regression
+coefficients, and $f_\bullet$ and $g_\bullet$ employ cyclic regression splines.
+
+The model formulas are specified by
+
+```{r, eval=FALSE}
+## Formulas
+f_ram.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean),
+                  sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log))
+
+f_ram.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean),
+                  sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log))
+```
+
+## Rotation-allowing models with correlation
+
+We further extend the setup by explicitly modeling the correlation parameter in
+a bivariate Gaussian setup. For the estimation of the correlation structure, we
+assume that the correlation mainly depends on the mean ensemble wind direction
+($\text{dir}_{mean}$) and speed ($\text{spd}_{mean}$) by modeling a linear
+interaction between these two covariates:
+
+\begin{align}
+\text{rhogit}(\rho) &= \gamma_0 + h_0(\text{doy}) +
+  h_1(\text{dir}_{mean}) +
+  (\gamma_1 + h_2(\text{dir}_{mean})) \cdot \text{spd}_{mean}\label{eq:gam:rho},
+\end{align}
+
+with $\text{rhogit}(\rho) = \rho / \sqrt{(1 - \rho^2)}$; $\gamma_0$ is the
+global intercept and $h_0(\text{doy})$ the seasonally varying intercept. The
+effect $h_1(\text{dir}_{mean})$ estimates the dependence of the correlation
+given the wind direction and $(\gamma_1 + h_2(\text{dir}_{mean})) \cdot
+\text{spd}_{mean}$ employs a varying effect of wind speed conditional on the
+wind direction. 
+
+The formulas, model fitting, and prediction are performed according to:
+
+```{r, eval=FALSE}
+## Formulas
+f_ram.adv <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean), 
+                  v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean), 
+                  sigma1   ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log), 
+                  sigma2   ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log) +
+                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log),
+                  rho      ~   s(yday, bs = 'cc') + s(dd10m_mean, bs = 'cc') + s(dd10m_mean, bs = 'cc', by = ff10m_mean))
+
+## Model fitting
+m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat, optimizer = bfit,
+               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+
+## Prediction
+p_ram.adv <- predict(m_ram.adv, type = "parameter")
+```
+
+The distribution of the correlation parameters for the underlying dependence
+structure of the raw ensemble and for the fitted bivariate model is visualized with
+
+```{r, eval=FALSE}
+hist(dat$uv10m_cor, xlim = c(-1,1), col = gray(0.8), freq = FALSE, breaks = 17, 
+  xlab = "Correlation parameter", main = "Raw ensemble", cex.main = 0.8)
+
+hist(p_ram.adv$rho, xlim = c(-1,1), col = gray(0.8), freq = FALSE, breaks = 17, 
+  xlab = "Correlation parameter", main = "Fitted bivariate model", cex.main = 0.8)
+```
+
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png"}
+par(mfrow = c(1, 2))
+
+dat <- readRDS("figures/bivnorm_data.rds")
+dat <- dat[["Innsbruck"]]
+hist(dat$uv10m_cor, xlim = c(-1,1), col = gray(0.8), freq = FALSE, breaks = 17, 
+  xlab = "Correlation parameter", main = "Raw ensemble", cex.main = 0.8)
+
+suppressWarnings(
+  p_ram.adv <- predict(m_ram.adv, type = "parameter")
+)
+hist(p_ram.adv$rho, xlim = c(-1,1), col = gray(0.8), freq = FALSE, breaks = 17, 
+  xlab = "Correlation parameter", main = "Fitted bivariate model", cex.main = 0.8)
+```
+
+## References
