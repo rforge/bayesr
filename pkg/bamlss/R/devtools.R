@@ -110,3 +110,33 @@ compute_derivatives <- function(loglik, parameters, density = NULL, expectation 
 
   return(list("score" = score, "hess" = hess))
 }
+
+## Fix pkgdown html.
+fix_site <- function(publications = "bivnorm") {
+  owd <- getwd()
+  setwd("../../www")
+  on.exit(setwd(owd))
+  if(!file.exists("publications")) {
+    dir.create("publications")
+  }
+  for(j in publications) {
+    file.copy(file.path("articles", paste0(j, ".html")),
+      file.path("publications", paste0(j, ".html")))
+    file.remove(file.path("articles", paste0(j, ".html")))
+  }
+  index <- readLines("index.html")
+  files <- dir(recursive = TRUE, full.names = TRUE)
+  files <- files[tools::file_ext(files) == "html"]
+  for(j in publications) {
+    i <- grep(paste0('<a href="articles/', j), index, fixed = TRUE)
+    if(length(i))
+      index <- index[-c(i - 1L, i, i + 1L)]
+    for(f in files) {
+      ft <- readLines(f)
+      ft <- gsub(paste0("articles/", j), paste0("publications/", j), ft, fixed = TRUE)
+      writeLines(ft, f)
+    }
+  }
+  writeLines(index, "index.html")
+}
+
