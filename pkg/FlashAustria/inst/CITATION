@@ -1,6 +1,6 @@
 bibentry("Misc",
   title = "{ERA}5: {F}ifth Generation of {ECMWF} Atmospheric Reanalyses of the Global Climate",
-  author = "{Copernicus Climate Change Service (C3S)}",
+  author = "Copernicus Climate Change Service (C3S)",
   howpublished = "Copernicus Climate Change Service Climate Date Store (CDS)",
   note = "date of access: June 2019",
   year = "2017", 
