@@ -1,6 +1,6 @@
 bibentry("Misc",
   title = "{ERA}5: {F}ifth Generation of {ECMWF} Atmospheric Reanalyses of the Global Climate",
-  author = "Copernicus Climate Change Service (C3S)",
+  author = "{Copernicus Climate Change Service (C3S)}",
   howpublished = "Copernicus Climate Change Service Climate Date Store (CDS)",
   note = "date of access: June 2019",
   year = "2017", 
@@ -21,6 +21,16 @@ bibentry("Article",
   header = "To cite the lightning data (observations), please use:"
 )
 
+bibentry("Article",
+  author  = "Schulz, W. and Diendorfer, G. and Pedeboy, S. and Poelman, D. R.",
+  title   = "The {E}uropean Lightning Location System {EUCLID}---Part~1: {P}erformance Analysis and Validation",
+  journal = "Nat.\ Hazards Earth Syst.\ Sci.",
+  volume  = "16",
+  year    = "2016",
+  number  = "2",
+  pages   = "595--605",
+  doi     = "10.5194/nhess-16-595-2016",
 
-
+  header = "To cite the lightning data (observations), please use:"
+)
 

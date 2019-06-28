@@ -55,10 +55,15 @@ Cloud-to-Ground Lightning in Austria: A 10-Year Study Using Data from a Lightnin
 J. Geophys. Res., 110, D09101.
 \url{https://doi.org/10.1029/2004JD005332}
 
+Schulz, W. and Diendorfer, G. and Pedeboy, S. and Poelman, D. R. (2016).
+The European Lightning Location System EUCLID---Part 1: Performance Analysis and Validation.
+Nat. Hazards Earth Syst. Sci., 16, 595--605.
+\url{https://doi.org/10.5194/nhess-16-595-2016}
+
 To cite the reanalyses data (covariates), please use:
 
 Copernicus Climate Change Service (C3S) (2017).
-ERA5: Fifth generation of ECMWF atmospheric reanalyses of the global climate.
+ERA5: Fifth Generation of ECMWF Atmospheric Reanalyses of the Global Climate.
 Copernicus Climate Change Service Climate Data Store (CDS), date of access: June 2019.
 \url{https://cds.climate.copernicus.eu/cdsapp#!/home}
 }
