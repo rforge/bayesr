@@ -4,9 +4,6 @@
 if(!file.exists("../../www/misc")) {
   dir.create("../../www/misc")
 }
-if(!file.exists("../../www/publications")) {
-  dir.create("../../www/publications")
-}
 figs <- dir("vignettes/figures", full.names = TRUE)
 file.copy(figs, file.path("../../www/misc/", basename(figs)))
 ```
