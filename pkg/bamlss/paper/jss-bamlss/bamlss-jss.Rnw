@@ -927,12 +927,20 @@ fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
 str(fit)
 @
 
+\code{predict()} returns a \code{list}, of which each element is named
+as a distributional parameter and contains by default a vector of
+predictions. Each prediction is the average of the preditions obtained
+by all MCMC samples. The resulting \code{list} can be used to
+derive further quantities by employing the functions of the \pkg{bamlss}
+family that can be extracted using \code{family()},
 
 <<app-rootogram2>>=
 ## --- extract family ---
 fam <- family(b)
 fam
 @
+
+
 
 <<app-rootogram3>>=
 ## --- expected frequencies ---
