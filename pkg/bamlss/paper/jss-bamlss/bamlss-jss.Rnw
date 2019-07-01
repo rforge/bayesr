@@ -906,27 +906,48 @@ corresponding spatial mode (not shown) for interpretation: Higher values of
 which is also available as a source of \emph{latent energy}, i.e., energy that
 becomes free when water transfers from the gas to the liquid phase.
 
-Another interesting effect to look at, is the one acting on the link scale of
+Finally it is interesting to look at the effect acting on the link scale of
 the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Fig.~\ref{fig:appeffect}).
+\code{sqrt_lsp} is the square root of large scale precipitation, i.e.,
+precipitation that is not linked to convective processes and thus it is
+not related to strong lightning events. The effect shows following relationship:
+Higher values of \code{sqrt_lsp} lead to smaller $\theta$, which increases the
+variance of the distribution.
 
-\setkeys{Gin}{width=.7\textwidth}
-\begin{figure}
-\begin{center}
-<<app-plot-rootogram, fig = TRUE, height = 5, width = 6>>=
-## --- compute quantities for rootogram ---
+Before applying the model, i.e., predicting lightning cases before 2010, we
+check the marginal calibration of the distribution by hanging rootogram, a tool
+popular for the evaluation of count data regression models
+\citep{kleiber2016visualizing}. First we predict the distributional parameter
+on out-of-sample data \code{flash_austria_eval} for which lightning
+observations are on hand.
 
-## --- expected frequencies ---
+<<app-rootogram1>>=
 ## --- out-of-sample prediciton ---
 fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
+str(fit)
+@
 
+
+<<app-rootogram2>>=
+## --- extract family ---
 fam <- family(b)
+fam
+@
+
+<<app-rootogram3>>=
+## --- expected frequencies ---
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 names(expect) <- 1:50
 expect <- as.table(expect)
 
 ## --- observed frequencies ---
 obsrvd <- table(flash_austria_eval$counts)[1:50]
+@
 
+\setkeys{Gin}{width=.7\textwidth}
+\begin{figure}
+\begin{center}
+<<app-plot-rootogram, fig = TRUE, height = 5, width = 6>>=
 ## --- plot rootogram ---
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
@@ -939,53 +960,53 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
-% \setkeys{Gin}{width=1\textwidth}
-% \begin{figure}
-% \begin{center}
-% <<app-plot-case, eval = FALSE>>=
-% library("sf")
-% library("ggplot2")
-% library("colorspace")
-% library("rnaturalearth")
-% library("rnaturalearthdata")
-%   
-% world <- ne_countries(scale = "medium", returnclass = "sf")
-% 
-% fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-% d_case$P10 <- 1 - fam$p(9, fit)
-%   
-% ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
-%   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-%   geom_sf(data = world, col = "white", fill = NA) +
-%   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
-%   facet_wrap(~time) + theme_minimal()
-% @
-% <<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
-% library("sf")
-% library("ggplot2")
-% library("colorspace")
-% library("rnaturalearth")
-% library("rnaturalearthdata")
-% 
-% fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-% flash_austria_case$P10 <- 1 - fam$p(9, fit)
-% 
-% world <- ne_countries(scale = "medium", returnclass = "sf")
-% 
-% ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
-%   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-%   geom_sf(data = world, col = "white", fill = NA) +
-%   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-%   facet_wrap(~time, nrow = 2) + theme_minimal() # +
-% #  theme(legend.position = "bottom")
-% @
-% \end{center}
-% \caption{A probabilistic reconstruction of lightning counts occured on
-% September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
-% 13~UTC, i.e., the probability of having observed $10$ or more counts within one
-% grid box.}
-% \label{fig:appcase}
-% \end{figure}
+\setkeys{Gin}{width=1\textwidth}
+\begin{figure}
+\begin{center}
+<<app-plot-case, eval = FALSE>>=
+library("sf")
+library("ggplot2")
+library("colorspace")
+library("rnaturalearth")
+library("rnaturalearthdata")
+  
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+d_case$P10 <- 1 - fam$p(9, fit)
+  
+ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
+  facet_wrap(~time) + theme_minimal()
+@
+<<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
+library("sf")
+library("ggplot2")
+library("colorspace")
+library("rnaturalearth")
+library("rnaturalearthdata")
+
+fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+flash_austria_case$P10 <- 1 - fam$p(9, fit)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+  facet_wrap(~time, nrow = 2) + theme_minimal() # +
+#  theme(legend.position = "bottom")
+@
+\end{center}
+\caption{A probabilistic reconstruction of lightning counts occured on
+September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
+13~UTC, i.e., the probability of having observed $10$ or more counts within one
+grid box.}
+\label{fig:appcase}
+\end{figure}
 
 
 \bibliography{bamlss}
