@@ -871,12 +871,13 @@ and thus help to understand the physics associted with lightning events.
 The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
 
-\begin{figure}
-\begin{center}
 <<app-plot-effect1, fig = FALSE, eval = FALSE>>=
 plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"),
   rug = TRUE)
 @
+
+\begin{figure}
+\begin{center}
 \setkeys{Gin}{width=1\textwidth}
 <<echo = FALSE, fig = TRUE, height = 3, width = 6>>=
 par(mfrow = c(1, 3))
@@ -940,11 +941,23 @@ fam <- family(b)
 fam
 @
 
-
+The family contains functions to map the predictors to the parameter
+scale, density, cumulative distribution function, log-likelihood, and
+scores and hessian. We apply the density to compute the expected
+frequencies of the positive counts. The function \code{...$d} takes the
+quantile as first argument, and the \code{list} with the parameters,
+as returned by \code{predict()}, as a second argument. 
 
 <<app-rootogram3>>=
 ## --- expected frequencies ---
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
+@
+
+In order to plot the rootogram, we have to name the vector and
+coerce it to an object of class \code{table}. The verifying
+observed frequencies can be directly obtained by \code{table}.
+
+<<app-rootogram4>>=
 names(expect) <- 1:50
 expect <- as.table(expect)
 
@@ -952,10 +965,20 @@ expect <- as.table(expect)
 obsrvd <- table(flash_austria_eval$counts)[1:50]
 @
 
+The observed and expected frequencies can be plugged into the
+default method of \code{rootogram} from the \pkg{countreg}
+package \citep{zeileis2008regression}.
+
+<<app-plot-rootogram1, eval = FALSE>>=
+## --- plot rootogram ---
+library("countreg")
+rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
+@
+
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}
 \begin{center}
-<<app-plot-rootogram, fig = TRUE, height = 5, width = 6>>=
+<<app-plot-rootogram2, fig = TRUE, height = 5, width = 6, echo = FALSE>>=
 ## --- plot rootogram ---
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
@@ -968,37 +991,53 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
-\setkeys{Gin}{width=1\textwidth}
-\begin{figure}
-\begin{center}
-<<app-plot-case, eval = FALSE>>=
+The rootogram reveals reasonable calibration of the model though it is slightly
+underestimating the number of events with a single lightning discharge.
+Now given good convergence and sample characteristics of the gradient
+boosting optimizer and MCMC sampler, physically interpretable effects, and
+good out-of-sample calibration, we can take our model and predict a case
+for the period before 2010, for which no lightning data are available.
+The case of interest is a front moving from the West to the East on the
+Northern side of the Alps on 2001-09-15 and 2001-09-16.
+The case data \code{flash_austria_case} contains additional columns containing
+time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
+We predict the parameters for this case, and derive the probability of
+observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
+by applying the cumulative distribution function \code{...$p} of the family.
+
+<<app-plot-case1>>=
+## --- predict case ---
 library("sf")
+fit <- predict(b, newdata = flash_austria_case, type = "parameter")
+flash_austria_case$P10 <- 1 - fam$p(9, fit)
+@
+
+We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
+and the Inferno color scale from the \pkg{colorspace} package
+\citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
+from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
+
+<<app-plot-case2, eval = FALSE>>=
+## --- plot case ---
 library("ggplot2")
 library("colorspace")
-library("rnaturalearth")
-library("rnaturalearthdata")
-  
-world <- ne_countries(scale = "medium", returnclass = "sf")
 
-fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-d_case$P10 <- 1 - fam$p(9, fit)
-  
 ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
   facet_wrap(~time) + theme_minimal()
 @
+
+\setkeys{Gin}{width=1\textwidth}
+\begin{figure}
+\begin{center}
 <<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
-library("sf")
 library("ggplot2")
 library("colorspace")
+
 library("rnaturalearth")
 library("rnaturalearthdata")
-
-fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-flash_austria_case$P10 <- 1 - fam$p(9, fit)
-
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
@@ -1016,6 +1055,12 @@ grid box.}
 \label{fig:appcase}
 \end{figure}
 
+The figure reveals that the probability for strong lightning events increases
+during 2001-09-15 between 6 and 17~UTC. During night time the front occurs,
+which can be nicely seen at 23~UTC. The propagation of the front is blocked
+by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
+2001-09-16 one can see that the probability on the downwind side of the
+Alps has increased.
 
 \bibliography{bamlss}
 
