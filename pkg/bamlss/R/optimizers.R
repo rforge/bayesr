@@ -3799,6 +3799,8 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
         rplab <- diff(range(plab))
         for(i in 1:(length(plab) - 1)) {
           dp <- abs(plab[i] - plab[i + 1]) / rplab
+          if(length(dp) < 1)
+            dp <- 0
           if(is.na(dp))
             dp <- 0
           if(dp <= 0.02) {
