@@ -799,7 +799,7 @@ on which the boosting took less than 6~minutes and the MCMC sampling took less t
 individual terms during the boosting optimization (Fig.~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
-boost.plot(b, "loglik.contrib", intercept = FALSE)
+boost.plot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
 \setkeys{Gin}{width=.8\textwidth}
@@ -872,8 +872,7 @@ The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
 
 <<app-plot-effect1, fig = FALSE, eval = FALSE>>=
-plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"),
-  rug = TRUE)
+plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"))
 @
 
 \begin{figure}
@@ -1061,6 +1060,9 @@ which can be nicely seen at 23~UTC. The propagation of the front is blocked
 by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
 2001-09-16 one can see that the probability on the downwind side of the
 Alps has increased.
+
+\section{Achknowledgements}
+T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
 
