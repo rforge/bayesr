@@ -115,7 +115,7 @@ Medium-Range Weather Forecasts (ECMWF) ensemble forecasts as explanatory
 variables for all distribution parameters.
 
 This vignette provides example code how to set up the models employing the
-package BAMLSS as presented in the article.
+package _bamlss_ as presented in the article.
 
 ## Data
 

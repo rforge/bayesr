@@ -12,6 +12,7 @@ articles:
     - distregvis
     - rent
     - bivnorm
+    - lasso
 
 navbar:
   left:
@@ -39,6 +40,8 @@ navbar:
       menu: 
       - text: Bivariate Gaussian Models for Wind Vectors
         href: articles/bivnorm.html
+      - text: LASSO-Type Penalization in the Framework of GAMLSS
+        href: articles/lasso.html
     - text: Changelog
       href: news/index.html
 
