@@ -79,21 +79,15 @@
   </a>
 </li>
 <li>
-  <a href="../reference/index.html">Reference</a>
-</li>
-<li>
   <a href="../articles/bamlss.html">Get started</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
+    Vignettes
      
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
-    <li>
-      <a href="../articles/misc.html">Miscellaneous Topics</a>
-    </li>
     <li>
       <a href="../articles/terms.html">Available Model Terms</a>
     </li>
@@ -108,6 +102,9 @@
     </li>
     <li>
       <a href="../articles/rent.html">Munich Rent Example</a>
+    </li>
+    <li>
+      <a href="../articles/misc.html">Miscellaneous Topics</a>
     </li>
   </ul>
 </li>
@@ -125,6 +122,9 @@
       <a href="../articles/lasso.html">LASSO-Type Penalization in the Framework of GAMLSS</a>
     </li>
   </ul>
+</li>
+<li>
+  <a href="../reference/index.html">Reference</a>
 </li>
 <li>
   <a href="../news/index.html">Changelog</a>
@@ -230,7 +230,7 @@
 #&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0001 iteration   5
 #&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0000 iteration   6
 #&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0000 iteration   6
-#&gt; elapsed time:  0.35sec</div><div class='input'>
+#&gt; elapsed time:  0.34sec</div><div class='input'>
 <span class='co'>## Sample.</span>
 <span class='no'>samps</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>MVNORM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='no'>o</span>$<span class='no'>parameters</span>))</div><div class='output co'>#&gt; </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>samps</span>)</div><div class='img'><img src='MVNORM-1.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-2.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-3.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-4.png' alt='' width='700' height='433' /></div></pre>
   </div>
