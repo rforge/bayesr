@@ -35,7 +35,7 @@ if(!file.exists("figures/lasso.rda")) {
     criterion = "BIC", nlambda = 30, multiple = TRUE)
 
   rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
-    criterion = "BIC", start = coef(rentmodel))
+    criterion = "BIC", start = coef(rentmodel, mstop = lasso.stop(rentmodel)))
 
   save(rentmodel, rentmodel_s, file = "figures/lasso.rda")
 } else {
@@ -70,12 +70,12 @@ file_url <- "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142c
 rent99 <- read.table(file_url, header = TRUE)
 ```
 The response is the monthly rent per square meter in Euro (`rentsqm`). In this example
-we use the year of construction (`yearc`), area (`area`) and the the location classification
-(`location', derived from expert knowledge) of the apartment as covariates. Following
+we use the year of construction (`yearc`), area (`area`) and the location classification
+(`location', derived from expert knowledge) of the apartment as covariates. Following the example
 [@bamlss:Groll+Hambuckers+Kneib+Umlauf:2019], the two continuous covariates are categorized 
 ```{r}
 ## Create factors of continuous covariates.
-rent99$yearc <- as.factor(floor(rent99$yearc/10)*10)
+rent99$yearc <- as.factor(floor(rent99$yearc / 10) * 10)
 rent99$area <- cut(rent99$area, breaks = c(0, seq(30, 140, by = 10), Inf),
   include.lowest = TRUE, right = FALSE)
 
@@ -92,15 +92,17 @@ f <- list(
   sigma ~ la(area,fuse=2) + la(yearc,fuse=2) + la(location,fuse=1)
 )
 
-## LASSO model based on lambda grid.
+## LASSO model based on lambda grid,
+## use special lasso() estimation engine.
 rentmodel <- bamlss(f, data = rent99, optimizer = lasso, sampler = FALSE,
   upper = exp(30), lower = 0.223102, criterion = "BIC", nlambda = 30, multiple = TRUE)
 ```
+where arguments `upper` and `lower` define the limits of the LASSO tuning parameters. Estimation
+in this case is based on the BIC using a two dimensional grid search with $30 \times 30$ iterations.
 Note that `fuse=1` is used for nominal fusion and `fuse=2` for ordinal fusion within the special
 `la()` model term constructor function.
 
-The optimal tuning parameters are selected by BIC on a 2-dimensional grid. The marginal BIC curves
-can be visualized with
+The resulting marginal BIC curves can be visualized with
 ```{r, eval=FALSE}
 lasso.plot(rentmodel, which = "criterion")
 ```
@@ -109,8 +111,8 @@ par(mfrow = c(1, 2))
 lasso.plot(rentmodel, which = "criterion", spar = FALSE)
 ```
 In this example both tuning parameters have the same value, also indicated by the gray dashed
-vertical lines. The coefficient paths w.r.t.\ the
-tuning parameters can be plotted, e.g. for parameter $\mu$, with
+vertical lines. The coefficient paths w.r.t.\ the tuning parameters can be plotted, e.g.,
+for parameter $\mu$, with
 ```{r, eval=FALSE}
 lasso.plot(rentmodel, which = "parameters", model = "mu")
 ```
@@ -118,9 +120,9 @@ lasso.plot(rentmodel, which = "parameters", model = "mu")
 par(mfrow = c(1, 2))
 lasso.plot(rentmodel, which = "parameters", model = "mu")
 ```
-The legend on the right hand side of the plot is not necessarily very nice. One option to select
-specific path for plotting is the `name` argument, e.g., plotting the coefficient paths for
-the year of construction for parameter $\mu$ can be done by
+The legend on the right hand side of the plot is not necessarily very nice (too long). One option
+to select specific paths for plotting is to set the `name` argument in `lasso.plot()`, e.g.,
+plotting the coefficient paths for the year of construction for parameter $\mu$ can be done by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
 lasso.plot(rentmodel, which = "parameters", model = "mu",
   name = "mu.s.la(yearc).yearc")
@@ -130,30 +132,32 @@ in the plot is easy to read. The plot shows that very old apartments are all shr
 of the model, whereas apartments from 1950 and younger enter the model and categories are
 not fused.
 
-Similarly, the effect on parameter $\sigma$ for the area of
-the apartment can be plotted by
+Similarly, the effect on parameter $\sigma$ for the `area` of the apartment can be plotted by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
 lasso.plot(rentmodel, which = "parameters", model = "sigma",
   name = "sigma.s.la(area).area")
 ```
-The plot shows that quite a few categories of covariate `area` are fused using the BIC for tuning
+The plot shows that almost all categories of covariate `area` are fused using the BIC for tuning
 parameter selection.
 
 ## Single tuning parameters.
 
 In _bamlss_, it is also possible to estimate single tuning parameters for each LASSO term.
 The main advantage of the single tuning parameter selection is that in principle classical
-LASSO and fused LASSO terms can be mixed, which is not the case if only single tuning parameter
-for each distributional parameter (e.g., $\mu$ and $\sigma$ using the Gaussian distribution) is used.
+LASSO and fused LASSO terms can be mixed, which is not the case if only single tuning parameters,
+one for each distributional parameter (e.g., $\mu$ and $\sigma$ using the Gaussian distribution),
+is used.
 
 E.g., using the Munich rent data, we could estimate the model with the default backfitting
 model fitting engine `bfit()`
 ```{r, eval=FALSE}
 rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
-  criterion = "BIC", start = coef(rentmodel))
+  criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso.stop(rentmodel)))
 ```
-using the estimated parameters of the first model as starting values. To compare both models
-by BIC, the `lasso.stop()` functions returns the optimum iteration of the `lasso()` optimizer
+using the estimated parameters of the first model as starting values (`mstop` is the optimum
+stopping iteration of the `lasso()` optimizer). Note that we also optimize the step length of
+the backfitting algorithm by setting `nu = 1`. To compare both models by BIC, the `lasso.stop()`
+functions returns the optimum iteration of the `lasso()` optimizer
 ```{r}
 lasso.stop(rentmodel)
 ```
@@ -165,10 +169,8 @@ BIC(rentmodel_s)
 which is slightly a bit smaller than the first model suggesting that the grid search method
 is most probably enough in this case.
 
-Using the `lasso.stop()` function, we can also extract the corresponding regression coefficients
-or compute predictions.
+Using the `lasso.stop()` function, we can also extract the corresponding predictions.
 ```{r, eval=FALSE}
-coef(rentmodel, mstop = lasso.stop(rentmodel))
 predict(rentmodel, mstop = lasso.stop(rentmodel))
 ```
 Note that the default in `coef()` and `predict()` would be to use the last LASSO iteration
