@@ -18,14 +18,10 @@ navbar:
   left:
     - icon: fa-home fa-lg
       href: index.html
-    - text: Reference
-      href: reference/index.html
     - text: Get started
       href: articles/bamlss.html
-    - text: Articles
+    - text: Vignettes
       menu:
-      - text: Miscellaneous Topics
-        href: articles/misc.html
       - text: Available Model Terms
         href: articles/terms.html
       - text: Generalized Linear Models (+)
@@ -36,12 +32,16 @@ navbar:
         href: articles/distregvis.html
       - text: Munich Rent Example
         href: articles/rent.html
+      - text: Miscellaneous Topics
+        href: articles/misc.html
     - text: Publications
       menu: 
       - text: Bivariate Gaussian Models for Wind Vectors
         href: articles/bivnorm.html
       - text: LASSO-Type Penalization in the Framework of GAMLSS
         href: articles/lasso.html
+    - text: Reference
+      href: reference/index.html
     - text: Changelog
       href: news/index.html
 
