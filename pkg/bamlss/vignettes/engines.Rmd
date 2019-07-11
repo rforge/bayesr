@@ -1,0 +1,158 @@
+---
+title: "Estimation Engines"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{engines}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{optimization, MCMC, estimation}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+```
+
+## Intro
+
+For the estimation of model parameters the _bamlss_ package provides a flexible
+infrastructure, which allows the user to exchange both, optimization functions for
+posterior mode estimation (penalized likelihood) and sampling functions for full
+Bayesian Inference. Within this unified modeling approach it is relatively straightforward
+to develop new estimation functions, e.g., such a function could also be an interface 
+function to  other software (see, e.g., the `JAGS()` sampling function). In the following,
+the basic requirements for optimizer and sampling functions are described.
+
+## Requirements
+
+Estimation engines in _bamlss_ are usually based on the model frame setup function
+`bamlss.frame()`, i.e., the functions all have a `x` argument, which contains all the
+necessary model and penalty matrices, and a `y` argument, which is the response
+(univariate or multivariate). In addition, an estimation engine usually has a `family`
+argument, which specifies the model to be estimated. However, this is not a mandatory
+argument, i.e., one could write an estimation function that is designed for one specific
+problem, only.
+
+The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is
+backfitting routine. The most important arguments are
+```{r, eval=FALSE}
+bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+```
+The default sampling engine in _bamlss_ is `GMCMC()`, again the most important
+arguments are
+```{r, eval=FALSE}
+GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+```
+So basically, the arguments of the optimizer and the sampling function are the same, the
+main difference is the return value. In _bamlss_ optimizer functions usually return
+a vector of estimated regression coefficients, while sampling functions return a matrix
+of samples of class `"mcmc"` or `"mcmc.list"` (see the documentation of the _coda_ package).
+
+Internally, what the optimizer or sampling function is actually running is not important
+for the `bamlss()` wrapper as long as a vector or matrix of parameters is returned. For
+optimizer functions the return value needs to be named list with an element `"parameters"`,
+the vector (also a matrix, e.g., for `lasso()` and `boost()` optimizers) of estimated 
+parameters. The most important requirement to make use of all extractor functions like
+`summary.bamlss()`, `predict.bamlss()`, `plot.bamlss()`, `residuals.bamlss()`, etc., is
+to keep the naming convention of the returned estimates. The parameter names are based
+on the names of the distribution parameters as specified in the family object. For example,
+the family object `gaussian_bamlss()` has names `"mu"` and `"sigma"`
+```{r}
+gaussian_bamlss()$names
+```
+Then, each distributional parameter can hold parametric and smooth effect terms. The
+parametric part is indicated with `"p"` and the smooth part with `"s"`. The names of the
+parametric coefficients are the names of the corresponding model matrices as returned
+from `bamlss.frame()`. E.g., if two linear effects, "`x1`" and `"x2"`, enter the model for 
+distributional parameter `"mu"`, then the final names are `"mu.p.x1"` and `"mu.p.x2"`.
+Similarly for the smooth parts, if we model a variable `"x3"` using a regression spline, the
+name is based on the names that are used by `bamlss.frame()` for the `smooth.construct()`
+object. In this case the parameter names would start with `"mu.s.s(x3)"`. If this smooth
+term has 10 regression coefficients, then the final name must be
+```{r}
+paste0("mu.s.s(x3)", ".b", 1:10)
+```
+i.e., all smooth term parameters are named with "b" and a numerated.
+
+## Example
+
+In the following, to explain the setup and the naming convention of estimation engines in
+more detail we implement
+
+* a new family object for simple linear models,
+* and set up an optimizer function based on the `lm()` function,
+* and additionally a MCMC sampling function.
+
+For illustration, the family object is kept very simple, we only model the mean function 
+in terms of covariates.
+```{r}
+lm_bamlss <- function(...) {
+  f <- list(
+    "family" = "LM",
+    "names" = "mu",
+    "links" = "identity",
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = 1, log = log)
+    },
+    "p" = function(y, par, ...) {
+      pnorm(y, mean = par$mu, sd = 1, ...)
+    }
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+```
+Now, for setting up the estimation functions we first simulate some data using the
+`GAMart()` function, afterwards the necessary `"bamlss.frame"` can be created with
+```{r}
+## Simulate some data.
+d <- GAMart()
+
+## Setup a "bamlss.frame" object, that is used for
+## developing the estimation functions for the linear model.
+bf <- bamlss.frame(num ~ x1 + x2, data = d, family = "lm")
+
+## Print the structure of the "bamlss.frame".
+print(bf)
+```
+As noted above, the object is a named list with elements `"x"` and `"y"`, which will be
+passed to the estimation functions. For the moment, since we only implement a linear 
+model, we need to work with the linear model matrix that is part of the `bf` object.
+```{r}
+print(head(bf$x$mu$model.matrix))
+```
+and the response `"y"`
+```{r}
+print(head(bf$y))
+```
+to setup the optimizer function with
+```{r}
+## Linear model optimizer function.
+lm.opt <- function(x, y, ...) {
+  ## Estimate model using lm.fit()
+  b <- lm.fit(x$mu$model.matrix, y[[1L]])
+
+  ## Extract estimated parameters and rename.
+  par <- b$coefficients
+  names(par) <- paste0("mu.p.", names(par))
+
+  ## Return estimated parameters and fitted values.
+  rval <- list(
+    "parameters" = par,
+    "fitted.values" = b$fitted.values
+  )
+
+  return(rval)
+}
+```
+
+
+## References
+

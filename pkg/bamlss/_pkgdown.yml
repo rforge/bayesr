@@ -13,6 +13,7 @@ articles:
     - rent
     - bivnorm
     - lasso
+    - engines
 
 navbar:
   left:
@@ -32,6 +33,8 @@ navbar:
         href: articles/distregvis.html
       - text: Munich Rent Example
         href: articles/rent.html
+      - text: Estimation Engines
+        href: articles/engines.html
       - text: Miscellaneous Topics
         href: articles/misc.html
     - text: Publications
