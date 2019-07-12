@@ -23,12 +23,15 @@ set.seed(123)
 ## Intro
 
 For the estimation of model parameters the _bamlss_ package provides a flexible
-infrastructure, which allows the user to exchange both, optimization functions for
+infrastructure that allows the user to exchange both, optimization functions for
 posterior mode estimation (penalized likelihood) and sampling functions for full
-Bayesian Inference. Within this unified modeling approach it is relatively straightforward
-to develop new estimation functions, e.g., such a function could also be an interface 
-function to  other software (see, e.g., the `JAGS()` sampling function). In the following,
-the basic requirements for optimizer and sampling functions are described.
+Bayesian Inference. This goes beyond the common modeling infrastructures that usually
+allow to create new family objects, only, and are too restrictive for a number of
+applications. Within the unified modeling approach in _bamlss_ it is relatively
+straightforward to develop new estimation functions (algorithms), e.g., for implementing
+new models or for efficiency reasons. Such estimation functions could also interface to
+other software (see, e.g., the `JAGS()` sampling function). In the following,
+the basic requirements for optimizer and sampling functions are described in detail.
 
 ## Requirements
 
@@ -40,7 +43,7 @@ argument, which specifies the model to be estimated. However, this is not a mand
 argument, i.e., one could write an estimation function that is designed for one specific
 problem, only.
 
-The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is
+The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is a
 backfitting routine. The most important arguments are
 ```{r, eval=FALSE}
 bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
@@ -52,18 +55,20 @@ GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 ```
 So basically, the arguments of the optimizer and the sampling function are the same, the
 main difference is the return value. In _bamlss_ optimizer functions usually return
-a vector of estimated regression coefficients, while sampling functions return a matrix
-of samples of class `"mcmc"` or `"mcmc.list"` (see the documentation of the _coda_ package).
+a vector of estimated regression coefficients (parameters), while sampling functions 
+return a matrix of parameter samples of class `"mcmc"` or `"mcmc.list"` (see the 
+documentation of the _coda_ package).
 
 Internally, what the optimizer or sampling function is actually running is not important
-for the `bamlss()` wrapper as long as a vector or matrix of parameters is returned. For
-optimizer functions the return value needs to be named list with an element `"parameters"`,
-the vector (also a matrix, e.g., for `lasso()` and `boost()` optimizers) of estimated 
-parameters. The most important requirement to make use of all extractor functions like
-`summary.bamlss()`, `predict.bamlss()`, `plot.bamlss()`, `residuals.bamlss()`, etc., is
-to keep the naming convention of the returned estimates. The parameter names are based
-on the names of the distribution parameters as specified in the family object. For example,
-the family object `gaussian_bamlss()` has names `"mu"` and `"sigma"`
+for the `bamlss()` wrapper function as long as a vector or matrix of parameters is
+returned. For optimizer functions the return value needs to be named list with an element
+`"parameters"`, the vector (also a matrix, e.g., for `lasso()` and `boost()` optimizers)
+of estimated parameters. The most important requirement to make use of all extractor
+functions like `summary.bamlss()`, `predict.bamlss()`, `plot.bamlss()`,
+`residuals.bamlss()`, etc., is to keep the naming convention of the returned estimates.
+The parameter names are based on the names of the distribution parameters as specified in
+the family object. For example, the family object `gaussian_bamlss()` has names `"mu"`
+and `"sigma"`
 ```{r}
 gaussian_bamlss()$names
 ```
@@ -99,10 +104,10 @@ lm_bamlss <- function(...) {
     "names" = "mu",
     "links" = "identity",
     "d" = function(y, par, log = FALSE) {
-      dnorm(y, mean = par$mu, sd = 1, log = log)
+      dnorm(y, mean = par$mu, log = log)
     },
     "p" = function(y, par, ...) {
-      pnorm(y, mean = par$mu, sd = 1, ...)
+      pnorm(y, mean = par$mu, ...)
     }
   )
   class(f) <- "family.bamlss"
@@ -152,6 +157,34 @@ lm.opt <- function(x, y, ...) {
   return(rval)
 }
 ```
+This optimizer function can already be used with the `bamlss()` wrapper function and
+all extractor functions are readily available.
+```{r}
+## Model formula with polynomial model terms.
+f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
+
+## Estimate model with new optimizer function.
+b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = FALSE)
+
+## Summary output.
+summary(b)
+
+## Predict for term x2.
+nd <- data.frame("x2" = seq(0, 1, length = 100))
+nd$p <- predict(b, newdata = nd, term = "x2")
+```
+Plot the estimated effect of `x2`.
+```{r, eval = FALSE}
+plot2d(p ~ x2, data = nd)
+```
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", echo = FALSE}
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+plot2d(p ~ x2, data = nd)
+```
+
+The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we
+assume multivariate normal priors for the regression coefficients a Gibbs sampler
+with 100\% acceptance rates can be created.
 
 
 ## References

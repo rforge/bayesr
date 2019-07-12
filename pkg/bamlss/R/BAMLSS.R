@@ -260,8 +260,14 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           attr(x, "terms") <- NULL
           return(x)
         }
-        obj$model.matrix <- model.matrix(drop.terms.bamlss(obj$terms,
-          sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = drop_terms_attr(data))
+        obj$model.matrix <- try(model.matrix(drop.terms.bamlss(obj$terms,
+          sterms = FALSE, keep.response = FALSE, data = data, specials = specials), data = drop_terms_attr(data)), silent = TRUE)
+        if(inherits(obj$model.matrix, "try-error")) {
+          lmt <- drop.terms.bamlss(obj$terms,
+            sterms = FALSE, keep.response = FALSE, data = data, specials = specials)
+          environment(lmt) <- .GlobalEnv
+          obj$model.matrix <- model.matrix(lmt, data = drop_terms_attr(data))
+        }
         if(ncol(obj$model.matrix) > 0) {
           if(scale.x)
             obj$model.matrix <- scale.model.matrix(obj$model.matrix)
@@ -3761,7 +3767,11 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
             }
           }
         }
-        X <- model.matrix(f, data = data)
+        X <- try(model.matrix(f, data = data), silent = TRUE)
+        if(inherits(X, "try-error")) {
+          attr(data, "terms") <- NULL
+          X <- model.matrix(f, data = data)
+        }
         if(has_intercept)
           X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         if(grepl(":", j)) {
