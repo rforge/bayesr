@@ -201,8 +201,9 @@ plot2d(p ~ x2, data = nd)
 
 The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we
 assume multivariate normal priors for the regression coefficients and an inverse Gamma prior
-for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals.
-The MCMC algorithm consecutively samples for $t = 1, \ldots, T$ from the full conditionals
+for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals
+can be created. The MCMC algorithm consecutively samples for $t = 1, \ldots, T$ from the full
+conditionals
 $$
 \boldsymbol{\beta}^{(t)} | \cdot \sim N\left(\boldsymbol{\mu}_{\boldsymbol{\beta}}^{(t - 1)}, 
   \boldsymbol{\Sigma}_{\boldsymbol{\beta}}^{(t - 1)}\right)
