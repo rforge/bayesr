@@ -1,0 +1,35 @@
+---
+title: "BAMLSS Model Frame"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{BAMLSS model frame}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{model frame}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+```
+
+## Understanding the BAMLSS model frame
+
+Similar to the well-known `model.frame()` function that is used, e.g., by the linear model 
+fitting function `lm()` or for generalized linear models `glm()`, the `bamlss.frame()`
+function extracts a model frame for fitting distributional regression models. Internally,
+the function parsers model formulae, one for each parameter of the distribution,
+using the _Formula_ package infrastructures [@bamlss:Zeileis+Croissant:2010] in combination
+with `smooth.construct()` processing of the _mgcv_ package to setup design and penalty
+matrices with prior functions and respective derivatives for unspecified smooth function
+estimation [@bamlss:Wood:2018] (see also the documentation of function `s()`).
+
+## References
+
