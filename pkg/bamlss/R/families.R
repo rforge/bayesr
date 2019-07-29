@@ -4492,56 +4492,56 @@ nmult_bamlss <- function(K)
 }
 
 
-if(FALSE) {
-foo1 <- function(x, p = 0.7) {
-  log(p * (1 - p)) - x * (p - 1 * (x < 0))
-}
+#if(FALSE) {
+#foo1 <- function(x, p = 0.7) {
+#  log(p * (1 - p)) - x * (p - 1 * (x < 0))
+#}
 
-absx <- function(x) { x * tanh(x/0.1) }
+#absx <- function(x) { x * tanh(x/0.1) }
 
-foo2 <- function(x, p = 0.7) {
-  i <- x > 0
-  rval <- rep(0, length(x))
-  rval[i] <- p * absx(x[i])
-  rval[!i] <- (1 - p) * absx(x[!i])
-  log(p * (1 - p)) - rval
-}
+#foo2 <- function(x, p = 0.7) {
+#  i <- x > 0
+#  rval <- rep(0, length(x))
+#  rval[i] <- p * absx(x[i])
+#  rval[!i] <- (1 - p) * absx(x[!i])
+#  log(p * (1 - p)) - rval
+#}
 
-curve(foo1, -1, 1)
-curve(foo2, -1, 1, col = 2, add = TRUE)
+#curve(foo1, -1, 1)
+#curve(foo2, -1, 1, col = 2, add = TRUE)
 
-library(numDeriv)
+#library(numDeriv)
 
-numDeriv::grad(foo3, -0.01)
-foo3prime(-0.01)
+#numDeriv::grad(foo3, -0.01)
+#foo3prime(-0.01)
 
-n <- 300
-x <- runif(n, -3, 3)
-y <- sin(x) + rnorm(n, sd = exp(-1 + 0.5 * x))
+#n <- 300
+#x <- runif(n, -3, 3)
+#y <- sin(x) + rnorm(n, sd = exp(-1 + 0.5 * x))
 
-data("mcycle", package = "MASS")
-x <- mcycle$times
-y <- mcycle$accel / max(abs(mcycle$accel))
+#data("mcycle", package = "MASS")
+#x <- mcycle$times
+#y <- mcycle$accel / max(abs(mcycle$accel))
 
-f <- list(
-  y ~ s(x),
-  sigma ~ s(x),
-  lambda ~ s(x)
-)
+#f <- list(
+#  y ~ s(x),
+#  sigma ~ s(x),
+#  lambda ~ s(x)
+#)
 
-maxit = 500
+#maxit = 500
 
-b1 <- bamlss(f, family = gF("ELF", tau = 0.1), optimizer = boost, initialize = FALSE)
-b2 <- bamlss(f, family = gF("ELF", tau = 0.5), optimizer = boost, initialize = FALSE)
-b3 <- bamlss(f, family = gF("ELF", tau = 0.9), optimizer = boost, initialize = FALSE)
+#b1 <- bamlss(f, family = gF("ELF", tau = 0.1), optimizer = boost, initialize = FALSE)
+#b2 <- bamlss(f, family = gF("ELF", tau = 0.5), optimizer = boost, initialize = FALSE)
+#b3 <- bamlss(f, family = gF("ELF", tau = 0.9), optimizer = boost, initialize = FALSE)
 
-p1 <- predict(b1, model = "mu")
-p2 <- predict(b2, model = "mu")
-p3 <- predict(b3, model = "mu")
+#p1 <- predict(b1, model = "mu")
+#p2 <- predict(b2, model = "mu")
+#p3 <- predict(b3, model = "mu")
 
-plot(x, y)
-plot2d(cbind(p1, p2, p3) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
-}
+#plot(x, y)
+#plot2d(cbind(p1, p2, p3) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
+#}
 
 ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
 {

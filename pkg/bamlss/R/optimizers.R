@@ -5518,7 +5518,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             shuffle_id <- sample(1:N)
           } else {
             shuffle_id <- NULL
-            for(ii in chunk(y)) {
+            for(ii in bit::chunk(y)) {
               ind <- ii[1]:ii[2]
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
@@ -5550,20 +5550,21 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   tau2f <- 100
 
   iter2 <- 1L
+  nu <- 0.5
 
   ptm <- proc.time()
   for(ej in 1:epochs) {
     if(verbose)
       cat("starting epoch", ej, "\n")
 
-    nu <- 1/(1 + iter2)
+    ## nu <- 1/(1 + iter2)
 
     ## Shuffle observations.
     if(noff) {
       shuffle_id <- sample(1:N)
     } else {
       shuffle_id <- NULL
-      for(ii in chunk(y)) {
+      for(ii in bit::chunk(y)) {
         ind <- ii[1]:ii[2]
         shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
       }
@@ -5640,14 +5641,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             P <- matrix_inv(XWX + 1/tau2f * I)
             b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
-            ll <- if(aic | loglik) {
+            if(aic | loglik) {
               if(aic) {
-                -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+                ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
               } else {
-                -1 * family$loglik(yt, family$map2par(etas))
+                ll <- -1 * family$loglik(yt, family$map2par(etas))
               }
             } else {
-              mean((zs - etas[[i]])^2, na.rm = TRUE)
+              ll <- mean((zs - etas[[i]])^2, na.rm = TRUE)
             }
             return(ll)
           }
@@ -5706,7 +5707,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                   iedf <- sum_diag(XWX %*% P)
                   ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
                 } else {
-                  -1 * family$loglik(yt, family$map2par(etas))
+                  ll <- -1 * family$loglik(yt, family$map2par(etas))
                 }
               } else {
                 ll <- mean((zs - etas[[i]])^2, na.rm = TRUE)
@@ -5714,7 +5715,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return(ll)
             }
 
-            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 100), silent = TRUE)
 
             if(!inherits(tau2s, "try-error")) {
               tau2[[i]][[j]] <- tau2s

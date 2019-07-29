@@ -222,6 +222,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     stop("data needs to be supplied!")
 
   no_ff <- !inherits(data, "ffdf")
+  if(!no_ff) {
+    stopifnot(requireNamespace("ff"))
+    stopifnot(requireNamespace("ffbase"))
+    stopifnot(requireNamespace("bit"))
+  }
 
   if(!is.character(data) & no_ff) {
     if(!inherits(data, "data.frame"))
@@ -279,11 +284,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         ff_mm <- function(x) {
           X <- model.matrix(mm_terms, data = x)
           cn <- colnames(X)
-          X <- ff(X, dim = dim(X), dimorder = c(2, 1))
+          X <- ff::ff(X, dim = dim(X), dimorder = c(2, 1))
           colnames(X) <- cn
           return(X)
         }
-        for(cff in chunk(data)) {
+        for(cff in bit::chunk(data)) {
           obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
         }
       }
@@ -642,8 +647,31 @@ smooth.construct_ff <- function(object, data, knots, ...)
 }
 
 
+ff_nrow <- function(x, value)
+{
+  d <- dim(x)
+  if (is.null(d) || length(d)!=2)
+    stop("not a two-dimensional array")
+  dim(x) <- c(as.integer(value), d[[2]])
+  x
+}
+
+ff_ncol <- function(x, value)
+{
+  d <- dim(x)
+  if (is.null(d) || length(d)!=2)
+    stop("not a two-dimensional array")
+  dim(x) <- c(d[[1]], as.integer(value))
+  x
+}
+
+
 ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...) 
 {
+  stopifnot(requireNamespace("ff"))
+  stopifnot(requireNamespace("ffbase"))
+  stopifnot(requireNamespace("bit"))
+
   w <- getOption("warn")
   options("warn" = -1)
   if(is.null(x))
@@ -651,14 +679,14 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
   n <- nrow(dat)
   nff <- nrow(x)
   cn <- colnames(x)
-  nrow(x) <- nff + n
+  x <- ff_nrow(x, nff + n)
   if(!identical(colnames(x), colnames(dat))) {
     warning("column names are not identical")
   }
   if(ncol(x) != ncol(dat)) {
     stop("Number of columns does not match")
   }
-  i <- hi(nff + 1, nff + n)
+  i <- ff::hi(nff + 1, nff + n)
   colnames(x) <- NULL
   colnames(dat) <- NULL
   x[i, ] <- dat[,]
@@ -682,11 +710,11 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   sX <- function(x) {
     X <- PredictMat(object, data = x)
     cn <- colnames(X)
-    X <- ff(X, dim = dim(X), dimorder = c(2, 1))
+    X <- ff::ff(X, dim = dim(X), dimorder = c(2, 1))
     colnames(X) <- cn
     return(X)
   }
-  for(ic in chunk(data)) {
+  for(ic in bit::chunk(data)) {
     object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
   }
   csum <- 0
@@ -716,6 +744,10 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.big.error=FALSE,...) {	
 	{i1<-NULL; i2<- NULL} #To avoid errors in R CMD check
 
+        stopifnot(requireNamespace("ff"))
+        stopifnot(requireNamespace("ffbase"))
+        stopifnot(requireNamespace("bit"))
+
 	dimx<-dim(x)
 	if(!is.null(y)) dimy<-dim(y)
 	if(is.null(y))  dimy<-dimx
@@ -742,35 +774,35 @@ ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.b
 	}
 
 	if(all(outDim==n)){
-		if( (xt) &(!yt)) ffapply({
+		if( (xt) &(!yt)) ff::ffapply({
 			out<-out+crossprod(x[i1:i2,], y[i1:i2,])
 			},X=x,MARGIN=1)
-		if((!xt) & (yt)) ffapply({
+		if((!xt) & (yt)) ff::ffapply({
 			out<-out+tcrossprod(x[,i1:i2], y[,i1:i2])
 			},X=x,MARGIN=2)
-		if((!xt) &(!yt)) ffapply({
+		if((!xt) &(!yt)) ff::ffapply({
 			out<-out+x[,i1:i2]%*% y[i1:i2,]
 			},X=x,MARGIN=2)
 	}
 	if(outDim[1]>outDim[2] | (outDim[1]==p & outDim[2]==p)){
-		if( (xt) & (!yt)) ffapply({
+		if( (xt) & (!yt)) ff::ffapply({
 			out[i1:i2,]<-crossprod(x[,i1:i2], y)
 			},X=x,MARGIN=2)
-		if((!xt) &  (yt)) ffapply({
+		if((!xt) &  (yt)) ff::ffapply({
 			out[i1:i2,]<-tcrossprod(x[i1:i2,], y)
 			},X=x,MARGIN=1)
-		if((!xt) & (!yt)) ffapply({
+		if((!xt) & (!yt)) ff::ffapply({
 			out[i1:i2,]<-x[i1:i2,]%*% y
 			},X=x,MARGIN=1)
 	}
 	if(outDim[1]< outDim[2]){ 
-		if( (xt) & (!yt))  ffapply({
+		if( (xt) & (!yt))  ff::ffapply({
 			out[,i1:i2]<-crossprod(x, y[,i1:i2])
 			},X=y,MARGIN=2)
-		if((!xt) &  (yt))  ffapply({
+		if((!xt) &  (yt))  ff::ffapply({
 			out[,i1:i2]<-tcrossprod(x, y[i1:i2,])
 			},X=y,MARGIN=1)
-		if((!xt) & (!yt))  ffapply({
+		if((!xt) & (!yt))  ff::ffapply({
 			out[,i1:i2]<- x %*% y[,i1:i2]
 			},X=y,MARGIN=2)
 		#Here, if y=NULL, we would've already gotten an error
@@ -9227,33 +9259,33 @@ matrix_inv <- function(x, index = NULL, force = FALSE)
 }
 
 
-if(FALSE) {
-  set.seed(1234)
-  a <- list()
-  sparse <- list()
-  for (i in 1:4){
-    a[[i]] <- crossprod(matrix(rnorm(i^2), nrow = i))
-  }
+#if(FALSE) {
+#  set.seed(1234)
+#  a <- list()
+#  sparse <- list()
+#  for (i in 1:4){
+#    a[[i]] <- crossprod(matrix(rnorm(i^2), nrow = i))
+#  }
 
-  A <- as.matrix(do.call(bdiag, a))
+#  A <- as.matrix(do.call(bdiag, a))
 
-  sparse$block.index <- list(
-    1L,
-    2L:3L,
-    4L:6L,
-    7L:10L
-  )
-  sparse$is.diagonal <- FALSE
+#  sparse$block.index <- list(
+#    1L,
+#    2L:3L,
+#    4L:6L,
+#    7L:10L
+#  )
+#  sparse$is.diagonal <- FALSE
 
-  # calculate inverse
-  inv1 <- bamlss:::matrix_inv(A, sparse)
-  attr(inv1, "dimnames") <- NULL
-  inv2 <- bamlss:::matrix_inv(A)
+#  # calculate inverse
+#  inv1 <- bamlss:::matrix_inv(A, sparse)
+#  attr(inv1, "dimnames") <- NULL
+#  inv2 <- bamlss:::matrix_inv(A)
 
-  all.equal(inv1, inv2)
-  inv1
-  inv2
-}
+#  all.equal(inv1, inv2)
+#  inv1
+#  inv2
+#}
 
 
 ## Compute matching index for duplicates in data.
@@ -9531,13 +9563,13 @@ stg <- function(x, interp = FALSE, k = -1, ...)
 }
 
 
-if(FALSE) {
-  x <- runif(3000, -3, 3)
-  f <- bamlss:::simfun("pick")
-  y <- sin(x) + rnorm(3000, sd = scale2(f(scale2(x, 0, 1)), 0.01, 0.3))
-  plot(x, y)
-  b <- bamlss(list(y ~ n(x), ~ n(x)), sampler = FALSE)
-}
+#if(FALSE) {
+#  x <- runif(3000, -3, 3)
+#  f <- bamlss:::simfun("pick")
+#  y <- sin(x) + rnorm(3000, sd = scale2(f(scale2(x, 0, 1)), 0.01, 0.3))
+#  plot(x, y)
+#  b <- bamlss(list(y ~ n(x), ~ n(x)), sampler = FALSE)
+#}
 
 ## Most likely transformations.
 h <- function(...)

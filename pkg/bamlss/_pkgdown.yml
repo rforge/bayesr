@@ -14,6 +14,7 @@ articles:
     - bivnorm
     - lasso
     - engines
+    - bf
 
 navbar:
   left:
@@ -35,6 +36,8 @@ navbar:
         href: articles/rent.html
       - text: Estimation Engines
         href: articles/engines.html
+      - text: BAMLSS Model Frame
+        href: articles/bf.html
       - text: Miscellaneous Topics
         href: articles/misc.html
     - text: Publications

@@ -3879,7 +3879,7 @@ SEXP boost_fit_nnet(SEXP nu, SEXP X, SEXP N, SEXP y, SEXP ind, SEXP nthreads)
   int i, j;
   int n = nrows(X);
   int k = ncols(X);
-  int *nthreadsptr = INTEGER(nthreads);
+//  int *nthreadsptr = INTEGER(nthreads);
 
   SEXP g;
   PROTECT(g = allocVector(REALSXP, k));

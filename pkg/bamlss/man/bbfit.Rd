@@ -54,17 +54,20 @@ bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 \examples{
 \dontrun{## Simulate data.
 set.seed(123)
-d <- GAMart(n = 27000)
+d <- GAMart(n = 27000, sd = -1)
 
 ## Write data to disc.
 tf <- tempdir()
 write.table(d, file.path(tf, "d.raw"), quote = FALSE, row.names = FALSE, sep = ",")
 
 ## Estimation using batch-wise backfitting.
-f <- num ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
+f <- list(
+  num ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10),
+  sigma ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
+)
 
 b <- bamlss(f, data = file.path(tf, "d.raw"), optimizer = bbfit,
-  sampler = FALSE, batch = 10, epochs = 2)
+  sampler = FALSE, nbatch = 10, epochs = 2, loglik = TRUE)
 
 ## Show estimated effects.
 plot(b)
