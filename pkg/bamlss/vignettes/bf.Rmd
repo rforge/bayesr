@@ -23,13 +23,30 @@ set.seed(123)
 ## Understanding the BAMLSS model frame
 
 Similar to the well-known `model.frame()` function that is used, e.g., by the linear model 
-fitting function `lm()` or for generalized linear models `glm()`, the `bamlss.frame()`
-function extracts a model frame for fitting distributional regression models. Internally,
-the function parsers model formulae, one for each parameter of the distribution,
+fitting function `lm()`, or for generalized linear models `glm()`, the `bamlss.frame()`
+function extracts a ``model frame'' for fitting distributional regression models. 
+Internally, the function parses model formulae, one for each parameter of the distribution,
 using the _Formula_ package infrastructures [@bamlss:Zeileis+Croissant:2010] in combination
-with `smooth.construct()` processing of the _mgcv_ package to setup design and penalty
-matrices with prior functions and respective derivatives for unspecified smooth function
-estimation [@bamlss:Wood:2018] (see also the documentation of function `s()`).
+with `model.matrix()` processing for linear effects and `smooth.construct()` processing of
+the _mgcv_ package to setup design and penalty matrices for unspecified smooth function 
+estimation [@bamlss:Wood:2018] (see also, e.g., the documentation of function `s()` and
+`te()`).
+
+The most important arguments are
+```{r, eval=FALSE}
+bamlss.frame(formula, data = NULL, family = "gaussian",
+  weights = NULL, subset = NULL, offset = NULL,
+  na.action = na.omit, contrasts = NULL, ...)
+```
+which basically represent the standard model frame specifications
+[@bamlss:Chambers+Hastie:1992], while argument `formula` can be a classical model
+formulae, e.g., as used by the `lm()` function, or an extended _bamlss_ formula, that is
+internally parsed by function `bamlss.formula()`. Note that the _bamlss_ package uses
+special `family` objects, that can be passed either as a character without the `"_bamlss"`
+extension of the _bamlss_ family name (see the manual `?bamlss.family` for a list of
+families), or the family function itself. In addition,
+all families of the _gamlss_ [@bamlss:gamlss] and _gamlss.dist_ 
+[@bamlss:gamlss.dist] package are supported.
 
 ## References
 

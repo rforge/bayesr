@@ -829,7 +829,7 @@ chunk_mat <- function (x, RECORDBYTES = sum(ff::.rambytes[ff::vmode(x)]),
             l$by <- b
         }
         l$maxindex <- n
-        ret <- do.call("chunk.default", l)
+        ret <- do.call(bit::chunk.default, l)
     }
     else {
         ret <- list()
