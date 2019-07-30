@@ -1,3 +1,13 @@
+## bamlss 1.0-2
+
+* Bug fixing.
+
+* First neural network implementations, the `n()` constructor.
+
+* Support for very large data sets using the ff and ffbase package.
+
+* Experimental batchwise backfitting algorithm `bbfit()`.
+
 ## bamlss 1.0-1
 
 * Bug fixing.
