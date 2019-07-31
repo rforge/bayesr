@@ -418,12 +418,11 @@ SwissLabor$c.age <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
   include.lowest = TRUE)
 
-SwissLabor$c.education <- cut(SwissLabor$education,
-  breaks = quantile(SwissLabor$education, prob = seq(0, 1, length = 5)),
-  include.lowest = TRUE)
+SwissLabor$c.education <- with(SwissLabor, cut(education,
+  unique(quantile(SwissLabor$education, prob = seq(0, 1, length = 10))),
+  include.lowest = TRUE))
 
 SwissLabor$youngkids <- ordered(SwissLabor$youngkids)
-  
 SwissLabor$oldkids[SwissLabor$oldkids > 4] <- 5
 SwissLabor$oldkids <- ordered(SwissLabor$oldkids)
 
@@ -433,7 +432,9 @@ if(!file.exists("LassoSL.rda")) {
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
     optimizer = lasso, sampler = FALSE, upper = 500, lower = 2,
-    criterion = "BIC", nlambda = 2000)
+    criterion = "BIC", nlambda = 1000)
+
+  set.seed(111)
 
   m <- bamlss(f, family = "binomial", data = SwissLabor,
     optimizer = FALSE, sampler = GMCMC,
@@ -478,8 +479,8 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
   optimizer = lasso, sampler = FALSE,
   criterion = "BIC")
 @
-Note the no MCMC sampling is used after the \fct{lasso} estimation engine is applied. Additionally,
-the optimum shrinkage parameter $\lambda$ is selected by the BIC.
+The optimum shrinkage parameter $\lambda$ is selected by the BIC.
+Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied.
 
 The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
@@ -493,62 +494,67 @@ and are shown in Figure~\ref{fig:lasso} for variables \code{age}, \code{youngkid
 \setkeys{Gin}{width=0.32\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4, height = 5>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
-lasso.plot(b, 1, spar = FALSE)
+lasso.plot(b, 1, spar = FALSE, main = "Criterion")
+@
+<<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
+par(mar = c(4.1, 4.1, 4.1, 4.1))
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.income).c.income", main = "income")
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
 lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.age).c.age", main = "age")
 @
+\newline
+<<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
+par(mar = c(4.1, 4.1, 4.1, 4.1))
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.education).c.education", main = "education")
+@
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
 lasso.plot(b, 2, spar = FALSE,
-  name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids"), main = "kids")
-legend("bottomleft", c("younkids", "oldkids"), lwd = 1, col = rev(rainbow_hcl(2)),
+  name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids", "pi.s.la(foreign).foreign"), main = "kids & foreign")
+legend("bottomleft", c("youngkids", "oldkids", "foreign"), lwd = 1, col = rev(rainbow_hcl(3)),
   box.col = NA, bg = NA)
 @
-\caption{\label{fig:lasso} BIC curve with optimum shrinkage parameter $\lambda$ of the LASSO
-  example model, left panel. Coefficient paths for categorized variable \code{age}, middle panel.
-  The right panel shows the coefficient paths of the ordered factor variables \code{youngkids} and
-  \code{oldkids}.}
+\caption{\label{fig:lasso} Top row left panel, BIC curve with optimum shrinkage parameter $\lambda$
+  of the LASSO example model. All other panels show the coefficient paths of categorized variables
+  and true factor covariates.}
 \end{figure}
 The BIC curves shows a clear minimum. The coefficient paths clearly depict that the algorithm
 can either shrink categories out of the model (shrink to zero), or even fuses them, e.g.,
 as shown for variable \code{youngkids} where categories \code{1}, \code{2} and \code{3} are
 all fused and have the same negative effect.
 
-Note again, that no sampling engine is used in this example. However, using the results of the
-fused LASSO model, the fully Bayesian LASSO model can be estimated with full MCMC using the
-estimates returned from the \fct{lasso} engine as starting values.
-<<eval = FALSE>>=
-m <- bamlss(f, family = "binomial", data = SwissLabor,
-  optimizer = FALSE, sampler = GMCMC,
-  n.iter = 12000, burnin = 2000, thin = 10,
-  start = coef(b, mstop = lasso.stop(b)))
-@
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.32\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
+pincome <- predict(b, term = "c.income", intercept = FALSE, mstop = lasso.stop(b))
+page <- predict(b, term = "c.age", intercept = FALSE, mstop = lasso.stop(b))
+peducation <- predict(b, term = "c.education", intercept = FALSE, mstop = lasso.stop(b))
+
+yr <- range(c(pincome, page, peducation))
+
+plot2d(pincome ~ income, data = SwissLabor, rug = TRUE, ylim = yr)
+@
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3>>=
-page <- predict(m, term = "c.age", intercept = FALSE, FUN = c95)
-plot2d(page ~ age, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
+plot2d(page ~ age, data = SwissLabor, rug = TRUE, ylim = yr)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
-pincome <- predict(m, term = "c.income", intercept = FALSE, FUN = c95)
-plot2d(pincome ~ income, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
-@
-<<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
-peducation <- predict(m, term = "c.education", intercept = FALSE, FUN = c95)
-plot2d(peducation ~ education, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
+plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr)
 @
 \caption{\label{fig:lasso_effects} Estimated nonlinear effects of categorized variables
-  \code{age}, \code{income} and \code{education}.}
+  \code{age}, \code{income} and \code{education} with added \fct{rug} representation
+  of the data (small bottom vertical lines).}
 \end{figure}
 In Figure~\ref{fig:lasso_effects}, the estimated effects of the categorized variables \code{age}, 
-\code{income} and \code{education} are shown. Using the fused LASSO estimation engine in combination
-with full MCMC, some nonlinearities can be identified, moreover, compared to the insignificant effect
+\code{income} and \code{education} are shown. Using the fused LASSO estimation some nonlinearities
+can be identified, moreover, compared to the insignificant effect
 of variable \code{education} in the summary output of Section~\ref{sec:logitmodel} on
-page~\pageref{logitmodel_summary}, the fused LASSO identifies a clear positive effect on labor
-\code{participation} for years of education above 12.
+page~\pageref{logitmodel_summary}, the fused LASSO identifies a positive effect on labor
+\code{participation} for years of education above 12. The effect size for covariate \code{age} is
+the largest according the y-axis, indicating that \code{age} has the highest influence on
+labor \code{participation}.
 
 \section{Distributional regression} \label{sec:distreg}
 
