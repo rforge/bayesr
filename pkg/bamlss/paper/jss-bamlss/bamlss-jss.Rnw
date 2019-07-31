@@ -160,9 +160,11 @@ demonstrates that the usual ``look \& feel'' when using well-established model f
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
 basic handling of the package should be relatively simple. The second example then
 explains how full distributional regression models can be estimated and show
-cases the flexibility of the provided modeling infrastructures.
+cases the flexibility of the provided modeling infrastructures. The last example shows that the
+package can also be used to use completely different estimation methods, in this case
+a LASSO-type estimation engine.
 
-\subsection{Logit model}
+\subsection{Logit model} \label{sec:logitmodel}
 
 This example is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
 labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
@@ -210,7 +212,7 @@ with the \fct{glm} function, which enables easy implementation of new distributi
 Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
 the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
 extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
-are available. The model summary output is printed by
+are available. The model summary output is printed by~\label{logitmodel_summary}
 <<>>=
 summary(b)
 @
@@ -405,6 +407,148 @@ the \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2
 provides easy evaluation of the continuous rank probability score (CRPS) for a couple of 
 distributions.
 
+\subsection{LASSO-type penalization}
+
+<<echo = FALSE>>=
+SwissLabor$c.income <- cut(SwissLabor$income,
+  breaks = quantile(SwissLabor$income, prob = seq(0, 1, length = 10)),
+  include.lowest = TRUE)
+
+SwissLabor$c.age <- cut(SwissLabor$age,
+  breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
+  include.lowest = TRUE)
+
+SwissLabor$c.education <- cut(SwissLabor$education,
+  breaks = quantile(SwissLabor$education, prob = seq(0, 1, length = 5)),
+  include.lowest = TRUE)
+
+SwissLabor$youngkids <- ordered(SwissLabor$youngkids)
+  
+SwissLabor$oldkids[SwissLabor$oldkids > 4] <- 5
+SwissLabor$oldkids <- ordered(SwissLabor$oldkids)
+
+if(!file.exists("LassoSL.rda")) {
+  f <- participation ~ la(c.income,fuse=2) + la(c.age,fuse=2) + la(c.education,fuse=2) +
+    la(youngkids,fuse=2) + la(oldkids,fuse=2) + la(foreign,fuse=2)
+    
+  b <- bamlss(f, family = "binomial", data = SwissLabor,
+    optimizer = lasso, sampler = FALSE, upper = 500, lower = 2,
+    criterion = "BIC", nlambda = 2000)
+
+  m <- bamlss(f, family = "binomial", data = SwissLabor,
+    optimizer = FALSE, sampler = GMCMC,
+    n.iter = 12000, burnin = 2000, thin = 10,
+    start = coef(b, mstop = lasso.stop(b)))
+
+  save(b, m, file = "LassoSL.rda")
+} else {
+  load("LassoSL.rda")
+}
+@
+
+This section illustrates that estimation engines can easily exchanged using the flexible
+infrastructure provided in \pkg{bamlss}. Again, the \code{SwissLabor} data and binomial logit model
+of Section~\ref{sec:logitmodel} is used, however, in this example a fused LASSO algorithm is applied
+for estimation.
+The algorithm performs variable selection in combination with factor clustering and can also be used
+to identify interpretable nonlinearities. Methodological details on LASSO-type penalization using
+\pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
+To apply the fused LASSO and to capture possible nonlinearities, the numeric variables \code{age},
+\code{income} and \code{education} are categorized using empirical quantiles. E.g., for variable
+\code{age} an ordered factor variable can be obtained by
+<<eval = FALSE>>=
+SwissLabor$c.age <- cut(SwissLabor$age,
+  breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
+  include.lowest = TRUE)
+@
+Variables \code{income} and \code{education} are transformed in the same way. Similarly,
+variable \code{youngkids} and \code{oldkids} are transformed to ordered factors using
+function \fct{ordered}. The formula for the fused LASSO model is then specified with the
+special \fct{la} smooth constructor function
+<<>>=
+f <- participation ~ la(c.income,fuse=2) + la(c.age,fuse=2) +
+  la(c.education,fuse=2) + la(youngkids,fuse=2) + la(oldkids,fuse=2) +
+  la(foreign,fuse=2)
+@
+where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse=1},
+ordered fusion \code{fuse=2}). To estimate the fused LASSO model only the default \code{optimizer}
+function in the \fct{bamlss} wrapper function call needs to exchanged
+<<eval = FALSE>>=
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  optimizer = lasso, sampler = FALSE,
+  criterion = "BIC")
+@
+Note the no MCMC sampling is used after the \fct{lasso} estimation engine is applied. Additionally,
+the optimum shrinkage parameter $\lambda$ is selected by the BIC.
+
+The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
+be visualized with
+<<eval = FALSE>>=
+lasso.plot(b)
+@
+and are shown in Figure~\ref{fig:lasso} for variables \code{age}, \code{youngkids} and
+\code{oldkids}.
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.32\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4, height = 5>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+lasso.plot(b, 1, spar = FALSE)
+@
+<<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
+par(mar = c(4.1, 4.1, 4.1, 4.1))
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.age).c.age", main = "age")
+@
+<<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
+par(mar = c(4.1, 4.1, 4.1, 4.1))
+lasso.plot(b, 2, spar = FALSE,
+  name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids"), main = "kids")
+legend("bottomleft", c("younkids", "oldkids"), lwd = 1, col = rev(rainbow_hcl(2)),
+  box.col = NA, bg = NA)
+@
+\caption{\label{fig:lasso} BIC curve with optimum shrinkage parameter $\lambda$ of the LASSO
+  example model, left panel. Coefficient paths for categorized variable \code{age}, middle panel.
+  The right panel shows the coefficient paths of the ordered factor variables \code{youngkids} and
+  \code{oldkids}.}
+\end{figure}
+The BIC curves shows a clear minimum. The coefficient paths clearly depict that the algorithm
+can either shrink categories out of the model (shrink to zero), or even fuses them, e.g.,
+as shown for variable \code{youngkids} where categories \code{1}, \code{2} and \code{3} are
+all fused and have the same negative effect.
+
+Note again, that no sampling engine is used in this example. However, using the results of the
+fused LASSO model, the fully Bayesian LASSO model can be estimated with full MCMC using the
+estimates returned from the \fct{lasso} engine as starting values.
+<<eval = FALSE>>=
+m <- bamlss(f, family = "binomial", data = SwissLabor,
+  optimizer = FALSE, sampler = GMCMC,
+  n.iter = 12000, burnin = 2000, thin = 10,
+  start = coef(b, mstop = lasso.stop(b)))
+@
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.32\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4, height = 4.3>>=
+page <- predict(m, term = "c.age", intercept = FALSE, FUN = c95)
+plot2d(page ~ age, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
+@
+<<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
+pincome <- predict(m, term = "c.income", intercept = FALSE, FUN = c95)
+plot2d(pincome ~ income, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
+@
+<<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
+peducation <- predict(m, term = "c.education", intercept = FALSE, FUN = c95)
+plot2d(peducation ~ education, data = SwissLabor, fill.select = c(0, 1, 0, 1), scheme = 2)
+@
+\caption{\label{fig:lasso_effects} Estimated nonlinear effects of categorized variables
+  \code{age}, \code{income} and \code{education}.}
+\end{figure}
+In Figure~\ref{fig:lasso_effects}, the estimated effects of the categorized variables \code{age}, 
+\code{income} and \code{education} are shown. Using the fused LASSO estimation engine in combination
+with full MCMC, some nonlinearities can be identified, moreover, compared to the insignificant effect
+of variable \code{education} in the summary output of Section~\ref{sec:logitmodel} on
+page~\pageref{logitmodel_summary}, the fused LASSO identifies a clear positive effect on labor
+\code{participation} for years of education above 12.
 
 \section{Distributional regression} \label{sec:distreg}
 
