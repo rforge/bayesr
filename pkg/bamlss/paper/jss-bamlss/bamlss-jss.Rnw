@@ -480,7 +480,8 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
   criterion = "BIC")
 @
 The optimum shrinkage parameter $\lambda$ is selected by the BIC.
-Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied.
+Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied,
+argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
 The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
