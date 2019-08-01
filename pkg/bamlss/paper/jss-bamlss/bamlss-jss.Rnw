@@ -717,43 +717,41 @@ investigate gradient boosting with stability selection algorithms
 (see also Section~\ref{sec:application}). Very recently, \citet{bamlss:Umlauf+Klein:2019}
 implement neural network distributional regression models.
 
-\subsection{Model Choice and Evaluation}
+\subsection{Model choice and evaluation}
 
 \subsubsection{Measures of performance}
 
-Model choice and variable selection is important in distributional regression due to the large number of candidate models. \texttt{bamlss} offers a number of possible options to do so.
-
+Model choice and variable selection is important in distributional regression due to the large
+number of candidate models. The following lists commonly used tools:
 \begin{itemize}
-\item {Information criteria} can be used to compare different model specifications.  
-For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
-AIC, as well as the Bayesian information criterion (BIC), are implemented in \texttt{bamlss}.  Estimation of model complexity
-is based on the so-called equivalent degrees of freedom (EDF). 
+\item \emph{Information criteria} can be used to compare different model specifications.  
+  For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
+  AIC, as well as the Bayesian information criterion (BIC), can be used. Estimation of model
+  complexity is based on the so-called equivalent degrees of freedom (EDF). 
 
-For MCMC based estimation, 
-\texttt{bamlss} mainly relies on the deviance information criterion (DIC, \cite{SpiBesCarLin2002}) and widely applicable information criterion (WAIC, \cite{watanabe2010asymptotic}). 
-\item Quantile residuals:
-Quantile residuals \cite{bamlss:Dunn:Smyth:1996} can be used to evaluate the model fit.
-%defined as
-%$\hat{r}_i = \Phi^{-1}(\mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_{i}))$ with the inverse 
-%cumulative distribution function (CDF) of a standard normal distribution $\Phi^{-1}$ and
-% $\mathbf{\mathcal{F}}( \cdot )$ the CDF of the modeled distribution $\mathcal{D}( \cdot )$ with estimated
-%parameters $\hat{\boldsymbol{\theta}}_{i} = (\hat{\theta}_{i1}, \ldots, \hat{\theta}_{iK})^\top$
-%plugged in, should at least approximately be standard normally distributed if the correct model has
-%been specified. Resulting residuals can
-%be assessed by quantile-quantile-plots or
-%probability integral transforms which consider
-%$u_i = \mathbf{\mathcal{F}}(y_i | \, \hat{\boldsymbol{\theta}}_i)$. If the estimated model is a good approximation to the true data generating 
-%process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
-%Graphically, histograms of the $u_i$ can be used for this purpose.
-\item Scoring rules:
-Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scoring rules \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}). %Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
+  For MCMC based estimation, model choice mainly relies on the deviance information criterion
+  (DIC, \citealp{SpiBesCarLin2002}) and the widely applicable information criterion
+  (WAIC, \citealp{watanabe2010asymptotic}). 
+\item \emph{Quantile residuals} \citep{bamlss:Dunn:Smyth:1996} can be used to evaluate the model
+  fit. The residuals can be assessed by quantile-quantile-plots, probability integral transforms
+  (PIT) histograms \citep{bamlss:Gneiting+Balabdaoui+Raftery:2007} or worm plots
+  \citep{bamlss:Buuren+Miranda:2001}.
+\item \emph{Scoring rules}: Sometimes it is helpful to evaluate the performance on a test data set
+  (or for instance based on cross validation). For this, proper scoring rules
+  \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}) can be utilized.
 \end{itemize}
 
-\subsubsection{Evaluation and Interpretation}
+\subsubsection{Evaluation and interpretation}
  \begin{itemize}
-\item Plotting: The default plotting function of a \texttt{bamlss} object \texttt{plot(b)} will return all effects centered around their mean. However, it can sometimes be useful in distributional regression to look at transformation of the original model parameters such as expected value or variance of the repsonse variable $\yvec$, we give examples for both in our application.
-\item Predictions:
-For obtaining such transformations the \texttt{predict} function is used. 
+\item \emph{Plotting}: Estimated functions $\hat{f}_{jk}( \cdot )$ are usually centered around their
+  mean, therefore, simple effect plots are a straightforward method to evaluate individual model
+  term importance and can also be used for respective interpretations. Sometimes it can be useful in
+  distributional regression to look at transformations of the original model parameters such as
+  expected value or variance of the response variable $\mathbf{y}$.
+\item \emph{Predictions}: For obtaining such transformations model predictions need to
+  be computed. This can be done either manually by the corresponding \fct{predict} method, or by
+  the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
+  graphical user interface for visualization of distributional regression models.
  \end{itemize}
 
 
