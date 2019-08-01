@@ -213,7 +213,7 @@ with the \fct{glm} function, which enables easy implementation of new distributi
 Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
 the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
 extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
-are available. The model summary output is printed by~\label{logitmodel_summary}
+are available. \hypertarget{msummary}{}The model summary output is printed by~\label{logitmodel_summary}
 <<>>=
 summary(b)
 @
@@ -285,16 +285,24 @@ plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
+
+myblue <- function(n, ...) {
+  rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
+}
+
 plot2d(p.no ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
-plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
-  lty = c(2, 1, 2))
+  ylim = range(c(nd$p.no, nd$p.yes)), scheme = 2,
+  fill.select = c(0, 1, 0, 1))
+plot2d(p.yes ~ age, data = nd, add = TRUE,
+  scheme = 2, fill.select = c(0, 1, 0, 1), s2.col = myblue)
+plot2d(p.yes[, "Mean"] ~ age, data = nd, add = TRUE,
+  col.lines = "blue")
 legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
 \caption{\label{fig:logit_effects} Effect of covariate \code{age} on estimated
   probabilities for both cases, \code{foreign} \code{"yes"} and \code{"no"}. The solid lines
-  represent mean estimates, dashed lines represent the 95\% credible interval.}
+  represent mean estimates, the shaded areas show 95\% credible intervals.}
 \end{figure}
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
@@ -403,10 +411,11 @@ DIC(b)
 @
 and is also reported in the model summary output. Furthermore, statistical calibration
 of fitted models can be assessed by scoring rules
-\citep{bamlss:Gneiting+Balabdaoui+Raftery:2007}. For example, 
+\citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}. For example, 
 the \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} 
 provides easy evaluation of the continuous rank probability score (CRPS) for a couple of 
-distributions.
+distributions. Moreover, the Appendix~\ref{appendix:crps} provides a code snippet that computes
+the CRPS using numerical integration.
 
 \subsection{LASSO-type penalization} \label{sec:lassointro}
 
@@ -435,14 +444,7 @@ if(!file.exists("LassoSL.rda")) {
     optimizer = lasso, sampler = FALSE, upper = 500, lower = 2,
     criterion = "BIC", nlambda = 1000)
 
-  set.seed(111)
-
-  m <- bamlss(f, family = "binomial", data = SwissLabor,
-    optimizer = FALSE, sampler = GMCMC,
-    n.iter = 12000, burnin = 2000, thin = 10,
-    start = coef(b, mstop = lasso.stop(b)))
-
-  save(b, m, file = "LassoSL.rda")
+  save(b, file = "LassoSL.rda")
 } else {
   load("LassoSL.rda")
 }
@@ -564,13 +566,17 @@ plot2d(p.age ~ age, data = SwissLabor, rug = TRUE)
 @
 Using the fused LASSO estimation some nonlinearities
 can be identified, moreover, compared to the insignificant effect
-of variable \code{education} in the summary output of Section~\ref{sec:logitmodel} on
+of variable \code{education} in the \hyperlink{msummary}{summary output} of Section~\ref{sec:logitmodel} on
 page~\pageref{logitmodel_summary}, the fused LASSO identifies a positive effect on labor
 \code{participation} for years of education above 12. The effect size for covariate \code{age} is
 the largest according the y-axis, indicating that \code{age} has the highest influence on
 labor \code{participation}.
 
 \section{Distributional regression} \label{sec:distreg}
+
+This section briefly summarizes the BAMLSS modeling framework. For a detailed
+description of the methodological framework, please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
+as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}.
 
 \subsection{Model structure}
 
@@ -627,11 +633,12 @@ situations the prior $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \b
 is based on a multivariate normal kernel for $\boldsymbol{\beta}_{jk}$ and on inverse gamma
 distributions for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$,
 but as indicated previously, in principle any type of prior can be used
-(please see \citealp{bamlss:Gelman:2006, bamlss:Polson+Scott:2012, bamlss:Klein+Kneib:2016,
+(see \citealp{bamlss:Gelman:2006, bamlss:Polson+Scott:2012, bamlss:Klein+Kneib:2016,
 bamlss:Umlauf+Klein+Zeileis:2018} for
 more detailed discussions on priors for $\boldsymbol{\beta}_{jk}$ and $\boldsymbol{\tau}_{jk}$).
 
-Examples of distributional models that fit well in this framework are the ones for:
+\hypertarget{somerefs}{}Examples of distributional models that fit well in this
+framework are the ones for: \label{somerefs2}
 \begin{itemize}
   \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as
     proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz:Klein+Strumann:2016},
@@ -731,7 +738,7 @@ Quantile residuals \cite{bamlss:Dunn:Smyth:1996} can be used to evaluate the mod
 %process, the $u_i$ will then approximately follow a uniform distribution on $[0, 1]$.
 %Graphically, histograms of the $u_i$ can be used for this purpose.
 \item Scoring rules:
-Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scoring rules \cite{bamlss:Gneiting+Balabdaoui+Raftery:2007}. %Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
+Sometimes it is helpful to evaluate the performance on a test data set (or for instance based on cross validation). For this, \texttt{bamlss} implements proper scoring rules \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}). %Implementation of the log-score (i.e.~the can for instance be done via \textbf{CODE}
 \end{itemize}
 
 \subsubsection{Evaluation and Interpretation}
@@ -765,29 +772,29 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 \citep{FlashAustria}.
 
 <<application-load-model, echo=FALSE>>=
-## --- data ---
+## Load the data.
 # data("flash_austria", package = "FlashAustria")
 data("fitted_model", package = "FlashAustria")
 b <- flash_austria_model
 
-## --- specify formula ---
+## Specify formula.
 f <- list(
-  mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
     s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
-  theta = ~s(sqrt_lsp, bs = "ps")
+  theta ~ s(sqrt_lsp, bs = "ps")
 )
 @
 
 <<application-data>>=
-## --- data ---
+## Load the data.
 data("flash_austria", package = "FlashAustria")
 head(flash_austria_train)
 nrow(flash_austria_train)
 @
 
 The motivation for this application is as follows: Lightning counts are not
-modelled within the atmospheric reanalyses. Lightning observations are only
+modeled within the atmospheric reanalyses. Lightning observations are only
 available for the period 2010--2018. With a statistical model on hand one could
 predict lightning counts for the time before 2010 and thus analyze lightning
 events in the past for which no observations are available.
@@ -796,7 +803,7 @@ The response of our statistical model are positive counts, with a mean of
 \Sexpr{round(mean(flash_austria_train$counts), 2)}, and a variance of
 \Sexpr{round(var(flash_austria_train$counts), 2)}. Thus, we are facing a
 truncated count data distribution which is highly overdispersive.  In order to
-capture the tuncation of the data and its overdispersion we employ a
+capture the truncation of the data and its overdispersion we employ a
 zero-truncated negative binomial distribution \citep{cameron2013count}, which
 is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
 expectation of the underlying untruncated negative binomial, and $\theta$
@@ -818,16 +825,16 @@ smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructur
 specification of the model:
 
 <<application-model1, eval=FALSE>>=
-## --- specify formula ---
+## Specify formula.
 f <- list(
-  mu = counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
     s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
-  theta = ~ s(sqrt_lsp, bs = "ps")
+  theta ~ s(sqrt_lsp, bs = "ps")
 )
 @
 
-Now we have all ingedients on hand to feed the standard interface for
+Now we have all ingredients on hand to feed the standard interface for
 statistical models in \proglang{R}: A formula \code{f}, a family
 \code{ztnbinom_bamlss()}, and a data set \code{flash_austria_train}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
@@ -842,7 +849,7 @@ phase, and apply a thinning of the resulting chain of $5$.  Running
 end:
 
 %%% <<application-model2, eval=FALSE>>=
-%%% ## --- fit model ---
+%%% ## Fit model.
 %%% b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
 %%%   optimizer = boost, maxit = 1000,                  # boosting arguments
 %%%   thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
@@ -851,7 +858,7 @@ end:
 %%% 
 \begin{Schunk}
 \begin{Sinput}
-R> ## --- fit model ---
+R> ## Fit model.
 R> b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
 +    optimizer = boost, maxit = 1000,                  # boosting arguments
 +    thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
@@ -867,7 +874,7 @@ Starting the sampler...
 
 The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
 on which the boosting took less than 6~minutes and the MCMC sampling took less the
-30~minutes. As a first diagnostic we check the loglikelihood contributions of the
+30~minutes. As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Fig.~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
@@ -890,7 +897,7 @@ gradient boosting.}
 \end{figure}
 
 After 1000~iterations the term \code{s(sqrt_cape).mu} has the highest contribution
-to the loglikelihood with %
+to the log-likelihood with %
 \Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(sqrt_cape)",2])} %
 followed by \code{s(q_prof_PC1).mu} with %
 \Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(q_prof_PC1)",2])}.
@@ -898,7 +905,7 @@ The term of the parameter $\theta$ \code{s(sqrt_lsp).theta} has a relatively sma
 contribution with %
 \Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$theta["s(sqrt_lsp)",2])}.
 The overall message of this diagnostic is that the contributions to the
-loglikelihood at the end of the boosting procedure are very small and that
+log-likelihood at the end of the boosting procedure are very small and that
 the algorithm approached a stable state, which suggest that we retrieve
 reasonable initial values for the MCMC sampling.
 
@@ -939,7 +946,7 @@ can go further and investigate the estimated effects. The boosting summary
 \code{s(q_prof_PC1)} had a large contribution for improving the fit. 
 Looking at these effects illustrate how the atmospheric parameters
 of the reanalyses are related to lightning events (Fig.~\ref{fig:appeffect}),
-and thus help to understand the physics associted with lightning events.
+and thus help to understand the physics associated with lightning events.
 The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
 
@@ -965,8 +972,8 @@ Credible intervals derived from MCMC samples.}
 
 \code{s(sqrt_cape)} reveals a monotonic increasing shape. In the
 range from $0$--$30$ the effect increases linearly with small credible intervals.
-For higher values the effect flattens and shows large credibe intervals which are
-associated with the samll amount of data in that range. Physically the shape of the
+For higher values the effect flattens and shows large credible intervals which are
+associated with the small amount of data in that range. Physically the shape of the
 effect is meaningful as more convective available potential energy has the
 potential to lead to heavier lightning events.
 \code{s(q_prof_PC1)} reveals areas of large credible intervals at the left and
@@ -994,20 +1001,20 @@ on out-of-sample data \code{flash_austria_eval} for which lightning
 observations are on hand.
 
 <<app-rootogram1>>=
-## --- out-of-sample prediciton ---
+## Out-of-sample prediction.
 fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
 str(fit)
 @
 
 \code{predict()} returns a \code{list}, of which each element is named
 as a distributional parameter and contains by default a vector of
-predictions. Each prediction is the average of the preditions obtained
+predictions. Each prediction is the average of the predictions obtained
 by all MCMC samples. The resulting \code{list} can be used to
 derive further quantities by employing the functions of the \pkg{bamlss}
 family that can be extracted using \code{family()},
 
 <<app-rootogram2>>=
-## --- extract family ---
+## Extract family.
 fam <- family(b)
 fam
 @
@@ -1020,7 +1027,7 @@ quantile as first argument, and the \code{list} with the parameters,
 as returned by \code{predict()}, as a second argument. 
 
 <<app-rootogram3>>=
-## --- expected frequencies ---
+## Expected frequencies.
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 @
 
@@ -1032,7 +1039,7 @@ observed frequencies can be directly obtained by \code{table}.
 names(expect) <- 1:50
 expect <- as.table(expect)
 
-## --- observed frequencies ---
+## Observed frequencies.
 obsrvd <- table(flash_austria_eval$counts)[1:50]
 @
 
@@ -1041,7 +1048,7 @@ default method of \code{rootogram} from the \pkg{countreg}
 package \citep{zeileis2008regression}.
 
 <<app-plot-rootogram1, eval = FALSE>>=
-## --- plot rootogram ---
+## Plot rootogram.
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 @
@@ -1050,7 +1057,7 @@ rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 \begin{figure}
 \begin{center}
 <<app-plot-rootogram2, fig = TRUE, height = 5, width = 6, echo = FALSE>>=
-## --- plot rootogram ---
+## Plot rootogram.
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 @
@@ -1077,7 +1084,7 @@ observing 10 or more flashes within a grid box conditioned on a thunderstorm act
 by applying the cumulative distribution function \code{...$p} of the family.
 
 <<app-plot-case1>>=
-## --- predict case ---
+## Predict case.
 library("sf")
 fit <- predict(b, newdata = flash_austria_case, type = "parameter")
 flash_austria_case$P10 <- 1 - fam$p(9, fit)
@@ -1089,7 +1096,7 @@ and the Inferno color scale from the \pkg{colorspace} package
 from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
 
 <<app-plot-case2, eval = FALSE>>=
-## --- plot case ---
+## Plot case.
 library("ggplot2")
 library("colorspace")
 
@@ -1137,6 +1144,17 @@ Alps has increased.
 T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
+
+\clearpage
+
+\begin{appendix}
+
+\section[Custom CRPS() function]{Custom \fct{CRPS} function}
+\label{appendix:crps}
+
+The following code snippet exemplifies how to compute the CRPS sc
+
+\end{appendix}
 
 \end{document}
 
