@@ -441,7 +441,7 @@ if(!file.exists("LassoSL.rda")) {
     la(youngkids,fuse=2) + la(oldkids,fuse=2) + la(foreign,fuse=2)
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
-    optimizer = lasso, sampler = FALSE, upper = 500, lower = 2,
+    optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
     criterion = "BIC", nlambda = 1000)
 
   save(b, file = "LassoSL.rda")
@@ -497,27 +497,28 @@ and are shown in Figure~\ref{fig:lasso}.
 \setkeys{Gin}{width=0.32\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4, height = 5>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
-lasso.plot(b, 1, spar = FALSE, main = "criterion")
+lwd <- 2
+lasso.plot(b, 1, spar = FALSE, main = "criterion", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.income).c.income", main = "income")
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.income).c.income", main = "income", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.age).c.age", main = "age")
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.age).c.age", main = "age", lwd = lwd)
 @
 \newline
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.education).c.education", main = "education")
+lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.education).c.education", main = "education", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
 lasso.plot(b, 2, spar = FALSE,
   name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids", "pi.s.la(foreign).foreign"),
-  main = "kids & foreign")
-legend("bottomleft", c("youngkids", "oldkids", "foreign"), lwd = 1, col = rev(rainbow_hcl(3)),
+  main = "kids & foreign", lwd = lwd)
+legend("bottomleft", c("youngkids", "oldkids", "foreign"), lwd = lwd, col = rev(rainbow_hcl(3)),
   box.col = NA, bg = NA)
 @
 \caption{\label{fig:lasso} Top row left panel, BIC curve with optimum shrinkage parameter $\lambda$
@@ -569,13 +570,13 @@ can be identified, moreover, compared to the insignificant effect
 of variable \code{education} in the \hyperlink{msummary}{summary output} of Section~\ref{sec:logitmodel} on
 page~\pageref{logitmodel_summary}, the fused LASSO identifies a positive effect on labor
 \code{participation} for years of education above 12. The effect size for covariate \code{age} is
-the largest according the y-axis, indicating that \code{age} has the highest influence on
-labor \code{participation}.
+the largest according the y-axis of Figure~\ref{fig:lasso_effects}, indicating that \code{age} has
+the highest influence on labor \code{participation}.
 
 \section{Distributional regression} \label{sec:distreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
-description of the methodological framework, please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
+methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
 as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}.
 
 \subsection{Model structure}
@@ -653,6 +654,13 @@ framework are the ones for: \label{somerefs2}
 \end{itemize}
 
 \subsection{Posterior estimation} \label{sec:algos}
+
+Estimation typically requires to evaluate the log-likelihood
+$\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ function and its derivatives w.r.t.\
+the regression coefficients $\boldsymbol{\beta}$ a number of times. For full Bayesian inference
+prior distributions $p_{jk}( \cdot )$ are assigned to the individual model components yielding the
+log-posterior, which needs to maximized for posterior mode estimation, or for solving
+high-dimensional integrals. e.g., for posterior mean estimation MCMC samples need to be computed.
 
 Although the types of models that can be fitted within the flexible BAMLSS framework
 can be quite complex, \citet{bamlss:Umlauf+Klein+Zeileis:2018} show that there are a number
