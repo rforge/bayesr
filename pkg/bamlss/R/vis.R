@@ -125,6 +125,12 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
       xlab = args$xlab, ylab = args$ylab, main = args$main)
   }
   args <- set.plot2d.specs(ncol(x) - 1L, args, col.lines, is.bayesx)
+  if(!is.null(args$add)) {
+    if(args$add) {
+      if(is.null(args$axes))
+        args$axes <- FALSE
+    }
+  }
   args$rugp <- rugp
   args$specs <- args
   args$residuals <- residuals
@@ -249,6 +255,8 @@ plot2d.default <- function(x, residuals, range, col.residuals = "black",
           mx <- grep("50%", colnames(x), fixed = TRUE)
           if(!length(mx))
             mx <- grep("mean", colnames(x), ignore.case = TRUE)
+          if(!length(mx))
+            mx <- grep("median", colnames(x), ignore.case = TRUE)
           if(!length(mx))
             mx <- grep("estimate", colnames(x), ignore.case = TRUE)
           if(length(mx)) {

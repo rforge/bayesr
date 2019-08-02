@@ -144,9 +144,10 @@ The package is made available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
 The remainder of this paper is as follows. In Section~\ref{sec:motivation},
-three motivating examples illustrate the first steps using \pkg{bamlss}. Section~\ref{sec:distreg}
+four motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
+of the provided infrastructures. Section~\ref{sec:distreg}
 introduces distributional regression models in more detail. A thorough introduction of the
-\proglang{R} package \pkg{bamlss}, describing the most important infrastructures and building blocks,
+\proglang{R} package \pkg{bamlss}, describing the most important building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
 unified modeling approach using a complex distributional regression model for predicting
 flash counts.
@@ -154,20 +155,19 @@ flash counts.
 
 \section{Motivating examples} \label{sec:motivation}
 
-This section gives a first quick overview of the basic functionality of the package.
-Readers more interested in advanced examples using \pkg{bamlss} could skip this
-section and move to Section~\ref{sec:application} directly. The first example
-demonstrates that the usual ``look \& feel'' when using well-established model fitting 
+This section gives a first quick overview of the functionality of the package. The first
+example demonstrates that the usual ``look \& feel'' when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
 basic handling of the package should be relatively simple. The second example then
 explains how full distributional regression models can be estimated and show
-cases the flexibility of the provided modeling infrastructures. The last example shows that the
-package can also be used to use completely different estimation methods, in this case
-a LASSO-type estimation engine.
+cases the flexibility of the provided modeling infrastructures. The third example shows that the
+package can also deal with completely different estimation methods by simply exchanging the
+model fitting functions, in this case by a LASSO-type estimation engine. The last example explains
+how special user defined smooth terms can be used with the default estimation engines.
 
 \subsection{Logit model} \label{sec:logitmodel}
 
-This example is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
+This example data is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
 labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
 The data can be loaded with
 <<>>=
@@ -294,9 +294,9 @@ plot2d(p.no ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$p.no, nd$p.yes)), scheme = 2,
   fill.select = c(0, 1, 0, 1))
 plot2d(p.yes ~ age, data = nd, add = TRUE,
-  scheme = 2, fill.select = c(0, 1, 0, 1), s2.col = myblue)
+  scheme = 2, fill.select = c(0, 1, 0, 1), s2.col = myblue, axes = FALSE)
 plot2d(p.yes[, "Mean"] ~ age, data = nd, add = TRUE,
-  col.lines = "blue")
+  col.lines = "blue", axes = FALSE)
 legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
@@ -307,7 +307,7 @@ legend("topright", c("foreign yes", "foreign no"), lwd = 1,
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
 
-\subsection{Normal location-scale model}
+\subsection{Normal location-scale model} \label{sec:locscalemodel}
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using a small textbook example of the well-known simulated motorcycle accident data
@@ -415,7 +415,7 @@ of fitted models can be assessed by scoring rules
 the \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} 
 provides easy evaluation of the continuous rank probability score (CRPS) for a couple of 
 distributions. Moreover, the Appendix~\ref{appendix:crps} provides a code snippet that computes
-the CRPS using numerical integration.
+the CRPS using numerical integration for the normal distribution.
 
 \subsection{LASSO-type penalization} \label{sec:lassointro}
 
@@ -540,13 +540,13 @@ peducation <- predict(b, term = "c.education", intercept = FALSE, mstop = lasso.
 
 yr <- range(c(pincome, page, peducation))
 
-plot2d(pincome ~ income, data = SwissLabor, rug = TRUE, ylim = yr)
+plot2d(pincome ~ income, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3>>=
-plot2d(page ~ age, data = SwissLabor, rug = TRUE, ylim = yr)
+plot2d(page ~ age, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
-plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr)
+plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
 @
 \caption{\label{fig:lasso_effects} Fused LASSO, estimated nonlinear effects of categorized variables
   \code{age}, \code{income} and \code{education} with added \fct{rug} representation
@@ -572,6 +572,138 @@ page~\pageref{logitmodel_summary}, the fused LASSO identifies a positive effect 
 \code{participation} for years of education above 12. The effect size for covariate \code{age} is
 the largest according the y-axis of Figure~\ref{fig:lasso_effects}, indicating that \code{age} has
 the highest influence on labor \code{participation}.
+
+\subsection{Special model terms} \label{sec:specialterms}
+
+The default estimation engines \fct{bfit} and \fct{GMCMC} (also the gradient boosting optimizer function
+\fct{boost}) in \pkg{bamlss} provide support for the implementation of special model terms, i.e.,
+model terms that cannot be represented by the \pkg{mgcv} smooth term constructor infrastructures.
+One simple example of such a special model term is a nonlinear growth curve, e.g., a nonlinear
+Gompertz curve
+$$
+f(x; \boldsymbol{\beta}) = \beta_1 * \exp(-\beta_2 * \exp(-\beta_3 \cdot x)),
+$$
+but also the LASSO model term constructor \fct{la} presented in Section~\ref{sec:lassointro} is a
+special \pkg{bamlss} model term. The special model term constructor is needed in this case, since
+the growth curve is nonlinear in the parameters $\boldsymbol{\beta}$, hence, the default backfitting
+and sampling strategies cannot be applied. Fortunately, estimation algorithms in distributional
+regression can be split into separate updating equations (see also Section~\ref{sec:algos}). This
+means that each model term can have its own updating function. The user interested in this feature
+only needs to write a new \fct{smooth.construct} and \fct{Predict.matrix} method, which is provided
+in Appendix~\ref{appendix:gc} for the Gompertz growth curve.
+
+Special model terms can then be used with the constructor function \fct{s2}. To illustrate the
+this feature in \pkg{bamlss}, we simulate heteroskedastic growth data with
+$$
+\texttt{y} \sim \mathcal{N}(\mu = 2 + 1 / (1 + \exp(0.5 \cdot (15 - \texttt{time}))),
+  \log(\sigma) = -3 + 2 \cdot \cos(\texttt{time}/30 \cdot 6 - 3))
+$$
+and estimate the model with slice sampling \citep{bamlss:Neal:2003} for $\boldsymbol{\beta}$ in the
+MCMC algorithm using the following \proglang{R} code
+<<echo = FALSE, results = hide>>=
+smooth.construct.gc.smooth.spec <- function(object, data, knots) 
+{
+  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else TRUE
+  object$by.done <- TRUE
+  if(object$by != "NA")
+    stop("by variables not supported!")
+
+  ## Begin special elements to be used with bfit() and GMCMC().
+  object$fit.fun <- function(X, b, ...) {
+    f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
+    if(center)
+      f <- f - mean(f)
+    f
+  }
+  object$update <- bfit_optim
+  object$propose <- GMCMC_slice
+  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
+  object$fixed <- TRUE
+  object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
+  object$state$fitted.values <- rep(0, length(object$X))
+  object$state$edf <- 3
+  object$special.npar <- 3 ## Important!
+  ## End special elements.
+
+  ## Important, This is a special smooth constructor!
+  class(object) <- c("gc.smooth", "no.mgcv", "special")
+
+  object
+}
+
+Predict.matrix.gc.smooth <- function(object, data, knots) 
+{
+  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  X
+}
+
+set.seed(111)
+
+d <- data.frame("time" = 1:30)
+d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
+
+f <- list(
+  y ~ s2(time, bs = "gc"),
+  sigma ~ s(time)
+)
+
+if(!file.exists("gc.rda")) {
+  b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
+  save(b, file = "gc.rda")
+} else {
+  load("gc.rda")
+}
+@
+<<eval = FALSE>>=
+## Simulate data.
+set.seed(111)
+
+d <- data.frame("time" = 1:30)
+d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
+
+## Special model terms must be called with s2()!
+f <- list(
+  y ~ s2(time, bs = "gc"),
+  sigma ~ s(time)
+)
+
+## Fit model with special model term.
+b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
+
+## Plot estimated effects.
+plot(b)
+@
+The estimated effects are shown in Figure~\ref{fig:gcurve}.
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+p <- predict(b, model = "mu", FUN = c95)
+plot(y ~ time, data = d, main = expression(mu))
+plot2d(p ~ time, data = d, add = TRUE, axes = FALSE,
+  fill.select = c(0, 1, 0, 1), scheme = 2)
+points(d$time, d$y)
+@
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, model = "sigma", spar = FALSE, scheme = 2, main = expression(log(sigma)))
+@
+\caption{\label{fig:gcurve} Estimated nonlinear effects on parameter $\mu$ and $\sigma$ of the
+  simulated growth curve example. Gray shaded areas represent 95\% credible intervals.}
+\end{figure}
+The growth curve mean function estimate seems to fit the data quite well. Also, the nonlinear
+relationship for parameter $\sigma$ could be captured by the model.
+
+In summary, in order to build up special \pkg{bamlss} model terms only a few things have to be
+considered. The example \proglang{R} code for the Gompertz smooth constructor given in
+Appendix~\ref{appendix:gc} is a good starting point for readers interested in using this
+feature.
 
 \section{Distributional regression} \label{sec:distreg}
 
@@ -754,8 +886,33 @@ number of candidate models. The following lists commonly used tools:
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
 
+\newpage
 
 \section{The bamlss package} \label{sec:package}
+
+The \proglang{R} package \pkg{bamlss} provides a modular computational framework for
+distributional regression models (and beyond). The implementation follows the conceptional framework
+presented in \citet{bamlss:Umlauf+Klein+Zeileis:2018}, which supports Bayesian and/or frequentist
+estimation engines using complex possibly nonlinear model terms of any type. The highlights of the
+package are: 
+
+\begin{itemize}
+\item A unified model description where a \code{formula} specifies how to set up the predictors
+  from the \code{data} and \code{family} objects provide information about the response distribution.
+\item A generic method for setting up model terms and a \fct{model.frame}, the \fct{bamlss.frame},
+  along with the  corresponding prior structures. A \fct{transformer} can optionally set up
+  modified terms, e.g., using mixed model representation for smooth terms.
+\item Support for modular and exchangeable updating functions or complete model fitting engines
+  in order to optionally implement either algorithms for maximization of the log-posterior for
+  posterior mode estimation or for solving high-dimensional integrals, e.g., for posterior mean
+  or median estimation.
+  First, an (optional) \fct{optimizer} function can be run, e.g., for computing posterior mode
+  estimates. Second, a \fct{sampler} is employed for full Bayesian inference with MCMC, which uses the
+  posterior mode estimates from the \fct{optimizer} as staring values. An additional step can be used
+  for preparing the \fct{results}.
+\item Standard post-modeling extractor functions to create sampling statistics, visualizations,
+  predictions, etc.
+\end{itemize}
 
 \section{Application} \label{sec:application}
 
@@ -1158,7 +1315,101 @@ T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P
 \section[Custom CRPS() function]{Custom \fct{CRPS} function}
 \label{appendix:crps}
 
-The following code snippet exemplifies how to compute the CRPS sc
+The \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} provides
+tools for model calibration checks. A commonly used measure is the CRPS. Since the number of
+candidate distributions in BAMLSS is quite large, it can happen that the CRPS for some
+distributions is not implemented. In such a case the reader can implement the CRPS using
+numerical integration. The following \proglang{R} code implements the \fct{CRPS} function for
+the normal distribution to be used with \pkg{bamlss} and the simulated motocycle data
+presented in Section~\ref{sec:locscalemodel}.
+<<>>=
+CRPS <- function(par) {
+  n <- nrow(mcycle)
+  crps <- rep(0, n)
+  for(i in 1:n) {
+    tpar <- list("mu" = par$mu[i], "sigma" = par$sigma[i])
+    foo <- function(y) {
+      (fam$p(y, tpar) - 1 * (y >= mcycle$accel[i]))^2
+    }
+    crps[i] <- integrate(foo, -Inf, Inf)$value
+  }
+  return(crps)
+}
+@
+
+\section[Growth curve implementation]{Growth curve implementation}
+\label{appendix:gc}
+
+The following \proglang{R} code implements a Gompertz growth curve model term given by
+$$
+f(x; \boldsymbol{\beta}) = \beta_1 * \exp(-\beta_2 * \exp(-\beta_3 \cdot x)),
+$$
+which can be used by the default optimizer function \fct{bfit} and sampling function \fct{GMCMC}
+of the \pkg{bamlss} package.
+
+The new \fct{smooth.construct} method is
+<<>>=
+smooth.construct.gc.smooth.spec <- function(object, data, knots) 
+{
+  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else TRUE
+  object$by.done <- TRUE
+  if(object$by != "NA")
+    stop("by variables not supported!")
+
+  ## Begin special elements to be used with bfit() and GMCMC().
+  object$fit.fun <- function(X, b, ...) {
+    f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
+    if(center)
+      f <- f - mean(f)
+    f
+  }
+  object$update <- bfit_optim
+  object$propose <- GMCMC_slice
+  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
+  object$fixed <- TRUE
+  object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
+  object$state$fitted.values <- rep(0, length(object$X))
+  object$state$edf <- 3
+  object$special.npar <- 3 ## Important!
+  ## End special elements.
+
+  ## Important, This is a special smooth constructor!
+  class(object) <- c("gc.smooth", "no.mgcv", "special")
+
+  object
+}
+@
+In principle, the setup is very similar to the smooth constructor functions provided by the
+\pkg{mgcv} package. Only few elements need to be added:
+\begin{itemize}
+\item \fct{fit.fun}: A function of the data \code{X} and parameter vector \code{b} that
+  evaluates the fitted values.
+\item \fct{update}: An updating function to be used with optimizer \fct{bfit}.
+\item \fct{propose}: A MCMC propose function to be used with sampler \fct{GMCMC}.
+\item \fct{prior}: Function of the parameters \code{b} that evaluates the log-prior. Note,
+  additional functions can be \fct{grad} and \code{hess} that evaluate the first and second
+  derivative of the log-prior w.r.t.\ the parameters \code{b}.
+\item \code{fixed}: Is the number of degrees of freedom fixed or not?
+\item \code{state}: This is a named list with starting values for the \code{"parameters"},
+  the \code{"fitted.values"} and degrees of freedom \code{"edf"}. Note that regression
+  coefficients are always named with \code{"b*"} and shrinkage or smoothing variances with
+  \code{"tau2*"} in the \code{"parameters"} vector.
+\item \code{special.npar}: How many parameters does this model term have in total? This is needed
+  for internal setup, because the Gompertz function has three parameters but the design matrix only one
+  column.
+\end{itemize}
+To compute predictions of this model term a new method for the \fct{Predict.matrix} function needs
+to be implemented, too.
+<<>>=
+Predict.matrix.gc.smooth <- function(object, data, knots) 
+{
+  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  X
+}
+@
 
 \end{appendix}
 

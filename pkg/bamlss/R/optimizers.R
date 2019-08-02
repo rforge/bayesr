@@ -4222,7 +4222,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   if("criterion" %in% which) {
     if(!multiple) {
       plot(ic[, nic], type = "l",
-        xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
+        xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE, lwd = list(...)$lwd)
       at <- pretty(mstop)
       at[at == 0] <- 1
       axis(1, at = at, labels = as.numeric(fmt(log_lambda[, 1][mstop][at], digits)))
@@ -4252,7 +4252,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
           take <- cbind(take, ic[, j] == lambda_min[j])
         take <- apply(take, 1, all)
         tic <- ic[take, nic]
-        plot(tic, type = "l", xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE)
+        plot(tic, type = "l", xlab = expression(log(lambda[, 1])), ylab = nic, axes = FALSE, lwd = list(...)$lwd)
         at <- pretty(1:length(tic))
         at[at == 0] <- 1
         axis(1, at = at, labels = as.numeric(fmt(log_lambda[take, paste("lambda", m, sep = ".")][at], digits)))
