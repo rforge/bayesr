@@ -3,6 +3,7 @@
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
 \usepackage{tikz}
+\usepackage{multirow}
 
 \usetikzlibrary{fit,backgrounds,arrows,calc}
 
@@ -922,8 +923,8 @@ estimation engines using complex possibly nonlinear model terms of any type. The
 package are:
 \begin{itemize}
 \item A unified model description where a \code{formula} specifies how to set up the predictors
-  from the \code{data} and \code{family} objects, which provide information about the response
-  distribution.
+  from the \code{data} and the \code{family}, which holds information about the response
+  distribution, the model.
 \item A generic method for setting up model terms and a \fct{model.frame} for BAMLSS, the
   \fct{bamlss.frame}, along with the corresponding prior structures. A \fct{transformer} can
   optionally set up modified terms, e.g., using mixed model representation for smooth terms.
@@ -934,7 +935,7 @@ package are:
   First, an (optional) \fct{optimizer} function can be run, e.g., for computing posterior mode
   estimates. Second, a \fct{sampler} is employed for full Bayesian inference with MCMC, which uses the
   posterior mode estimates from the \fct{optimizer} as staring values. An additional step can be used
-  for preparing the \fct{results}.
+  for preparing the \fct{results}, e.g., for creating model term effect plots.
 \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
   predictions, etc.
 \end{itemize}
@@ -1030,7 +1031,7 @@ package are:
   run an \fct{optimizer} function prior running the \fct{sampler}, or run the \fct{sampler}
   function directly.}
 \end{figure}
-The modular architecture of the \pkg{bamlss} is illustrated in Figure~\ref{fig:flowchart}. As
+The modular architecture of \pkg{bamlss} is illustrated in Figure~\ref{fig:flowchart}. As
 mentioned above, the first
 step in model development is to setup design and penalty matrices for a model that is specified
 by the \code{family} object. Therefore a \code{formula} is processed together with the \code{data}
@@ -1045,11 +1046,132 @@ or results that can be used for plotting the estimated effects, function \fct{re
 that the post-processing step is optional since it is not necessarily needed in the last
 output step, e.g., for computing predictions. This feature is especially important when using
 large data sets, because the run time for computing \fct{samplestats} or \fct{results} can be
-quite long or even lead to memory problems. In summary, the architecture is very flexible
-such that users that are interested in implementing new models only need to focus on the
-estimation step, i.e., write \fct{optimizer} or \fct{sampler} functions. This way, prototyping
-becomes relatively easy, but also the integration of high-performance estimation engines.
+quite long or computations can even lead to memory problems. In summary, the architecture is very flexible
+such that users interested in implementing new models only need to focus on the
+estimation step, i.e., write \fct{optimizer} or \fct{sampler} functions and get all post-processing
+and extractor functionalities ``for free''. This way, prototyping
+becomes relatively easy, but also the integration/implementation of (new) high-performance
+estimation engines is facilitated.
 
+Table~\ref{tab:functions} provides an overview of current available functions.
+\begin{table}[ht!]
+\centering
+\begin{tabular}{lll}
+Step & Type        & Function \\ \hline
+\multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
+ & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
+ & & \code{lasso.transform()} \\ \hline
+\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{bfit()}, \code{bbfit()},
+                              \code{boost()}, \code{lasso()} \\
+ & &\code{cox.mode()}, \code{jm.mode()}  \\ \cline{2-3}
+ & \multirow{2}{*}{Sampler} & \code{GMCMC()}, \code{BayesX()}, \code{JAGS()} \\
+ & & \code{cox.mcmc()}, \code{jm.mcmc()} \\ \hline
+Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()}
+\end{tabular}
+\caption{\label{tab:functions} Current available functions that can be used for
+  pre-processing, estimation and post-processing within the \pkg{bamlss} framework.}
+\end{table}
+
+To exemplify the presented ``Lego toolbox'', the following \proglang{R} code estimates the
+logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logitmodel}. First,
+the data is loaded and the model formula is specified with
+<<>>=
+data("SwissLabor", package = "AER")
+
+## Model formula.
+f <- participation ~ income + age + education +
+  youngkids + oldkids + foreign + I(age^2)
+@
+In the second step, the necessary design matrices are constructed using the model frame
+parser function \fct{bamlss.frame}
+<<>>=
+bf <- bamlss.frame(f, data = SwissLabor, family = "binomial")
+@
+Then, posterior mode estimates are obtained by using the implemented backfitting estimation
+function \fct{bfit}
+<<results = hide>>=
+pm <- with(bf, bfit(x, y, family))
+@
+The estimated parameters returned from function \fct{bfit} can then be used as starting
+values for the MCMC sampler function \fct{GMCMC}
+<<results = hide>>=
+samps <- with(bf, GMCMC(x, y, family, start = pm$parameters))
+@
+Using the parameters samples returned from function \fct{GMCMC}, statistics like the DIC are
+computed using the \fct{samplestats} function
+<<>>=
+stats <- with(bf, samplestats(samps, x, y, family))
+print(unlist(stats))
+@
+As can be seen in the code above, estimation engines have common arguments \code{x} (holding the
+design and penalty matrices), \code{y} (the response data) and \code{family} (the \pkg{bamlss}
+family object). For implementing new estimation engines, users only need to keep the argument
+structures and the return values, i.e., for \fct{optimizer} functions a named numeric vector
+of estimated parameters and for \fct{sampler} functions parameter samples of class \code{"mcmc"}
+or \code{"mcmc.list"} (see package \pkg{coda}, \citealp{bamlss:Plummer+Best+Cowles+Vines:2006}).
+More details on the naming convention and the structure of the return value of \fct{bamlss.frame}
+are given in Section~\ref{sec:bf}.
+
+To ease the modeling process, all the single modeling steps presented in the above can be executed
+using the \pkg{bamlss} wrapper function \fct{bamlss}. The main arguments of \fct{bamlss} are
+\begin{Code}
+  bamlss(formula, family = "gaussian", data = NULL,
+    transform = NULL,                         ## Pre-processing.
+    optimizer = NULL, sampler = NULL,         ## Estimation.
+    samplestats = NULL, results = NULL, ...)  ## Post-processing.
+\end{Code}
+where the first line basically represents the standard model frame specifications
+\citep[see][]{bamlss:Chambers+Hastie:1992}. All other arguments represent functions presented
+in Table~\ref{tab:functions} and can be exchanged. Note that the default for argument
+\code{optimizer} is the backfitting estimation function \fct{bfit} and the default for argument
+\code{sampler} is the \fct{GMCMC} sampling function.
+
+The returned fitted model object is a list of class \class{bamlss}, which is supported by several
+standard methods and extractor functions, such as \fct{plot}, \fct{summary} and \fct{predict}.
+
+As already exemplified in Section~\ref{sec:motivation}, using the model fitting wrapper function
+\fct{bamlss} it is straightforward to use different modeling approaches by simply exchanging
+the estimation engines. This feature can be particularly important in complex modeling situation,
+where good mixing of the MCMC algorithm requires very good starting values. A use case is presented
+in Section~\ref{sec:application}, where for stability reasons posterior mode estimates are obtained
+using the gradient boosting optimizer function \fct{boost}. Afterwards the MCMC sampling engine
+\fct{GMCMC} is applied with the boosting estimates as starting values.
+
+\subsection{The BAMLSS model frame} \label{sec:bf}
+
+Similar to the well-known \fct{model.frame} function that is used, e.g., by the linear model 
+fitting function \fct{lm}, or for generalized linear models \fct{glm}, the \fct{bamlss.frame}
+function extracts a ``model frame'' for fitting distributional regression models. 
+Internally, the function parses model formulae, one for each parameter of the distribution,
+using the \pkg{Formula} package infrastructures \citep{bamlss:Zeileis+Croissant:2010} in combination
+with \fct{model.matrix()} processing for linear effects and \fct{smooth.construct} processing of
+the \pkg{mgcv} package to setup design and penalty matrices for unspecified smooth function 
+estimation \citep{bamlss:Wood:2019} (see also, e.g., the documentation of function \fct{s} and
+\fct{te}).
+
+The most important arguments are
+\begin{Code}
+  bamlss.frame(formula, data = NULL, family = "gaussian",
+    weights = NULL, subset = NULL, offset = NULL,
+    na.action = na.omit, contrasts = NULL, ...)
+\end{Code}
+Argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm()} function,
+or an extended \pkg{bamlss} formula, that is internally parsed by function \fct{bamlss.formula}.
+Note that the \pkg{bamlss} package uses special \code{family} objects, that can be passed either as
+a character without the \code{"\_bamlss"} extension of the \pkg{bamlss} family name (see the manual
+\code{?bamlss.family} for a list of available families), or the family function itself.
+In addition, all families of the \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2019} and
+\pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported.
+
+The returned object is a named list of class \code{"bamlss.frame"}. The most important elements
+used for estimation are:
+\begin{itemize}
+\item \code{x}: A named list, the elements correspond to the parameters that are specified within
+  the \code{family} object. For each distribution parameter, the list contains all design and
+  penalty matrices needed for modeling (see the upcoming example).
+\item \code{y}: The response data.
+\item \code{family}: The processed \pkg{bamlss} \code{family}.
+\end{itemize}
 
 \section{Application} \label{sec:application}
 
