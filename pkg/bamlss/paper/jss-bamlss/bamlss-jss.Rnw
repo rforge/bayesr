@@ -926,7 +926,8 @@ package are:
   from the \code{data} and the \code{family}, which holds information about the response
   distribution, the model.
 \item A generic method for setting up model terms and a \fct{model.frame} for BAMLSS, the
-  \fct{bamlss.frame}, along with the corresponding prior structures. A \fct{transformer} can
+  \fct{bamlss.frame}, along with the corresponding prior structures. A \fct{transform}
+  function can
   optionally set up modified terms, e.g., using mixed model representation for smooth terms.
 \item Support for modular and exchangeable updating functions or complete model fitting engines
   in order to optionally implement either algorithms for maximization of the log-posterior for
@@ -954,7 +955,7 @@ package are:
   \end{pgfonlayer}
 
   \node (bframe) [processing, below of=family, yshift=-0.3cm] {\texttt{bamlss.frame()}};
-  \node (trans)  [processing, below of=bframe, yshift=0.3cm] {\texttt{transformer()}};
+  \node (trans)  [processing, below of=bframe, yshift=0.3cm] {\texttt{transform()}};
 
   \coordinate[below of=family, yshift=0.6cm] (invisible6);
   \draw[->, shorten >=3pt] (invisible6) -- (bframe);
@@ -1144,7 +1145,7 @@ fitting function \fct{lm}, or for generalized linear models \fct{glm}, the \fct{
 function extracts a ``model frame'' for fitting distributional regression models. 
 Internally, the function parses model formulae, one for each parameter of the distribution,
 using the \pkg{Formula} package infrastructures \citep{bamlss:Zeileis+Croissant:2010} in combination
-with \fct{model.matrix()} processing for linear effects and \fct{smooth.construct} processing of
+with \fct{model.matrix} processing for linear effects and \fct{smooth.construct} processing of
 the \pkg{mgcv} package to setup design and penalty matrices for unspecified smooth function 
 estimation \citep{bamlss:Wood:2019} (see also, e.g., the documentation of function \fct{s} and
 \fct{te}).
