@@ -2,6 +2,31 @@
 \documentclass[nojss]{jss}
 \usepackage{amsmath,amssymb,amsfonts,thumbpdf}
 \usepackage{multirow,longtable}
+\usepackage{tikz}
+
+\usetikzlibrary{fit,backgrounds,arrows,calc}
+
+\usetikzlibrary{arrows.meta}
+\tikzset{%
+  >={Latex[width=2mm,length=2mm]},
+  % Specifications for style of nodes:
+  base/.style = {rectangle, rounded corners, draw=black,
+                 minimum width=3.2cm, minimum height=0.8cm,
+                 text centered, font=\ttfamily},
+  input/.style = {base, minimum width=2.2cm, fill=blue!30},
+  processing/.style = {base, fill=yellow!30},
+  estimation/.style = {base, fill=red!30},
+  stats/.style = {base, fill=green!30},
+  output/.style = {base, minimum width=2.2cm, fill=orange!15},
+  outer/.style={draw=gray, dashed, fill=green!1, thick, inner sep=5pt, rounded corners},
+}
+
+\newcommand*{\conH}[4][]{
+  \draw[#1] (#3) -| ($(#3) !#2! (#4)$) |- (#4);
+}
+\newcommand*{\conV}[4][]{
+  \draw[#1] (#3) |- ($(#3) !#2! (#4)$) -| (#4);
+}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -913,6 +938,99 @@ package are:
 \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
   predictions, etc.
 \end{itemize}
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm,
+    every node/.style={fill=white, font=\sffamily}, align=center]
+  % Specification of nodes (position, etc.)
+  \node (data)        [input]                               {\texttt{data}};
+  \node (formula)     [input, left of=data, xshift=-4.5cm]  {\texttt{formula}};
+  \node (family)      [input, right of=data, xshift=-4.5cm]   {\texttt{family}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(data) (formula) (family)] (A) {};
+  \node (text) [right of=A, xshift=-6.5cm] {Input};
+  \end{pgfonlayer}
+
+  \node (bframe) [processing, below of=family, yshift=-0.3cm] {\texttt{bamlss.frame()}};
+  \node (trans)  [processing, below of=bframe, yshift=0.3cm] {\texttt{transformer()}};
+
+  \coordinate[below of=family, yshift=0.6cm] (invisible6);
+  \draw[->, shorten >=3pt] (invisible6) -- (bframe);
+
+  \draw[] (data)    -- (invisible6);
+  \draw[] (family)  -- (invisible6);
+  \draw[] (formula) -- (invisible6);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (bframe)  -- (trans);
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(bframe) (trans), minimum width=8.55cm] (B) {};
+  \node (text) [right of=B, xshift=-7.2cm] {Preprocessing};
+  \end{pgfonlayer}
+
+  \node (opt) [estimation, below of=trans] {\texttt{optimizer()}};
+  \node (sampler) [estimation, below of=opt, yshift=0.3cm] {\texttt{sampler()}};
+
+  \coordinate[right of=sampler, yshift=0.15cm] (invisible5);
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (trans) -- (opt);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (opt)   -- (sampler);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (trans.west) to [out=-180,in=180] (sampler.west);
+  \draw[->, shorten >=6pt, line width=0.8mm, gray] (bframe.east) to [out=10,in=10] (invisible5);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (bframe.east) to [out=10,in=10] (opt.east);
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(opt) (sampler), minimum width=8.55cm] (C) {};
+  \node (text) [right of=C, xshift=-6.9cm] {Estimation};
+  \end{pgfonlayer}
+
+  \node (sstats) [stats, below of=sampler] {\texttt{samplestats()}};
+  \node (results) [stats, below of=sstats, yshift=0.3cm] {\texttt{results()}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(sstats) (results), minimum width=8.55cm] (D) {};
+  \node (text) [right of=D, xshift=-7.25cm] {Postprocessing};
+  \end{pgfonlayer}
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (sampler) -- (sstats);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (sstats)  -- (results);
+
+  \node (plot) [output, below of=results, yshift=-0.5cm] {\texttt{plot()}};
+  \node (summary) [output, left of=plot, xshift=-1.5cm]  {\texttt{summary()}};
+  \node (predict) [output, right of=plot, xshift=1.5cm]  {\texttt{predict()}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(summary) (plot) (predict)] (E) {};
+  \node (text) [right of=E, xshift=-6.6cm] {Output};
+  \end{pgfonlayer}
+
+  \coordinate[below of=results, yshift=0.55cm] (invisible);
+  \coordinate[below of=results, yshift=0.7cm] (invisible3);
+
+  \draw[->, shorten >=3pt] (invisible) -- (plot);
+  \draw[->, shorten >=3pt] (invisible) -- (summary);
+  \draw[->, shorten >=3pt] (invisible) -- (predict);
+  \draw[] (results) -- (invisible);
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (opt.west) to [out=-180,in=180] (results.west);
+
+  \coordinate[left of=opt, xshift=-2cm] (invisible2);
+  \coordinate[right of=sampler, xshift=2cm] (invisible4);
+  \draw[line width=0.8mm, gray] (opt.west) |- (invisible2);
+  \draw[line width=0.8mm, gray] (sampler.east) |- (invisible4);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (invisible2) |- (invisible3);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (invisible4) |- (invisible3);
+
+  %%\draw[->, shorten >=3pt, line width=0.8mm, gray, -stealth] (opt.west) to [out=-180,in=180] (invisible.west);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (sampler.east) to [out=10,in=10] (results.east);
+
+  \end{tikzpicture}
+\caption{\label{fig:flowchart} Flow chart of the \pkg{bamlss} modeling architecture. Thick gray
+  lines represent optional paths, e.g., after building the \fct{bamlss.frame} the user can either
+  run an \fct{optimizer} function prior running the \fct{sampler}, or run the \fct{sampler}
+  function directly.}
+\end{figure}
 
 \section{Application} \label{sec:application}
 
