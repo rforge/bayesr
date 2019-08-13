@@ -607,7 +607,7 @@ model terms that cannot be represented by the \pkg{mgcv} smooth term constructor
 One simple example of such a special model term is a nonlinear growth curve, e.g., a nonlinear
 Gompertz curve
 $$
-f(x; \boldsymbol{\beta}) = \beta_1 * \exp(-\beta_2 * \exp(-\beta_3 \cdot x)),
+f(x; \boldsymbol{\beta}) = \beta_1 \cdot \exp(-\beta_2 \cdot \exp(-\beta_3 \cdot x)),
 $$
 but also the LASSO model term constructor \fct{la} presented in Section~\ref{sec:lassointro} is a
 special \pkg{bamlss} model term. The special model term constructor is needed in this case, since
@@ -1147,7 +1147,7 @@ Internally, the function parses model formulae, one for each parameter of the di
 using the \pkg{Formula} package infrastructures \citep{bamlss:Zeileis+Croissant:2010} in combination
 with \fct{model.matrix} processing for linear effects and \fct{smooth.construct} processing of
 the \pkg{mgcv} package to setup design and penalty matrices for unspecified smooth function 
-estimation \citep{bamlss:Wood:2019} (see also, e.g., the documentation of function \fct{s} and
+estimation (\citealp{bamlss:Wood:2019}, see also, e.g., the documentation of function \fct{s} and
 \fct{te}).
 
 The most important arguments are
@@ -1156,16 +1156,17 @@ The most important arguments are
     weights = NULL, subset = NULL, offset = NULL,
     na.action = na.omit, contrasts = NULL, ...)
 \end{Code}
-Argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm()} function,
-or an extended \pkg{bamlss} formula, that is internally parsed by function \fct{bamlss.formula}.
+Argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm} function,
+or an extended \pkg{bamlss} formula including smooth term specifications like \fct{s} or \fct{te},
+that is internally parsed by function \fct{bamlss.formula}.
 Note that the \pkg{bamlss} package uses special \code{family} objects, that can be passed either as
 a character without the \code{"\_bamlss"} extension of the \pkg{bamlss} family name (see the manual
 \code{?bamlss.family} for a list of available families), or the family function itself.
 In addition, all families of the \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2019} and
 \pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported.
 
-The returned object is a named list of class \code{"bamlss.frame"}. The most important elements
-used for estimation are:
+The returned object can be used with the model fitting engines listed in Table~\ref{tab:functions} and
+is a named list of class \code{"bamlss.frame"}. The most important elements used for estimation are:
 \begin{itemize}
 \item \code{x}: A named list, the elements correspond to the parameters that are specified within
   the \code{family} object. For each distribution parameter, the list contains all design and
@@ -1173,6 +1174,196 @@ used for estimation are:
 \item \code{y}: The response data.
 \item \code{family}: The processed \pkg{bamlss} \code{family}.
 \end{itemize}
+To better understand the structure of the \code{"bamlss.frame"} object a print method is provided.
+For illustration, we simulate data and set up a \code{"bamlss.frame"} object for a Gaussian
+distributional regression model including smooth terms.
+<<>>=
+## Simulate data.
+d <- GAMart()
+## Model formula.
+f <- list(
+  num ~ x1 + s(x2) + s(x3) + te(lon,lat),
+  sigma ~ x1 + s(x2) + s(x3) + te(lon,lat)
+)
+## Create a "bamlss.frame".
+bf <- bamlss.frame(f, data = d, family = "gaussian")
+## Show the structure.
+print(bf)
+@
+For writing a new estimation engine, the user can directly work with the \code{model.matrix}
+elements, for linear effects, and the \code{smooth.construct} list, for smooth effects respectively.
+The \code{smooth.construct} is a named list which is compiled using the \fct{smoothCon} function
+of the \pkg{mgcv} package using the generic \fct{smooth.construct} method for setting up
+smooth terms.
+<<>>=
+print(names(bf$x$mu$smooth.construct))
+@
+In this example, the list contains of three smooth term objects for parameter \code{mu} and
+\code{sigma}.
+
+As shown in Section~\ref{sec:specialterms} the \fct{bamlss.frame} function can also
+process special model terms, i.e., model terms that are not necessarily represented by
+a linear matrix vector product.
+
+\subsection{Family objects} \label{sec:families}
+
+Family objects are important building blocks in the design of BAMLSS models.
+They specify the distribution by collecting functions of the density,
+respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.\
+predictors (the score function), and (optionally) second-order derivatives of
+the log-likelihood w.r.t.\ predictors or their expectation (the Hessian).
+
+The \pkg{bamlss} package can be easily extended by constructing families for specific
+tasks, i.e., problems for which a likelihood can be formulated.
+However, the most important distributions are shipped with \pkg{bamlss}.
+Finally, it is also possible to employ \pkg{gamlss}.
+
+We illustrate how to build a \pkg{bamlss} family by hand along the Gaussian
+distribution, with density
+$$
+f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
+\left( \frac{-(y-\mu)^2}{2\sigma^2} \right),
+$$
+and log-likelihood function
+$$
+\ell(\mu,\sigma\,|\,y) = - \frac{1}{2} \log(2\pi) - \log(\sigma) -
+\frac{(y-\mu)^2}{2\sigma^2},
+$$
+for an individual observation. The sum of the log-likelihood function
+over all observations is the target function of the optimization problem.
+
+In the distributional regression framework the parameters are linked
+to predictors by link functions,
+$$
+\mu = \eta_\mu, \qquad \log(\sigma) = \eta_\sigma.
+$$
+For the Gaussian $\mu$ and $\sigma$ are linked to $\eta_\mu$ and $\eta_\sigma$
+by the identity function and the logarithm, respectively.
+
+The score functions in \pkg{bamlss} are the first derivatives of the log-likelihood w.r.t.\
+the predictors:
+$$
+s_\mu = \frac{\partial\ell}{\partial\eta_\mu} = \frac{\partial\ell}{\partial\mu} \cdot
+\frac{\partial\mu}{\partial\eta_\mu} = \frac{y-\mu}{\sigma^2},
+$$
+and
+$$
+s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\partial\sigma} \cdot
+\frac{\partial\sigma}{\partial\eta_\sigma} = -1 + \frac{(y-\mu)^2}{\sigma^2}.
+$$
+
+\begin{table}[ht!]
+\centering
+\begin{tabular}{lp{12cm}}
+Name of element & Value \\ \hline
+\code{family} & Character string with the name of the family. \\
+\code{names} & Vector of character strings with the names of the parameters. \\
+\code{links} & Vector of character strings with the names of the link functions \\
+\code{d} & A function returning the density with arguments \code{y}, \code{par},
+  \code{log = FALSE} (see below). \\
+\code{score} & A list with functions (one for each parameter) returning the first derivatives of
+  the log-likelihood w.r.t.\ predictors. \\
+\code{hess} & A list with functions (one for each parameter) returning the negative second
+  derivatives of the log-likelihood w.r.t.\ predictors.
+\end{tabular}
+\caption{\label{tab:families} Elements of the Gaussian distribution \code{"bamlss.family"} object.}
+\end{table}
+
+For the second derivative of the log-likelihood we are able to obtain the
+negative expectation,
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\mu}^{2} ) = \sigma^{-2},
+$$
+and
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\sigma}^{2} ) = 2.
+$$
+
+Now we have to write a function that returns a \code{family.bamlss} object (S3)
+which encapsulates functions for density, score and Hessian, and the names of
+the family, parameter and link functions. The required elements are listed
+in Table~\ref{tab:families}.
+
+Merely all functions take as first argument the response \code{y} and as second
+argument a named list holding the evaluated parameters \code{par} of the
+distribution. The example implementation is shown in Appendix~\ref{appendix:families}.
+
+Optionally, the \code{"family.bamlss"} object can be extended by functions for
+\begin{itemize}
+\item the cumulative distribution function \code{p(y, par, ...)},
+\item the quantile function (the inverse cdf) \code{q(p, par)},
+\item a random number generator \code{r(n, par)},
+\item the log-likelihood \code{loglik(y, par)},
+\item the expectation \code{mu(par, ...)},
+\item initial values for optimization, which has to be a list containing a
+  function for each parameter,
+\item \code{...},
+\end{itemize}
+which can help to speed up optimization, or be convenient for
+predictions and simulations.
+
+For a list of all implemented families, please see the documentation of \code{?bamlss.family}.
+
+\subsection{Estimation engines} \label{sec:engines}
+
+Estimation engines in \pkg{bamlss} are usually based on the model frame setup function
+\fct{bamlss.frame} (see Section~\ref{sec:bf}), i.e., the functions all have a \code{x} argument,
+which contains all the necessary model and penalty matrices, and a \code{y} argument, which is the
+response (univariate or multivariate). In addition, an estimation engine usually has a \code{family}
+argument, which specifies the model to be estimated. However, this is not a mandatory
+argument, i.e., one could write an estimation function that is designed for one specific
+problem, only.
+
+The modeling setup is best explained by looking at the main estimation engines provided by
+\pkg{bamlss}. The default optimizer using the \fct{bamlss} wrapper function is \fct{bfit}, which is a
+backfitting routine. The most important arguments are
+\begin{Code}
+  bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+\end{Code}
+The default sampling engine in \pkg{bamlss} is \fct{GMCMC}, again the most important
+arguments are
+\begin{Code}
+  GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+\end{Code}
+So basically, the arguments of the optimizer and the sampling function are the same, the
+main difference is the return value. In \pkg{bamlss} optimizer functions usually return
+a vector of estimated regression coefficients (parameters), while sampling functions 
+return a matrix of parameter samples of class \code{"mcmc"} or \code{"mcmc.list"} (for details
+see the  documentation of the \pkg{coda} package).
+
+Internally, what the optimizer or sampling function is actually processing is not important
+for the \code{bamlss()} wrapper function as long as a vector or matrix of parameters is
+returned. For optimizer functions the return value needs to be named list with an element
+\code{"parameters"}, the vector (also a matrix, e.g., for \fct{lasso} and \fct{boost} optimizers)
+of estimated parameters. The most important requirement to make use of all extractor
+functions like \fct{summary.bamlss}, \fct{predict.bamlss}, \fct{plot.bamlss},
+\fct{residuals.bamlss}, etc., is to follow the naming convention of the returned estimates.
+The parameter names are based on the names of the distribution parameters as specified in
+the family object. For example, the family object \fct{gaussian\_bamlss} has parameter names
+\code{"mu"} and \code{"sigma"}
+<<>>=
+gaussian_bamlss()$names
+@
+Then, each distributional parameter can be modeled by parametric (linear) and
+nonlinear smooth effect terms. The parametric part is indicated with \code{"p"} and the smooth part with
+\code{"s"}. The names of the parametric coefficients are the names of the corresponding model
+matrices as returned from \fct{bamlss.frame}. E.g., if two linear effects, with variables \code{"x1"}
+and \code{"x2"}, enter the model for 
+distributional parameter \code{"mu"}, then the final names are \code{"mu.p.x1"} and \code{"mu.p.x2"}.
+Similarly for the smooth parts, if we model a variable \code{"x3"} using a regression spline as
+provided by the \fct{s} function of the \pkg{mgcv} package, the
+name is based on the names that are used by \fct{bamlss.frame} for the \fct{smooth.construct}
+object. In this case the parameter names start with \code{"mu.s.s(x3)"}. If this smooth
+term has 10 regression coefficients, then the final name must be
+<<>>=
+paste0("mu.s.s(x3)", ".b", 1:10)
+@
+i.e., all smooth term parameters are named with \code{"b"} and a numerated.
+
+An example of how to setup an estimation engine for \pkg{bamlss} for linear regression models is
+given in Appendix~\ref{appendix:engine}. The example also provides details on the naming convention
+and return values of optimizer and sampler functions.
+
 
 \section{Application} \label{sec:application}
 
@@ -1669,6 +1860,308 @@ Predict.matrix.gc.smooth <- function(object, data, knots)
   X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
   X
 }
+@
+
+\section[Gaussian family object]{Gaussian family object} \label{appendix:families}
+
+The following \proglang{R} code shows an example implementation of the Gaussian distribution
+as presented in Section~\ref{sec:families}.
+<<>>=
+Gauss_bamlss <- function(...) {
+  f <- list(
+    "family" = "mygauss",
+    "names"  = c("mu", "sigma"),
+    "links"  = c(mu = "identity", sigma = "log"),
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+    },
+    "score" = list(
+      mu = function(y, par, ...) {
+        drop((y - par$mu) / (par$sigma^2))
+      },
+      sigma = function(y, par, ...) {
+        drop(-1 + (y - par$mu)^2 / (par$sigma^2))
+      }
+    ),
+    "hess" = list(
+      mu = function(y, par, ...) {
+        drop(1 / (par$sigma^2))
+      },
+      sigma = function(y, par, ...) { 
+        rep(2, length(y))
+      }
+    )
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+@
+
+
+\section[Engines for linear regression]{Model fitting engines for linear regression} \label{appendix:engine}
+
+In the following, to explain the setup and the naming convention of estimation engines in
+more detail, we implement
+\begin{itemize}
+\item a new family object for simple linear models $y = x^{\top}\boldsymbol{\beta} + \varepsilon$ with
+  $\varepsilon \sim N(0, \sigma^2)$,
+\item and set up an optimizer function,
+\item and additionally a MCMC sampling function.
+\end{itemize}
+For illustration, the family object is kept very simple, we only model the mean function 
+in terms of covariates.
+<<>>=
+lm_bamlss <- function(...) {
+  f <- list(
+    "family" = "LM",
+    "names" = "mu",
+    "links" = "identity",
+    "d" = function(y, par, log = FALSE) {
+      sigma <- sqrt(sum((y - par$mu)^2) / (length(y) - .lm_bamlss.p))
+      dnorm(y, mean = par$mu, sd = sigma, log = log)
+    },
+    "p" = function(y, par, ...) {
+      sigma <- sqrt(sum((y - par$mu)^2) / (length(y) - .lm_bamlss.p))
+      pnorm(y, mean = par$mu, sd = sigma, ...)
+    }
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+@
+Now, for setting up the estimation functions we first simulate some data using the
+\fct{GAMart} function, afterwards the necessary \code{"bamlss.frame"} can be created with
+<<>>=
+## Simulate some data.
+d <- GAMart()
+
+## Setup a "bamlss.frame" object, that is used for
+## developing the estimation functions for the linear model.
+bf <- bamlss.frame(num ~ x1 + x2, data = d, family = "lm")
+
+## Print the structure of the "bamlss.frame".
+print(bf)
+@
+As noted above, the object is a named list with elements \code{"x"} and \code{"y"}, which will be
+passed to the estimation functions. For the moment, since we only implement a linear 
+model, we need to work with the linear model matrix that is part of the \code{bf} object.
+<<>>=
+print(head(bf$x$mu$model.matrix))
+@
+and the response \code{"y"}
+<<>>=
+print(head(bf$y))
+@
+to setup the optimizer function with:
+<<>>=
+## Linear model optimizer function.
+lm.opt <- function(x, y, ...)
+{
+  ## Only univariate response.
+  y <- y[[1L]]
+
+  ## For illustration this is easier to read.
+  X <- x$mu$model.matrix
+
+  ## Estimate model parameters.
+  par <- drop(chol2inv(chol(crossprod(X))) %*% crossprod(X, y))
+
+  ## Set parameter names.
+  names(par) <- paste0("mu.p.", colnames(X))
+
+  ## Return estimated parameters and fitted values.
+  rval <- list(
+    "parameters" = par,
+    "fitted.values" = drop(X %*% par),
+    "edf" = length(par),
+    "sigma" = drop(sqrt(crossprod(y - X %*% par) / (length(y) - ncol(X))))
+  )
+
+  ## Set edf within .GlobalEnv for the
+  ## loglik() function in the lm_bamlss() family.
+  .lm_bamlss.p <<- length(par)
+
+  return(rval)
+}
+@
+This optimizer function can already be used with the \fct{bamlss} wrapper function and
+all extractor functions are readily available.
+<<>>=
+## Model formula with polynomial model terms.
+f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
+
+## Estimate model with new optimizer function.
+b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = FALSE)
+
+## Summary output.
+summary(b)
+
+## Predict for term x2.
+nd <- data.frame("x2" = seq(0, 1, length = 100))
+nd$p <- predict(b, newdata = nd, term = "x2")
+@
+Plot the estimated effect of variable \code{x2}.
+<<eval = FALSE>>=
+plot2d(p ~ x2, data = nd)
+@
+
+The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we
+assume multivariate normal priors for the regression coefficients and an inverse Gamma prior
+for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals
+can be created. The MCMC algorithm consecutively samples for $t = 1, \ldots, T$ from the full
+conditionals
+$$
+\boldsymbol{\beta}^{(t)} | \cdot \sim N\left(\boldsymbol{\mu}_{\boldsymbol{\beta}}^{(t - 1)}, 
+  \boldsymbol{\Sigma}_{\boldsymbol{\beta}}^{(t - 1)}\right)
+$$
+and
+$$ 
+{\sigma^2}^{(t)} | \cdot \sim IG\left({a^{\prime}}^{(t - 1)}, {b^{\prime}}^{(t - 1)}\right),
+$$
+where $IG( \cdot )$ is the inverse Gamma distribution for sampling the variance parameter.
+The covariance matrix for $\boldsymbol{\beta}$ is given by
+$$
+\boldsymbol{\Sigma}_{\boldsymbol{\beta}} = \left(\frac{1}{\sigma^2}\mathbf{X}^\top\mathbf{X} +
+  \frac{1}{\sigma^2}\mathbf{M}^{-1}\right)^{-1}
+$$
+and the mean
+$$
+\boldsymbol{\mu}_{\boldsymbol{\beta}} = \boldsymbol{\Sigma}_{\boldsymbol{\beta}}
+  \left(\frac{1}{\sigma^2}\mathbf{X}^\top\mathbf{y} +
+  \frac{1}{\sigma^2}\mathbf{M}^{-1}\mathbf{m}\right),
+$$
+where $\mathbf{m}$ is the prior mean and $\mathbf{M}$ the prior covariance matrix.
+Similarly, for $\sigma^2$ paramaters $a^{\prime}$ and $b^{\prime}$ are computed by
+$$
+a^{\prime} = a + \frac{n}{2} + \frac{p}{2}
+$$
+and
+$$
+b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
+  \mathbf{X}\boldsymbol{\beta})^\top(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) +
+  \frac{1}{2} (\boldsymbol{\beta} - \mathbf{m})^\top \mathbf{M}^{-1}(\boldsymbol{\beta}
+  - \mathbf{m}),
+$$
+where $a$ and $b$ are usually set small, e.g., with $a = 1$ and $b = 0.0001$, such that the prior is
+flat and uninformative.
+
+We can implement the MCMC algorithm in the following sampling function
+<<>>=
+lm.mcmc <- function(x, y, start = NULL,
+  n.iter = 12000, burnin = 2000, thin = 10,
+  m = 0, M = 1e+05,
+  a = 1, b = 1e-05,
+  verbose = TRUE, ...)
+{
+  ## How many samples are saved?
+  itrthin <- seq.int(burnin, n.iter, by = thin)
+  nsaves <- length(itrthin)
+
+  ## Only univariate response.
+  y <- y[[1L]]
+
+  ## For illustration this is easier to read.
+  X <- x$mu$model.matrix
+
+  ## Again, set edf within .GlobalEnv for the
+  ## loglik() function in the lm_bamlss() family.
+  .lm_bamlss.p <<- ncol(X)
+
+  ## Number of observations and parameters.
+  n <- length(y)
+  p <- ncol(X)
+
+  ## Matrix saving the samples.
+  samples <- matrix(0, nsaves, p + 1L)
+
+  ## Stick to the naming convention.
+  pn <- paste0("mu.p.", colnames(X))
+  colnames(samples) <- c(
+    pn,      ## Regression coefficients and
+    "sigma"  ## variance samples.
+  )
+
+  ## Setup coefficient vector,
+  ## again, use correct names.
+  beta <- rep(0, p)
+  names(beta) <- pn
+  sigma <- sd(y)
+
+  ## Check for starting values obtained,
+  ## e.g., from lm.opt() from above.
+  if(!is.null(start)) {
+    sn <- names(start)
+    for(j in names(beta)) {
+      if(j %in% sn)
+        beta[j] <- start[j]
+    }
+  }
+
+  ## Process prior information.
+  m <- rep(m, length.out = p)
+  if(length(M) < 2)
+    M <- rep(M, length.out = p)
+  if(!is.matrix(M))
+    M <- diag(M)
+  Mi <- solve(M)
+
+  ## Precompute cross products.
+  XX <- crossprod(X)
+  Xy <- crossprod(X, y)
+
+  ## Inverse gamma parameter.
+  a <- a + n / 2 + p / 2
+
+  ## Start sampling.
+  ii <- 1
+  for(i in 1:n.iter) {
+    ## Sampling sigma
+    b2 <- b + 1 / 2 * t(y - X %*% beta) %*% (y - X %*% beta) +
+      1 / 2 * t(beta - m) %*% Mi %*% (beta - m)
+    sigma2 <- sqrt(1 / rgamma(1, a, b2))
+
+    ## Sampling beta.
+    sigma2i <- 1 / sigma2
+    Sigma <- chol2inv(chol(sigma2i * XX + sigma2i * Mi))
+    mu <- Sigma %*% (sigma2i * Xy + sigma2i * Mi %*% m)
+    beta <- MASS::mvrnorm(1, mu, Sigma)
+      
+    if(i %in% itrthin) {
+      samples[ii, pn] <- beta
+      samples[ii, "sigma"] <- sqrt(sigma2)
+      ii <- ii + 1
+    }
+    if(verbose) {
+      if(i %% 1000 == 0)
+        cat("iteration:", i, "\n")
+    }
+  }
+
+  ## Convert to "mcmc" object.
+  samples <- as.mcmc(samples)
+
+  return(samples)
+}
+@
+The new sampling function can be directly used with the \fct{bamlss} wrapper
+<<>>=
+b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = lm.mcmc)
+
+summary(b)
+
+## Predict for all terms including 95% credible intervals
+nd$x1 <- nd$x3 <- seq(0, 1, length = 100)
+for(j in c("x1", "x2", "x3")) {
+  nd[[paste0("p.", j)]] <- predict(b, newdata = nd, term = j,
+    FUN = c95, intercept = FALSE)
+}
+@
+The estimated effects can be plotted with:
+<<eval = FALSE>>=
+par(mfrow = c(1, 3))
+plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 @
 
 \end{appendix}
