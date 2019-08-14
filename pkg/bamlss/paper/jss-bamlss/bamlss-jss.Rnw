@@ -1792,7 +1792,7 @@ CRPS <- function(par) {
 
 The following \proglang{R} code implements a Gompertz growth curve model term given by
 $$
-f(x; \boldsymbol{\beta}) = \beta_1 * \exp(-\beta_2 * \exp(-\beta_3 \cdot x)),
+f(x; \boldsymbol{\beta}) = \beta_1 \cdot \exp(-\beta_2 \cdot \exp(-\beta_3 \cdot x)),
 $$
 which can be used by the default optimizer function \fct{bfit} and sampling function \fct{GMCMC}
 of the \pkg{bamlss} package.
