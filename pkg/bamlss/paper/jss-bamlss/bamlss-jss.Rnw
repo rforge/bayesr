@@ -52,9 +52,9 @@
 \Shorttitle{A Lego Toolbox for BAMLSS (and Beyond)}
 	
 \Keywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO,
-  MCMC, neural networks, \proglang{R}}
+  MCMC, \proglang{R}}
 \Plainkeywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO,
-  MCMC, neural networks, R}
+  MCMC, R}
 
 \Abstract{
 During the last decades there has been an increasing interest in distributional regression 
@@ -1795,7 +1795,7 @@ $$
 f(x; \boldsymbol{\beta}) = \beta_1 \cdot \exp(-\beta_2 \cdot \exp(-\beta_3 \cdot x)),
 $$
 which can be used by the default optimizer function \fct{bfit} and sampling function \fct{GMCMC}
-of the \pkg{bamlss} package.
+of the \pkg{bamlss} package (see Section~\ref{sec:specialterms}).
 
 The new \fct{smooth.construct} method is
 <<>>=
