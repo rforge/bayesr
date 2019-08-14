@@ -7377,7 +7377,8 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
     }
   }
   rval$model.matrix <- .coef.bamlss(object, model = model, FUN = FUN,
-     sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters, ...)
+     sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters,
+     summary = TRUE, ...)
   rval$model.matrix <- lapply(rval$model.matrix, function(x) {
     if(!is.matrix(x)) {
       rn <- names(x)
@@ -8490,7 +8491,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
       }
     }
   } else {
-    drop <- c(".tau2", ".lambda", ".edf", ".accepted",
+    drop <- c(".tau2", ".lambda", ".edf", ".accepted", if(!summary) ".alpha" else NULL,
       "logLik", "logPost", "AIC", "BIC", "DIC", "pd")
     if(is.null(FUN))
       FUN <- function(x) { mean(x, na.rm = TRUE) }
