@@ -41,7 +41,7 @@
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
         Achim Zeileis\\Universit\"at Innsbruck \AND
-        Nadja Klein\\Humboldt-University of Berlin \And
+        Nadja Klein\\Humboldt Universit\"at zu Berlin \And
         Thorsten Simon\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Achim Zeileis, Nadja Klein, Thorsten Simon}
 
