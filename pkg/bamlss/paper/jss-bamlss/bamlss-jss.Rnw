@@ -58,11 +58,11 @@
 
 \Abstract{
 During the last decades there has been an increasing interest in distributional regression 
-models that allow to model all distributional parameters, such as location, scale and shape 
-and thereby the entire data distribution conditional on covariates. In particular, the 
-framework of structured additive distributional regression models enables to specify 
+models that allow to model the entire data distribution conditional on covariates. In particular,
+the  framework of structured additive distributional regression models enables to specify 
 different types of effects such as linear, non-linear or interaction effects on all the 
-distribution parameters hence providing a very flexible and generic framework suited for 
+distribution parameters (such as location scale and shape) hence providing a very flexible and
+generic framework suited for 
 many complex real data problems. However, the implementation of new models is usually time-consuming
 and complex, especially using Bayesian estimation algorithms. We propose an unified modeling
 architecture, which is implemented in the \proglang{R} package \pkg{bamlss}, that makes it possible
@@ -88,7 +88,7 @@ well as neural network distributional regression models.
   \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
 
   Nadja Klein\\
-  Humboldt-University of Berlin\\
+  Humboldt Universit\"at zu Berlin\\
   School of Business and Economics\\
   Applied Statistics\\
   Unter den Linden 6\\
@@ -118,7 +118,7 @@ Generalized additive models for location, scale and shape
 flexible framework that enables modeling all parameters of a response distribution in terms of
 covariates. While most common model specifications (linear models, generalized linear models [GLMs],
 generalized additive models [GAMs], etc.) ignore the fact that the distribution of any quantity is
-not well characterized by the mean alone, GAMLSS has the clear advantage to minimize the risk of
+not well characterized by the mean alone, GAMLSS has the clear advantage to alleviate the risk of
 model misspecification and therefore provides much more reliable probabilistic forecasts.
 
 The \proglang{R} package \pkg{gamlss}
@@ -132,9 +132,9 @@ base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2019} 
 fitting routine for the estimation of general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}.
 The inferential framework of the packages mentioned is based on maximum likelihood, however, if
 taken into account at all. For complex models, e.g., with response
-distributions outside the exponential family or when multiple predictors contain several smooth
-effects \citep{bamlss:Klein+Kneib+Lang:2015}, the maximum likelihood estimators based on
-asymptotic properties might fail. In such situations the fully Bayesian approach using Markov chain
+distributions outside the exponential family combined with complex predictor structures of
+several smooth effects \citep{bamlss:Klein+Kneib+Lang:2015}, the \pkg{gamlss} package may
+suffer from numerical instabilities. In such situations the fully Bayesian approach using Markov chain
 Monte Carlo (MCMC) simulation techniques is particularly attractive since valid credible intervals
 are easily obtained from the posterior samples. While Bayesian distributional regression models
 can in principle be estimated using general purpose MCMC software like
@@ -199,7 +199,7 @@ The data can be loaded with
 <<>>=
 data("SwissLabor", package = "AER")
 @
-The data frame contains of 872 observations on 7 variables, where some of them might have
+The data frame contains of 872 observations on 6 variables, where some of them might have
 a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
 binomial logit model using the default MCMC algorithm can be fitted with
 <<echo = FALSE, results = hide>>=
@@ -227,9 +227,9 @@ set.seed(123)
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 12000, burnin = 2000, thin = 10)
 @
-using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Prior
-the MCMC sampling a backfitting algorithm for posterior mode estimation is performed. The
-posterior mode estimates are then used as starting values for MCMC. Using
+using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. To obtain
+reasonable starting values for the MCMC sampler we run a backfitting algorithm that optimizes
+the posterior mode. Using
 the main model fitting function \fct{bamlss} all model fitting engines can be exchanged, 
 which is explained in detail in Section~\ref{sec:package} and the application
 Section~\ref{sec:application}. The default model fitting engines use family objects
@@ -271,7 +271,7 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
 These are visualized in Figure~\ref{fig:logit_traceplots} and reveal convergence of
 the MCMC chains, i.e., there is no visible trend and the very low
 auto-correlation shown for the intercept and the maximum auto-correlation of all
-parameters suggests i.i.d.\ samples from the posterior distribution.
+parameters suggest close to i.i.d.\ samples from the posterior distribution.
 Note that the function call would compute all trace- and auto-correlation plots, however,
 for convenience we only show plots for the intercept. In addition, samples can also be
 extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},
@@ -333,7 +333,7 @@ legend("topright", c("foreign yes", "foreign no"), lwd = 1,
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
 
-\subsection{Normal location-scale model} \label{sec:locscalemodel}
+\subsection{Gaussian location-scale model} \label{sec:locscalemodel}
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using a small textbook example of the well-known simulated motorcycle accident data
@@ -343,7 +343,7 @@ data("mcycle", package = "MASS")
 @
 The data set contains measurements of the head acceleration
 (in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after
-impact (variable \code{times}). To estimate a normal location-scale model with
+impact (variable \code{times}). To estimate a Gaussian location-scale model with
 $$
 \texttt{accel} \sim \mathcal{N}(\mu = f_{\mu}(\texttt{times}),
   \log(\sigma) = f_{\sigma}(\texttt{times}))
@@ -739,8 +739,7 @@ as well as to the \hyperlink{somerefs}{references} given below on page \pageref{
 
 \subsection{Model structure}
 
-Within the framework of GAMLSS \citep{bamlss:Rigby+Stasinopoulos:2005} or
-distributional regression models \citep{bamlss:Klein+Kneib+Lang+Sohn:2015}
+Within the framework of GAMLSS or distributional regression models
 all parameters of the response distribution can be modeled by
 explanatory variables such that
 \begin{equation} \label{eqn:dreg}
@@ -787,7 +786,7 @@ $\boldsymbol{\tau} =
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
 the vector of all assigned hyper-parameters, e.g., representing smoothing variances (shrinkage parameters).
-Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all fixed prior specifications. In most
+Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all prior specifications. In most
 situations the prior $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$
 is based on a multivariate normal kernel for $\boldsymbol{\beta}_{jk}$ and on inverse gamma
 distributions for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$,
@@ -815,9 +814,8 @@ framework are the ones for: \label{somerefs2}
 
 Estimation typically requires to evaluate the log-likelihood
 $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ function and its derivatives w.r.t.\
-the regression coefficients $\boldsymbol{\beta}$ a number of times. For full Bayesian inference
-prior distributions $p_{jk}( \cdot )$ are assigned to the individual model components yielding the
-log-posterior, which needs to maximized for posterior mode estimation, or for solving
+all regression coefficients $\boldsymbol{\beta}$ a number of times. For fully Bayesian inference
+the log-posterior is either used for posterior mode estimation, or for solving
 high-dimensional integrals. e.g., for posterior mean estimation MCMC samples need to be computed.
 
 Although the types of models that can be fitted within the flexible BAMLSS framework
@@ -850,16 +848,16 @@ well-known IWLS updating scheme for generalized linear models (GLM,~\citealp{bam
 The matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are derivative matrices of the priors
 $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ w.r.t.\ the
 regression coefficients $\boldsymbol{\beta}_{jk}$, e.g.,
-$\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrix that penalizes the complexity of
+$\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that penalizes the complexity of
 $f_{jk}( \cdot )$ using a P-spline representation \citep{bamlss:Eilers+Marx:1996}.
 
 Even if the functions $f_{jk}( \cdot )$ are not based on a basis function approach, the
-updating scheme (\ref{eqn:blockbackfit}) can be further generalized with
+updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
 $$
 \boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
   \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}; \, \cdot \,\right),
 $$
-i.e., theoretically any updating function applied on the ``partial residuals''
+i.e., theoretically any updating function applied to the ``partial residuals''
 $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. (For detailed derivations see
 \citealp{bamlss:Umlauf+Klein+Zeileis:2018}.)
 
@@ -896,7 +894,7 @@ number of candidate models. The following lists commonly used tools:
   \citep{bamlss:Buuren+Miranda:2001}.
 \item \emph{Scoring rules}: Sometimes it is helpful to evaluate the performance on a test data set
   (or for instance based on cross validation). For this, proper scoring rules
-  \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}) can be utilized.
+  \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007} can be utilized.
 \end{itemize}
 
 \subsubsection{Evaluation and interpretation}
@@ -1156,7 +1154,7 @@ The most important arguments are
     weights = NULL, subset = NULL, offset = NULL,
     na.action = na.omit, contrasts = NULL, ...)
 \end{Code}
-Argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm} function,
+The argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm} function,
 or an extended \pkg{bamlss} formula including smooth term specifications like \fct{s} or \fct{te},
 that is internally parsed by function \fct{bamlss.formula}.
 Note that the \pkg{bamlss} package uses special \code{family} objects, that can be passed either as
@@ -1165,8 +1163,9 @@ a character without the \code{"\_bamlss"} extension of the \pkg{bamlss} family n
 In addition, all families of the \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2019} and
 \pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported.
 
-The returned object can be used with the model fitting engines listed in Table~\ref{tab:functions} and
-is a named list of class \code{"bamlss.frame"}. The most important elements used for estimation are:
+The returned object, a named list of class \code{"bamlss.frame"}, can be employed with the model
+fitting engines listed in Table~\ref{tab:functions}. The most important elements used for
+estimation are:
 \begin{itemize}
 \item \code{x}: A named list, the elements correspond to the parameters that are specified within
   the \code{family} object. For each distribution parameter, the list contains all design and
@@ -1198,7 +1197,7 @@ smooth terms.
 <<>>=
 print(names(bf$x$mu$smooth.construct))
 @
-In this example, the list contains of three smooth term objects for parameter \code{mu} and
+In this example, the list contains three smooth term objects for parameter \code{mu} and
 \code{sigma}.
 
 As shown in Section~\ref{sec:specialterms} the \fct{bamlss.frame} function can also
@@ -1215,8 +1214,8 @@ the log-likelihood w.r.t.\ predictors or their expectation (the Hessian).
 
 The \pkg{bamlss} package can be easily extended by constructing families for specific
 tasks, i.e., problems for which a likelihood can be formulated.
-However, the most important distributions are shipped with \pkg{bamlss}.
-Finally, it is also possible to employ \pkg{gamlss}.
+However, commonly used distributions are already implemented in \pkg{bamlss}; and the ones
+from the \pkg{gamlss} package can also be accessed through the \pkg{bamlss} package.
 
 We illustrate how to build a \pkg{bamlss} family by hand along the Gaussian
 distribution, with density
@@ -1367,7 +1366,7 @@ and return values of optimizer and sampler functions.
 
 \section{Application} \label{sec:application}
 
-This section illustrates the workflow with \pkg{bamlss} along an example application.
+This section illustrates the workflow with \pkg{bamlss} along a small case study.
 We want to build a statistical model linking positive counts of cloud-to-ground
 lightning discharges to atmospheric quantities from a reanalysis dataset.
 
@@ -1379,8 +1378,8 @@ The reanalysis data comes from the fifth generation of the ECMWF (European
 Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
 global climate \citep{era5}. ERA5 provides a globally complete and consistent
 pseudo-observations of the atmosphere using the laws of physics. The horizontal
-resolution is approx.\ $32~km$. The temporal resolution is hourly. The temporal
-coverage is from 1979 to present.
+resolution is approx.\ $32~km$, while the temporal resolution is hourly and covers the years
+from 1979 to present.
 In this example application we work only with a small subset of the data, which
 can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 \citep{FlashAustria}.
@@ -1465,8 +1464,8 @@ end:
 %%% <<application-model2, eval=FALSE>>=
 %%% ## Fit model.
 %%% b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
-%%%   optimizer = boost, maxit = 1000,                  # boosting arguments
-%%%   thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
+%%%   optimizer = boost, maxit = 1000,                ## Boosting arguments.
+%%%   thin = 5, burnin = 1000, n.iter = 6000          ## Sampler arguments.
 %%% )
 %%% @
 %%% 
@@ -1474,8 +1473,8 @@ end:
 \begin{Sinput}
 R> ## Fit model.
 R> b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
-+    optimizer = boost, maxit = 1000,                  # boosting arguments
-+    thin = 5, burnin = 1000, n.iter = 6000            # sampler arguments
++    optimizer = boost, maxit = 1000,                 ## Boosting arguments.
++    thin = 5, burnin = 1000, n.iter = 6000           ## Sampler arguments.
 +  )
 \end{Sinput}
 \begin{Soutput}
