@@ -116,9 +116,9 @@ Generalized additive models for location, scale and shape
 (GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as distributional regression models
 \citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, provide a very
 flexible framework that enables modeling all parameters of a response distribution in terms of
-covariates. While most common model specifications (linear models, generalized linear models [GLMs],
-generalized additive models [GAMs], etc.) ignore the fact that the distribution of any quantity is
-not well characterized by the mean alone, GAMLSS has the clear advantage to alleviate the risk of
+covariates. While most classical model specifications -- such as linear models, generalized linear models (GLMs),
+generalized additive models (GAMs), etc. -- focus on characterization of the mean of the distribution
+and ignore changes in other moments, GAMLSS has the clear advantage to alleviate the risk of
 model misspecification and therefore provides much more reliable probabilistic forecasts.
 
 The \proglang{R} package \pkg{gamlss}
