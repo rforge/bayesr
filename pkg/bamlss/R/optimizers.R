@@ -5550,7 +5550,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   tau2f <- 100
 
   iter2 <- 1L
-  nu <- 0.5
+  nu <- 0.05
 
   ptm <- proc.time()
   for(ej in 1:epochs) {

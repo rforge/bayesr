@@ -43,7 +43,7 @@ argument, which specifies the model to be estimated. However, this is not a mand
 argument, i.e., one could write an estimation function that is designed for one specific
 problem, only.
 
-The modeling setup is best explained by looking at the main estimation engines provided bay _bamlss_.
+The modeling setup is best explained by looking at the main estimation engines provided by _bamlss_.
 The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is a
 backfitting routine. The most important arguments are
 ```{r, eval=FALSE}

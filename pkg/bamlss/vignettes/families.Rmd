@@ -55,7 +55,7 @@ $$
 \mu = \eta_\mu, \qquad \log(\sigma) = \eta_\sigma.
 $$
 For the Gaussian $\mu$ and $\sigma$ are linked to $\eta_\mu$ and $\eta_\sigma$
-by the identity funciton and the logarithm, respectively.
+by the identity function and the logarithm, respectively.
 
 The score functions in _bamlss_ are the first derivatives of the log-likelihood w.r.t.
 the predictors:
