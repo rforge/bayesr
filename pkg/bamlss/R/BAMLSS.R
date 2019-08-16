@@ -2241,8 +2241,8 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
   }
   if(!is.null(offset)) {
     if(!is.list(offset)) {
-      offset <- rep(list(offset), length = length(family$names))
-      names(offset) <- family$names
+      offset <- list(offset)
+      names(offset) <- family$names[1]
     }
     offset <- do.call("cbind", offset)
     colnames(offset) <- names(formula)[1:ncol(offset)]
@@ -2253,6 +2253,8 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
     }
     if(nrow(offset) < 2)
       offset <- do.call(rbind, replicate(nrow(data), offset, simplify = FALSE))
+    if(!is.null(attr(data, "na.action")))
+      offset <- offset[-attr(data, "na.action"), , drop = FALSE]
     data[["(offset)"]] <- offset
   }
 
