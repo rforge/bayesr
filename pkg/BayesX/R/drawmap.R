@@ -59,7 +59,8 @@ drawmap <- function(data, map, regionvar = 2, plotvar = 3, limits, cols = "hcl",
     regionvar <- data[, regionvar]
     regionvar <- regionvar[ord]
     
-    if (cols != "hcl" && cols != "hsv" && cols != "grey") {
+    col_check <- any(!(cols %in% c("hcl", "hsv", "grey")))
+    if (col_check) {
       nrcolors <- length(cols)
       if (swapcolors == TRUE) 
         cols <- rev(cols)
@@ -80,7 +81,7 @@ drawmap <- function(data, map, regionvar = 2, plotvar = 3, limits, cols = "hcl",
     maxim <- max(plotvar, na.rm = TRUE)
     minim <- min(plotvar, na.rm = TRUE)
     
-    if (cols != "hcl" && cols != "hsv" && cols != "grey") {
+    if (col_check) {
       upperlimit <- 1
       lowerlimit <- -1
     } else {
@@ -108,7 +109,7 @@ drawmap <- function(data, map, regionvar = 2, plotvar = 3, limits, cols = "hcl",
       nrcolors <- 3
       upperlimit <- 1
       lowerlimit <- -1
-      if (cols != "hcl" && cols != "hsv" && cols != "grey") 
+      if (col_check) 
         cols <- c(cols[1], cols[round(length(cols)/2 + 0.5)], cols[length(cols)])
     }
     
@@ -117,7 +118,7 @@ drawmap <- function(data, map, regionvar = 2, plotvar = 3, limits, cols = "hcl",
     fill.colors <- fill.colors[c(-1, -length(fill.colors))]
     fill.colors <- as.vector(fill.colors, mode = "numeric")
     
-    if (cols != "hcl" && cols != "hsv" && cols != "grey") {
+    if (col_check) {
       fill.colors <- cols[fill.colors]
       legend.colors <- cols
     } else {
