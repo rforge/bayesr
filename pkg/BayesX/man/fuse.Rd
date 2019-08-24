@@ -26,7 +26,7 @@ Map object in boundary format with the specified regions combined.
 \seealso{\code{\link{read.bnd}},\code{\link{write.bnd}}}
 
 \examples{
-require("gpclib")
+\dontrun{require("gpclib")
 library("maptools")
 gpclibPermit()
 map <- read.bnd(system.file("examples/germany9301.bnd", package="BayesX"))
@@ -46,7 +46,7 @@ regions <- c("9371","9373","9374","9471","9472","9474","9574")
 #new name of combined region
 newname <- "1"
 newmap <- fuse(germany,regions,newname)
-drawmap(map=newmap,drawnames=TRUE)
+drawmap(map=newmap,drawnames=TRUE)}
 }
 
 
