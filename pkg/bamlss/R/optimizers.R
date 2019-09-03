@@ -1137,10 +1137,14 @@ get.ic <- function(family, y, par, edf, n, type = c("AIC", "BIC", "AICc", "MP"),
   if(is.na(edf))
     edf <- n - 1
   denom <- (n - edf - 1)
-  if(denom < 1e-10) {
+  if(is.na(denom)) {
     add <- 0
   } else {
-    add <- (2 * edf * (edf + 1)) / denom
+    if(denom < 1e-10) {
+      add <- 0
+    } else {
+      add <- (2 * edf * (edf + 1)) / denom
+    }
   }
   pen <- switch(type,
                 "AIC" = -2 * ll + 2 * edf,
