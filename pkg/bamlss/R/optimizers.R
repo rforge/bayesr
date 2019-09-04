@@ -5492,6 +5492,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(eps_loglik))
     eps_loglik <- 0.01
 
+  lasso <- list(...)$lasso
+  if(is.null(lasso))
+    lasso <- FALSE
+
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -5546,6 +5550,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        if(lasso) {
+          lS <- length(x[[i]]$smooth.construct[[j]]$S)
+          x[[i]]$smooth.construct[[j]]$S[[lS + 1]] <- function(parameters, ...) {
+            b <- get.par(parameters, "b")
+            A <- 1 / sqrt(b^2 + 1e-05)
+            A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+            A
+          }
+          attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
+        }
         tau2[[i]][[j]] <- rep(0.01, length(x[[i]]$smooth.construct[[j]]$S))
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
@@ -5741,7 +5755,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return(ll)
             }
 
-            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 100), silent = TRUE)
+            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 1), silent = TRUE)
 
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
@@ -5816,7 +5830,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   rval$runtime <- elapsed
   rval$edf <- edf
   rval$nbatch <- nbatch
-  rval$selfreq <- unlist(selfreq) / iter2
+  rval$selfreq <- as.table(unlist(selfreq) / iter2)
 
   rval
 }
