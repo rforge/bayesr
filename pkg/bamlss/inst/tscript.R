@@ -96,9 +96,17 @@ data("GAMart")
 b <- bamlss(cat ~ s(x1) + s(x2) + s(x3) + s(long, lat), family = multinomial.bamlss, data = GAMart)
 
 
-
+library("bamlss")
 data("marital.nz", package = "VGAM")
-b <- bamlss(mstatus ~ s(age), family = multinomial.bamlss, data = marital.nz)
+
+f <- list(
+  mstatus ~ s(age),
+          ~ s(age),
+          ~ s(age)
+)
+
+b <- bamlss(f, family = "multinomial",
+  data = marital.nz, reference = "Married/Partnered")
 
 
 

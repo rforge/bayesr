@@ -45,8 +45,7 @@
         Thorsten Simon\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Achim Zeileis, Nadja Klein, Thorsten Simon}
 
-\title{\pkg{bamlss}: A Lego Toolbox for {B}ayesian Additive Models for
-  Location Scale and Shape (and Beyond)}
+\title{\pkg{bamlss}: A Lego Toolbox for flexible {B}ayesian Regression (and Beyond)}
 \Plaintitle{bamlss: A Lego Toolbox for Bayesian Additive
   Models for Location Scale and Shape (and Beyond)}
 \Shorttitle{A Lego Toolbox for BAMLSS (and Beyond)}
@@ -57,6 +56,27 @@
   MCMC, R}
 
 \Abstract{
+lego+flexibel, weil ich alles austauschen kann, Terme, Schätzer, Verteilungen
+
+2.1 Basic Bayesian regression: Logit Model
+2.2 Flexible terms and estimators -> spline + fused LASSO + Boosting hier auf den Appendix verweisen,
+  die Terme die wir hier haben gibts schon, aber man kann auch wietere Terme hinzufügen,
+  es ist sicher besonders wie einfach und flexibel man diese Terme im Bayes Kontext austauschen kann.
+
+3. A flexible Bayesian model framework/ theoretical background. Wir schreiben das jetzt im
+  distreg framework hin, es sind aber auch einfachere Fälle im Spezialfall enthalten.
+
+cut(order.results = TRUE)
+
+pathplot()
+lasso_stop()
+Immer underscore nehmen!
+
+Families mappen!
+Fig. -> Figure
+
+Gerade beim 2. Teil hat sich gegenüber JCGS viel getan.
+
 During the last decades there has been an increasing interest in distributional regression 
 models that allow to model the entire data distribution conditional on covariates. In particular,
 the  framework of structured additive distributional regression models enables to specify 

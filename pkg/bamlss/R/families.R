@@ -3414,6 +3414,17 @@ ztnbinom_bamlss <- function(...) {
     )
   )
 
+  rval$rps <- function(y, par) {
+    K <- sort(unique(y))
+    rps <- 0
+    for(k in K) {
+      P <- rval$p(k, par)
+      O <- y <= k
+      rps <- rps + (P - O)^2
+    }
+    return(rps)
+  }
+
   class(rval) <- "family.bamlss"
   rval
 }
