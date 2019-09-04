@@ -700,6 +700,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   object$xt$center <- FALSE
   object$xt$nocenter <- TRUE
   nd <- list()
+  cat(".. ff processing term", object$label, "\n")
   for(j in object$term) {
     xr <- ffbase::range.ff(data[[j]], na.rm = TRUE)
     nd[[j]] <- sample(seq(xr[1], xr[2], length = 500))
