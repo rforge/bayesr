@@ -5508,6 +5508,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(lasso))
     lasso <- FALSE
 
+  always <- list(...)$always
+  if(is.null(always))
+    always <- FALSE
+
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -5525,15 +5529,15 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- selfreq <- ll_contrib <- list()
+  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
+    medf[[i]] <- list()
     ll_contrib[[i]] <- list()
-    selfreq[[i]] <- list()
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
-      ll_contrib[[i]][["p"]] <- NA
+      ll_contrib[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
         beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
@@ -5559,11 +5563,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         }
       }
       names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
-      selfreq[[i]][["p"]] <- 0
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
-        ll_contrib[[i]][[paste0("s.", j)]] <- NA
+        ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- NA
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
@@ -5583,7 +5586,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
-        selfreq[[i]][[paste0("s.", j)]] <- 0
       }
     }
   }
@@ -5704,23 +5706,24 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun(tau2fe, retLL = TRUE)
             epsll <- abs((ll1 - ll0)/ll0)
-            if((ll1 > ll0) & (epsll > eps_loglik)) {
+            if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
               tau2f <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f * I)
               if(select) {
                 tbeta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               } else {
                 beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
-                selfreq[[i]][["p"]] <- selfreq[[i]][["p"]] + 1
               }
               ll_contrib[[i]][["p"]] <- ll1 - ll0
+              tedf <- sum_diag(XWX %*% P)
+              edf <- edf + tedf
+              medf[[i]][["p.edf"]] <- c(medf[[i]][["p.edf"]], tedf)
             }
           }
           if(!select) {
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
             etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
           }
-          edf <- edf + ncol(Xt)
         }
 
         ## Nonlinear.
@@ -5784,7 +5787,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
-              if((ll1 > ll0) & (epsll > eps_loglik)) {
+              if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
                 for(l in 1:length(tau2[[i]][[j]])) {
@@ -5800,10 +5803,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                   tbeta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
                 } else {
                   beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
-                  selfreq[[i]][[paste0("s.", j)]] <- selfreq[[i]][[paste0("s.", j)]] + 1
                 }
-                edf <- edf + sum_diag(XWX %*% P)
+                tedf <- sum_diag(XWX %*% P)
+                edf <- edf + tedf
                 ll_contrib[[i]][[paste0("s.", j)]] <- ll1 - ll0
+                medf[[i]][[paste0("s.", j, ".edf")]] <- c(medf[[i]][[paste0("s.", j, ".edf")]], tedf)
               }
             }
 
@@ -5832,7 +5836,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           eta[[llc[1]]] <- eta[[llc[1]]] + drop(Xn %*% beta[[llc[1]]][[llc[2]]])
           etas[[llc[1]]] <- etas[[llc[1]]] + drop(Xt %*% beta[[llc[1]]][[llc[2]]])
-          selfreq[[llc[1]]][[llc[2]]] <- selfreq[[i]][["p"]] + 1
         }
       }
 
@@ -5874,14 +5877,21 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     cat("elapsed time: ", et, "\n", sep = "")
   }
 
+  for(i in nx) {
+    for(j in seq_along(medf[[i]])) {
+      medf[[i]][[j]] <-  if(all(is.na(medf[[i]][[j]]))) {
+        0
+      } else median(medf[[i]][[j]], na.rm = TRUE)
+    }
+  }
+
   rval <- list()
-  rval$parameters <- unlist(beta)
+  rval$parameters <- c(unlist(beta), unlist(medf))
   rval$fitted.values <- eta
   rval$shuffle <- shuffle
   rval$runtime <- elapsed
   rval$edf <- edf
   rval$nbatch <- nbatch
-  rval$selfreq <- as.table(unlist(selfreq) / iter2)
 
   rval
 }

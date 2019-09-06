@@ -7381,7 +7381,7 @@ summary.bamlss <- function(object, model = NULL, FUN = NULL, parameters = TRUE, 
   }
   rval$model.matrix <- .coef.bamlss(object, model = model, FUN = FUN,
      sterms = FALSE, full.names = FALSE, list = TRUE, parameters = parameters,
-     summary = TRUE, ...)
+     summary = TRUE, mm = TRUE, ...)
   rval$model.matrix <- lapply(rval$model.matrix, function(x) {
     if(!is.matrix(x)) {
       rn <- names(x)
@@ -8505,6 +8505,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
     drop <- c(drop, ".s.") 
   par <- samps <- NULL
   rval <- list()
+  mm <- if(is.null(list(...)$mm)) FALSE else TRUE
   if(!is.null(object$samples)) {
     rval$samples <- samples(object, model = model, term = term, ...)
     tdrop <- grep2(drop, colnames(rval$samples), fixed = TRUE)
@@ -8531,10 +8532,15 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   }
   if(!is.null(object$parameters) & parameters) {
     rval$parameters <- parameters(object, list = FALSE, ...)
+    pedf <- rval$parameters[grep(".p.edf", names(rval$parameters), fixed = TRUE)]
     if(length(di <- grep2(drop, names(rval$parameters), fixed = TRUE)))
       rval$parameters <- rval$parameters[-di]
-    if(summary)
-      rval$parameters <- rval$parameters[grep2(c(".tau2", ".edf"), names(rval$parameters), fixed = TRUE)]
+    if(length(pedf) & !(".p." %in% drop))
+      rval$parameters <- c(rval$parameters, pedf)
+    if(summary) {
+      if(!mm)
+        rval$parameters <- rval$parameters[grep2(c(".tau2", ".edf"), names(rval$parameters), fixed = TRUE)]
+    }
     rval$parameters <- as.matrix(rval$parameters, ncol = 1)
     if(!is.null(rval$samples) & length(rval$samples)) {
       pc <- NULL
