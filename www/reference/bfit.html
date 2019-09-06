@@ -67,7 +67,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -106,6 +106,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -447,7 +450,7 @@
   <span class='no'>object</span>$<span class='no'>X</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/matrix'>matrix</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/numeric'>as.numeric</a></span>(<span class='no'>data</span><span class='kw'>[[</span><span class='no'>object</span>$<span class='no'>term</span>]]), <span class='kw'>ncol</span> <span class='kw'>=</span> <span class='fl'>1</span>)
   <span class='no'>center</span> <span class='kw'>&lt;-</span> <span class='kw'>if</span>(!<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/NULL'>is.null</a></span>(<span class='no'>object</span>$<span class='no'>xt</span>$<span class='no'>center</span>)) {
     <span class='no'>object</span>$<span class='no'>xt</span>$<span class='no'>center</span>
-  } <span class='kw'>else</span> <span class='fl'>FALSE</span>
+  } <span class='kw'>else</span> <span class='fl'>TRUE</span>
   <span class='no'>object</span>$<span class='no'>by.done</span> <span class='kw'>&lt;-</span> <span class='fl'>TRUE</span>
   <span class='kw'>if</span>(<span class='no'>object</span>$<span class='no'>by</span> <span class='kw'>!=</span> <span class='st'>"NA"</span>)
     <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/stop'>stop</a></span>(<span class='st'>"by variables not supported!"</span>)
@@ -477,16 +480,16 @@
 }
 
 <span class='co'>## Heteroscedastic growth curve data example.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>123</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>111</span>)
 
 <span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/data.frame'>data.frame</a></span>(<span class='st'>"time"</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>30</span>)
 <span class='no'>d</span>$<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='fl'>2</span> + <span class='fl'>1</span> / (<span class='fl'>1</span> + <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Log'>exp</a></span>(<span class='fl'>0.5</span> * (<span class='fl'>15</span> - <span class='no'>d</span>$<span class='no'>time</span>))) +
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='fl'>30</span>, <span class='kw'>sd</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Log'>exp</a></span>(-<span class='fl'>4</span> + <span class='fl'>0.1</span> * <span class='no'>d</span>$<span class='no'>time</span>))
+  <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/Normal'>rnorm</a></span>(<span class='fl'>30</span>, <span class='kw'>sd</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Log'>exp</a></span>(-<span class='fl'>3</span> + <span class='fl'>2</span> * <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Trig'>cos</a></span>(<span class='no'>d</span>$<span class='no'>time</span>/<span class='fl'>30</span> * <span class='fl'>6</span> - <span class='fl'>3</span>)))
 
 <span class='co'>## Special model terms must be called with s2()!</span>
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(
-  <span class='st'>"mu"</span> <span class='kw'>=</span> <span class='no'>y</span> ~ <span class='fu'><a href='s2.html'>s2</a></span>(<span class='no'>time</span>, <span class='kw'>bs</span> <span class='kw'>=</span> <span class='st'>"gc"</span>),
-  <span class='st'>"sigma"</span> <span class='kw'>=</span> ~ <span class='fu'>s</span>(<span class='no'>time</span>)
+  <span class='no'>y</span> ~ <span class='fu'><a href='s2.html'>s2</a></span>(<span class='no'>time</span>, <span class='kw'>bs</span> <span class='kw'>=</span> <span class='st'>"gc"</span>),
+  <span class='no'>sigma</span> ~ <span class='fu'>s</span>(<span class='no'>time</span>)
 )
 
 <span class='co'>## Fit model with special model term.</span>

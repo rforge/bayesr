@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Survival Model Transformer Function — surv.transform • bamlss</title>
+<title>Survival Model Transformer Function — surv_transform • bamlss</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,7 +30,7 @@
 
 
 
-<meta property="og:title" content="Survival Model Transformer Function — surv.transform" />
+<meta property="og:title" content="Survival Model Transformer Function — surv_transform" />
 
 <meta property="og:description" content="This function takes a bamlss.frame and computes design matrices of model terms
   based on a time grid for time-dependent structured additive predictors in a survival context.
@@ -70,7 +70,7 @@ See the example section on how to extract the time grid design matrices." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -109,6 +109,9 @@ See the example section on how to extract the time grid design matrices." />
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -170,7 +173,7 @@ See the example section on how to extract the time grid design matrices." />
     
     </div>
 
-    <pre class="usage"><span class='fu'>surv.transform</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>data</span>, <span class='no'>family</span>,
+    <pre class="usage"><span class='fu'>surv_transform</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>data</span>, <span class='no'>family</span>,
   <span class='kw'>subdivisions</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>timedependent</span> <span class='kw'>=</span> <span class='st'>"lambda"</span>,
   <span class='kw'>timevar</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>idvar</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>is.cox</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='no'>...</span>)</pre>
@@ -181,7 +184,7 @@ See the example section on how to extract the time grid design matrices." />
     <tr>
       <th>x</th>
       <td><p>The <code>x</code> list, as returned from function
-    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code>surv.transform</code>,
+    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code>surv_transform</code>,
     holding all model matrices and other information that is used for
     fitting the model.</p></td>
     </tr>
@@ -238,7 +241,7 @@ See the example section on how to extract the time grid design matrices." />
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='cox.mode.html'>cox.mode</a></code>, <code><a href='cox.mcmc.html'>cox.mcmc</a></code>,
+    <div class='dont-index'><p><code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='cox.mode.html'>cox_mode</a></code>, <code><a href='cox.mcmc.html'>cox_mcmc</a></code>,
   <code><a href='simSurv.html'>simSurv</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
     
 
@@ -282,7 +285,7 @@ See the example section on how to extract the time grid design matrices." />
 #&gt;   ..$ y 
 #&gt;   .. ..$ Surv(time, event) </div><div class='input'>
 <span class='co'>## Apply the transformer.</span>
-<span class='no'>bf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>surv.transform</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>model.frame</span>,
+<span class='no'>bf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>surv_transform</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>model.frame</span>,
   <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>family</span>, <span class='kw'>is.cox</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>subdivisions</span> <span class='kw'>=</span> <span class='fl'>25</span>))
 
 <span class='co'>## Extract the time grid design matrix for term s(time).</span>

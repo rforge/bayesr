@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -69,6 +69,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -128,7 +131,7 @@
 <h2 class="hasAnchor">
 <a href="#the-basic-setup" class="anchor"></a>The basic setup</h2>
 <p>Estimation engines in <em>bamlss</em> are usually based on the model frame setup function <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code>, i.e., the functions all have a <code>x</code> argument, which contains all the necessary model and penalty matrices, and a <code>y</code> argument, which is the response (univariate or multivariate). In addition, an estimation engine usually has a <code>family</code> argument, which specifies the model to be estimated. However, this is not a mandatory argument, i.e., one could write an estimation function that is designed for one specific problem, only.</p>
-<p>The modeling setup is best explained by looking at the main estimation engines provided bay <em>bamlss</em>. The default optimizer using the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper function is <code><a href="../reference/bfit.html">bfit()</a></code>, which is a backfitting routine. The most important arguments are</p>
+<p>The modeling setup is best explained by looking at the main estimation engines provided by <em>bamlss</em>. The default optimizer using the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper function is <code><a href="../reference/bfit.html">bfit()</a></code>, which is a backfitting routine. The most important arguments are</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/bfit.html">bfit</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</code></pre></div>
 <p>The default sampling engine in <em>bamlss</em> is <code><a href="../reference/GMCMC.html">GMCMC()</a></code>, again the most important arguments are</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/GMCMC.html">GMCMC</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</code></pre></div>
@@ -264,19 +267,19 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## num ~ x1 + poly(x2, 5) + poly(x3, 5)
 ## -
 ## Parametric coefficients:
-##                    
-## (Intercept)   0.344
-## x1           -0.677
-## poly(x2, 5)1 -1.138
-## poly(x2, 5)2  2.575
-## poly(x2, 5)3  0.966
-## poly(x2, 5)4 -1.504
-## poly(x2, 5)5  1.201
-## poly(x3, 5)1 -0.214
-## poly(x3, 5)2  4.446
-## poly(x3, 5)3  0.200
-## poly(x3, 5)4 -0.052
-## poly(x3, 5)5 -0.627
+##              parameters
+## (Intercept)       0.344
+## x1               -0.677
+## poly(x2, 5)1     -1.138
+## poly(x2, 5)2      2.575
+## poly(x2, 5)3      0.966
+## poly(x2, 5)4     -1.504
+## poly(x2, 5)5      1.201
+## poly(x3, 5)1     -0.214
+## poly(x3, 5)2      4.446
+## poly(x3, 5)3      0.200
+## poly(x3, 5)4     -0.052
+## poly(x3, 5)5     -0.627
 ## ---
 ## Optimizer summary:
 ## -
@@ -448,7 +451,7 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 105.551 pd = 48.6437 runtime = 1.989
+## DIC = 105.551 pd = 48.6437 runtime = 1.873
 ## ---
 ## Optimizer summary:
 ## -

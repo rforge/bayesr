@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -69,6 +69,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -345,43 +348,47 @@ P &lt;-<span class="st"> </span>P *<span class="st"> </span>-<span class="dv">1<
 st &lt;-<span class="st"> </span><span class="kw">s</span>(ID, <span class="dt">bs=</span> <span class="st">"mrf"</span>, <span class="dt">xt =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="st">"penalty"</span> =<span class="st"> </span>P))
 
 ## Design and penalty constructor.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/str">str</a></span>(<span class="kw"><a href="../reference/smooth.construct.html">smooth.construct</a></span>(st, <span class="dt">data =</span> d, <span class="dt">knots =</span> <span class="ot">NULL</span>))</code></pre></div>
-<pre><code>## List of 19
-##  $ term          : chr "ID"
-##  $ bs.dim        : int 115
-##  $ fixed         : logi FALSE
-##  $ dim           : int 1
-##  $ p.order       : logi NA
-##  $ by            : chr "NA"
-##  $ label         : chr "s(ID)"
-##  $ xt            :List of 1
-##   ..$ penalty: num [1:115, 1:115] 2 0 0 0 0 0 0 0 0 -1 ...
-##   .. ..- attr(*, "call")= language nb2mat(neighbours = nb, style = "B")
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/str">str</a></span>(<span class="kw">smoothCon</span>(st, <span class="dt">data =</span> d, <span class="dt">knots =</span> <span class="ot">NULL</span>))</code></pre></div>
+<pre><code>## List of 1
+##  $ :List of 22
+##   ..$ term          : chr "ID"
+##   ..$ bs.dim        : int 115
+##   ..$ fixed         : logi FALSE
+##   ..$ dim           : int 1
+##   ..$ p.order       : logi NA
+##   ..$ by            : chr "NA"
+##   ..$ label         : chr "s(ID)"
+##   ..$ xt            :List of 1
+##   .. ..$ penalty: num [1:115, 1:115] 2 0 0 0 0 0 0 0 0 -1 ...
+##   .. .. ..- attr(*, "call")= language nb2mat(neighbours = nb, style = "B")
+##   .. .. ..- attr(*, "dimnames")=List of 2
+##   .. .. .. ..$ : chr [1:115] "14" "15" "16" "17" ...
+##   .. .. .. ..$ : chr [1:115] "14" "15" "16" "17" ...
+##   ..$ id            : NULL
+##   ..$ sp            : NULL
+##   ..$ X             : num [1:500, 1:115] 0 0 0 0 0 0 0 0 0 0 ...
 ##   .. ..- attr(*, "dimnames")=List of 2
-##   .. .. ..$ : chr [1:115] "14" "15" "16" "17" ...
-##   .. .. ..$ : chr [1:115] "14" "15" "16" "17" ...
-##  $ id            : NULL
-##  $ sp            : NULL
-##  $ X             : num [1:500, 1:115] 0 0 0 0 0 0 0 0 0 0 ...
-##   ..- attr(*, "dimnames")=List of 2
-##   .. ..$ : chr [1:500] "1" "2" "3" "4" ...
-##   .. ..$ : chr [1:115] "x100" "x101" "x102" "x103" ...
-##   ..- attr(*, "assign")= int [1:115] 1 1 1 1 1 1 1 1 1 1 ...
-##   ..- attr(*, "contrasts")=List of 1
-##   .. ..$ x: chr "contr.treatment"
-##  $ plot.me       : logi FALSE
-##  $ S             :List of 1
-##   ..$ : num [1:115, 1:115] 3 -1 0 0 0 0 0 0 0 0 ...
-##   .. ..- attr(*, "dimnames")=List of 2
-##   .. .. ..$ : chr [1:115] "100" "101" "102" "103" ...
-##   .. .. ..$ : chr [1:115] "100" "101" "102" "103" ...
-##  $ rank          : int 114
-##  $ null.space.dim: int 1
-##  $ knots         : Factor w/ 115 levels "100","101","102",..: 2 3 4 5 6 7 8 9 10 11 ...
-##  $ df            : int 115
-##  $ te.ok         : num 2
-##  $ noterp        : logi TRUE
-##  - attr(*, "class")= chr "mrf.smooth"</code></pre>
+##   .. .. ..$ : chr [1:500] "1" "2" "3" "4" ...
+##   .. .. ..$ : chr [1:115] "x100" "x101" "x102" "x103" ...
+##   .. ..- attr(*, "assign")= int [1:115] 1 1 1 1 1 1 1 1 1 1 ...
+##   .. ..- attr(*, "contrasts")=List of 1
+##   .. .. ..$ x: chr "contr.treatment"
+##   ..$ plot.me       : logi FALSE
+##   ..$ S             :List of 1
+##   .. ..$ : num [1:115, 1:115] 0.25 -0.0833 0 0 0 ...
+##   .. .. ..- attr(*, "dimnames")=List of 2
+##   .. .. .. ..$ : chr [1:115] "100" "101" "102" "103" ...
+##   .. .. .. ..$ : chr [1:115] "100" "101" "102" "103" ...
+##   ..$ rank          : int 114
+##   ..$ null.space.dim: int 1
+##   ..$ knots         : Factor w/ 115 levels "100","101","102",..: 2 3 4 5 6 7 8 9 10 11 ...
+##   ..$ df            : int 115
+##   ..$ te.ok         : num 2
+##   ..$ noterp        : logi TRUE
+##   ..$ side.constrain: logi TRUE
+##   ..$ C             : num [1, 1:115] 0 0.004 0.006 0.014 0.018 0.016 0.002 0.01 0.018 0.008 ...
+##   ..$ S.scale       : num 12
+##   ..- attr(*, "class")= chr [1:2] "mrf.smooth" "mgcv.smooth"</code></pre>
 </div>
 <div id="functional-random-intercepts" class="section level2">
 <h2 class="hasAnchor">

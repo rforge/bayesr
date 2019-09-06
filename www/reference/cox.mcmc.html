@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Cox Model Markov Chain Monte Carlo — cox.mcmc • bamlss</title>
+<title>Cox Model Markov Chain Monte Carlo — cox_mcmc • bamlss</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,7 +30,7 @@
 
 
 
-<meta property="og:title" content="Cox Model Markov Chain Monte Carlo — cox.mcmc" />
+<meta property="og:title" content="Cox Model Markov Chain Monte Carlo — cox_mcmc" />
 
 <meta property="og:description" content="This sampler function implements a derivative based MCMC algorithm for
   flexible Cox models with structured additive predictors." />
@@ -64,7 +64,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -103,6 +103,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -158,7 +161,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>cox.mcmc</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
+    <pre class="usage"><span class='fu'>cox_mcmc</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
   <span class='kw'>n.iter</span> <span class='kw'>=</span> <span class='fl'>1200</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>thin</span> <span class='kw'>=</span> <span class='fl'>1</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>step</span> <span class='kw'>=</span> <span class='fl'>20</span>, <span class='no'>...</span>)</pre>
     
@@ -168,7 +171,7 @@
     <tr>
       <th>x</th>
       <td><p>The <code>x</code> list, as returned from function
-    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code><a href='surv.transform.html'>surv.transform</a></code>,
+    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code><a href='surv.transform.html'>surv_transform</a></code>,
     holding all model matrices and other information that is used for
     fitting the model.</p></td>
     </tr>
@@ -248,7 +251,7 @@
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code>cox.mcmc</code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv.transform</a></code>,
+    <div class='dont-index'><p><code>cox_mcmc</code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv_transform</a></code>,
   <code><a href='simSurv.html'>simSurv</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
     
 
@@ -271,8 +274,8 @@
 <span class='co'>## Note the the family object cox_bamlss() sets</span>
 <span class='co'>## the default optimizer and sampler function!</span>
 <span class='co'>## First, posterior mode estimates are computed</span>
-<span class='co'>## using function cox.mode(), afterwards the</span>
-<span class='co'>## sampler cox.mcmc() is started.</span>
+<span class='co'>## using function cox_mode(), afterwards the</span>
+<span class='co'>## sampler cox_mcmc() is started.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"cox"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
 
 <span class='co'>## Plot estimated effects.</span>

@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -69,6 +69,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -137,7 +140,7 @@ f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
 \]</span> for an individual observation. The sum of the log-likelihood function over all observations is the target function of the optimization problem.</p>
 <p>In the distributional regression framework the parameters are linked to predictors by link functions, <span class="math display">\[
 \mu = \eta_\mu, \qquad \log(\sigma) = \eta_\sigma.
-\]</span> For the Gaussian <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> are linked to <span class="math inline">\(\eta_\mu\)</span> and <span class="math inline">\(\eta_\sigma\)</span> by the identity funciton and the logarithm, respectively.</p>
+\]</span> For the Gaussian <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> are linked to <span class="math inline">\(\eta_\mu\)</span> and <span class="math inline">\(\eta_\sigma\)</span> by the identity function and the logarithm, respectively.</p>
 <p>The score functions in <em>bamlss</em> are the first derivatives of the log-likelihood w.r.t. the predictors: <span class="math display">\[
 s_\mu = \frac{\partial\ell}{\partial\eta_\mu} = \frac{\partial\ell}{\partial\mu} \cdot
 \frac{\partial\mu}{\partial\eta_\mu} = \frac{y-\mu}{\sigma^2},

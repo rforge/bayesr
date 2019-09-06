@@ -64,7 +64,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -103,6 +103,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -169,20 +172,20 @@
 
 <span class='co'>## Lasso transformation function to set</span>
 <span class='co'>## adaptive weights from an unpenalized model.</span>
-<span class='fu'>lasso.transform</span>(<span class='no'>x</span>, <span class='no'>zeromodel</span>, <span class='kw'>nobs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+<span class='fu'>lasso_transform</span>(<span class='no'>x</span>, <span class='no'>zeromodel</span>, <span class='kw'>nobs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
 
 <span class='co'>## Plotting function for lasso() optimizer.</span>
-<span class='fu'>lasso.plot</span>(<span class='no'>x</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"criterion"</span>, <span class='st'>"parameters"</span>),
+<span class='fu'>lasso_plot</span>(<span class='no'>x</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"criterion"</span>, <span class='st'>"parameters"</span>),
   <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>retrans</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>color</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>show.lambda</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>labels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='no'>...</span>)
 
 <span class='co'>## Extract optimum stopping iteration for lasso() optimizer.</span>
 <span class='co'>## Based on the minimum of the information criterion.</span>
-<span class='fu'>lasso.stop</span>(<span class='no'>x</span>)
+<span class='fu'>lasso_stop</span>(<span class='no'>x</span>)
 
 <span class='co'>## Extract retransformed Lasso coefficients.</span>
-<span class='fu'>lasso.coef</span>(<span class='no'>x</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>lasso_coef</span>(<span class='no'>x</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -199,10 +202,10 @@
     </tr>
     <tr>
       <th>x</th>
-      <td><p>For function <code>lasso()</code> and <code>lasso.transform()</code> the <code>x</code> list, as returned
+      <td><p>For function <code>lasso()</code> and <code>lasso_transform()</code> the <code>x</code> list, as returned
     from function <code><a href='bamlss.frame.html'>bamlss.frame</a></code>, holding all model matrices and other information that
     is used for fitting the model. For the plotting function and
-    <code>lasso.stop()</code>/<code>lasso.coef()</code> the
+    <code>lasso_stop()</code>/<code>lasso_coef()</code> the
     corresponding <code><a href='bamlss.html'>bamlss</a></code> object fitted with the <code>lasso()</code> optimizer.</p></td>
     </tr>
     <tr>
@@ -247,7 +250,7 @@
     <tr>
       <th>digits</th>
       <td><p>Set the digits for printing when <code>verbose = TRUE</code>. If the optimum lambda value
-    is plotted, the number of decimal decimal places to be used within <code>lasso.plot()</code>.</p></td>
+    is plotted, the number of decimal decimal places to be used within <code>lasso_plot()</code>.</p></td>
     </tr>
     <tr>
       <th>flush</th>
@@ -345,10 +348,10 @@
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Andreas Groll, Julien Hambuckers, Thomas Kneib, and Nikolaus Umlauf. Lasso-type penalization in
+    <p>Andreas Groll, Julien Hambuckers, Thomas Kneib, and Nikolaus Umlauf (2019). Lasso-type penalization in
   the framework of generalized additive models for location, scale and shape.
-  Working papers, Faculty of Economics and Statistics, University of Innsbruck, 2018.
-  <a href='https://econpapers.repec.org/RePEc:inn:wpaper:2018-16'>https://econpapers.repec.org/RePEc:inn:wpaper:2018-16</a></p>
+  <em>Computational Statistics \&amp; Data Analysis</em>.
+  <a href='https://doi.org/10.1016/j.csda.2019.06.005'>https://doi.org/10.1016/j.csda.2019.06.005</a></p>
 <p>Oelker Margreth-Ruth and Tutz Gerhard (2015). A uniform framework for combination of
   penalties in generalized structured models. <em>Adv Data Anal Classif</em>.
   <a href='http://dx.doi.org/10.1007/s11634-015-0205-y'>http://dx.doi.org/10.1007/s11634-015-0205-y</a></p>
@@ -382,27 +385,27 @@
   <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='st'>"BIC"</span>, <span class='kw'>zeromodel</span> <span class='kw'>=</span> <span class='no'>b0</span>)
 
 <span class='co'>## Plot information criterion and coefficient paths.</span>
-<span class='fu'>lasso.plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>1</span>)
-<span class='fu'>lasso.plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>)
-<span class='fu'>lasso.plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.la(id).id"</span>)
-<span class='fu'>lasso.plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"sigma"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"sigma.s.la(id).id"</span>)
+<span class='fu'>lasso_plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>1</span>)
+<span class='fu'>lasso_plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+<span class='fu'>lasso_plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.la(id).id"</span>)
+<span class='fu'>lasso_plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"sigma"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"sigma.s.la(id).id"</span>)
 
 <span class='co'>## Extract coefficients for optimum Lasso parameter.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/coef'>coef</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso.stop</span>(<span class='no'>b1</span>))
+<span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/coef'>coef</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso_stop</span>(<span class='no'>b1</span>))
 
 <span class='co'>## Predict with optimum Lasso parameter.</span>
-<span class='no'>p1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso.stop</span>(<span class='no'>b1</span>))
+<span class='no'>p1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso_stop</span>(<span class='no'>b1</span>))
 
-<span class='co'>## Full MCMC, needs lasso.transform() to assign the</span>
+<span class='co'>## Full MCMC, needs lasso_transform() to assign the</span>
 <span class='co'>## adaptive weights from unpenalized model b0.</span>
-<span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='no'>lasso.transform</span>,
-  <span class='kw'>zeromodel</span> <span class='kw'>=</span> <span class='no'>b0</span>, <span class='kw'>nobs</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>y</span>), <span class='kw'>start</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/coef'>coef</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso.stop</span>(<span class='no'>b1</span>)),
+<span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='no'>lasso_transform</span>,
+  <span class='kw'>zeromodel</span> <span class='kw'>=</span> <span class='no'>b0</span>, <span class='kw'>nobs</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>y</span>), <span class='kw'>start</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/coef'>coef</a></span>(<span class='no'>b1</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fu'>lasso_stop</span>(<span class='no'>b1</span>)),
   <span class='kw'>n.iter</span> <span class='kw'>=</span> <span class='fl'>4000</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>b2</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b2</span>)
 
 <span class='no'>ci</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/confint'>confint</a></span>(<span class='no'>b2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>pterms</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sterms</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='fu'>lasso.plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.la(id).id"</span>, <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'>lasso_plot</span>(<span class='no'>b1</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.la(id).id"</span>, <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 <span class='kw'>for</span>(<span class='no'>i</span> <span class='kw'>in</span> <span class='fl'>1</span>:<span class='fl'>8</span>) {
   <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/abline'>abline</a></span>(<span class='kw'>h</span> <span class='kw'>=</span> <span class='no'>ci</span>[<span class='no'>i</span>, <span class='fl'>1</span>], <span class='kw'>lty</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"red"</span>)
   <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/abline'>abline</a></span>(<span class='kw'>h</span> <span class='kw'>=</span> <span class='no'>ci</span>[<span class='no'>i</span>, <span class='fl'>2</span>], <span class='kw'>lty</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"red"</span>)

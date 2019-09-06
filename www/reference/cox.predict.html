@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Cox Model Prediction — cox.predict • bamlss</title>
+<title>Cox Model Prediction — cox_predict • bamlss</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,10 +30,10 @@
 
 
 
-<meta property="og:title" content="Cox Model Prediction — cox.predict" />
+<meta property="og:title" content="Cox Model Prediction — cox_predict" />
 
-<meta property="og:description" content="This function takes a fitted Cox model, i.e., a model estimated by cox.mode
-  or cox.mcmc and computes predictions given a new data set or the
+<meta property="og:description" content="This function takes a fitted Cox model, i.e., a model estimated by cox_mode
+  or cox_mcmc and computes predictions given a new data set or the
   original values. Survival probabilities are computed using numerical integration, therefore,
   computation may take some time. To avoid problems with computer memory, the prediction
   of survival probabilities can be split into chunks and computed parallel on different cores." />
@@ -67,7 +67,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -106,6 +106,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -156,15 +159,15 @@
 
     <div class="ref-description">
     
-    <p>This function takes a fitted Cox model, i.e., a model estimated by <code><a href='cox.mode.html'>cox.mode</a></code>
-  or <code><a href='cox.mcmc.html'>cox.mcmc</a></code> and computes predictions given a new data set or the
+    <p>This function takes a fitted Cox model, i.e., a model estimated by <code><a href='cox.mode.html'>cox_mode</a></code>
+  or <code><a href='cox.mcmc.html'>cox_mcmc</a></code> and computes predictions given a new data set or the
   original values. Survival probabilities are computed using numerical integration, therefore,
   computation may take some time. To avoid problems with computer memory, the prediction
   of survival probabilities can be split into chunks and computed parallel on different cores.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>cox.predict</span>(<span class='no'>object</span>, <span class='no'>newdata</span>,
+    <pre class="usage"><span class='fu'>cox_predict</span>(<span class='no'>object</span>, <span class='no'>newdata</span>,
   <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"link"</span>, <span class='st'>"parameter"</span>, <span class='st'>"probabilities"</span>),
   <span class='kw'>FUN</span> <span class='kw'>=</span> <span class='kw'>function</span>(<span class='no'>x</span>) { <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/mean'>mean</a></span>(<span class='no'>x</span>, <span class='kw'>na.rm</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>) },
   <span class='kw'>time</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>subdivisions</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -176,7 +179,7 @@
     <tr>
       <th>object</th>
       <td><p>A <code>"bamlss"</code> object as returned from function <code><a href='bamlss.html'>bamlss</a></code>
-    using the optimizer <code><a href='cox.mode.html'>cox.mode</a></code> or sampler function <code><a href='cox.mcmc.html'>cox.mcmc</a></code>.</p></td>
+    using the optimizer <code><a href='cox.mode.html'>cox_mode</a></code> or sampler function <code><a href='cox.mcmc.html'>cox_mcmc</a></code>.</p></td>
     </tr>
     <tr>
       <th>newdata</th>
@@ -232,7 +235,7 @@
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='cox.mcmc.html'>cox.mcmc</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv.transform</a></code>,
+    <div class='dont-index'><p><code><a href='cox.mcmc.html'>cox_mcmc</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv_transform</a></code>,
   <code><a href='simSurv.html'>simSurv</a></code>, <code><a href='bamlss.html'>bamlss</a></code>, <code><a href='predict.bamlss.html'>predict.bamlss</a></code></p></div>
     
 
@@ -255,8 +258,8 @@
 <span class='co'>## Note the the family object cox_bamlss() sets</span>
 <span class='co'>## the default optimizer and sampler function!</span>
 <span class='co'>## First, posterior mode estimates are computed</span>
-<span class='co'>## using function cox.mode(), afterwards the</span>
-<span class='co'>## sampler cox.mcmc() is started.</span>
+<span class='co'>## using function cox_mode(), afterwards the</span>
+<span class='co'>## sampler cox_mcmc() is started.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"cox"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
 
 <span class='co'>## Predict survival probabilities P(T &gt; t).</span>

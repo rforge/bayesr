@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -108,6 +108,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -169,7 +172,7 @@
     </div>
 
     <pre class="usage"><span class='co'>## Family objects in bamlss:</span>
-<span class='fu'>ALD_bamlss</span>(<span class='no'>...</span>, <span class='kw'>p</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>eps</span> <span class='kw'>=</span> <span class='fl'>1e-10</span>)
+<span class='fu'>ALD_bamlss</span>(<span class='no'>...</span>, <span class='kw'>tau</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>eps</span> <span class='kw'>=</span> <span class='fl'>0.01</span>)
 <span class='fu'>beta_bamlss</span>(<span class='no'>...</span>)
 <span class='fu'>binomial_bamlss</span>(<span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"logit"</span>, <span class='no'>...</span>)
 <span class='fu'>cnorm_bamlss</span>(<span class='no'>...</span>)
@@ -223,12 +226,12 @@
       <td><p>Possible link functions.</p></td>
     </tr>
     <tr>
-      <th>eps</th>
-      <td><p>Constant to be used for the approximation of the absolute function.</p></td>
+      <th>tau</th>
+      <td><p>The quantile the should be fitted.</p></td>
     </tr>
     <tr>
-      <th>p</th>
-      <td><p>The quantile the should be fitted.</p></td>
+      <th>eps</th>
+      <td><p>Constant to be used for the approximation of the absolute function.</p></td>
     </tr>
     <tr>
       <th>&#8230;</th>

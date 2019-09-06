@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Cox Model Posterior Mode Estimation — cox.mode • bamlss</title>
+<title>Cox Model Posterior Mode Estimation — cox_mode • bamlss</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,7 +30,7 @@
 
 
 
-<meta property="og:title" content="Cox Model Posterior Mode Estimation — cox.mode" />
+<meta property="og:title" content="Cox Model Posterior Mode Estimation — cox_mode" />
 
 <meta property="og:description" content="This function computes posterior mode estimates of the parameters of a flexible Cox model
   with structured additive predictors using a Newton-Raphson algorithm. Integrals are solved
@@ -66,7 +66,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.3</span>
       </span>
     </div>
 
@@ -105,6 +105,9 @@
     </li>
     <li>
       <a href="../articles/engines.html">Estimation Engines</a>
+    </li>
+    <li>
+      <a href="../articles/bf.html">BAMLSS Model Frame</a>
     </li>
     <li>
       <a href="../articles/misc.html">Miscellaneous Topics</a>
@@ -162,7 +165,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>cox.mode</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
+    <pre class="usage"><span class='fu'>cox_mode</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
   <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>),
   <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>update.nu</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
@@ -174,7 +177,7 @@
     <tr>
       <th>x</th>
       <td><p>The <code>x</code> list, as returned from function
-    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code><a href='surv.transform.html'>surv.transform</a></code>,
+    <code><a href='bamlss.frame.html'>bamlss.frame</a></code> and transformed by function <code><a href='surv.transform.html'>surv_transform</a></code>,
     holding all model matrices and other information that is used for
     fitting the model.</p></td>
     </tr>
@@ -254,12 +257,12 @@
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='cox.mcmc.html'>cox.mcmc</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv.transform</a></code>,
+    <div class='dont-index'><p><code><a href='cox.mcmc.html'>cox_mcmc</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv_transform</a></code>,
   <code><a href='simSurv.html'>simSurv</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>## Please see the examples of function cox.mcmc()!
+    <pre class="examples"><div class='input'>## Please see the examples of function cox_mcmc()!
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
