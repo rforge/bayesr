@@ -5782,7 +5782,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return(ll)
             }
 
-            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]],
+              optim = if(length(tau2[[i]][[j]]) > 1) TRUE else FALSE), silent = TRUE)
             ll_contrib[[i]][["p"]] <- NA
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
