@@ -1200,8 +1200,16 @@ cround <- function(x, digits = 2)
 
 
 ## Naive smoothing parameter optimization.
-tau2.optim <- function(f, start, ..., scale = 10, eps = .Machine$double.eps^0.5, maxit = 1, add = TRUE, force.stop = TRUE)
+tau2.optim <- function(f, start, ..., scale = 10, eps = .Machine$double.eps^0.5, maxit = 1, add = TRUE, force.stop = TRUE, optim = FALSE)
 {
+  if(optim) {
+    lower <- start / scale
+    upper <- start * scale + if(add) 1 else 0
+    start <- optim(start, fn = f, method = "L-BFGS-B",
+      lower = lower, upper = upper)$par
+    return(start)
+  }
+
   foo <- function(par, start, k) {
     start[k] <- cround(par)
     return(f(start, ...))
@@ -5492,6 +5500,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(eps_loglik))
     eps_loglik <- 0.01
 
+  select <- list(...)$select
+  if(is.null(select))
+    select <- FALSE
+
   lasso <- list(...)$lasso
   if(is.null(lasso))
     lasso <- FALSE
@@ -5513,13 +5525,15 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- selfreq <- list()
+  beta <- eta <- etas <- tau2 <- selfreq <- ll_contrib <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
+    ll_contrib[[i]] <- list()
     selfreq[[i]] <- list()
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
+      ll_contrib[[i]][["p"]] <- NA
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
         beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
@@ -5549,6 +5563,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
+        ll_contrib[[i]][[paste0("s.", j)]] <- NA
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
@@ -5572,6 +5587,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       }
     }
   }
+  tbeta <- if(select) beta else NA
   tau2f <- 100
 
   iter2 <- 1L
@@ -5684,18 +5700,26 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
 
           tau2fe <- try(tau2.optim(objfun, tau2f), silent = TRUE)
+          ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun(tau2fe, retLL = TRUE)
             epsll <- abs((ll1 - ll0)/ll0)
             if((ll1 > ll0) & (epsll > eps_loglik)) {
               tau2f <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f * I)
-              beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
-              selfreq[[i]][["p"]] <- selfreq[[i]][["p"]] + 1
+              if(select) {
+                tbeta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+              } else {
+                beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                selfreq[[i]][["p"]] <- selfreq[[i]][["p"]] + 1
+              }
+              ll_contrib[[i]][["p"]] <- ll1 - ll0
             }
           }
-          eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
-          etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
+          if(!select) {
+            eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
+            etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
+          }
           edf <- edf + ncol(Xt)
         }
 
@@ -5755,11 +5779,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return(ll)
             }
 
-            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 1), silent = TRUE)
-
+            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+            ll_contrib[[i]][["p"]] <- NA
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
-
               epsll <- abs((ll1 - ll0)/ll0)
               if((ll1 > ll0) & (epsll > eps_loglik)) {
                 tau2[[i]][[j]] <- tau2s
@@ -5773,15 +5796,43 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 }
 
                 P <- matrix_inv(XWX + S)
-                beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                if(select) {
+                  tbeta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                } else {
+                  beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                  selfreq[[i]][[paste0("s.", j)]] <- selfreq[[i]][[paste0("s.", j)]] + 1
+                }
                 edf <- edf + sum_diag(XWX %*% P)
-                selfreq[[i]][[paste0("s.", j)]] <- selfreq[[i]][[paste0("s.", j)]] + 1
+                ll_contrib[[i]][[paste0("s.", j)]] <- ll1 - ll0
               }
             }
 
-            eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
-            etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][[paste0("s.", j)]])
+            if(!select) {
+              eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
+              etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][[paste0("s.", j)]])
+            }
           }
+        }
+      }
+
+      if(select) {
+        llc <- unlist(ll_contrib)
+        if(!all(is.na(llc))) {
+          llc <- names(llc)[which.max(llc)]
+          llc <- strsplit(llc, ".", fixed = TRUE)[[1]]
+          llc <- c(llc[1], paste0(llc[-1], collapse = "."))
+          beta[[llc[1]]][[llc[2]]] <- tbeta[[llc[1]]][[llc[2]]]
+          if(llc[2] != "p") {
+            llc2 <- gsub("s.", "", llc[2], fixed = TRUE)
+            Xn <- x[[llc[1]]]$smooth.construct[[llc2]]$X[shuffle_id[take], , drop = FALSE]
+            Xt <- x[[llc[1]]]$smooth.construct[[llc2]]$X[shuffle_id[take2], , drop = FALSE]
+          } else {
+            Xn <- x[[llc[1]]]$model.matrix[shuffle_id[take], , drop = FALSE]
+            Xt <- x[[llc[1]]]$model.matrix[shuffle_id[take2], , drop = FALSE]
+          }
+          eta[[llc[1]]] <- eta[[llc[1]]] + drop(Xn %*% beta[[llc[1]]][[llc[2]]])
+          etas[[llc[1]]] <- etas[[llc[1]]] + drop(Xt %*% beta[[llc[1]]][[llc[2]]])
+          selfreq[[llc[1]]][[llc[2]]] <- selfreq[[i]][["p"]] + 1
         }
       }
 
