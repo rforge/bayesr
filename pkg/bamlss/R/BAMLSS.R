@@ -8518,7 +8518,7 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
       } else rval$samples <- numeric(0)
     }
     if(length(rval$samples)) {
-      rval$samples <- apply(rval$samples, 2, function(x) { FUN(na.omit(x), ...) })
+      rval$samples <- apply(rval$samples, 2, function(x, ...) { FUN(na.omit(x), ...) })
       rval$samples <- if(!is.null(dim(rval$samples))) {
         t(rval$samples)
       } else {
