@@ -69,10 +69,10 @@ export(
   "BayesX.control",
   "get_BayesXsrc",
   "MVNORM",
-  "surv.transform",
-  "cox.mode",
-  "cox.mcmc",
-  "cox.predict",
+  "surv_transform",
+  "cox_mode",
+  "cox_mcmc",
+  "cox_predict",
 
   ## engine setup functions
   "randomize",
@@ -125,12 +125,12 @@ export(
 
   ## JM
   "jm_bamlss",
-  "jm.mode",
-  "jm.mcmc",
+  "jm_mode",
+  "jm_mcmc",
   "simJM",
   "rJM",
-  "jm.survplot",
-  "jm.predict",
+  "jm_survplot",
+  "jm_predict",
 
   ## others
   "GAMart",
@@ -168,10 +168,10 @@ export(
   "boost.frame",
   "la",
   "lasso",
-  "lasso.plot",
-  "lasso.stop",
-  "lasso.coef",
-  "lasso.transform",
+  "lasso_plot",
+  "lasso_stop",
+  "lasso_coef",
+  "lasso_transform",
 
   ## neural nets
   "n",

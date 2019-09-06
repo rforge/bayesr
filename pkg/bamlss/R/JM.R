@@ -13,7 +13,7 @@ jm_bamlss <- function(...)
     "links" = links,
     "transform" = function(x, jm.start = NULL, timevar = NULL, idvar = NULL, init.models = FALSE, 
                            plot = FALSE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...) {
-      rval <- jm.transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
+      rval <- jm_transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
                            formula = x$formula, family = x$family, data = x$model.frame,
                            jm.start = jm.start, timevar = timevar, idvar = idvar, 
                            nonlinear = nonlinear, edf_alt = edf_alt, start_mu = start_mu, k_mu = k_mu, ...)
@@ -38,7 +38,7 @@ jm_bamlss <- function(...)
         attr(y, "width") <- attr(rval$y[[1]], "width")
         attr(y, "subdivisions") <- attr(rval$y[[1]], "subdivisions")
         cat2("generating starting model for survival part...\n")
-        spar <- cox.mode(x = x2, y = list(y), family = gF2("cox"),
+        spar <- cox_mode(x = x2, y = list(y), family = gF2("cox"),
                          start = NULL, maxit = 100)$parameters
         if(plot) {
           b <- list("x" = x2, "model.frame" = x$model.frame, "parameters" = spar)
@@ -50,9 +50,9 @@ jm_bamlss <- function(...)
       
       return(rval)
     },
-    "optimizer" = jm.mode,
-    "sampler" = jm.mcmc,
-    "predict" = jm.predict
+    "optimizer" = jm_mode,
+    "sampler" = jm_mcmc,
+    "predict" = jm_predict
   )
   
   class(rval) <- "family.bamlss"
@@ -61,7 +61,7 @@ jm_bamlss <- function(...)
 
 
 ## (2) The transformer function.
-jm.transform <- function(x, y, data, terms, knots, formula, family,
+jm_transform <- function(x, y, data, terms, knots, formula, family,
                          subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
                          timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
                          sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...)
@@ -479,7 +479,7 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take, nonlinear
 }
 
 
-jm.mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
+jm_mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
                     criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
                     nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
                     update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
@@ -1885,7 +1885,7 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 
 ## (5) Joint model MCMC.
-jm.mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+jm_mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                     n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, 
                     digits = 4, step = 20, ...)
 {
@@ -3750,7 +3750,7 @@ rJM <- function(hazard, censoring, x, r,
 
 
 ## Prediction.
-jm.predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz", "loglik"),
+jm_predict <- function(object, newdata, type = c("link", "parameter", "probabilities", "cumhaz", "loglik"),
                        dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, subdivisions = 100, cores = NULL,
                        chunks = 1, verbose = FALSE,  ...)
 {
@@ -4049,7 +4049,7 @@ jm.predict <- function(object, newdata, type = c("link", "parameter", "probabili
 
 
 
-jm.survplot <- function(object, id = 1, dt = NULL, steps = 10, 
+jm_survplot <- function(object, id = 1, dt = NULL, steps = 10, 
                         points = TRUE, rug = !points)
 {
   on.exit(par(par(no.readonly = TRUE)))

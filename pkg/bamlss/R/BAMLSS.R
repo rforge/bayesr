@@ -2314,7 +2314,7 @@ bamlss.family <- function(family, type = "bamlss", ...)
       if(is.null(family$family)) stop("family is specified wrong, no family name available!")
       family <- family$family
     }
-    txt <- paste(family, type, sep = if(!is.null(type)) "_" else "")
+    txt <- paste(tolower(family), type, sep = if(!is.null(type)) "_" else "")
     txt <- gsub("bamlss.bamlss", "bamlss", txt, fixed = TRUE)
     family <- eval(parse(text = txt[1]))
     family <- family()

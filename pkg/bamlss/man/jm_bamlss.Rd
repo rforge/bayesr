@@ -1,10 +1,10 @@
 \name{jm_bamlss}
 \alias{jm_bamlss}
-\alias{jm.mode}
-\alias{jm.mcmc}
-\alias{jm.transform}
-\alias{jm.survplot}
-\alias{jm.predict}
+\alias{jm_mode}
+\alias{jm_mcmc}
+\alias{jm_transform}
+\alias{jm_survplot}
+\alias{jm_predict}
 
 \title{
   Fit Flexible Additive Joint Models
@@ -23,14 +23,14 @@ jm_bamlss(...)
 
 ## "bamlss.frame" transformer function
 ## to set up joint models.
-jm.transform(x, y, data, terms, knots, formula, family, subdivisions = 25,
+jm_transform(x, y, data, terms, knots, formula, family, subdivisions = 25,
   timedependent = c("lambda", "mu", "alpha", "dalpha"), timevar = NULL, 
   idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL, 
   sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, 
   k_mu = 6, ...)
                     
 ## Posterior mode optimizing engine.     
-jm.mode(x, y, start = NULL, weights = NULL, offset = NULL, 
+jm_mode(x, y, start = NULL, weights = NULL, offset = NULL, 
   criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1), 
   nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, 
   "alpha" = 0.1, "dalpha" = 0.1),
@@ -38,25 +38,25 @@ jm.mode(x, y, start = NULL, weights = NULL, offset = NULL,
   nback = 40, verbose = TRUE, digits = 4, ...)
 
 ## Sampler function.
-jm.mcmc(x, y, family, start = NULL, weights = NULL, offset = NULL, 
+jm_mcmc(x, y, family, start = NULL, weights = NULL, offset = NULL, 
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, 
   step = 20, ...)
   
 ## Predict function, set to default in jm_bamlss().
-jm.predict(object, newdata,
+jm_predict(object, newdata,
   type = c("link", "parameter", "probabilities", "cumhaz", "loglik"),
   dt, steps, id, FUN = function(x) { mean(x, na.rm = TRUE) }, 
   subdivisions = 100, cores = NULL, chunks = 1,
   verbose = FALSE,  ...)
   
 ## Survival plot.
-jm.survplot(object, id = 1, dt = NULL, steps = 10, 
+jm_survplot(object, id = 1, dt = NULL, steps = 10, 
   points = TRUE, rug = !points)
 }
 
 \arguments{
   \item{x}{The \code{x} list, as returned from function
-    \code{\link{bamlss.frame}} (and transformed by function \code{jm.transform()}),
+    \code{\link{bamlss.frame}} (and transformed by function \code{jm_transform()}),
     holding all model matrices and other information that is used for
     fitting the model.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
@@ -120,7 +120,7 @@ jm.survplot(object, id = 1, dt = NULL, steps = 10,
     that only every 10th sampled parameter will be stored.}
   \item{step}{How many times should algorithm runtime information be printed, divides \code{n.iter}.}
   \item{object}{A \code{"bamlss"} object processed with the JM optimizer function
-    \code{jm.mode()} ans/or sampler function \code{jm.mcmc()} for which the survival plot
+    \code{jm_mode()} ans/or sampler function \code{jm_mcmc()} for which the survival plot
     should be created.}
   \item{newdata}{Dataset for which to create predictions. Not needed for conditional survival probabilities.}
   \item{type}{Character string indicating which type of predictions to compute. \code{link} returns estimates
@@ -223,7 +223,7 @@ f <- list(
 ## Joint model estimation
 ## jm_bamlss() sets the default optimizer and sampler function.
 ## First, posterior mode estimates are computed using function
-## jm.mode(), afterwards the sampler jm.mcmc() is started.
+## jm_mode(), afterwards the sampler jm_mcmc() is started.
 b <- bamlss(f, data = d, family = "jm",
            timevar = "obstime", idvar = "id")
 
@@ -240,8 +240,8 @@ print(p)
 ## Plot of survival probabilities and
 ## corresponding longitudinal effects
 ## for individual id.
-jm.survplot(b, id = 3)
-jm.survplot(b, id = 30)
+jm_survplot(b, id = 3)
+jm_survplot(b, id = 30)
 
 
 ## Simulate survival data
@@ -267,12 +267,12 @@ f <- list(
   dalpha ~ -1
 )
 
-## Estimating posterior mode only using jm.mode()
+## Estimating posterior mode only using jm_mode()
 b_mode <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", 
                  sampler = FALSE)
 
-## Estimating posterior means using jm.mcmc() 
+## Estimating posterior means using jm_mcmc() 
 ##  with starting values generated from posterior mode 
 b_mean <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", optimizer = FALSE,

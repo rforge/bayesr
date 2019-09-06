@@ -46,9 +46,8 @@
 \Plainauthor{Nikolaus Umlauf, Achim Zeileis, Nadja Klein, Thorsten Simon}
 
 \title{\pkg{bamlss}: A Lego Toolbox for flexible {B}ayesian Regression (and Beyond)}
-\Plaintitle{bamlss: A Lego Toolbox for Bayesian Additive
-  Models for Location Scale and Shape (and Beyond)}
-\Shorttitle{A Lego Toolbox for BAMLSS (and Beyond)}
+\Plaintitle{bamlss: A Lego Toolbox for flexible Bayesian Regression (and Beyond)}
+\Shorttitle{A Lego Toolbox for flexible Bayesian Regression (and Beyond)}
 	
 \Keywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO,
   MCMC, \proglang{R}}
@@ -56,27 +55,6 @@
   MCMC, R}
 
 \Abstract{
-lego+flexibel, weil ich alles austauschen kann, Terme, Schätzer, Verteilungen
-
-2.1 Basic Bayesian regression: Logit Model
-2.2 Flexible terms and estimators -> spline + fused LASSO + Boosting hier auf den Appendix verweisen,
-  die Terme die wir hier haben gibts schon, aber man kann auch wietere Terme hinzufügen,
-  es ist sicher besonders wie einfach und flexibel man diese Terme im Bayes Kontext austauschen kann.
-
-3. A flexible Bayesian model framework/ theoretical background. Wir schreiben das jetzt im
-  distreg framework hin, es sind aber auch einfachere Fälle im Spezialfall enthalten.
-
-cut(order.results = TRUE)
-
-pathplot()
-lasso_stop()
-Immer underscore nehmen!
-
-Families mappen!
-Fig. -> Figure
-
-Gerade beim 2. Teil hat sich gegenüber JCGS viel getan.
-
 During the last decades there has been an increasing interest in distributional regression 
 models that allow to model the entire data distribution conditional on covariates. In particular,
 the  framework of structured additive distributional regression models enables to specify 
@@ -90,8 +68,7 @@ to embed many different approaches suggested in literature and software. We show
 implementing (new) algorithms, non-standard distributions or effect types, or the integration of
 already existing software, is relatively straightforward in this setting. We illustrate the
 usefulness of the approach by implementing highly efficient algorithms for fully Bayesian inference
-based on MCMC simulation, backfitting algorithms, gradient boosting, LASSO-type penalized models as
-well as neural network distributional regression models.
+based on MCMC simulation, backfitting algorithms, gradient boosting and LASSO-type penalized models.
 }
 
 \Address{
@@ -168,17 +145,25 @@ GAM-type distributional regression models using MCMC is the standalone package
 which provides highly efficient sampling schemes for very large
 data sets as well as (spatial) multilevel models. However, the implementation of new response
 distributions (models) in \pkg{BayesX} is not straightforward and users usually have to ask the
-maintainers to do so.
+maintainers to do so. Recently, the \proglang{R} package \pkg{brms}
+\citep{bamlss:Buerkner:2017, bamlss:Buerkner:2018}
+provides infrastructures for estimating Bayesian multilevel models using \pkg{Stan}. The software
+supports a variety of models and is also capable to estimate distributional regression models.
+However, as already mentioned above, estimation time is usually quite long and \pkg{Stan}
+does not easily handle models with a lot of observations.
 
-In this paper, we present the \proglang{R} package \pkg{bamlss}, a flexible ``Lego toolbox''
-for Bayesian distributional regression models (and beyond). The main contributions of \pkg{bamlss}
-are the following:
+In this paper, we present the \proglang{R} package \pkg{bamlss}, a ``Lego toolbox''
+for flexible Bayesian regression models (and beyond), which was first introduced in
+\citet{bamlss:Umlauf+Klein+Zeileis:2018}. Since then, the package has undergone significant further
+development. The focus has shifted tremendously from the pure Bayesian viewpoint to virtually a
+mixture of state-of-the-art estimation techniques from machine learning and statistics. The main
+contributions of \pkg{bamlss} are the following:
 %
 \begin{itemize}
-\item Estimate distributional regression models with usual \proglang{R} modeling ``look \& feel'',
-\item easy implementation of (new) models and algorithms (Bayesian or frequentist),
-\item comparison of existing optimization algorithms and samplers,
-\item or integration of existing implementations.
+\item With the usual \proglang{R} modeling ``look \& feel'',
+\item estimation of classic (GAM-type) regression models (Bayesian or frequentist),
+\item estimation of flexible distributional regression models,
+\item easy implementation of (new) models, model terms and algorithms.
 \end{itemize}
 %
 The package builds on the well-established \pkg{mgcv} infrastructures using
@@ -192,7 +177,7 @@ The package is made available from the Comprehensive
 The remainder of this paper is as follows. In Section~\ref{sec:motivation},
 four motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
 of the provided infrastructures. Section~\ref{sec:distreg}
-introduces distributional regression models in more detail. A thorough introduction of the
+introduces the flexible regression framework in more detail. A thorough introduction of the
 \proglang{R} package \pkg{bamlss}, describing the most important building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
 unified modeling approach using a complex distributional regression model for predicting
@@ -211,17 +196,19 @@ package can also deal with completely different estimation methods by simply exc
 model fitting functions, in this case by a LASSO-type estimation engine. The last example explains
 how special user defined smooth terms can be used with the default estimation engines.
 
-\subsection{Logit model} \label{sec:logitmodel}
+\subsection{Basic Bayesian regression: Logit Model} \label{sec:logitmodel}
 
 This example data is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
 labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
-The data can be loaded with
+The \pkg{bamlss} package and the data can be loaded with
 <<>>=
+library("bamlss")
 data("SwissLabor", package = "AER")
 @
 The data frame contains of 872 observations on 6 variables, where some of them might have
 a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
-binomial logit model using the default MCMC algorithm can be fitted with
+binomial logit model using the default MCMC algorithm can be fitted. First, the model formula
+specified with
 <<echo = FALSE, results = hide>>=
 if(!file.exists("SwissLaborModel.rda")) {
   f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
@@ -234,32 +221,34 @@ if(!file.exists("SwissLaborModel.rda")) {
 }
 @
 <<eval = FALSE>>=
-library("bamlss")
-
-## Model formula.
 f <- participation ~ income + age + education +
   youngkids + oldkids + foreign + I(age^2)
-
-## First, set the seed for reproducibility.
+@
+Then, to reproduce the results the seed of the random number generator is set to
+<<>>=
 set.seed(123)
-
-## Estimate model.
+@
+The model is estimated by
+<<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 12000, burnin = 2000, thin = 10)
 @
-using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. To obtain
-reasonable starting values for the MCMC sampler we run a backfitting algorithm that optimizes
-the posterior mode. Using
-the main model fitting function \fct{bamlss} all model fitting engines can be exchanged, 
-which is explained in detail in Section~\ref{sec:package} and the application
-Section~\ref{sec:application}. The default model fitting engines use family objects
+using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Note that
+the defaults are 1200 iterations, burnin of 200 and thinning 1. The reason is that during the modeling
+process, users usually want to obtain first results rather quickly and most commonly, if a final
+model is estimated, then the number of iterations of the MCMC sampler etc.\ is set much higher.
+To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
+optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
+engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
+application Section~\ref{sec:application}. The default model fitting engines use family objects
 (see Section~\ref{sec:package}), similar to the families that can be used
 with the \fct{glm} function, which enables easy implementation of new distributions (models).
 
 Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
 the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
 extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
-are available. \hypertarget{msummary}{}The model summary output is printed by~\label{logitmodel_summary}
+are available. \hypertarget{msummary}{}The model summary output is printed
+by~\label{logitmodel_summary}
 <<>>=
 summary(b)
 @
@@ -303,16 +292,17 @@ Heidelberger and Welch's convergence diagnostic
 \citep{bamlss:Heidelberger+Welch:1981, bamlss:Heidelberger+Welch:1983}.
 
 Model predictions on the probability scale can be obtained by the predict method, e.g.,
-to visualize the effect of covariate \code{age} on the probability we can do the following:
+to visualize the effect of covariate \code{age} on the probability we can create a new
+data frame for prediction
 <<>>=
-## Create new data for prediction.
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1, foreign = "no")
-
-## Predict for both cases of variable foreign.
-nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+@
+Afterwards, we predict for both cases of variable \code{foreign}
+<<>>=
+nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
-nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 @
 The predict method is applied on all MCMC samples and argument \code{FUN} specifies a function
 that can be applied on the predictor or distribution parameter samples. The default is the \fct{mean} function,
@@ -321,12 +311,15 @@ using function \fct{c95} to obtain credible intervals (note, individual samples 
 extracted by passing \code{FUN = function(x) \{ return(x) \}}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
 <<eval = FALSE>>=
-plot2d(p.no ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
-plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
+plot2d(pSwiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$pSwiss, nd$pForeign)), lty = c(2, 1, 2))
+plot2d(pForeign ~ age, data = nd, col.lines = "blue", add = TRUE,
   lty = c(2, 1, 2))
 @
-\begin{figure}[!ht]
+The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
+for the effect of \code{age} between both cases of factor variable \code{foreign}.
+
+\begin{figure}[!t]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
@@ -336,24 +329,90 @@ myblue <- function(n, ...) {
   rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
 }
 
-plot2d(p.no ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p.no, nd$p.yes)), scheme = 2,
+plot2d(pSwiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$pSwiss, nd$pForeign)), scheme = 2,
   fill.select = c(0, 1, 0, 1))
-plot2d(p.yes ~ age, data = nd, add = TRUE,
+plot2d(pForeign ~ age, data = nd, add = TRUE,
   scheme = 2, fill.select = c(0, 1, 0, 1), s2.col = myblue, axes = FALSE)
-plot2d(p.yes[, "Mean"] ~ age, data = nd, add = TRUE,
+plot2d(pForeign[, "Mean"] ~ age, data = nd, add = TRUE,
   col.lines = "blue", axes = FALSE)
-legend("topright", c("foreign yes", "foreign no"), lwd = 1,
+legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
-\caption{\label{fig:logit_effects} Effect of covariate \code{age} on estimated
-  probabilities for both cases, \code{foreign} \code{"yes"} and \code{"no"}. The solid lines
-  represent mean estimates, the shaded areas show 95\% credible intervals.}
-\end{figure}
-The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
-for the effect of \code{age} between both cases of factor variable \code{foreign}.
+<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
+f <- participation ~ income + age + education +
+  youngkids + oldkids + foreign + s(age, k = 10)
 
-\subsection{Gaussian location-scale model} \label{sec:locscalemodel}
+if(!file.exists("logit_spline.rda")) {
+  set.seed(123)
+  b <- bamlss(f, family = "binomial", data = SwissLabor,
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b, file = "logit_spline.rda")
+} else {
+  load("logit_spline.rda")
+}
+
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(b, term = "s(age)", spar = FALSE, ylab = expression(paste("Effect on Logi", t^-1, (pi))),
+  scheme = 2)
+@
+\caption{\label{fig:logit_effects} Left panel, quadratic polynomial effect of covariate \code{age}
+  on estimated probabilities for both cases, \code{foreign} \code{"yes"} and \code{"no"}.
+  Right panel, effect on $\text{Logit}^{-1}(\pi)$ of variable \code{age} using regression splines
+  (see Section~\ref{sec:flexm}).
+  The solid lines represent mean estimates, the shaded areas show 95\% credible intervals.}
+\end{figure}
+
+\subsection{Flexible model terms} \label{sec:flexm}
+
+Using the flexible infrastructure of \pkg{bamlss}, model terms can be easily exchanged. To give a
+first impression of the modeling capabilities, we again use the \code{SwissLabor} data and binomial
+logit model of Section~\ref{sec:logitmodel}, however, in this example we use
+regression splines to capture the nonlinear effect variable \code{age}.
+
+As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
+package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures. To estimate a spline model instead of
+a polynomial model for variable \code{age} the model formula only needs to be slightly adapted
+<<>>=
+f <- participation ~ income + age + education +
+  youngkids + oldkids + foreign + s(age, k = 10)
+@
+The function \fct{s} is the smooth term constructor from the \pkg{mgcv} package, the default of
+\fct{s} are thin-plate regression splines with \code{k = 10} basis functions. The model is again
+fitted by
+<<eval = FALSE>>=
+set.seed(123)
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  n.iter = 12000, burnin = 2000, thin = 10)
+@
+The estimated nonlinear effect can be plotted instantly by typing
+<<eval=FALSE>>=
+plot(b, term = "s(age)")
+@
+The estimated effect based on regression splines is shown if Figure~\ref{fig:logit_effects} and
+reveals that the quadratic polynomial seems to capture the nonlinearity appropriately. 
+
+To give a better impression what type of model terms can be used with the \pkg{bamlss} framework
+Table~\ref{tab:modelterms} lists commonly used specifications.
+\begin{table}[t!]
+\centering
+\begin{tabular}{p{6cm}p{8cm}}
+\hline
+Description & Formula \\ \hline
+Linear effects $\mathbf{X}\boldsymbol{\beta}$ & \code{~ x1 + x2 + x3} \\
+Nonlinear effects of continuous covariates $f(\mathbf{x}) = f(x_1)$ & \code{~ s(x1)} \\
+Two-dimensional surfaces\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{~ s(x1,x2)}, \code{~ te(x1,x2)} or \code{~ ti(x1,x2)} (higher dimensional terms possible) \\
+Spatially correlated effects\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{~ s(xs,bs="mrf",xt=list(penalty=K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()} \\
+Varying coefficients $f(\mathbf{x}) = x_1f(x_2)$ & \code{~ s(x2,by=x1)} \\
+Spatially varying effects\newline $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or\newline $f(\mathbf{x}) = x_1f(x_2, x_3)$ & \code{~ s(xs,bs="mrf",xt=list(penalty=K),by=x1)}, \code{~ s(x2,x3,by=x1)} or \code{~ te(x2,x3,by=x1)} \\
+Random intercepts with cluster index $c$: $f(\mathbf{x}) = \beta_c$ & \code{~ s(id,bs="re")}, where \code{id} is a factor of cluster indices \\
+Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{~ s(id,x1,bs="re")}, as above with continuous covariate \code{x1} \\ \hline
+\end{tabular}
+\caption{\label{tab:modelterms} Commonly used model term specifications with respective \proglang{R}
+  formula syntax.}
+\end{table}
+
+\subsection{Location-scale model} \label{sec:locscalemodel}
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using a small textbook example of the well-known simulated motorcycle accident data
@@ -374,8 +433,8 @@ $\sigma$ ensures positivity. We can use the following model formula for estimati
 <<>>=
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 @
-where function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
-\citep{bamlss:Wood:2019}, the default of \fct{s} are thin-plate regression splines.
+again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
+\citep{bamlss:Wood:2019}.
 Note that model formulae are provided as lists of formulae, i.e., each list entry
 represents one parameter of the response distribution. Moreover, note that all smooth
 terms, i.e., \fct{te}, \fct{ti}, etc., are supported by \pkg{bamlss}. This way, it is
@@ -392,10 +451,7 @@ if(!file.exists("toymodel.rda")) {
 }
 @
 <<eval = FALSE>>=
-## Set the seed for reproducibility.
 set.seed(456)
-
-## Estimate normal location-scale model.
 b <- bamlss(f, data = mcycle, family = "gaussian",
   n.iter = 12000, burnin = 2000, thin = 10)
 @
@@ -461,29 +517,29 @@ of fitted models can be assessed by scoring rules
 the \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} 
 provides easy evaluation of the continuous rank probability score (CRPS) for a couple of 
 distributions. Moreover, the Appendix~\ref{appendix:crps} provides a code snippet that computes
-the CRPS using numerical integration for the normal distribution.
+the CRPS using numerical integration.
 
 \subsection{LASSO-type penalization} \label{sec:lassointro}
 
 <<echo = FALSE>>=
-SwissLabor$c.income <- cut(SwissLabor$income,
+SwissLabor$cincome <- cut(SwissLabor$income,
   breaks = quantile(SwissLabor$income, prob = seq(0, 1, length = 10)),
-  include.lowest = TRUE)
+  include.lowest = TRUE, order.results = TRUE)
 
-SwissLabor$c.age <- cut(SwissLabor$age,
+SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
-  include.lowest = TRUE)
+  include.lowest = TRUE, order.results = TRUE)
 
-SwissLabor$c.education <- with(SwissLabor, cut(education,
+SwissLabor$ceducation <- with(SwissLabor, cut(education,
   unique(quantile(SwissLabor$education, prob = seq(0, 1, length = 10))),
-  include.lowest = TRUE))
+  include.lowest = TRUE, order.results = TRUE))
 
 SwissLabor$youngkids <- ordered(SwissLabor$youngkids)
 SwissLabor$oldkids[SwissLabor$oldkids > 4] <- 5
 SwissLabor$oldkids <- ordered(SwissLabor$oldkids)
 
 if(!file.exists("LassoSL.rda")) {
-  f <- participation ~ la(c.income,fuse=2) + la(c.age,fuse=2) + la(c.education,fuse=2) +
+  f <- participation ~ la(cincome,fuse=2) + la(cage,fuse=2) + la(ceducation,fuse=2) +
     la(youngkids,fuse=2) + la(oldkids,fuse=2) + la(foreign,fuse=2)
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
@@ -507,17 +563,17 @@ To apply the fused LASSO and to capture possible nonlinearities, the numeric var
 \code{income} and \code{education} are categorized using empirical quantiles. E.g., for variable
 \code{age} an ordered factor variable can be obtained by
 <<eval = FALSE>>=
-SwissLabor$c.age <- cut(SwissLabor$age,
+SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
-  include.lowest = TRUE)
+  include.lowest = TRUE, order.results = TRUE)
 @
 Variables \code{income} and \code{education} are transformed in the same way. Similarly,
 variable \code{youngkids} and \code{oldkids} are transformed to ordered factors using
 function \fct{ordered}. The formula for the fused LASSO model is then specified with the
 special \fct{la} model term constructor function provided in \pkg{bamlss}
 <<>>=
-f <- participation ~ la(c.income,fuse=2) + la(c.age,fuse=2) +
-  la(c.education,fuse=2) + la(youngkids,fuse=2) + la(oldkids,fuse=2) +
+f <- participation ~ la(cincome,fuse=2) + la(cage,fuse=2) +
+  la(ceducation,fuse=2) + la(youngkids,fuse=2) + la(oldkids,fuse=2) +
   la(foreign,fuse=2)
 @
 where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse=1},
@@ -535,7 +591,7 @@ argument \code{sampler = FALSE} in the \fct{bamlss} call.
 The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
 <<eval = FALSE>>=
-lasso.plot(b)
+lasso_plot(b)
 @
 and are shown in Figure~\ref{fig:lasso}.
 \begin{figure}[!ht]
@@ -544,24 +600,24 @@ and are shown in Figure~\ref{fig:lasso}.
 <<echo = FALSE, fig = TRUE, width = 4, height = 5>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 lwd <- 2
-lasso.plot(b, 1, spar = FALSE, main = "criterion", lwd = lwd)
+lasso_plot(b, 1, spar = FALSE, main = "criterion", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.income).c.income", main = "income", lwd = lwd)
+lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(cincome).cincome", main = "income", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.age).c.age", main = "age", lwd = lwd)
+lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "age", lwd = lwd)
 @
 \newline
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE, name = "pi.s.la(c.education).c.education", main = "education", lwd = lwd)
+lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(ceducation).ceducation", main = "education", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso.plot(b, 2, spar = FALSE,
+lasso_plot(b, 2, spar = FALSE,
   name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids", "pi.s.la(foreign).foreign"),
   main = "kids & foreign", lwd = lwd)
 legend("bottomleft", c("youngkids", "oldkids", "foreign"), lwd = lwd, col = rev(rainbow_hcl(3)),
@@ -580,19 +636,22 @@ all fused and have the same negative effect.
 \centering
 \setkeys{Gin}{width=0.32\textwidth}
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
-pincome <- predict(b, term = "c.income", intercept = FALSE, mstop = lasso.stop(b))
-page <- predict(b, term = "c.age", intercept = FALSE, mstop = lasso.stop(b))
-peducation <- predict(b, term = "c.education", intercept = FALSE, mstop = lasso.stop(b))
+pincome <- predict(b, term = "cincome", intercept = FALSE, mstop = lasso_stop(b))
+page <- predict(b, term = "cage", intercept = FALSE, mstop = lasso_stop(b))
+peducation <- predict(b, term = "ceducation", intercept = FALSE, mstop = lasso_stop(b))
 
 yr <- range(c(pincome, page, peducation))
 
-plot2d(pincome ~ income, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
+plot2d(pincome ~ income, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2,
+  ylab = expression(paste("Effect on Logi", t^-1, (pi))))
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3>>=
-plot2d(page ~ age, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
+plot2d(page ~ age, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2,
+  ylab = expression(paste("Effect on Logi", t^-1, (pi))))
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 4.3, results = hide>>=
-plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2)
+plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2,
+  ylab = expression(paste("Effect on Logi", t^-1, (pi))))
 @
 \caption{\label{fig:lasso_effects} Fused LASSO, estimated nonlinear effects of categorized variables
   \code{age}, \code{income} and \code{education} with added \fct{rug} representation
@@ -601,15 +660,15 @@ plot2d(peducation ~ education, data = SwissLabor, rug = TRUE, ylim = yr, lwd = 2
 In Figure~\ref{fig:lasso_effects}, the estimated effects of the categorized variables \code{age}, 
 \code{income} and \code{education} are shown. The effects are computed by predicting without
 intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
-function \fct{lasso.stop}. The stopping iteration is passed to the \fct{predict} method by specifying
+function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
 the \code{mstop} argument.
 <<eval = FALSE>>=
-p.age <- predict(b, term = "c.age", intercept = FALSE,
-  mstop = lasso.stop(b))
+page <- predict(b, term = "cage", intercept = FALSE,
+  mstop = lasso_stop(b))
 @
 The figure is then generated using the untransformed original covariate
 <<eval = FALSE>>=
-plot2d(p.age ~ age, data = SwissLabor, rug = TRUE)
+plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
 Using the fused LASSO estimation some nonlinearities
 can be identified, moreover, compared to the insignificant effect
@@ -1076,16 +1135,17 @@ Table~\ref{tab:functions} provides an overview of current available functions.
 \begin{table}[ht!]
 \centering
 \begin{tabular}{lll}
+\hline
 Step & Type        & Function \\ \hline
 \multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
  & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
- & & \code{lasso.transform()} \\ \hline
+ & & \code{lasso\_transform()} \\ \hline
 \multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{bfit()}, \code{bbfit()},
                               \code{boost()}, \code{lasso()} \\
- & &\code{cox.mode()}, \code{jm.mode()}  \\ \cline{2-3}
+ & &\code{cox\_mode()}, \code{jm\_mode()}  \\ \cline{2-3}
  & \multirow{2}{*}{Sampler} & \code{GMCMC()}, \code{BayesX()}, \code{JAGS()} \\
- & & \code{cox.mcmc()}, \code{jm.mcmc()} \\ \hline
-Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()}
+ & & \code{cox\_mcmc()}, \code{jm\_mcmc()} \\ \hline
+Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
 \end{tabular}
 \caption{\label{tab:functions} Current available functions that can be used for
   pre-processing, estimation and post-processing within the \pkg{bamlss} framework.}
@@ -1508,7 +1568,7 @@ Starting the sampler...
 The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
 on which the boosting took less than 6~minutes and the MCMC sampling took less the
 30~minutes. As a first diagnostic we check the log-likelihood contributions of the
-individual terms during the boosting optimization (Fig.~\ref{fig:appboost}).
+individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
 boost.plot(b, which = "loglik.contrib", intercept = FALSE)
@@ -1575,10 +1635,10 @@ splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
 As these diagnostics suggest that a reasonable initial state for the sampling
 has been found and the samples are independent draws from the posterior, one
 can go further and investigate the estimated effects. The boosting summary
-(Fig.~\ref{fig:appboost}) revealed that the terms \code{s(sqrt_cape)} and
+(Figure~\ref{fig:appboost}) revealed that the terms \code{s(sqrt_cape)} and
 \code{s(q_prof_PC1)} had a large contribution for improving the fit. 
 Looking at these effects illustrate how the atmospheric parameters
-of the reanalyses are related to lightning events (Fig.~\ref{fig:appeffect}),
+of the reanalyses are related to lightning events (Figure~\ref{fig:appeffect}),
 and thus help to understand the physics associated with lightning events.
 The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
@@ -1619,7 +1679,7 @@ which is also available as a source of \emph{latent energy}, i.e., energy that
 becomes free when water transfers from the gas to the liquid phase.
 
 Finally it is interesting to look at the effect acting on the link scale of
-the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Fig.~\ref{fig:appeffect}).
+the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Figure~\ref{fig:appeffect}).
 \code{sqrt_lsp} is the square root of large scale precipitation, i.e.,
 precipitation that is not linked to convective processes and thus it is
 not related to strong lightning events. The effect shows following relationship:

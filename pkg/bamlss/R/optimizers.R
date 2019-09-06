@@ -3986,7 +3986,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
         zeromodel <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
       }
     }
-    x <- lasso.transform(x, zeromodel, nobs = nrow(y))
+    x <- lasso_transform(x, zeromodel, nobs = nrow(y))
   }
   
   for(l in 1:nrow(lambdas)) {
@@ -4074,7 +4074,7 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
   list("parameters" = do.call("rbind", par), "lasso.stats" = ic, "nobs" = nrow(y))
 }
 
-lasso.transform <- function(x, zeromodel, nobs = NULL, ...)
+lasso_transform <- function(x, zeromodel, nobs = NULL, ...)
 {
   if(bframe <- inherits(x, "bamlss.frame")) {
     if(is.null(x$x))
@@ -4142,7 +4142,7 @@ lasso.transform <- function(x, zeromodel, nobs = NULL, ...)
 
 print.lasso.stats <- function(x, digits = 4, ...)
 {
-  ls <- attr(lasso.stop(x), "stats")
+  ls <- attr(lasso_stop(x), "stats")
   ic <- grep("ic", names(ls), ignore.case = TRUE, value = TRUE)
   cat(ic, "=", ls[ic], "-> at lambda =", ls[grep("lambda", names(ls))], "\n")
   ls <- ls[!grepl("lambda", names(ls))]
@@ -4152,7 +4152,7 @@ print.lasso.stats <- function(x, digits = 4, ...)
 }
 
 
-lasso.coef <- function(x, ...) {
+lasso_coef <- function(x, ...) {
   cx <- coef.bamlss(x, ...)
   ncx <- if(!is.null(dim(cx))) colnames(cx) else names(cx)
   if(is.null(x$x))
@@ -4186,7 +4186,7 @@ lasso.coef <- function(x, ...) {
 }
 
 
-lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, model = NULL, name = NULL,
+lasso_plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, model = NULL, name = NULL,
   mstop = NULL, retrans = FALSE, color = NULL, show.lambda = TRUE, labels = NULL,
   digits = 2, ...)
 {
@@ -4209,7 +4209,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
   if(is.null(mstop))
     mstop <- 1:nrow(x$parameters)
   if(retrans)
-    x$parameters <- lasso.coef(x)
+    x$parameters <- lasso_coef(x)
   npar <- colnames(x$parameters)
   for(j in c("Intercept", ".edf", ".lambda", ".tau"))
     npar <- npar[!grepl(j, npar, fixed = TRUE)]
@@ -4392,7 +4392,7 @@ lasso.plot <- function(x, which = c("criterion", "parameters"), spar = TRUE, mod
 }
 
 
-lasso.stop <- function(x)
+lasso_stop <- function(x)
 {
   if(!inherits(x, "lasso.stats"))
     x <- x$model.stats$optimizer$lasso.stats
