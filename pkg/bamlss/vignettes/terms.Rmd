@@ -225,7 +225,7 @@ levels(d$ID) <- c(levels(d$ID), pn[i])
 st <- s(ID, bs= "mrf", xt = list("penalty" = P))
 
 ## Design and penalty constructor.
-str(smooth.construct(st, data = d, knots = NULL))
+str(smoothCon(st, data = d, knots = NULL))
 ```
 
 ## Functional random intercepts

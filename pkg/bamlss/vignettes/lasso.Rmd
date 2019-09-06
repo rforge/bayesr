@@ -35,7 +35,7 @@ if(!file.exists("figures/lasso.rda")) {
     criterion = "BIC", nlambda = 30, multiple = TRUE)
 
   rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
-    criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso.stop(rentmodel)))
+    criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
 
   save(rentmodel, rentmodel_s, file = "figures/lasso.rda")
 } else {
@@ -104,27 +104,27 @@ Note that `fuse=1` is used for nominal fusion and `fuse=2` for ordinal fusion wi
 
 The resulting marginal BIC curves can be visualized with
 ```{r, eval=FALSE}
-lasso.plot(rentmodel, which = "criterion")
+lasso_plot(rentmodel, which = "criterion")
 ```
 ```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
 par(mfrow = c(1, 2))
-lasso.plot(rentmodel, which = "criterion", spar = FALSE)
+lasso_plot(rentmodel, which = "criterion", spar = FALSE)
 ```
 In this example both tuning parameters have the same value, also indicated by the gray dashed
 vertical lines. The coefficient paths w.r.t.\ the tuning parameters can be plotted, e.g.,
 for parameter $\mu$, with
 ```{r, eval=FALSE}
-lasso.plot(rentmodel, which = "parameters", model = "mu")
+lasso_plot(rentmodel, which = "parameters", model = "mu")
 ```
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 par(mfrow = c(1, 2))
-lasso.plot(rentmodel, which = "parameters", model = "mu")
+lasso_plot(rentmodel, which = "parameters", model = "mu")
 ```
 The legend on the right hand side of the plot is not necessarily very nice (too long). One option
-to select specific paths for plotting is to set the `name` argument in `lasso.plot()`, e.g.,
+to select specific paths for plotting is to set the `name` argument in `lasso_plot()`, e.g.,
 plotting the coefficient paths for the year of construction for parameter $\mu$ can be done by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
-lasso.plot(rentmodel, which = "parameters", model = "mu",
+lasso_plot(rentmodel, which = "parameters", model = "mu",
   name = "mu.s.la(yearc).yearc")
 ```
 The plotting function also replaces the names of the coefficients such that the labeling
@@ -134,7 +134,7 @@ not fused.
 
 Similarly, the effect on parameter $\sigma$ for the `area` of the apartment can be plotted by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
-lasso.plot(rentmodel, which = "parameters", model = "sigma",
+lasso_plot(rentmodel, which = "parameters", model = "sigma",
   name = "sigma.s.la(area).area")
 ```
 The plot shows that almost all categories of covariate `area` are fused using the BIC for tuning
@@ -152,14 +152,14 @@ E.g., using the Munich rent data, we could estimate the model with the default b
 model fitting engine `bfit()`
 ```{r, eval=FALSE}
 rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
-  criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso.stop(rentmodel)))
+  criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
 ```
 using the estimated parameters of the first model as starting values (`mstop` is the optimum
 stopping iteration of the `lasso()` optimizer). Note that we also optimize the step length of
-the backfitting algorithm by setting `nu = 1`. To compare both models by BIC, the `lasso.stop()`
+the backfitting algorithm by setting `nu = 1`. To compare both models by BIC, the `lasso_stop()`
 functions returns the optimum iteration of the `lasso()` optimizer
 ```{r}
-lasso.stop(rentmodel)
+lasso_stop(rentmodel)
 ```
 along the estimated degrees of freedom and the BIC. Similarly, the BIC of the second model can
 be extracted with
@@ -169,9 +169,9 @@ BIC(rentmodel_s)
 which is slightly a bit smaller than the first model suggesting that the grid search method
 is most probably enough in this case.
 
-Using the `lasso.stop()` function, we can also extract the corresponding predictions.
+Using the `lasso_stop()` function, we can also extract the corresponding predictions.
 ```{r, eval=FALSE}
-predict(rentmodel, mstop = lasso.stop(rentmodel))
+predict(rentmodel, mstop = lasso_stop(rentmodel))
 ```
 Note that the default in `coef()` and `predict()` would be to use the last LASSO iteration
 otherwise.

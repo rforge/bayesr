@@ -61,7 +61,7 @@ reference:
     contents:
     - '`bfit`'
     - '`boost`'
-    - '`cox.mode`'
+    - '`cox_mode`'
     - '`jm_bamlss`'
     - '`stabsel`'
     - '`boost2`'
@@ -74,7 +74,7 @@ reference:
     - '`BayesX`'
     - '`JAGS`'
     - '`MVNORM`'
-    - '`cox.mcmc`'
+    - '`cox_mcmc`'
     - '`GMCMC`'
     - '`jm_bamlss`'
   - title: Special Model Terms
@@ -104,7 +104,7 @@ reference:
     - '`coef.bamlss`'
     - '`colorlegend`'
     - '`continue`'
-    - '`cox.predict`'
+    - '`cox_predict`'
     - '`dl.bamlss`'
     - '`family.bamlss`'
     - '`fitted.bamlss`'
@@ -134,7 +134,7 @@ reference:
     - '`smooth.construct.ms.smooth.spec`'
     - '`smooth.construct.sr.smooth.spec`'
     - '`summary.bamlss`'
-    - '`surv.transform`'
+    - '`surv_transform`'
     - '`terms.bamlss`'
     - '`WAIC`'
 
