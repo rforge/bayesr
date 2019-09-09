@@ -2117,7 +2117,7 @@ boostm <- function(x, y, family, offset = NULL,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x = x, y = y, df = df, family = family,
+  x <- boost_transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
     weights = weights)
   for(i in nx) {
@@ -2335,17 +2335,17 @@ boostm <- function(x, y, family, offset = NULL,
   }
   
   itr <- if(!stopped) maxit else (iter - 1)
-  bsum <- make.boost.summary(x, itr, save.ll, edf, FALSE, nobs)
+  bsum <- make.boost_summary(x, itr, save.ll, edf, FALSE, nobs)
   bsum$criterion <- list(
     "bic" = -2 * save.ll[1:itr] + edf[1:itr] * log(nobs),
     "aic" = -2 * save.ll[1:itr] + edf[1:itr] * 2,
     "edf" = edf[1:itr]
   )
   if(plot)
-    plot.boost.summary(bsum)
+    plot.boost_summary(bsum)
   
   return(list("parameters" = parm2mat(parm, itr),
-    "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum,
+    "fitted.values" = eta, "nobs" = nobs, "boost_summary" = bsum,
     "runtime" = elapsed))
 }
 
@@ -2422,7 +2422,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   ## Setup boosting structure, i.e, all parametric
   ## terms get an entry in $smooth.construct object.
   ## Intercepts are initalized.
-  x <- boost.transform(x = x, y = y, df = df, family = family,
+  x <- boost_transform(x = x, y = y, df = df, family = family,
     maxit = maxit, eps = eps, initialize = initialize, offset = offset,
     weights = weights, always3 = always3, ...)
 
@@ -2901,10 +2901,10 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
   
-  bsum <- make.boost.summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf,
+  bsum <- make.boost_summary(x, if(is.null(nback)) maxit else (iter - 1), save.ll, edf,
     (hatmatrix | approx.edf | reverse.edf), length(eta[[1]]))
   if(plot)
-    plot.boost.summary(bsum)
+    plot.boost_summary(bsum)
 
   if(!is.null(selectfun)) {
     if(is.null(bsum$criterion))
@@ -2913,7 +2913,7 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
   }
   
   return(list("parameters" = parm2mat(parm, if(light) { 1L} else { if(is.null(nback)) maxit else (iter - 1) }),
-    "fitted.values" = eta, "nobs" = nobs, "boost.summary" = bsum, "runtime" = elapsed))
+    "fitted.values" = eta, "nobs" = nobs, "boost_summary" = bsum, "runtime" = elapsed))
 }
 
 
@@ -3003,7 +3003,7 @@ selfun <- function(iter, i, j, state, parm, x, family, sfun, yname, weights, sel
 }
 
 
-boost.frame <- function(formula, train, test, family = "gaussian", ...)
+boost_frame <- function(formula, train, test, family = "gaussian", ...)
 {
   if(!all(names(test) == names(train)))
     stop("test and training data must contain the same variables!")
@@ -3061,12 +3061,12 @@ boost.frame <- function(formula, train, test, family = "gaussian", ...)
   attr(formula, "response.name") <- yname
 
   bf <- list("formula" = formula, "x" = bf, "family" = family)
-  class(bf) <- c("boost.frame", "list")
+  class(bf) <- c("boost_frame", "list")
 
   bf
 }
 
-predict.boost.frame <- function(object, type = c("link", "parameter"), ...)
+predict.boost_frame <- function(object, type = c("link", "parameter"), ...)
 {
   type <- match.arg(type)
   object$x <- set.starting.values(object$x, object$parameters)
@@ -3090,7 +3090,7 @@ hatmat_sumdiag <- function(H)
 
 
 ## Boost setup.
-boost.transform <- function(x, y, df = NULL, family,
+boost_transform <- function(x, y, df = NULL, family,
   weights = NULL, offset = NULL, maxit = 100,
   eps = .Machine$double.eps^0.25, initialize = TRUE,
   nu = 0.1, nu.adapt = TRUE, ...)
@@ -3601,7 +3601,7 @@ get.maxq <- function(x)
 
 
 ## Extract summary for boosting.
-make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
+make.boost_summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
 {
   nx <- names(x)
   labels <- NULL
@@ -3639,26 +3639,26 @@ make.boost.summary <- function(x, mstop, save.ic, edf, hatmatrix, nobs)
   }
   if(!is.null(crit.contrib))
     bsum$crit.contrib <- crit.contrib
-  class(bsum) <- "boost.summary"
+  class(bsum) <- "boost_summary"
   return(bsum)
 }
 
 
-boost.summary <- function(object, ...)
+boost_summary <- function(object, ...)
 {
-  if(!is.null(object$model.stats$optimizer$boost.summary))
-    print.boost.summary(object$model.stats$optimizer$boost.summary, ...)
-  invisible(object$model.stats$optimizer$boost.summary)
+  if(!is.null(object$model.stats$optimizer$boost_summary))
+    print.boost_summary(object$model.stats$optimizer$boost_summary, ...)
+  invisible(object$model.stats$optimizer$boost_summary)
 }
 
 
 ## Smallish print function for boost summaries.
-print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
+print.boost_summary <- function(x, summary = TRUE, plot = TRUE,
   which = c("loglik", "loglik.contrib"), intercept = TRUE,
   spar = TRUE, ...)
 {
   if(inherits(x, "bamlss"))
-    x <- x$model.stats$optimizer$boost.summary
+    x <- x$model.stats$optimizer$boost_summary
   if(is.null(x))
     stop("no summary for boosted model available")
   if(summary) {
@@ -3739,12 +3739,12 @@ print.boost.summary <- function(x, summary = TRUE, plot = TRUE,
 }
 
 
-plot.boost.summary <- function(x, ...)
+plot.boost_summary <- function(x, ...)
 {
-  print.boost.summary(x, summary = FALSE, plot = TRUE, ...) 
+  print.boost_summary(x, summary = FALSE, plot = TRUE, ...) 
 }
 
-boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user"),
+boost_plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "aic", "bic", "user"),
   intercept = TRUE, spar = TRUE, mstop = NULL, name = NULL, drop = NULL, labels = NULL, color = NULL, ...)
 {
   if(!is.character(which)) {
@@ -3761,10 +3761,10 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
   }
   
   if(is.null(mstop))
-    mstop <- x$model.stats$optimizer$boost.summary$mstop
-  x$model.stats$optimizer$boost.summary$mstop <- mstop
-  x$model.stats$optimizer$boost.summary$ic <- x$model.stats$optimizer$boost.summary$ic[1:mstop]
-  x$model.stats$optimizer$boost.summary$loglik <- x$model.stats$optimizer$boost.summary$loglik[1:mstop, , drop = FALSE]
+    mstop <- x$model.stats$optimizer$boost_summary$mstop
+  x$model.stats$optimizer$boost_summary$mstop <- mstop
+  x$model.stats$optimizer$boost_summary$ic <- x$model.stats$optimizer$boost_summary$ic[1:mstop]
+  x$model.stats$optimizer$boost_summary$loglik <- x$model.stats$optimizer$boost_summary$loglik[1:mstop, , drop = FALSE]
   
   for(w in which) {
     if(w %in% c("loglik", "loglik.contrib", "aic", "bic", "user")) {
@@ -3772,7 +3772,7 @@ boost.plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
         par(mar = c(5.1, 4.1, 2.1, 2.1))
       if((w == "loglik.contrib") & spar)
         par(mar = c(5.1, 4.1, 2.1, 10.1))
-      plot.boost.summary(x, which = w, spar = FALSE, intercept = intercept, name = name, ...)
+      plot.boost_summary(x, which = w, spar = FALSE, intercept = intercept, name = name, ...)
     }
     if(w == "parameters") {
       if(spar)

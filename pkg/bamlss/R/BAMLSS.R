@@ -3581,7 +3581,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   } else {
     if(is.null(object$parameters))
       stop("cannot find any parameters!")
-    if(!is.null(dim(object$parameters)) & !is.null(object$model.stats$optimizer$boost.summary) & is.null(list(...)$mstop)) {
+    if(!is.null(dim(object$parameters)) & !is.null(object$model.stats$optimizer$boost_summary) & is.null(list(...)$mstop)) {
       samps <- object$parameters
       FUN <- function(x) { x }
       FUN2 <- function(x, ...) FUN(x)
@@ -3594,7 +3594,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       }
       mstop <- list(...)$mstop
       if(!is.null(mstop)) {
-        if(!is.null(object$model.stats$optimizer$boost.summary) & (length(mstop) > 1)) {
+        if(!is.null(object$model.stats$optimizer$boost_summary) & (length(mstop) > 1)) {
           FUN <- function(x) { x }
           FUN2 <- function(x, ...) FUN(x)
         }
@@ -6768,7 +6768,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
-    "scatter-resid", "max-acf", "param-samples", "boost.summary", "results",
+    "scatter-resid", "max-acf", "param-samples", "boost_summary", "results",
     "max-acf")
   if(!is.character(which)) {
     if(any(which > 8L))
@@ -6850,9 +6850,9 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
       } else plot(x$results, model = model, term = term, spar = spar, ask = ask, ...)
     }
 
-    if(which == "boost.summary") {
-      if(!is.null(x$boost.summary))
-        plot(x$boost.summary, ...)
+    if(which == "boost_summary") {
+      if(!is.null(x$boost_summary))
+        plot(x$boost_summary, ...)
     }
   }
 
@@ -7613,9 +7613,9 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
           samplestats(object[[j]])
         } else ms$optimizer
       } else ms$sampler
-      if(("boost.summary" %in% names(ms)) & is.null(mstop)) {
-        llb <- ms$boost.summary$ic
-        edfb <- ms$boost.summary$criterion$edf
+      if(("boost_summary" %in% names(ms)) & is.null(mstop)) {
+        llb <- ms$boost_summary$ic
+        edfb <- ms$boost_summary$criterion$edf
         ll <- c(ll, llb)
         edf <- c(edf, edfb)
       }
@@ -9826,7 +9826,7 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
       b <- bamlss(..., data = d0, plot = FALSE, boost.light = TRUE,
         light = TRUE, sampler = FALSE, optimizer = boost)
       attr(b, "mstop") <- list(
-        "logLik" = b$model.stats$optimizer$boost.summary$ic,
+        "logLik" = b$model.stats$optimizer$boost_summary$ic,
         "mstop" = nrow(b$parameters))
       b$parameters <- b$parameters[nrow(b$parameters), ]
       if(trace)
@@ -9902,7 +9902,7 @@ predict.bamlss.sl <- function(object, models, newdata,
   return(fit)
 }
 
-bboost.plot <- function(object, col = NULL)
+bboost_plot <- function(object, col = NULL)
 {
   ncrit <- names(attr(object[[1]], "mstop"))
   ncrit <- ncrit[!(ncrit %in% "mstop")]
@@ -9920,7 +9920,7 @@ bboost.plot <- function(object, col = NULL)
 }
 
 plot.bboost <- function(...) {
-  bboost.plot(...)
+  bboost_plot(...)
 }
 
 predict.bboost <- function(object, newdata, ..., cores = 1, pfun = NULL)
