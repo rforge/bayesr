@@ -591,7 +591,7 @@ argument \code{sampler = FALSE} in the \fct{bamlss} call.
 The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
 <<eval = FALSE>>=
-lasso_plot(b)
+pathplot(b)
 @
 and are shown in Figure~\ref{fig:lasso}.
 \begin{figure}[!ht]
@@ -600,24 +600,24 @@ and are shown in Figure~\ref{fig:lasso}.
 <<echo = FALSE, fig = TRUE, width = 4, height = 5>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 lwd <- 2
-lasso_plot(b, 1, spar = FALSE, main = "criterion", lwd = lwd)
+pathplot(b, 1, spar = FALSE, main = "criterion", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(cincome).cincome", main = "income", lwd = lwd)
+pathplot(b, 2, spar = FALSE, name = "pi.s.la(cincome).cincome", main = "income", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "age", lwd = lwd)
+pathplot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "age", lwd = lwd)
 @
 \newline
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso_plot(b, 2, spar = FALSE, name = "pi.s.la(ceducation).ceducation", main = "education", lwd = lwd)
+pathplot(b, 2, spar = FALSE, name = "pi.s.la(ceducation).ceducation", main = "education", lwd = lwd)
 @
 <<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
 par(mar = c(4.1, 4.1, 4.1, 4.1))
-lasso_plot(b, 2, spar = FALSE,
+pathplot(b, 2, spar = FALSE,
   name = c("pi.s.la(youngkids).youngkids", "pi.s.la(oldkids).oldkids", "pi.s.la(foreign).foreign"),
   main = "kids & foreign", lwd = lwd)
 legend("bottomleft", c("youngkids", "oldkids", "foreign"), lwd = lwd, col = rev(rainbow_hcl(3)),
@@ -1571,17 +1571,17 @@ on which the boosting took less than 6~minutes and the MCMC sampling took less t
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
-boost_plot(b, which = "loglik.contrib", intercept = FALSE)
+pathplot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
 \setkeys{Gin}{width=.8\textwidth}
 \begin{figure}
 \begin{center}
 <<app-plot-boost, fig = TRUE, height = 4, width = 6, echo = FALSE>>=
-boost_plot(b, c("loglik.contrib"), intercept = FALSE)
+pathplot(b, c("loglik.contrib"), intercept = FALSE)
 # layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
-# boost_plot(b, "loglik")
-# boost_plot(b, "loglik.contrib")
+# pathplot(b, "loglik")
+# pathplot(b, "loglik.contrib")
 @
 \end{center}
 \caption{Contribution to the log-likelihood of individual terms during
@@ -1854,6 +1854,20 @@ the normal distribution to be used with \pkg{bamlss} and the simulated motocycle
 presented in Section~\ref{sec:locscalemodel}.
 <<>>=
 CRPS <- function(par) {
+  n <- nrow(mcycle)
+  crps <- rep(0, n)
+  for(i in 1:n) {
+    tpar <- list("mu" = par$mu[i], "sigma" = par$sigma[i])
+    foo <- function(y) {
+      (fam$p(y, tpar) - 1 * (y >= mcycle$accel[i]))^2
+    }
+    crps[i] <- integrate(foo, -Inf, Inf)$value
+  }
+  return(crps)
+}
+
+CRPS <- function(object, newdata = NULL) {
+  yname <- response.name(object)
   n <- nrow(mcycle)
   crps <- rep(0, n)
   for(i in 1:n) {

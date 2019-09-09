@@ -2951,6 +2951,11 @@ response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE, 
   rn
 }
 
+response_name <- function(object, ...)
+{
+  return(response.name(object, ...))
+}
+
 ## Search and process "&"
 formula_and <- function(formula)
 {

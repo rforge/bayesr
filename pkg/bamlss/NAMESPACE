@@ -206,7 +206,10 @@ export(
   "bboost",
   "predict.bboost",
   "bboost_plot",
-  "pathplot"
+  "pathplot",
+
+  ## misc
+  "response_name"
 )
 
 S3method("plot", "bamlss")
