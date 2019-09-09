@@ -163,7 +163,8 @@ contributions of \pkg{bamlss} are the following:
 \item With the usual \proglang{R} modeling ``look \& feel'',
 \item estimation of classic (GAM-type) regression models (Bayesian or frequentist),
 \item estimation of flexible distributional regression models,
-\item easy implementation of (new) models, model terms and algorithms.
+\item easy implementation of (new) models and algorithms,
+\item easy interchangeability of model terms.
 \end{itemize}
 %
 The package builds on the well-established \pkg{mgcv} infrastructures using
@@ -399,14 +400,16 @@ Table~\ref{tab:modelterms} lists commonly used specifications.
 \begin{tabular}{p{6cm}p{8cm}}
 \hline
 Description & Formula \\ \hline
-Linear effects $\mathbf{X}\boldsymbol{\beta}$ & \code{~ x1 + x2 + x3} \\
-Nonlinear effects of continuous covariates $f(\mathbf{x}) = f(x_1)$ & \code{~ s(x1)} \\
-Two-dimensional surfaces\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{~ s(x1,x2)}, \code{~ te(x1,x2)} or \code{~ ti(x1,x2)} (higher dimensional terms possible) \\
-Spatially correlated effects\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{~ s(xs,bs="mrf",xt=list(penalty=K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()} \\
-Varying coefficients $f(\mathbf{x}) = x_1f(x_2)$ & \code{~ s(x2,by=x1)} \\
-Spatially varying effects\newline $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or\newline $f(\mathbf{x}) = x_1f(x_2, x_3)$ & \code{~ s(xs,bs="mrf",xt=list(penalty=K),by=x1)}, \code{~ s(x2,x3,by=x1)} or \code{~ te(x2,x3,by=x1)} \\
-Random intercepts with cluster index $c$: $f(\mathbf{x}) = \beta_c$ & \code{~ s(id,bs="re")}, where \code{id} is a factor of cluster indices \\
-Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{~ s(id,x1,bs="re")}, as above with continuous covariate \code{x1} \\ \hline
+Linear effects: $\mathbf{X}\boldsymbol{\beta}$ & \code{x1 + x2 + x3} \\
+Nonlinear effects of continuous\newline covariates: $f(\mathbf{x}) = f(x_1)$ & \multirow{2}{*}{\code{s(x1)}} \\ \hline
+Two-dimensional surfaces:\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{s(x1,x2)}, \code{te(x1,x2)} or \code{ti(x1,x2)} 
+\newline(higher dimensional terms possible). \\ \hline
+Spatially correlated effects:\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{s(xs,bs="mrf",xt=list(penalty=K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()}. \\ \hline
+Varying coefficients:\newline $f(\mathbf{x}) = x_1f(x_2)$ & \multirow{2}{*}{\code{s(x2,by=x1)}} \\ \hline
+Spatially varying effects:\newline $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or\newline $f(\mathbf{x}) = x_1f(x_2, x_3)$ &
+  \code{s(xs,bs="mrf",xt=list(penalty=K),by=x1)}, \code{s(x2,x3,by=x1)} or\newline \code{te(x2,x3,by=x1)} \\ \hline
+Random intercepts with cluster\newline index $c$: $f(\mathbf{x}) = \beta_c$ & \code{s(id,bs="re")}, where \code{id} is a factor of cluster indices. \\ \hline
+Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id,x1,bs="re")}, as above with continuous covariate \code{x1}. \\ \hline
 \end{tabular}
 \caption{\label{tab:modelterms} Commonly used model term specifications with respective \proglang{R}
   formula syntax.}
