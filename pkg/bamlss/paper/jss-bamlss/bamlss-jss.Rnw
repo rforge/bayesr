@@ -176,8 +176,8 @@ The package is made available from the Comprehensive
 \proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
 
 The remainder of this paper is as follows. In Section~\ref{sec:motivation},
-four motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
-of the provided infrastructures. Section~\ref{sec:distreg}
+three motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
+of the provided infrastructures. Section~\ref{sec:flexreg}
 introduces the flexible regression framework in more detail. A thorough introduction of the
 \proglang{R} package \pkg{bamlss}, describing the most important building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
@@ -190,12 +190,11 @@ flash counts.
 This section gives a first quick overview of the functionality of the package. The first
 example demonstrates that the usual ``look \& feel'' when using well-established model fitting 
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
-basic handling of the package should be relatively simple. The second example then
-explains how full distributional regression models can be estimated and show
-cases the flexibility of the provided modeling infrastructures. The third example shows that the
-package can also deal with completely different estimation methods by simply exchanging the
-model fitting functions, in this case by a LASSO-type estimation engine. The last example explains
-how special user defined smooth terms can be used with the default estimation engines.
+basic handling of the package should be relatively simple. The second example shows that the
+package can deal with a variety of different model terms and that model fitting functions
+can easily be exchanged, here, we exemplify this feature by applying a LASSO-type estimation engine.
+The third example then explains how full distributional regression models can be estimated and show
+cases once more the flexibility of the provided modeling infrastructures.
 
 \subsection{Basic Bayesian regression: Logit Model} \label{sec:logitmodel}
 
@@ -236,8 +235,8 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
 @
 using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Note that
 the defaults are 1200 iterations, burnin of 200 and thinning 1. The reason is that during the modeling
-process, users usually want to obtain first results rather quickly and most commonly, if a final
-model is estimated, then the number of iterations of the MCMC sampler etc.\ is set much higher.
+process, users usually want to obtain first results rather quickly. Afterwards, if a final
+model is estimated the number of iterations of the MCMC sampler etc.\ is usually set much higher.
 To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
 optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
 engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
@@ -309,7 +308,7 @@ The predict method is applied on all MCMC samples and argument \code{FUN} specif
 that can be applied on the predictor or distribution parameter samples. The default is the \fct{mean} function,
 however, in this case we additionally extract the empirical 2.5\% and 97.5\% quantiles
 using function \fct{c95} to obtain credible intervals (note, individual samples can be
-extracted by passing \code{FUN = function(x) \{ return(x) \}}, i.e., this way users can
+extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
 <<eval = FALSE>>=
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
@@ -390,8 +389,9 @@ The estimated nonlinear effect can be plotted instantly by typing
 <<eval=FALSE>>=
 plot(b, term = "s(age)")
 @
-The estimated effect based on regression splines is shown if Figure~\ref{fig:logit_effects} and
-reveals that the quadratic polynomial seems to capture the nonlinearity appropriately. 
+The estimated effect based on regression splines is shown in the right panel of
+Figure~\ref{fig:logit_effects} and reveals that the quadratic polynomial seems to capture the
+nonlinearity appropriately. 
 
 To give a better impression what type of model terms can be used with the \pkg{bamlss} framework
 Table~\ref{tab:modelterms} lists commonly used specifications.
@@ -420,17 +420,13 @@ SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
   include.lowest = TRUE, order.results = TRUE)
 
-SwissLabor$youngkids <- ordered(SwissLabor$youngkids)
-SwissLabor$oldkids[SwissLabor$oldkids > 4] <- 5
-SwissLabor$oldkids <- ordered(SwissLabor$oldkids)
-
 if(!file.exists("LassoSL.rda")) {
   f <- participation ~ income + education + youngkids + oldkids + foreign + 
     la(cage, fuse = 2)
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
     optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
-    criterion = "BIC", nlambda = 1000)
+    criterion = "BIC", nlambda = 2000)
 
   save(b, file = "LassoSL.rda")
 } else {
@@ -438,11 +434,12 @@ if(!file.exists("LassoSL.rda")) {
 }
 @
 
-Besides the supperted infrastructures from the \pkg{mgcv} package, it is also possible to
+Besides the supported infrastructures from the \pkg{mgcv} package, it is also possible to
 implement completely new model terms that may follow different setups compared to the basis
-functions approach. Moreover, using \pkg{bamlss}, estimation engines can be exchanged. To give
+functions approach. Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
 an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
-a fused LASSO algorithm.
+a fused LASSO algorithm (see also Section~\ref{sec:application} for a complex example using gradient
+boosting optimization).
 The algorithm performs variable selection in combination with factor fusion (clustering) and can also
 be used to identify interpretable nonlinearities. Methodological details on LASSO-type penalization
 using \pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
@@ -488,12 +485,12 @@ the \code{mstop} argument.
 page <- predict(b, term = "cage", intercept = FALSE,
   mstop = lasso_stop(b))
 @
-The figure is then generated using the untransformed original covariate
+The figure is then created using the untransformed original covariate
 <<eval = FALSE>>=
 plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
 Using the fused LASSO estimation some nonlinearities can be identified again, however, the
-BIC criterion seems to shrink out the positive effects that are shown for the spline estimate in
+BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
 in the right panel of Figure~\ref{fig:logit_effects}.
 
 \begin{figure}[!ht]
@@ -515,7 +512,7 @@ par(mar = c(4.1, 4.1, 4.1, 0.5))
 page <- predict(b, term = "cage", intercept = FALSE, mstop = lasso_stop(b))
 plot2d(page ~ age, data = SwissLabor, rug = TRUE, lwd = 2,
   ylab = expression(paste("Effect on Logi", t^-1, (pi))))
-mtext("Estimated effect", side = 3, line = 2.5, cex = 1.2, font = 2)
+mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
 @
 \caption{\label{fig:lasso} Left panel, BIC curve with optimum shrinkage parameter $\lambda$
   of the LASSO example model. The middle panel shows the corresponding coefficient paths for
@@ -631,7 +628,7 @@ distributions. Moreover, the Appendix~\ref{appendix:crps} provides a code snippe
 the CRPS using numerical integration.
 
 
-\section{Distributional regression} \label{sec:distreg}
+\section{A flexible Bayesian model framework} \label{sec:flexreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
 methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
@@ -810,7 +807,6 @@ number of candidate models. The following lists commonly used tools:
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
 
-\newpage
 
 \section{The bamlss package} \label{sec:package}
 
@@ -1155,6 +1151,7 @@ $$
 \begin{table}[ht!]
 \centering
 \begin{tabular}{lp{12cm}}
+\hline
 Name of element & Value \\ \hline
 \code{family} & Character string with the name of the family. \\
 \code{names} & Vector of character strings with the names of the parameters. \\
@@ -1164,7 +1161,7 @@ Name of element & Value \\ \hline
 \code{score} & A list with functions (one for each parameter) returning the first derivatives of
   the log-likelihood w.r.t.\ predictors. \\
 \code{hess} & A list with functions (one for each parameter) returning the negative second
-  derivatives of the log-likelihood w.r.t.\ predictors.
+  derivatives of the log-likelihood w.r.t.\ predictors. \\ \hline
 \end{tabular}
 \caption{\label{tab:families} Elements of the Gaussian distribution \code{"bamlss.family"} object.}
 \end{table}
@@ -1265,7 +1262,7 @@ given in Appendix~\ref{appendix:engine}. The example also provides details on th
 and return values of optimizer and sampler functions.
 
 
-\section{Application} \label{sec:application}
+\section{Flexible count regression for lightning prediction} \label{sec:application}
 
 This section illustrates the workflow with \pkg{bamlss} along a small case study.
 We want to build a statistical model linking positive counts of cloud-to-ground
@@ -1396,7 +1393,7 @@ pathplot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
 \setkeys{Gin}{width=.8\textwidth}
-\begin{figure}
+\begin{figure}[t!]
 \begin{center}
 <<app-plot-boost, fig = TRUE, height = 4, width = 6, echo = FALSE>>=
 pathplot(b, c("loglik.contrib"), intercept = FALSE)
@@ -1438,7 +1435,7 @@ reasonable starting values for the sampling. The auto-correlation functions
 reveal that after the thinning hardly any correlation remains between
 consecutive samples.
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{center}
 <<echo = FALSE, fig = TRUE>>=
 b2 <- b
@@ -1468,7 +1465,7 @@ log scale.
 plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"))
 @
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{center}
 \setkeys{Gin}{width=1\textwidth}
 <<echo = FALSE, fig = TRUE, height = 3, width = 6>>=
@@ -1567,8 +1564,8 @@ library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 @
 
+\begin{figure}[!t]
 \setkeys{Gin}{width=.7\textwidth}
-\begin{figure}
 \begin{center}
 <<app-plot-rootogram2, fig = TRUE, height = 5, width = 6, echo = FALSE>>=
 ## Plot rootogram.
@@ -1621,8 +1618,8 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   facet_wrap(~time) + theme_minimal()
 @
 
+\begin{figure}[t!]
 \setkeys{Gin}{width=1\textwidth}
-\begin{figure}
 \begin{center}
 <<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
 library("ggplot2")
