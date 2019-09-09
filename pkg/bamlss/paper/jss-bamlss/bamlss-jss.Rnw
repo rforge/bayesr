@@ -340,7 +340,7 @@ legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
 <<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
-f <- participation ~ income + age + education +
+f <- participation ~ income + education +
   youngkids + oldkids + foreign + s(age, k = 10)
 
 if(!file.exists("logit_spline.rda")) {
@@ -374,7 +374,7 @@ As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \
 package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures. To estimate a spline model instead of
 a polynomial model for variable \code{age} the model formula only needs to be slightly adapted
 <<>>=
-f <- participation ~ income + age + education +
+f <- participation ~ income + education +
   youngkids + oldkids + foreign + s(age, k = 10)
 @
 The function \fct{s} is the smooth term constructor from the \pkg{mgcv} package, the default of
@@ -1466,9 +1466,9 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 
 <<application-load-model, echo=FALSE>>=
 ## Load the data.
-# data("flash_austria", package = "FlashAustria")
-data("fitted_model", package = "FlashAustria")
-b <- flash_austria_model
+# data("FlashAustria", package = "FlashAustria")
+data("FlashAustriaModel", package = "FlashAustria")
+b <- FlashAustriaModel
 
 ## Specify formula.
 f <- list(
@@ -1481,9 +1481,9 @@ f <- list(
 
 <<application-data>>=
 ## Load the data.
-data("flash_austria", package = "FlashAustria")
-head(flash_austria_train)
-nrow(flash_austria_train)
+data("FlashAustria", package = "FlashAustria")
+head(FlashAustriaTrain)
+nrow(FlashAustriaTrain)
 @
 
 The motivation for this application is as follows: Lightning counts are not
@@ -1493,8 +1493,8 @@ predict lightning counts for the time before 2010 and thus analyze lightning
 events in the past for which no observations are available.
 
 The response of our statistical model are positive counts, with a mean of
-\Sexpr{round(mean(flash_austria_train$counts), 2)}, and a variance of
-\Sexpr{round(var(flash_austria_train$counts), 2)}. Thus, we are facing a
+\Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of
+\Sexpr{round(var(FlashAustriaTrain$counts), 2)}. Thus, we are facing a
 truncated count data distribution which is highly overdispersive.  In order to
 capture the truncation of the data and its overdispersion we employ a
 zero-truncated negative binomial distribution \citep{cameron2013count}, which
@@ -1529,7 +1529,7 @@ f <- list(
 
 Now we have all ingredients on hand to feed the standard interface for
 statistical models in \proglang{R}: A formula \code{f}, a family
-\code{ztnbinom_bamlss()}, and a data set \code{flash_austria_train}. Within the
+\code{ztnbinom_bamlss()}, and a data set \code{FlashAustriaTrain}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
 optimizer and the sampler. We choose the gradient boosting optimizer
 \code{boost()} in order to find initial values for the default sampler
@@ -1543,7 +1543,7 @@ end:
 
 %%% <<application-model2, eval=FALSE>>=
 %%% ## Fit model.
-%%% b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
+%%% b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
 %%%   optimizer = boost, maxit = 1000,                ## Boosting arguments.
 %%%   thin = 5, burnin = 1000, n.iter = 6000          ## Sampler arguments.
 %%% )
@@ -1552,7 +1552,7 @@ end:
 \begin{Schunk}
 \begin{Sinput}
 R> ## Fit model.
-R> b <- bamlss(f, family = "ztnbinom", data = flash_austria_train,
+R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
 +    optimizer = boost, maxit = 1000,                 ## Boosting arguments.
 +    thin = 5, burnin = 1000, n.iter = 6000           ## Sampler arguments.
 +  )
@@ -1571,17 +1571,17 @@ on which the boosting took less than 6~minutes and the MCMC sampling took less t
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 
 <<app-plot-boost, eval = FALSE>>=
-boost.plot(b, which = "loglik.contrib", intercept = FALSE)
+boost_plot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
 \setkeys{Gin}{width=.8\textwidth}
 \begin{figure}
 \begin{center}
 <<app-plot-boost, fig = TRUE, height = 4, width = 6, echo = FALSE>>=
-boost.plot(b, c("loglik.contrib"), intercept = FALSE)
+boost_plot(b, c("loglik.contrib"), intercept = FALSE)
 # layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
-# boost.plot(b, "loglik")
-# boost.plot(b, "loglik.contrib")
+# boost_plot(b, "loglik")
+# boost_plot(b, "loglik.contrib")
 @
 \end{center}
 \caption{Contribution to the log-likelihood of individual terms during
@@ -1591,12 +1591,12 @@ gradient boosting.}
 
 After 1000~iterations the term \code{s(sqrt_cape).mu} has the highest contribution
 to the log-likelihood with %
-\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(sqrt_cape)",2])} %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])} %
 followed by \code{s(q_prof_PC1).mu} with %
-\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$mu["s(q_prof_PC1)",2])}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])}.
 The term of the parameter $\theta$ \code{s(sqrt_lsp).theta} has a relatively small
 contribution with %
-\Sexpr{round(flash_austria_model$model.stats$optimizer$boost.summary$summary$theta["s(sqrt_lsp)",2])}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$theta["s(sqrt_lsp)",2])}.
 The overall message of this diagnostic is that the contributions to the
 log-likelihood at the end of the boosting procedure are very small and that
 the algorithm approached a stable state, which suggest that we retrieve
@@ -1690,12 +1690,12 @@ Before applying the model, i.e., predicting lightning cases before 2010, we
 check the marginal calibration of the distribution by hanging rootogram, a tool
 popular for the evaluation of count data regression models
 \citep{kleiber2016visualizing}. First we predict the distributional parameter
-on out-of-sample data \code{flash_austria_eval} for which lightning
+on out-of-sample data \code{FlashAustriaEval} for which lightning
 observations are on hand.
 
 <<app-rootogram1>>=
 ## Out-of-sample prediction.
-fit <- predict(b, newdata = flash_austria_eval, type = "parameter")
+fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
 str(fit)
 @
 
@@ -1733,7 +1733,7 @@ names(expect) <- 1:50
 expect <- as.table(expect)
 
 ## Observed frequencies.
-obsrvd <- table(flash_austria_eval$counts)[1:50]
+obsrvd <- table(FlashAustriaEval$counts)[1:50]
 @
 
 The observed and expected frequencies can be plugged into the
@@ -1770,7 +1770,7 @@ good out-of-sample calibration, we can take our model and predict a case
 for the period before 2010, for which no lightning data are available.
 The case of interest is a front moving from the West to the East on the
 Northern side of the Alps on 2001-09-15 and 2001-09-16.
-The case data \code{flash_austria_case} contains additional columns containing
+The case data \code{FlashAustriaCase} contains additional columns containing
 time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
@@ -1779,8 +1779,8 @@ by applying the cumulative distribution function \code{...$p} of the family.
 <<app-plot-case1>>=
 ## Predict case.
 library("sf")
-fit <- predict(b, newdata = flash_austria_case, type = "parameter")
-flash_austria_case$P10 <- 1 - fam$p(9, fit)
+fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 @
 
 We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
@@ -1793,7 +1793,7 @@ from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}.
 library("ggplot2")
 library("colorspace")
 
-ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
@@ -1811,7 +1811,7 @@ library("rnaturalearth")
 library("rnaturalearthdata")
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-ggplot() + geom_sf(aes(fill = P10), data = flash_austria_case) +
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   scale_fill_continuous_sequential("Inferno", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
