@@ -185,23 +185,23 @@
   <span class='kw'>do.optim</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
 
 <span class='co'>## Boosting summary extractor.</span>
-<span class='fu'>boost.summary</span>(<span class='no'>object</span>, <span class='no'>...</span>)
+<span class='fu'>boost_summary</span>(<span class='no'>object</span>, <span class='no'>...</span>)
 
 <span class='co'>## Plot all boosting paths.</span>
-<span class='fu'>boost.plot</span>(<span class='no'>x</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"loglik"</span>, <span class='st'>"loglik.contrib"</span>, <span class='st'>"parameters"</span>,
+<span class='fu'>boost_plot</span>(<span class='no'>x</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"loglik"</span>, <span class='st'>"loglik.contrib"</span>, <span class='st'>"parameters"</span>,
   <span class='st'>"aic"</span>, <span class='st'>"bic"</span>, <span class='st'>"user"</span>), <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>name</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>drop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>color</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
 
 <span class='co'>## Boosting summary printing and plotting.</span>
-<span class='co'># S3 method for boost.summary</span>
+<span class='co'># S3 method for boost_summary</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/print'>print</a></span>(<span class='no'>x</span>, <span class='kw'>summary</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"loglik"</span>, <span class='st'>"loglik.contrib"</span>), <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
-<span class='co'># S3 method for boost.summary</span>
+<span class='co'># S3 method for boost_summary</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>x</span>, <span class='no'>...</span>)
 
 <span class='co'>## Model frame for out-of-sample selection.</span>
-<span class='fu'>boost.frame</span>(<span class='no'>formula</span>, <span class='no'>train</span>, <span class='no'>test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>boost_frame</span>(<span class='no'>formula</span>, <span class='no'>train</span>, <span class='no'>test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -385,18 +385,18 @@
     <tr>
       <th>&#8230;</th>
       <td><p>For function <code>boost()</code>, arguments passed to <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>.
-    for function <code>boost.summary()</code> arguments passed to function <code>print.boost.summary()</code>.</p></td>
+    for function <code>boost_summary()</code> arguments passed to function <code>print.boost_summary()</code>.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>For function <code>boost.summary()</code> a list containing information on selection frequencies etc.
+    <p>For function <code>boost_summary()</code> a list containing information on selection frequencies etc.
   For function <code>boost()</code> and <code>boostm()</code> a list containing the following objects:</p>
 <dt>fitted.values</dt><dd><p>A named list of the fitted values based on the last boosting iteration
     of the modeled parameters of the selected distribution.</p></dd>
   <dt>parameters</dt><dd><p>A matrix, each row corresponds to the parameter values of one boosting iteration.</p></dd>
-  <dt>boost.summary</dt><dd><p>The boosting summary which can be printed and plotted.</p></dd>
+  <dt>boost_summary</dt><dd><p>The boosting summary which can be printed and plotted.</p></dd>
 
     
     <h2 class="hasAnchor" id="warnings"><a class="anchor" href="#warnings"></a>WARNINGS</h2>
@@ -430,10 +430,10 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Print and plot the boosting summary.</span>
-<span class='fu'>boost.summary</span>(<span class='no'>b</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>1</span>)
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>)
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.te(lon,lat)."</span>)
+<span class='fu'>boost_summary</span>(<span class='no'>b</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>1</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.te(lon,lat)."</span>)
 
 <span class='co'>## Extract estimated parameters for certain</span>
 <span class='co'>## boosting iterations.</span>
@@ -461,8 +461,8 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Plot AIC and log-lik contributions.</span>
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='st'>"AIC"</span>)
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='st'>"loglik.contrib"</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='st'>"AIC"</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='st'>"loglik.contrib"</span>)
 
 <span class='co'>## Out-of-sample selection of model terms.</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>123</span>)
@@ -480,7 +480,7 @@
 )
 
 <span class='co'>## Create model frame for out-of-sample selection.</span>
-<span class='no'>sm</span> <span class='kw'>&lt;-</span> <span class='fu'>boost.frame</span>(<span class='no'>f</span>, <span class='kw'>train</span> <span class='kw'>=</span> <span class='no'>d.train</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='no'>d.test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
+<span class='no'>sm</span> <span class='kw'>&lt;-</span> <span class='fu'>boost_frame</span>(<span class='no'>f</span>, <span class='kw'>train</span> <span class='kw'>=</span> <span class='no'>d.train</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='no'>d.test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
 
 <span class='co'>## Out-of-sample selection function.</span>
 <span class='no'>sfun</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>parameters</span>) {
@@ -495,7 +495,7 @@
   <span class='kw'>selectfun</span> <span class='kw'>=</span> <span class='no'>sfun</span>, <span class='kw'>always</span> <span class='kw'>=</span> <span class='st'>"best"</span>)
 
 <span class='co'>## Plot curve of negative out-of-sample log-likelihood.</span>
-<span class='fu'>boost.plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='st'>"user"</span>)
+<span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='st'>"user"</span>)
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
