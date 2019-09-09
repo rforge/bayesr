@@ -1,16 +1,15 @@
-\name{flash_austria_model}
-\alias{flash_austria_model}
-\alias{fitted_model}
+\name{FlashAustriaModel}
+\alias{FlashAustriaModel}
 
 \title{A fitted BAMLSS model object}
 
-\description{A bamlss model trained on the \code{flash_austria_train} data.
+\description{A bamlss model trained on the \code{\link{FlashAustriaTrain}} data.
 Lightning counts serve as response, the ERA5 covariates enter the model
 as smooth terms using P-splines. The zero-truncated negative binomial
 is employed as distribution.}
 
 \format{
-A \code{bamlss} object.
+An object of class \code{"bamlss"}.
 }
 
 \references{
@@ -21,9 +20,9 @@ J. Comput. Graph. Stat., 27, 612--627.
 }
 
 \examples{
-data("fitted_model", package = "FlashAustria")
-if (require(bamlss)) {
-  plot(flash_austria_model)
+data("FlashAustriaModel", package = "FlashAustria")
+if(require("bamlss")) {
+  plot(FlashAustriaModel)
 }
 }
 

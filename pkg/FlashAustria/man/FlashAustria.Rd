@@ -1,9 +1,8 @@
-\name{flash_austria}
+\name{FlashAustria}
 \alias{FlashAustria}
-\alias{flash_austria}
-\alias{flash_austria_train}
-\alias{flash_austria_eval}
-\alias{flash_austria_case}
+\alias{FlashAustriaTrain}
+\alias{FlashAustriaEval}
+\alias{FlashAustriaCase}
 
 \title{Flash Counts for Austria}
 
@@ -20,17 +19,17 @@ The temporal resolution of the data is hourly.
 \details{
 Only a random subset of the data given positive counts
 is provided for training and evaluation:
-\code{flash_austria_train} and \code{flash_austria_eval} contain 12000 and 6000
+\code{FlashAustriaTrain} and \code{FlashAustriaEval} contain 12000 and 6000
 observations, respectively.
 As prediction cases 2019-09-15 06 UTC, 2001-09-15 17 UTC, 2001-09-15 23 UTC and
 2001-09-16 13 UTC are provided.
 }
 
 \format{
-Three objects \code{flash_austria_train}, \code{flash_austria_eval} and
-\code{flash_austria_case} are added to the environment. \code{flash_austria_train} and
-\code{flash_austria_eval} are \code{data.frame}s. \code{flash_austria_case} is a
-\code{sf} object---which contains a geometry column providing the 32 x 32 sq-km grid
+Three objects \code{FlashAustriaTrain}, \code{FlashAustriaEval} and
+\code{FlashAustriaCase} are added to the environment. \code{FlashAustriaTrain} and
+\code{FlashAustriaEval} are \code{data.frame}s. \code{FlashAustriaCase} is a
+\code{"sf"} object---which contains a geometry column providing the 32 x 32 sq-km grid
 as polygons.
 
 \describe{
@@ -69,23 +68,23 @@ Copernicus Climate Change Service Climate Data Store (CDS), date of access: June
 }
 
 \examples{
-data("flash_austria", package = "FlashAustria")
-head(flash_austria_train)
-nrow(flash_austria_train)
-hist(flash_austria_train$counts,
+data("FlashAustria", package = "FlashAustria")
+head(FlashAustriaTrain)
+nrow(FlashAustriaTrain)
+hist(FlashAustriaTrain$counts,
   breaks = c(seq(.5, 50.5), Inf),
   xlim = c(0, 50),
   col = "lightgray"
 )
 
-plot(counts ~ log(sqrt_cape), flash_austria_train)
+plot(counts ~ log(sqrt_cape), FlashAustriaTrain)
 
-nrow(flash_austria_eval)
+nrow(FlashAustriaEval)
 
-if (require(sf)) {
-  class(flash_austria_case)
-  head(flash_austria_case)
-  plot(st_geometry(flash_austria_case))
+if(require("sf")) {
+  class(FlashAustriaCase)
+  head(FlashAustriaCase)
+  plot(st_geometry(FlashAustriaCase))
 }
 
 }
