@@ -205,7 +205,8 @@ export(
   "bayesx2",
   "bboost",
   "predict.bboost",
-  "bboost_plot"
+  "bboost_plot",
+  "pathplot"
 )
 
 S3method("plot", "bamlss")

@@ -9964,6 +9964,18 @@ vfun <- function(gamma, constr) {
 }
 
 
+pathplot <- function(object, ...)
+{
+  if(is.null(object$model.stats$optimizer)) {
+    warning("there is nothing to plot!")
+  }
+  if(!is.null(object$model.stats$optimizer$boost_summary))
+    boost_plot(object, ...)
+  if(!is.null(object$model.stats$optimizer$lasso.stats))
+    lasso_plot(object, ...)
+  return(invisible(NULL))
+}
+
 smooth.construct.ms.smooth.spec <- function(object, data, knots, ...)
 {
   class(object) <- "ps.smooth.spec"
