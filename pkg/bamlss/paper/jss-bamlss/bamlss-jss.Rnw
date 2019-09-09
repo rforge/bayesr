@@ -1849,31 +1849,23 @@ The \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2
 tools for model calibration checks. A commonly used measure is the CRPS. Since the number of
 candidate distributions in BAMLSS is quite large, it can happen that the CRPS for some
 distributions is not implemented. In such a case the reader can implement the CRPS using
-numerical integration. The following \proglang{R} code implements the \fct{CRPS} function for
-the normal distribution to be used with \pkg{bamlss} and the simulated motocycle data
+numerical integration. The following \proglang{R} code implements the \fct{CRPS} to be used with
+\pkg{bamlss} and a numeric response, e.g., which can be used with the motorcycle accident model
 presented in Section~\ref{sec:locscalemodel}.
 <<>>=
-CRPS <- function(par) {
-  n <- nrow(mcycle)
-  crps <- rep(0, n)
-  for(i in 1:n) {
-    tpar <- list("mu" = par$mu[i], "sigma" = par$sigma[i])
-    foo <- function(y) {
-      (fam$p(y, tpar) - 1 * (y >= mcycle$accel[i]))^2
-    }
-    crps[i] <- integrate(foo, -Inf, Inf)$value
-  }
-  return(crps)
-}
-
 CRPS <- function(object, newdata = NULL) {
-  yname <- response.name(object)
-  n <- nrow(mcycle)
+  yname <- response_name(object)
+  fam <- family(object)
+  if(is.null(fam$p))
+    stop("no p() function in family object!")
+  if(is.null(newdata))
+    newdata <- model.frame(object)
+  n <- nrow(newdata)
   crps <- rep(0, n)
+  par <- as.data.frame(predict(object, newdata = newdata, type = "parameter"))
   for(i in 1:n) {
-    tpar <- list("mu" = par$mu[i], "sigma" = par$sigma[i])
     foo <- function(y) {
-      (fam$p(y, tpar) - 1 * (y >= mcycle$accel[i]))^2
+      (fam$p(y, par[i, , drop = FALSE]) - 1 * (y >= newdata[[yname]][i]))^2
     }
     crps[i] <- integrate(foo, -Inf, Inf)$value
   }
