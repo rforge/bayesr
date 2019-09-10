@@ -163,8 +163,8 @@ contributions of \pkg{bamlss} are the following:
 \item With the usual \proglang{R} modeling ``look \& feel'',
 \item estimation of classic (GAM-type) regression models (Bayesian or frequentist),
 \item estimation of flexible distributional regression models,
-\item easy implementation of (new) models and algorithms,
 \item easy interchangeability of model terms.
+\item easy implementation of (new) models and algorithms,
 \end{itemize}
 %
 The package builds on the well-established \pkg{mgcv} infrastructures using
@@ -209,7 +209,7 @@ The data frame contains of 872 observations on 6 variables, where some of them m
 a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
 binomial logit model using the default MCMC algorithm can be fitted. First, the model formula
 specified with
-<<echo = FALSE, results = hide>>=
+<<echo=FALSE, results=hide>>=
 if(!file.exists("SwissLaborModel.rda")) {
   f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
   set.seed(123)
@@ -236,7 +236,7 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
 using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Note that
 the defaults are 1200 iterations, burnin of 200 and thinning 1. The reason is that during the modeling
 process, users usually want to obtain first results rather quickly. Afterwards, if a final
-model is estimated the number of iterations of the MCMC sampler etc.\ is usually set much higher.
+model is estimated the number of iterations of the MCMC sampler is usually set much higher.
 To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
 optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
 engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
@@ -260,13 +260,13 @@ The column \code{parameters} shows respective posterior mode estimates of the re
 coefficients, which are calculated by the upstream backfitting algorithm. Before 
 proceeding the analysis, users usually perform additional convergence checks of the
 MCMC chains by looking at traceplots and auto-correlation.
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot(b, which = c("samples", "max-acf"))
 @
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=1\textwidth}
-<<echo = FALSE, fig = TRUE, height = 3, width = 8>>=
+<<echo=FALSE, fig=TRUE, height=3, width=8>>=
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 4.1, 1.1))
 bsp <- b
 bsp$samples <- bsp$samples[, c("pi.p.(Intercept)"), drop = FALSE]
@@ -310,7 +310,7 @@ however, in this case we additionally extract the empirical 2.5\% and 97.5\% qua
 using function \fct{c95} to obtain credible intervals (note, individual samples can be
 extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)), lty = c(2, 1, 2))
 plot2d(pForeign ~ age, data = nd, col.lines = "blue", add = TRUE,
@@ -322,7 +322,7 @@ for the effect of \code{age} between both cases of factor variable \code{foreign
 \begin{figure}[!t]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 
 myblue <- function(n, ...) {
@@ -339,17 +339,17 @@ plot2d(pForeign[, "Mean"] ~ age, data = nd, add = TRUE,
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8, results=hide>>=
 f <- participation ~ income + education +
   youngkids + oldkids + foreign + s(age, k = 10)
 
-if(!file.exists("logit_spline.rda")) {
+if(!file.exists("SwissLaborModel-spline.rda")) {
   set.seed(123)
   b <- bamlss(f, family = "binomial", data = SwissLabor,
     n.iter = 12000, burnin = 2000, thin = 10)
-  save(b, file = "logit_spline.rda")
+  save(b, file = "SwissLaborModel-spline.rda")
 } else {
-  load("logit_spline.rda")
+  load("SwissLaborModel-spline.rda")
 }
 
 par(mar = c(4.1, 4.1, 0.1, 1.1))
@@ -380,7 +380,7 @@ f <- participation ~ income + education +
 The function \fct{s} is the smooth term constructor from the \pkg{mgcv} package, the default of
 \fct{s} are thin-plate regression splines with \code{k = 10} basis functions. The model is again
 fitted by
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 set.seed(123)
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 12000, burnin = 2000, thin = 10)
@@ -415,12 +415,12 @@ Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id,
   formula syntax.}
 \end{table}
 
-<<echo = FALSE>>=
+<<echo=FALSE, results=hide>>=
 SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
   include.lowest = TRUE, order.results = TRUE)
 
-if(!file.exists("LassoSL.rda")) {
+if(!file.exists("SwissLaborModel-lasso.rda")) {
   f <- participation ~ income + education + youngkids + oldkids + foreign + 
     la(cage, fuse = 2)
     
@@ -428,9 +428,9 @@ if(!file.exists("LassoSL.rda")) {
     optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
     criterion = "BIC", nlambda = 2000)
 
-  save(b, file = "LassoSL.rda")
+  save(b, file = "SwissLaborModel-lasso.rda")
 } else {
-  load("LassoSL.rda")
+  load("SwissLaborModel-lasso.rda")
 }
 @
 
@@ -445,7 +445,7 @@ be used to identify interpretable nonlinearities. Methodological details on LASS
 using \pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
 To apply the fused LASSO, the numeric variables \code{age} is categorized using empirical quantiles,
 e.g., with
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
   include.lowest = TRUE, order.results = TRUE)
@@ -459,7 +459,7 @@ f <- participation ~ income + education + youngkids + oldkids + foreign +
 where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse=1},
 ordered fusion \code{fuse=2}). To estimate the fused LASSO model only the default \code{optimizer}
 function in the \fct{bamlss} wrapper function call needs to exchanged
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   optimizer = lasso, sampler = FALSE,
   criterion = "BIC")
@@ -470,7 +470,7 @@ argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
 The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 pathplot(b)
 @
 and are shown in Figure~\ref{fig:lasso}. The BIC curves shows a clear minimum at the gray dashed
@@ -481,12 +481,12 @@ the estimated effect of the categorized variable
 intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
 function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
 the \code{mstop} argument.
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 page <- predict(b, term = "cage", intercept = FALSE,
   mstop = lasso_stop(b))
 @
 The figure is then created using the untransformed original covariate
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
 Using the fused LASSO estimation some nonlinearities can be identified again, however, the
@@ -496,18 +496,18 @@ in the right panel of Figure~\ref{fig:logit_effects}.
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.24\textwidth}
-<<echo = FALSE, fig = TRUE, width = 3, height = 5>>=
+<<echo=FALSE, fig=TRUE, width=3, height=5>>=
 par(mar = c(4.1, 4.1, 4.1, 0.5))
 lwd <- 2
 pathplot(b, 1, spar = FALSE, main = "Criterion", lwd = lwd)
 @
 \setkeys{Gin}{width=0.36\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 5, results = hide>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=5, results=hide>>=
 par(mar = c(4.1, 4.1, 4.1, 7.3))
 pathplot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "Coefficient paths age", lwd = lwd)
 @
 \setkeys{Gin}{width=0.32\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4, height = 5, results = hide>>=
+<<echo=FALSE, fig=TRUE, width=4, height=5, results=hide>>=
 par(mar = c(4.1, 4.1, 4.1, 0.5))
 page <- predict(b, term = "cage", intercept = FALSE, mstop = lasso_stop(b))
 plot2d(page ~ age, data = SwissLabor, rug = TRUE, lwd = 2,
@@ -530,7 +530,7 @@ data("mcycle", package = "MASS")
 @
 The data set contains measurements of the head acceleration
 (in $g$, variable \code{accel}) in a simulated motorcycle accident, recorded in milliseconds after
-impact (variable \code{times}). To estimate a Gaussian location-scale model with
+impact (variable \code{times}). To estimate a location-scale model with
 $$
 \texttt{accel} \sim \mathcal{N}(\mu = f_{\mu}(\texttt{times}),
   \log(\sigma) = f_{\sigma}(\texttt{times}))
@@ -548,17 +548,17 @@ represents one parameter of the response distribution. Moreover, note that all s
 terms, i.e., \fct{te}, \fct{ti}, etc., are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms. A full Bayesian semi-parametric 
 distributional regression model can be estimated with
-<<echo = FALSE, results = hide>>=
-if(!file.exists("toymodel.rda")) {
+<<echo=FALSE, results=hide>>=
+if(!file.exists("McycleModel.rda")) {
   set.seed(456)
   b <- bamlss(f, data = mcycle, family = "gaussian",
     n.iter = 12000, burnin = 2000, thin = 10)
-  save(b, file = "toymodel.rda")
+  save(b, file = "McycleModel.rda")
 } else {
-  load("toymodel.rda")
+  load("McycleModel.rda")
 }
 @
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 set.seed(456)
 b <- bamlss(f, data = mcycle, family = "gaussian",
   n.iter = 12000, burnin = 2000, thin = 10)
@@ -566,17 +566,17 @@ b <- bamlss(f, data = mcycle, family = "gaussian",
 again using 12000 iterations for the MCMC chain, a burnin of 2000 and a thinning
 of parameter of 10. After the estimation algorithms are finished, the estimated effects can be
 visualized instantly using the plotting method.
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot(b, model = c("mu", "sigma"))
 @
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "mu", spar = FALSE, scheme = 2, grid = 200)
 @
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 3.8>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE, scheme = 2, grid = 200)
 @
@@ -591,17 +591,17 @@ For judging how well the model fits to the data the user can inspect randomized 
 residuals \citep{bamlss:Dunn:Smyth:1996} using histograms or quantile-quantile plots. 
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot(b, which = c("hist-resid", "qq-resid"))
 @
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 @
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE)
 @
@@ -973,8 +973,6 @@ logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logit
 the data is loaded and the model formula is specified with
 <<>>=
 data("SwissLabor", package = "AER")
-
-## Model formula.
 f <- participation ~ income + age + education +
   youngkids + oldkids + foreign + I(age^2)
 @
@@ -985,13 +983,15 @@ bf <- bamlss.frame(f, data = SwissLabor, family = "binomial")
 @
 Then, posterior mode estimates are obtained by using the implemented backfitting estimation
 function \fct{bfit}
-<<results = hide>>=
+<<results=hide>>=
 pm <- with(bf, bfit(x, y, family))
 @
 The estimated parameters returned from function \fct{bfit} can then be used as starting
 values for the MCMC sampler function \fct{GMCMC}
-<<results = hide>>=
-samps <- with(bf, GMCMC(x, y, family, start = pm$parameters))
+<<results=hide>>=
+set.seed(123)
+samps <- with(bf, GMCMC(x, y, family, start = pm$parameters,
+  n.iter = 12000, burnin = 2000, thin = 10))
 @
 Using the parameters samples returned from function \fct{GMCMC}, statistics like the DIC are
 computed using the \fct{samplestats} function
@@ -1282,7 +1282,7 @@ In this example application we work only with a small subset of the data, which
 can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 \citep{FlashAustria}.
 
-<<application-load-model, echo=FALSE>>=
+<<echo=FALSE>>=
 ## Load the data.
 # data("FlashAustria", package = "FlashAustria")
 data("FlashAustriaModel", package = "FlashAustria")
@@ -1297,7 +1297,7 @@ f <- list(
 )
 @
 
-<<application-data>>=
+<<>>=
 ## Load the data.
 data("FlashAustria", package = "FlashAustria")
 head(FlashAustriaTrain)
@@ -1335,7 +1335,7 @@ smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructur
 \citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
 specification of the model:
 
-<<application-model1, eval=FALSE>>=
+<<eval=FALSE>>=
 ## Specify formula.
 f <- list(
   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
@@ -1359,7 +1359,7 @@ phase, and apply a thinning of the resulting chain of $5$.  Running
 \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples in the
 end:
 
-%%% <<application-model2, eval=FALSE>>=
+%%% <<eval=FALSE>>=
 %%% ## Fit model.
 %%% b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
 %%%   optimizer = boost, maxit = 1000,                ## Boosting arguments.
@@ -1388,14 +1388,14 @@ on which the boosting took less than 6~minutes and the MCMC sampling took less t
 30~minutes. As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 
-<<app-plot-boost, eval = FALSE>>=
+<<eval=FALSE>>=
 pathplot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
 \setkeys{Gin}{width=.8\textwidth}
 \begin{figure}[t!]
 \begin{center}
-<<app-plot-boost, fig = TRUE, height = 4, width = 6, echo = FALSE>>=
+<<fig=TRUE, height=4, width=6, echo=FALSE>>=
 pathplot(b, c("loglik.contrib"), intercept = FALSE)
 # layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
 # pathplot(b, "loglik")
@@ -1423,7 +1423,7 @@ reasonable initial values for the MCMC sampling.
 The MCMC chains are investigated by looking directly at the traces of the chains
 and with the auto-correlation function of the chains.
 
-<<app-plot-trace, fig = FALSE, eval = FALSE>>=
+<<fig=FALSE, eval=FALSE>>=
 plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
 @
 
@@ -1437,7 +1437,7 @@ consecutive samples.
 
 \begin{figure}[t!]
 \begin{center}
-<<echo = FALSE, fig = TRUE>>=
+<<echo=FALSE, fig=TRUE>>=
 b2 <- b
 b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1]]), fixed = TRUE)][, 1:2]
 
@@ -1461,14 +1461,14 @@ and thus help to understand the physics associated with lightning events.
 The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
 
-<<app-plot-effect1, fig = FALSE, eval = FALSE>>=
+<<fig=FALSE, eval=FALSE>>=
 plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"))
 @
 
 \begin{figure}[t!]
 \begin{center}
 \setkeys{Gin}{width=1\textwidth}
-<<echo = FALSE, fig = TRUE, height = 3, width = 6>>=
+<<echo=FALSE, fig=TRUE, height=3, width=6>>=
 par(mfrow = c(1, 3))
 plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"),
   ask = FALSE, spar = FALSE, scheme = 2, grid = 200,
@@ -1511,7 +1511,7 @@ popular for the evaluation of count data regression models
 on out-of-sample data \code{FlashAustriaEval} for which lightning
 observations are on hand.
 
-<<app-rootogram1>>=
+<<>>=
 ## Out-of-sample prediction.
 fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
 str(fit)
@@ -1524,7 +1524,7 @@ by all MCMC samples. The resulting \code{list} can be used to
 derive further quantities by employing the functions of the \pkg{bamlss}
 family that can be extracted using \code{family()},
 
-<<app-rootogram2>>=
+<<>>=
 ## Extract family.
 fam <- family(b)
 fam
@@ -1537,7 +1537,7 @@ frequencies of the positive counts. The function \code{...$d} takes the
 quantile as first argument, and the \code{list} with the parameters,
 as returned by \code{predict()}, as a second argument. 
 
-<<app-rootogram3>>=
+<<>>=
 ## Expected frequencies.
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 @
@@ -1546,7 +1546,7 @@ In order to plot the rootogram, we have to name the vector and
 coerce it to an object of class \code{table}. The verifying
 observed frequencies can be directly obtained by \code{table}.
 
-<<app-rootogram4>>=
+<<>>=
 names(expect) <- 1:50
 expect <- as.table(expect)
 
@@ -1558,7 +1558,7 @@ The observed and expected frequencies can be plugged into the
 default method of \code{rootogram} from the \pkg{countreg}
 package \citep{zeileis2008regression}.
 
-<<app-plot-rootogram1, eval = FALSE>>=
+<<eval=FALSE>>=
 ## Plot rootogram.
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
@@ -1567,7 +1567,7 @@ rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
 \begin{figure}[!t]
 \setkeys{Gin}{width=.7\textwidth}
 \begin{center}
-<<app-plot-rootogram2, fig = TRUE, height = 5, width = 6, echo = FALSE>>=
+<<fig=TRUE, height=5, width=6, echo=FALSE>>=
 ## Plot rootogram.
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
@@ -1594,7 +1594,7 @@ We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
 by applying the cumulative distribution function \code{...$p} of the family.
 
-<<app-plot-case1>>=
+<<>>=
 ## Predict case.
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
@@ -1606,7 +1606,7 @@ and the Inferno color scale from the \pkg{colorspace} package
 \citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
 from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
 
-<<app-plot-case2, eval = FALSE>>=
+<<eval=FALSE>>=
 ## Plot case.
 library("ggplot2")
 library("colorspace")
@@ -1621,7 +1621,7 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
 \begin{figure}[t!]
 \setkeys{Gin}{width=1\textwidth}
 \begin{center}
-<<app-plot-case-eval, fig = TRUE, echo = FALSE>>=
+<<fig=TRUE, echo=FALSE>>=
 library("ggplot2")
 library("colorspace")
 
@@ -1832,14 +1832,14 @@ f <- list(
   sigma ~ s(time)
 )
 
-if(!file.exists("gc.rda")) {
+if(!file.exists("GrowthCurveModel.rda")) {
   b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
-  save(b, file = "gc.rda")
+  save(b, file = "GrowthCurveModel.rda")
 } else {
-  load("gc.rda")
+  load("GrowthCurveModel.rda")
 }
 @
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 ## Simulate data.
 set.seed(111)
 
@@ -1863,7 +1863,7 @@ The estimated effects are shown in Figure~\ref{fig:gcurve}.
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 p <- predict(b, model = "mu", FUN = c95)
 plot(y ~ time, data = d, main = expression(mu))
@@ -1871,7 +1871,7 @@ plot2d(p ~ time, data = d, add = TRUE, axes = FALSE,
   fill.select = c(0, 1, 0, 1), scheme = 2)
 points(d$time, d$y)
 @
-<<echo = FALSE, fig = TRUE, width = 4.5, height = 4.7>>=
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, model = "sigma", spar = FALSE, scheme = 2, main = expression(log(sigma)))
 @
@@ -1989,7 +1989,7 @@ nd <- data.frame("x2" = seq(0, 1, length = 100))
 nd$p <- predict(b, newdata = nd, term = "x2")
 @
 Plot the estimated effect of variable \code{x2}.
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 plot2d(p ~ x2, data = nd)
 @
 
@@ -2145,7 +2145,7 @@ for(j in c("x1", "x2", "x3")) {
 }
 @
 The estimated effects can be plotted with:
-<<eval = FALSE>>=
+<<eval=FALSE>>=
 par(mfrow = c(1, 3))
 plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
