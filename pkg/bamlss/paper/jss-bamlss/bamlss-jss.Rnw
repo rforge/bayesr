@@ -1414,7 +1414,7 @@ pathplot(b, which = "loglik.contrib", intercept = FALSE)
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
 \begin{center}
-<<fig=TRUE, height=5, width=6, echo=FALSE>>=
+<<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
 pathplot(b, c("loglik.contrib"), intercept = FALSE, spar = FALSE)
 # layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
@@ -1618,7 +1618,7 @@ FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 \begin{figure}[t!]
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
-<<fig=TRUE, echo=FALSE>>=
+<<fig=TRUE, echo=FALSE, width=7, height=5>>=
 library("ggplot2")
 library("colorspace")
 
