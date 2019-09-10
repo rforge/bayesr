@@ -118,6 +118,14 @@ generalized additive models (GAMs), etc. -- focus on characterization of the mea
 and ignore changes in other moments, GAMLSS has the clear advantage to alleviate the risk of
 model misspecification and therefore provides much more reliable probabilistic forecasts.
 
+Besides the increasing interest in distributional regression, nowadays, regression models are
+becoming more and more complex, because of the complexity of the problem, sometimes because more and
+more data is available or because interactions have to be taken into account in many applications,
+etc. This is not an easy problem to solve and sometimes requires a flexible development environment
+to avoid reinventing the wheel. However, although some implementations for regression modeling seem
+to be quite flexible in the first place, the possibilities are usually limited, e.g., concerning
+models and estimation algorithms.
+
 The \proglang{R} package \pkg{gamlss}
 \citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}
 \citep{bamlss:Yee:2009, bamlss:Yee:2019} were the first packages
@@ -182,7 +190,7 @@ introduces the flexible regression framework in more detail. A thorough introduc
 \proglang{R} package \pkg{bamlss}, describing the most important building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
 unified modeling approach using a complex distributional regression model for predicting
-flash counts.
+lighting counts in complex terrain.
 
 
 \section{Motivating examples} \label{sec:motivation}
@@ -236,12 +244,13 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
 using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Note that
 the defaults are 1200 iterations, burnin of 200 and thinning 1. The reason is that during the modeling
 process, users usually want to obtain first results rather quickly. Afterwards, if a final
-model is estimated the number of iterations of the MCMC sampler is usually set much higher.
+model is estimated the number of iterations of the MCMC sampler is usually set much higher to
+get close to i.i.d.\ samples from the posterior distribution.
 To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
 optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
 engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
 application Section~\ref{sec:application}. The default model fitting engines use family objects
-(see Section~\ref{sec:package}), similar to the families that can be used
+(see also Section~\ref{sec:package}), similar to the families that can be used
 with the \fct{glm} function, which enables easy implementation of new distributions (models).
 
 Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
@@ -363,6 +372,8 @@ plot(b, term = "s(age)", spar = FALSE, ylab = expression(paste("Effect on Logi",
   The solid lines represent mean estimates, the shaded areas show 95\% credible intervals.}
 \end{figure}
 
+\newpage
+
 \subsection{Flexible model terms and estimators} \label{sec:flexm}
 
 Using the flexible infrastructure of \pkg{bamlss}, model terms can be easily exchanged. To give a
@@ -436,14 +447,15 @@ if(!file.exists("SwissLaborModel-lasso.rda")) {
 
 Besides the supported infrastructures from the \pkg{mgcv} package, it is also possible to
 implement completely new model terms that may follow different setups compared to the basis
-functions approach. Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
+functions approach (see also Appendix~\ref{appendix:specialterms} for an example using growth curves).
+Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
 an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
 a fused LASSO algorithm (see also Section~\ref{sec:application} for a complex example using gradient
 boosting optimization).
 The algorithm performs variable selection in combination with factor fusion (clustering) and can also
 be used to identify interpretable nonlinearities. Methodological details on LASSO-type penalization
 using \pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
-To apply the fused LASSO, the numeric variables \code{age} is categorized using empirical quantiles,
+To apply the fused LASSO, the numeric variable \code{age} is categorized using empirical quantiles,
 e.g., with
 <<eval=FALSE>>=
 SwissLabor$cage <- cut(SwissLabor$age,
@@ -456,8 +468,8 @@ special \fct{la} model term constructor function provided in \pkg{bamlss}
 f <- participation ~ income + education + youngkids + oldkids + foreign + 
   la(cage, fuse = 2)
 @
-where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse=1},
-ordered fusion \code{fuse=2}). To estimate the fused LASSO model only the default \code{optimizer}
+where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse = 1},
+ordered fusion \code{fuse = 2}). To estimate the fused LASSO model only the default \code{optimizer}
 function in the \fct{bamlss} wrapper function call needs to exchanged
 <<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
@@ -473,10 +485,10 @@ be visualized with
 <<eval=FALSE>>=
 pathplot(b)
 @
-and are shown in Figure~\ref{fig:lasso}. The BIC curves shows a clear minimum at the gray dashed
-line. The coefficient paths obviously depict that the algorithm can either shrink categories out
-of the model (shrink to zero), or even fuses them. In the right panel of Figure~\ref{fig:lasso},
-the estimated effect of the categorized variable
+and are shown in Figure~\ref{fig:lasso}. The BIC curve shows a clear minimum at the vertical
+gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
+categories out of the model (shrink to zero), or even fuses them. In the right panel of
+Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
 \code{age} is shown. The effect is computed by predicting without
 intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
 function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
@@ -485,7 +497,7 @@ the \code{mstop} argument.
 page <- predict(b, term = "cage", intercept = FALSE,
   mstop = lasso_stop(b))
 @
-The figure is then created using the untransformed original covariate
+The figure is then created using the untransformed original covariate on the x-axis.
 <<eval=FALSE>>=
 plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
@@ -633,6 +645,10 @@ the CRPS using numerical integration.
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
 methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
 as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}.
+The following outlines the framework from the viewpoint of distributional regression models,
+however, please note that model classes like, e.g., GLMs and GAMs or even survival joint models
+\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}
+are special cases in this setup.
 
 \subsection{Model structure}
 
@@ -1071,19 +1087,25 @@ estimation are:
 \item \code{family}: The processed \pkg{bamlss} \code{family}.
 \end{itemize}
 To better understand the structure of the \code{"bamlss.frame"} object a print method is provided.
-For illustration, we simulate data and set up a \code{"bamlss.frame"} object for a Gaussian
-distributional regression model including smooth terms.
+For illustration, we simulate data
 <<>>=
-## Simulate data.
+set.seed(111)
 d <- GAMart()
-## Model formula.
+@
+and set up a \code{"bamlss.frame"} object for a Gaussian
+distributional regression model including smooth terms. First, a model formula is needed
+<<>>=
 f <- list(
   num ~ x1 + s(x2) + s(x3) + te(lon,lat),
   sigma ~ x1 + s(x2) + s(x3) + te(lon,lat)
 )
-## Create a "bamlss.frame".
+@
+Afterwards the model frame can be computed with
+<<>>=
 bf <- bamlss.frame(f, data = d, family = "gaussian")
-## Show the structure.
+@
+To keep the overview, there is also an implemented print method for \code{"bamlss.frame"} objects.
+<<>>=
 print(bf)
 @
 For writing a new estimation engine, the user can directly work with the \code{model.matrix}
@@ -1280,7 +1302,7 @@ resolution is approx.\ $32~km$, while the temporal resolution is hourly and cove
 from 1979 to present.
 In this example application we work only with a small subset of the data, which
 can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
-\citep{FlashAustria}.
+\citep{FlashAustria}. The data is loaded with
 
 <<echo=FALSE>>=
 ## Load the data.
@@ -1298,7 +1320,6 @@ f <- list(
 @
 
 <<>>=
-## Load the data.
 data("FlashAustria", package = "FlashAustria")
 head(FlashAustriaTrain)
 nrow(FlashAustriaTrain)
@@ -1333,10 +1354,9 @@ paramter $\theta$. Hence well known for their sampling properties, we are
 applying P-splines \citep{bamlss:Eilers+Marx:1996} for all terms. Specifying
 smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructure
 \citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
-specification of the model:
+specification of the model (formula):
 
 <<eval=FALSE>>=
-## Specify formula.
 f <- list(
   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
@@ -1369,7 +1389,6 @@ end:
 %%% 
 \begin{Schunk}
 \begin{Sinput}
-R> ## Fit model.
 R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
 +    optimizer = boost, maxit = 1000,                 ## Boosting arguments.
 +    thin = 5, burnin = 1000, n.iter = 6000           ## Sampler arguments.
@@ -1392,11 +1411,12 @@ individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 pathplot(b, which = "loglik.contrib", intercept = FALSE)
 @
 
-\setkeys{Gin}{width=.8\textwidth}
+\setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
 \begin{center}
-<<fig=TRUE, height=4, width=6, echo=FALSE>>=
-pathplot(b, c("loglik.contrib"), intercept = FALSE)
+<<fig=TRUE, height=5, width=6, echo=FALSE>>=
+par(mar = c(4.1, 4.1, 2.1, 9.5))
+pathplot(b, c("loglik.contrib"), intercept = FALSE, spar = FALSE)
 # layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
 # pathplot(b, "loglik")
 # pathplot(b, "loglik.contrib")
@@ -1509,10 +1529,9 @@ check the marginal calibration of the distribution by hanging rootogram, a tool
 popular for the evaluation of count data regression models
 \citep{kleiber2016visualizing}. First we predict the distributional parameter
 on out-of-sample data \code{FlashAustriaEval} for which lightning
-observations are on hand.
+observations are on hand
 
 <<>>=
-## Out-of-sample prediction.
 fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
 str(fit)
 @
@@ -1525,20 +1544,19 @@ derive further quantities by employing the functions of the \pkg{bamlss}
 family that can be extracted using \code{family()},
 
 <<>>=
-## Extract family.
 fam <- family(b)
 fam
 @
 
 The family contains functions to map the predictors to the parameter
 scale, density, cumulative distribution function, log-likelihood, and
-scores and hessian. We apply the density to compute the expected
-frequencies of the positive counts. The function \code{...$d} takes the
+scores and Hessian. We apply the density to compute the expected
+frequencies of the positive counts. The function \code{...$d()} takes the
 quantile as first argument, and the \code{list} with the parameters,
-as returned by \code{predict()}, as a second argument. 
+as returned by \code{predict()}, as a second argument. The expected frequencies can then be computed
+by
 
 <<>>=
-## Expected frequencies.
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 @
 
@@ -1549,8 +1567,6 @@ observed frequencies can be directly obtained by \code{table}.
 <<>>=
 names(expect) <- 1:50
 expect <- as.table(expect)
-
-## Observed frequencies.
 obsrvd <- table(FlashAustriaEval$counts)[1:50]
 @
 
@@ -1559,18 +1575,17 @@ default method of \code{rootogram} from the \pkg{countreg}
 package \citep{zeileis2008regression}.
 
 <<eval=FALSE>>=
-## Plot rootogram.
 library("countreg")
-rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
+rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
 @
 
 \begin{figure}[!t]
 \setkeys{Gin}{width=.7\textwidth}
 \begin{center}
 <<fig=TRUE, height=5, width=6, echo=FALSE>>=
-## Plot rootogram.
+par(mar = c(4.1, 4.1, 3.1, 0.1))
 library("countreg")
-rootogram(obsrvd, expect, xlab = "# Counts", main = "Rootogram")
+rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
 @
 \end{center}
 \caption{Hanging rootogram for evaluating calibration of count data model
@@ -1592,34 +1607,16 @@ The case data \code{FlashAustriaCase} contains additional columns containing
 time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
-by applying the cumulative distribution function \code{...$p} of the family.
+by applying the cumulative distribution function \code{...$p} of the family
 
 <<>>=
-## Predict case.
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 @
 
-We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
-and the Inferno color scale from the \pkg{colorspace} package
-\citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
-from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
-
-<<eval=FALSE>>=
-## Plot case.
-library("ggplot2")
-library("colorspace")
-
-ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
-  geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
-  facet_wrap(~time) + theme_minimal()
-@
-
 \begin{figure}[t!]
-\setkeys{Gin}{width=1\textwidth}
+\setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
 <<fig=TRUE, echo=FALSE>>=
 library("ggplot2")
@@ -1630,23 +1627,39 @@ library("rnaturalearthdata")
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-  facet_wrap(~time, nrow = 2) + theme_minimal() # +
+  facet_wrap(~time, nrow = 2) + theme_minimal() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0)) # +
 #  theme(legend.position = "bottom")
 @
 \end{center}
-\caption{A probabilistic reconstruction of lightning counts occured on
+\caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
 September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
 13~UTC, i.e., the probability of having observed $10$ or more counts within one
 grid box.}
-\label{fig:appcase}
 \end{figure}
 
-The figure reveals that the probability for strong lightning events increases
-during 2001-09-15 between 6 and 17~UTC. During night time the front occurs,
-which can be nicely seen at 23~UTC. The propagation of the front is blocked
+We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
+and the Inferno color scale from the \pkg{colorspace} package
+\citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
+from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
+
+<<eval=FALSE>>=
+library("ggplot2")
+library("colorspace")
+
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
+  facet_wrap(~time) + theme_minimal()
+@
+
+The maps are shown in Figure~\ref{fig:appcase} and reveal that the probability for strong
+lightning events increases during 2001-09-15 between 6 and 17~UTC. During night time the front
+occurs, which can be nicely seen at 23~UTC. The propagation of the front is blocked
 by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
 2001-09-16 one can see that the probability on the downwind side of the
 Alps has increased.
