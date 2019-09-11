@@ -1388,9 +1388,10 @@ end:
 %%% 
 \begin{Schunk}
 \begin{Sinput}
+R> set.seed(111)
 R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
-+    optimizer = boost, maxit = 1000,                 ## Boosting arguments.
-+    thin = 5, burnin = 1000, n.iter = 6000           ## Sampler arguments.
++    optimizer = boost, maxit = 1000,        ## Boosting arguments.
++    thin = 5, burnin = 1000, n.iter = 6000  ## Sampler arguments.
 +  )
 \end{Sinput}
 \begin{Soutput}
