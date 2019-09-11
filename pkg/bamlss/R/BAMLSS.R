@@ -3348,6 +3348,12 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     }
   }
 
+  if(nrow(smf) < 2L) {
+    smf <- t(smf)
+    smf <- cbind(smf, smf, smf)
+    colnames(smf) <- c("2.5%", "50%", "97.5%")
+  }
+
   cnames <- colnames(smf)
   smf <- as.data.frame(smf)
   for(l in 1:nt) {
@@ -8053,6 +8059,8 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
   x$formula <- as.formula(x$formula)
 
+  FUN <- list(...)$FUN
+
   what <- match.arg(what)
   if(!is.null(x$samples) & what == "samples") {
     if(!is.null(list(...)$bamlss)) {
@@ -8234,7 +8242,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
 
           s.effects[[obj$smooth.construct[[j]]$label]] <- compute_s.effect(obj$smooth.construct[[j]],
             get.X = get.X, fit.fun = obj$smooth.construct[[j]]$fit.fun, psamples = psamples[, b, drop = FALSE],
-            FUN = NULL, snames = snames, data = if(!is.null(obj$smooth.construct[[j]]$model.frame)) {
+            FUN = FUN, snames = snames, data = if(!is.null(obj$smooth.construct[[j]]$model.frame)) {
               obj$smooth.construct[[j]]$model.frame
             } else mf[, tn, drop = FALSE], grid = grid)
         }
