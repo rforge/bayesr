@@ -5912,6 +5912,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   rval$edf <- edf
   rval$nbatch <- nbatch
   rval$parpaths <- parm
+  rval$epochs <- epochs
 
   rval
 }

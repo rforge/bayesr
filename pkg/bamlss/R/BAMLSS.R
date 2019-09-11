@@ -7458,11 +7458,11 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
     if(!is.null(x$model.stats$optimizer)) {
       cat("Optimizer summary:\n-\n")
       k <- 1
-      nmo <- sort(names(x$model.stats$optimizer))
+      nmo <- names(x$model.stats$optimizer)
       cl <- sapply(x$model.stats$optimizer, class)
       nmo <- nmo[cl != "matrix"]
       if(length(nmo)) {
-        for(j in nmo) {
+        for(j in sort(nmo)) {
           if(length(x$model.stats$optimizer[[j]]) < 2) {
             ok <- TRUE
             cat(if(k > 1) " " else "", j, " = ", round(x$model.stats$optimizer[[j]], digits), sep = "")
