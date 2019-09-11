@@ -5529,18 +5529,22 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- list()
+  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
     medf[[i]] <- list()
+    parm[[i]] <- list()
     ll_contrib[[i]] <- list()
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
       ll_contrib[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
+      parm[[i]][["p"]] <- matrix(0, nrow = nbatch * epochs, ncol = ncol(x[[i]]$model.matrix))
+      colnames(parm[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
         beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
+        parm[[i]][["p"]][1L, ] <- beta[[i]][["p"]]
       } else {
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
@@ -5568,6 +5572,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- NA
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        parm[[i]][[paste0("s.", j)]] <- matrix(0, nrow = nbatch * epochs, ncol = ncX)
+        colnames(parm[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
           x[[i]]$smooth.construct[[j]]$S[[lS + 1]] <- function(parameters, ...) {
@@ -5584,6 +5590,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         } else {
           start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
+          parm[[i]][[paste0("s.", j)]][1L, ] <- beta[[i]][[paste0("s.", j)]]
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
       }
@@ -5840,6 +5847,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         }
       }
 
+      for(i in nx) {
+        for(j in names(parm[[i]])) {
+          parm[[i]][[j]][iter2, ] <- beta[[i]][[j]]
+        }
+      }
+
       eta00 <- do.call("cbind", eta00)
       eta01 <- do.call("cbind", eta)
 
@@ -5884,7 +5897,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         0
       } else median(medf[[i]][[j]], na.rm = TRUE)
     }
+    for(j in names(parm[[i]])) {
+      colnames(parm[[i]][[j]]) <- paste0(i, ".", j, ".", colnames(parm[[i]][[j]]))
+    }
+    parm[[i]] <- do.call("cbind", parm[[i]])
   }
+  parm <- do.call("cbind", parm)
 
   rval <- list()
   rval$parameters <- c(unlist(beta), unlist(medf))
@@ -5893,7 +5911,31 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   rval$runtime <- elapsed
   rval$edf <- edf
   rval$nbatch <- nbatch
+  rval$parpaths <- parm
 
   rval
+}
+
+
+bbfit_plot <- function(x, name = NULL, ...)
+{
+  x <- x$model.stats$optimizer$parpaths
+  if(is.null(x)) {
+    warning("there is nothing to plot")
+    return(invisible(NULL))
+  }
+  if(!is.null(name)) {
+    for(i in name) {
+      x <- x[, grep(i, colnames(x), fixed = TRUE)]
+    }
+  }
+  cn <- colnames(x)
+  cn2 <- strsplit(cn, ".", fixed = TRUE)
+  cn2 <- lapply(cn2, function(x) { paste0(x[-length(x)], collapse = ".") })
+  cn2 <- as.factor(unlist(cn2))
+  cat(levels(cn2), "\n")
+  col <- rainbow_hcl(nlevels(cn2))[cn2]
+  matplot(x, type = "l", lty = 1, xlab = "Iteration", ylab = "Coefficients", col = col, ...)
+  return(invisible(x))
 }
 

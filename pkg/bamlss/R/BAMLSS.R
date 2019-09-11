@@ -9978,6 +9978,8 @@ pathplot <- function(object, ...)
     boost_plot(object, ...)
   if(!is.null(object$model.stats$optimizer$lasso.stats))
     lasso_plot(object, ...)
+  if(!is.null(object$model.stats$optimizer$parpaths))
+    bbfit_plot(object, ...)
   return(invisible(NULL))
 }
 
