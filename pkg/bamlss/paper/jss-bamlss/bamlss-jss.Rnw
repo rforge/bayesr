@@ -1718,6 +1718,15 @@ Gauss_bamlss <- function(...) {
     "d" = function(y, par, log = FALSE) {
       dnorm(y, mean = par$mu, sd = par$sigma, log = log)
     },
+    "p" = function(y, par, ...) {
+      pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    },
+    "r" = function(n, par) {
+      rnorm(n, mean = par$mu, sd = par$sigma)
+    },
+    "q" = function(p, par) {
+      qnorm(p, mean = par$mu, sd = par$sigma)
+    },
     "score" = list(
       mu = function(y, par, ...) {
         drop((y - par$mu) / (par$sigma^2))
@@ -1852,6 +1861,24 @@ if(!file.exists("GrowthCurveModel.rda")) {
   load("GrowthCurveModel.rda")
 }
 @
+\begin{figure}[!t]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+p <- predict(b, model = "mu", FUN = c95)
+plot(y ~ time, data = d, main = expression(mu))
+plot2d(p ~ time, data = d, add = TRUE, axes = FALSE,
+  fill.select = c(0, 1, 0, 1), scheme = 2)
+points(d$time, d$y)
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, model = "sigma", spar = FALSE, scheme = 2, main = expression(log(sigma)))
+@
+\caption{\label{fig:gcurve} Estimated nonlinear effects on parameter $\mu$ and $\sigma$ of the
+  simulated growth curve example. Gray shaded areas represent 95\% credible intervals.}
+\end{figure}
 <<eval=FALSE>>=
 ## Simulate data.
 set.seed(111)
@@ -1873,24 +1900,6 @@ b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
 plot(b)
 @
 The estimated effects are shown in Figure~\ref{fig:gcurve}.
-\begin{figure}[!ht]
-\centering
-\setkeys{Gin}{width=0.4\textwidth}
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-p <- predict(b, model = "mu", FUN = c95)
-plot(y ~ time, data = d, main = expression(mu))
-plot2d(p ~ time, data = d, add = TRUE, axes = FALSE,
-  fill.select = c(0, 1, 0, 1), scheme = 2)
-points(d$time, d$y)
-@
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, model = "sigma", spar = FALSE, scheme = 2, main = expression(log(sigma)))
-@
-\caption{\label{fig:gcurve} Estimated nonlinear effects on parameter $\mu$ and $\sigma$ of the
-  simulated growth curve example. Gray shaded areas represent 95\% credible intervals.}
-\end{figure}
 The growth curve mean function estimate seems to fit the data quite well. Also, the nonlinear
 relationship for parameter $\sigma$ could be captured by the model.
 
@@ -1949,7 +1958,7 @@ model, we need to work with the linear model matrix that is part of the \code{bf
 <<>>=
 print(head(bf$x$mu$model.matrix))
 @
-and the response \code{"y"}
+and the response \code{y}
 <<>>=
 print(head(bf$y))
 @
