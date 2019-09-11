@@ -1648,7 +1648,7 @@ grid box.}
 \end{figure}
 
 We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
-and the Inferno color scale from the \pkg{colorspace} package
+and the Oslo color scale from the \pkg{colorspace} package
 \citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
 from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
 
@@ -1657,7 +1657,7 @@ library("ggplot2")
 library("colorspace")
 
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Inferno", rev = TRUE) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
   facet_wrap(~time) + theme_minimal()
