@@ -1289,7 +1289,7 @@ given in Appendix~\ref{appendix:engine}. The example also provides details on th
 and return values of optimizer and sampler functions.
 
 
-\section{Flexible count regression for lightning prediction} \label{sec:application}
+\section{Flexible count regression for lightning reanalysis} \label{sec:application}
 
 This section illustrates the workflow with \pkg{bamlss} along a small case study.
 We want to build a statistical model linking positive counts of cloud-to-ground
