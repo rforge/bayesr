@@ -119,12 +119,11 @@ and ignore changes in other moments, GAMLSS has the clear advantage to alleviate
 model misspecification and therefore provides much more reliable probabilistic forecasts.
 
 Besides the increasing interest in distributional regression, nowadays, regression models are
-becoming more and more complex, because of the complexity of the problem, sometimes because more and
-more data is available or because interactions have to be taken into account in many applications,
-etc. This is not an easy problem to solve and sometimes requires a flexible development environment
-to avoid reinventing the wheel. However, although some implementations for regression modeling seem
-to be quite flexible in the first place, the possibilities are usually limited, e.g., concerning
-models and estimation algorithms.
+becoming more and more complex. The reasons are commonly two-fold: because of the complexity of
+the problems or because more and more data is available. This is not an easy problem to solve and
+sometimes requires a flexible development environment to avoid reinventing the wheel. However,
+although some implementations for regression modeling seem to be quite flexible in the first place,
+the possibilities are usually limited, e.g., concerning models and estimation algorithms.
 
 The \proglang{R} package \pkg{gamlss}
 \citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}

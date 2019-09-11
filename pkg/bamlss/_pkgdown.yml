@@ -114,6 +114,7 @@ reference:
     - '`model.matrix.bamlss.frame`'
     - '`neighbormatrix`'
     - '`parameters`'
+    - '`pathplot`'
     - '`plot.bamlss`'
     - '`plot2d`'
     - '`plot3d`'
