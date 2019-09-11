@@ -17,7 +17,7 @@
   input/.style = {base, minimum width=2.2cm, fill=blue!30},
   processing/.style = {base, fill=yellow!30},
   estimation/.style = {base, fill=red!30},
-  stats/.style = {base, fill=green!30},
+  stats/.style = {base, fill=blue!30},
   output/.style = {base, minimum width=2.2cm, fill=orange!15},
   outer/.style={draw=gray, dashed, fill=green!1, thick, inner sep=5pt, rounded corners},
 }
@@ -28,6 +28,12 @@
 \newcommand*{\conV}[4][]{
   \draw[#1] (#3) |- ($(#3) !#2! (#4)$) -| (#4);
 }
+
+\definecolor{rb1}{HTML}{E495A5}
+\definecolor{rb2}{HTML}{BDAB66}
+\definecolor{rb3}{HTML}{65BC8C}
+\definecolor{rb4}{HTML}{55B8D0}
+\definecolor{rb5}{HTML}{C29DDE}
 
 %% additional commands
 \newcommand{\squote}[1]{`{#1}'}
@@ -854,17 +860,17 @@ package are:
 \begin{tikzpicture}[node distance=1.5cm,
     every node/.style={fill=white, font=\sffamily}, align=center]
   % Specification of nodes (position, etc.)
-  \node (data)        [input]                               {\texttt{data}};
-  \node (formula)     [input, left of=data, xshift=-4.5cm]  {\texttt{formula}};
-  \node (family)      [input, right of=data, xshift=-4.5cm]   {\texttt{family}};
+  \node (data)        [input,fill=rb1]                               {\texttt{data}};
+  \node (formula)     [input, left of=data, xshift=-4.5cm,fill=rb1]  {\texttt{formula}};
+  \node (family)      [input, right of=data, xshift=-4.5cm,fill=rb1]   {\texttt{family}};
 
   \begin{pgfonlayer}{background}
   \node[outer,fit=(data) (formula) (family)] (A) {};
   \node (text) [right of=A, xshift=-6.5cm] {Input};
   \end{pgfonlayer}
 
-  \node (bframe) [processing, below of=family, yshift=-0.3cm] {\texttt{bamlss.frame()}};
-  \node (trans)  [processing, below of=bframe, yshift=0.3cm] {\texttt{transform()}};
+  \node (bframe) [processing, below of=family, yshift=-0.3cm,fill=rb2] {\texttt{bamlss.frame()}};
+  \node (trans)  [processing, below of=bframe, yshift=0.3cm,fill=rb2] {\texttt{transform()}};
 
   \coordinate[below of=family, yshift=0.6cm] (invisible6);
   \draw[->, shorten >=3pt] (invisible6) -- (bframe);
@@ -879,8 +885,8 @@ package are:
   \node (text) [right of=B, xshift=-7.2cm] {Pre-processing};
   \end{pgfonlayer}
 
-  \node (opt) [estimation, below of=trans] {\texttt{optimizer()}};
-  \node (sampler) [estimation, below of=opt, yshift=0.3cm] {\texttt{sampler()}};
+  \node (opt) [estimation, below of=trans,fill=rb3] {\texttt{optimizer()}};
+  \node (sampler) [estimation, below of=opt, yshift=0.3cm,fill=rb3] {\texttt{sampler()}};
 
   \coordinate[right of=sampler, yshift=0.15cm] (invisible5);
 
@@ -895,8 +901,8 @@ package are:
   \node (text) [right of=C, xshift=-6.9cm] {Estimation};
   \end{pgfonlayer}
 
-  \node (sstats) [stats, below of=sampler] {\texttt{samplestats()}};
-  \node (results) [stats, below of=sstats, yshift=0.3cm] {\texttt{results()}};
+  \node (sstats) [stats, below of=sampler,fill=rb4] {\texttt{samplestats()}};
+  \node (results) [stats, below of=sstats, yshift=0.3cm,fill=rb4] {\texttt{results()}};
 
   \begin{pgfonlayer}{background}
   \node[outer,fit=(sstats) (results), minimum width=8.55cm] (D) {};
@@ -906,9 +912,9 @@ package are:
   \draw[->, shorten >=3pt, line width=0.8mm, gray] (sampler) -- (sstats);
   \draw[->, shorten >=1pt, line width=0.8mm, gray] (sstats)  -- (results);
 
-  \node (plot) [output, below of=results, yshift=-0.5cm] {\texttt{plot()}};
-  \node (summary) [output, left of=plot, xshift=-1.5cm]  {\texttt{summary()}};
-  \node (predict) [output, right of=plot, xshift=1.5cm]  {\texttt{predict()}};
+  \node (plot) [output, below of=results, yshift=-0.5cm,fill=rb5] {\texttt{plot()}};
+  \node (summary) [output, left of=plot, xshift=-1.5cm,fill=rb5]  {\texttt{summary()}};
+  \node (predict) [output, right of=plot, xshift=1.5cm,fill=rb5]  {\texttt{predict()}};
 
   \begin{pgfonlayer}{background}
   \node[outer,fit=(summary) (plot) (predict)] (E) {};
