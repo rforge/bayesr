@@ -133,22 +133,29 @@ library("bamlss")
 %  simulation, backfitting algorithms, gradient boosting and LASSO-type penalized
 %  models.
 
-Generalized additive models for location, scale and shape
-(GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as distributional regression models
-\citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, provide a very
-flexible framework that enables modeling all parameters of a response distribution in terms of
-covariates. While most classical model specifications -- such as linear models, generalized linear models (GLMs),
-generalized additive models (GAMs), etc. -- focus on characterization of the mean of the distribution
-and ignore changes in other moments, GAMLSS has the clear advantage to alleviate the risk of
-model misspecification and therefore provides much more reliable probabilistic forecasts.
+Nowadays, regression models must be able to capture a variety of different dependencies in order to
+provide reliable predictions and inference. Moreover, the great interest in models for full
+probabilistic forecasting that alleviate the risk of misspecification, means that the underlying
+methods are becoming increasingly complex. This is not an easy problem to solve and sometimes
+requires a flexible development environment to avoid reinventing the wheel. Although some
+implementations for regression modeling seem to be quite flexible in the first place, the
+possibilities are usually limited, e.g., concerning models and estimation algorithms.
 
-Besides the increasing interest in distributional regression, nowadays, regression models are
-becoming more and more complex. The reasons are commonly two-fold: because of the complexity of
-the problems or because more and more data is available. This is not an easy problem to solve and
-sometimes requires a flexible development environment to avoid reinventing the wheel. However,
-although some implementations for regression modeling seem to be quite flexible in the first place,
-the possibilities are usually limited, e.g., concerning models and estimation algorithms.
+Probably the first implementations that allow for some flexibility concerning the choice of response
+distribution where developed for generalized linear models
+(GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}). The next extension of GLMs was to
+allow for different (user specified) smooth model terms within the framework of generalized additive
+models (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}). Further development was the extension away
+from the pure exponential family of distributions to the so called generalized additive models for
+location, scale and shape (GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as
+distributional regression models
+\citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, which enable
+modeling all parameters of a response distribution in terms of covariates. Besides, there are also
+some implementations for nonparametric quantile regression models \citep{bamlss:Koenker:2005}, but
+with rather limited support for flexible model terms.
 
+The statistical environment \proglang{R} \citep{bamlss:R} provides a rich number of packages
+that support a quite flexible regression modeling approach.
 The \proglang{R} package \pkg{gamlss}
 \citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}
 \citep{bamlss:Yee:2009, bamlss:Yee:2019} were the first packages
@@ -183,12 +190,13 @@ supports a variety of models and is also capable to estimate distributional regr
 However, as already mentioned above, estimation time is usually quite long and \pkg{Stan}
 does not easily handle models with a lot of observations.
 
-In this paper, we present the \proglang{R} package \pkg{bamlss}, a ``Lego toolbox''
-for flexible Bayesian regression models (and beyond), which was first introduced in
-\citet{bamlss:Umlauf+Klein+Zeileis:2018}. Since then, the package has undergone significant further
-development. The focus has shifted tremendously from the pure Bayesian viewpoint to virtually a
-mixture of state-of-the-art estimation techniques from machine learning and statistics. The main
-contributions of \pkg{bamlss} are the following:
+To summarize the above: although supposedly quite flexible, most implementations follow a very
+specific focus and are therefore not easy to use to implement new methods. Therefore, we present
+the \proglang{R} package \pkg{bamlss}, a ``Lego toolbox'' for flexible Bayesian regression models
+(and beyond), which was first introduced in \citet{bamlss:Umlauf+Klein+Zeileis:2018}. Since then,
+the package has undergone significant further development. The focus has shifted tremendously from
+the pure Bayesian viewpoint to virtually a mixture of state-of-the-art estimation techniques from
+machine learning and statistics. The main contributions of \pkg{bamlss} are the following:
 %
 \begin{itemize}
 \item With the usual \proglang{R} modeling ``look \& feel'',
