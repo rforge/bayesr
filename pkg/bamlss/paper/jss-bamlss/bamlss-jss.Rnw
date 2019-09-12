@@ -193,10 +193,11 @@ does not easily handle models with a lot of observations.
 To summarize the above: although supposedly quite flexible, most implementations follow a very
 specific focus and are therefore not easy to use to implement new methods. Therefore, we present
 the \proglang{R} package \pkg{bamlss}, a ``Lego toolbox'' for flexible Bayesian regression models
-(and beyond), which was first introduced in \citet{bamlss:Umlauf+Klein+Zeileis:2018}. Since then,
-the package has undergone significant further development. The focus has shifted tremendously from
-the pure Bayesian viewpoint to virtually a mixture of state-of-the-art estimation techniques from
-machine learning and statistics. The main contributions of \pkg{bamlss} are the following:
+(and beyond), which was first introduced in \citet{bamlss:Umlauf+Klein+Zeileis:2018} (BAMLSS).
+Since then, the package has undergone significant further development. The focus has shifted
+tremendously from the pure Bayesian viewpoint to virtually a mixture of state-of-the-art estimation
+techniques from machine learning and statistics. The main contributions of \pkg{bamlss} are the
+following:
 %
 \begin{itemize}
 \item With the usual \proglang{R} modeling ``look \& feel'',
