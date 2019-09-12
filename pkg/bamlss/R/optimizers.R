@@ -5848,9 +5848,13 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       for(i in nx) {
         for(j in names(parm[[i]])) {
-          jj <- gsub("s.", "", j, fixed = TRUE)
+          jj <- paste0(strsplit(j, ".", fixed = TRUE)[[1]][-1], collapse = ".")
           tedf <- medf[[i]][[paste0(j, ".edf")]]
-          tpar <- c(beta[[i]][[j]], tau2[[i]][[jj]], tedf[length(tedf)])
+          tpar <-  if(j != "p") {
+            c(beta[[i]][[j]], tau2[[i]][[jj]], tedf[length(tedf)])
+          } else {
+            beta[[i]][[j]]
+          }
           names(tpar) <- NULL
           parm[[i]][[j]] <- rbind(parm[[i]][[j]], tpar)
         }
