@@ -514,32 +514,7 @@ The optimum shrinkage parameter $\lambda$ is selected by the BIC.
 Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied,
 argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
-The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
-be visualized with
-<<eval=FALSE>>=
-pathplot(b)
-@
-and are shown in Figure~\ref{fig:lasso}. The BIC curve shows a clear minimum at the vertical
-gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
-categories out of the model (shrink to zero), or even fuses them. In the right panel of
-Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
-\code{age} is shown. The effect is computed by predicting without
-intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
-function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
-the \code{mstop} argument.
-<<eval=FALSE>>=
-page <- predict(b, term = "cage", intercept = FALSE,
-  mstop = lasso_stop(b))
-@
-The figure is then created using the untransformed original covariate on the x-axis.
-<<eval=FALSE>>=
-plot2d(page ~ age, data = SwissLabor, rug = TRUE)
-@
-Using the fused LASSO estimation some nonlinearities can be identified again, however, the
-BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
-in the right panel of Figure~\ref{fig:logit_effects}.
-
-\begin{figure}[!ht]
+\begin{figure}[!b]
 \centering
 \setkeys{Gin}{width=0.24\textwidth}
 <<echo=FALSE, fig=TRUE, width=3, height=5>>=
@@ -564,6 +539,31 @@ mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
   of the LASSO example model. The middle panel shows the corresponding coefficient paths for
   variable \code{cage}. The right panel displays the respective estimated effect.}
 \end{figure}
+
+The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
+be visualized with
+<<eval=FALSE>>=
+pathplot(b)
+@
+and are shown in Figure~\ref{fig:lasso}. The BIC curve shows a clear minimum at the vertical
+gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
+categories out of the model (shrink to zero), or even fuses them. In the right panel of
+Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
+\code{age} is shown. The effect is computed by predicting without
+intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
+function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
+the \code{mstop} argument.
+<<eval=FALSE>>=
+page <- predict(b, term = "cage", intercept = FALSE,
+  mstop = lasso_stop(b))
+@
+The figure is then created using the untransformed original covariate on the x-axis.
+<<eval=FALSE>>=
+plot2d(page ~ age, data = SwissLabor, rug = TRUE)
+@
+Using the fused LASSO estimation some nonlinearities can be identified again, however, the
+BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
+in the right panel of Figure~\ref{fig:logit_effects}.
 
 
 \subsection{Location-scale model} \label{sec:locscalemodel}
