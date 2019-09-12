@@ -59,24 +59,21 @@
 \Plainkeywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO, MCMC, R}
 
 \Abstract{
-  Over the last decades there has been an increasing interest in distributional
-  regression  models that allow to model the entire data distribution
-  conditional on covariates. In particular, the  framework of structured
-  additive distributional regression models enables to specify  different types
-  of effects such as linear, non-linear or interaction effects on all the 
-  distribution parameters (such as location scale and shape) hence providing a
-  very flexible and generic framework suited for  many complex real data
-  problems. However, the implementation of new models is usually time-consuming
-  and complex, especially using Bayesian estimation algorithms. We propose an
-  unified modeling architecture, which is implemented in the \proglang{R}
-  package \pkg{bamlss}, that makes it possible to embed many different
-  approaches suggested in literature and software. We show that implementing
-  (new) algorithms, non-standard distributions or effect types, or the
-  integration of already existing software, is relatively straightforward in
-  this setting. We illustrate the usefulness of the approach by implementing
-  highly efficient algorithms for fully Bayesian inference based on MCMC
-  simulation, backfitting algorithms, gradient boosting and LASSO-type penalized
-  models.
+  Over the last decades, there has been an increasing interest in flexible regression models.
+  There are several reasons for this development: On the one hand, the number of data sets is
+  constantly increasing and thus the number of problems as well as their complexity, on the other hand,
+  infrastructures that can deal with ever larger data sets are needed, so that efficient estimation
+  algorithms gain more and more importance. Particularly in this environment, models for full
+  probabilistic forecasting, that allow to model the entire data distribution conditional on
+  covariates, are necessary in a variety of applications. However, the implementation of new models
+  is usually time-consuming and complex, especially using Bayesian estimation algorithms. We propose
+  an unified modeling architecture, which is implemented in the \proglang{R} package \pkg{bamlss},
+  that makes it possible to embed many different approaches suggested in literature and software. We
+  show that implementing (new) algorithms, non-standard distributions or effect types, or the
+  integration of already existing software, is relatively straightforward in this setting. We
+  illustrate the usefulness of the approach by implementing highly efficient algorithms for fully
+  Bayesian inference based on MCMC simulation, backfitting algorithms, gradient boosting and
+  LASSO-type penalized models.
 }
 
 \Address{
@@ -116,6 +113,25 @@ library("bamlss")
 \SweaveOpts{concordance=TRUE}
 
 \section{Introduction}
+
+%  Over the last decades there has been an increasing interest in distributional
+%  regression  models that allow to model the entire data distribution
+%  conditional on covariates. In particular, the  framework of structured
+%  additive distributional regression models enables to specify  different types
+%  of effects such as linear, non-linear or interaction effects on all the 
+%  distribution parameters (such as location scale and shape) hence providing a
+%  very flexible and generic framework suited for  many complex real data
+%  problems. However, the implementation of new models is usually time-consuming
+%  and complex, especially using Bayesian estimation algorithms. We propose an
+%  unified modeling architecture, which is implemented in the \proglang{R}
+%  package \pkg{bamlss}, that makes it possible to embed many different
+%  approaches suggested in literature and software. We show that implementing
+%  (new) algorithms, non-standard distributions or effect types, or the
+%  integration of already existing software, is relatively straightforward in
+%  this setting. We illustrate the usefulness of the approach by implementing
+%  highly efficient algorithms for fully Bayesian inference based on MCMC
+%  simulation, backfitting algorithms, gradient boosting and LASSO-type penalized
+%  models.
 
 Generalized additive models for location, scale and shape
 (GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as distributional regression models
