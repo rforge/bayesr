@@ -425,10 +425,22 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 }
               }
             } else {
-              if(!inherits(data, "ffdf")) {
-                smt2 <- smooth.construct(tsm, data, knots)
+              if(is.null(tsm$xt$nrep)) {
+                if(!inherits(data, "ffdf")) {
+                  smt2 <- smooth.construct(tsm, data, knots)
+                } else {
+                  smt2 <- smooth.construct_ff(tsm, data, knots)
+                }
               } else {
-                smt2 <- smooth.construct_ff(tsm, data, knots)
+                smt2 <- list()
+                for(jnr in 1:tsm$xt$nrep) {
+                  if(!inherits(data, "ffdf")) {
+                    smt2[[jnr]] <- smooth.construct(tsm, data, knots)
+                  } else {
+                    smt2[[jnr]] <- smooth.construct_ff(tsm, data, knots)
+                  }
+                }
+                class(smt2) <- c("no.mgcv", "smooth.list")
               }
               if(inherits(tsm, "no.mgcv") | inherits(smt2, "no.mgcv")) {
                   no.mgcv <- c(no.mgcv, if(!inherits(smt2, "smooth.list")) list(smt2) else smt2)
