@@ -1614,15 +1614,6 @@ expect <- as.table(expect)
 obsrvd <- table(FlashAustriaEval$counts)[1:50]
 @
 
-The observed and expected frequencies can be plugged into the
-default method of \code{rootogram} from the \pkg{countreg}
-package \citep{zeileis2008regression}.
-
-<<eval=FALSE>>=
-library("countreg")
-rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
-@
-
 \begin{figure}[!t]
 \setkeys{Gin}{width=.7\textwidth}
 \begin{center}
@@ -1638,6 +1629,15 @@ square root scale. Gray bars indicate observed frequencies on square root
 scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
+
+The observed and expected frequencies can be plugged into the
+default method of \code{rootogram} from the \pkg{countreg}
+package \citep{zeileis2008regression}.
+
+<<eval=FALSE>>=
+library("countreg")
+rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
+@
 
 The rootogram reveals reasonable calibration of the model though it is slightly
 underestimating the number of events with a single lightning discharge.
@@ -1708,12 +1708,12 @@ by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
 2001-09-16 one can see that the probability on the downwind side of the
 Alps has increased.
 
-\section{Achknowledgements}
-T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
-
 
 \newpage
 
+
+\section{Achknowledgements}
+T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
 
