@@ -220,8 +220,8 @@ of the provided infrastructures. Section~\ref{sec:flexreg}
 introduces the flexible regression framework in more detail. A thorough introduction of the
 \proglang{R} package \pkg{bamlss}, describing the most important building blocks,
 is then given in Section~\ref{sec:package}. In Section~\ref{sec:application} we highlight the
-unified modeling approach using a complex distributional regression model for predicting
-lighting counts in complex terrain.
+unified modeling approach using a complex distributional regression model for lighting counts in
+complex terrain.
 
 
 \section{Motivating examples} \label{sec:motivation}
