@@ -5911,6 +5911,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   }
   parm <- do.call("cbind", parm)
   rownames(parm) <- NULL
+  if(nrow(parm) > 1L)
+    parm <- parm[-1L, , drop = FALSE]
 
   rval <- list()
   rval$parameters <- c(unlist(beta), unlist(medf))

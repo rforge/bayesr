@@ -6310,13 +6310,23 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     const <- 1e-05
 
   object$S <- list()
-  object$S[[1]] <- function(parameters, ...) {
-    b <- get.par(parameters, "b")
-    A <- df / sqrt(b^2 + const)
-    A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
-    A
+  pt <- object$xt$pt
+  if(is.null(pt))
+    pt <- "ridge"
+  pt <- tolower(pt)
+  if("ridge" %in% pt) {
+    object$S[[1]] <- diag(ncol(object$X))
   }
-  attr(object$S[[1]], "npar") <- ncol(object$X)
+  if("lasso" %in% pt) {
+    np <- length(object$S) + 1L
+    object$S[[np]] <- function(parameters, ...) {
+      b <- get.par(parameters, "b")
+      A <- df / sqrt(b^2 + const)
+      A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
+      A
+    }
+    attr(object$S[[np]], "npar") <- ncol(object$X)
+  }
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- FALSE
