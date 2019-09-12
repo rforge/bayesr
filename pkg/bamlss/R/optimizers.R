@@ -5539,12 +5539,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
       ll_contrib[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
-      parm[[i]][["p"]] <- matrix(0, nrow = nbatch * epochs, ncol = ncol(x[[i]]$model.matrix))
+      parm[[i]][["p"]] <- matrix(nrow = 0, ncol = ncol(x[[i]]$model.matrix))
       colnames(parm[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
         beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
-        parm[[i]][["p"]][1L, ] <- beta[[i]][["p"]]
       } else {
         beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
@@ -5572,8 +5571,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- NA
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
-        parm[[i]][[paste0("s.", j)]] <- matrix(0, nrow = nbatch * epochs, ncol = ncX)
-        colnames(parm[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+        ncS <- length(x[[i]]$smooth.construct[[j]]$S) + if(lasso) 1L else 0L
+        parm[[i]][[paste0("s.", j)]] <- matrix(nrow = 0L, ncol = ncX + ncS + 1L)
+        colnames(parm[[i]][[paste0("s.", j)]]) <- c(paste0("b", 1:ncX), paste0("tau2", 1:ncS), "edf")
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
           x[[i]]$smooth.construct[[j]]$S[[lS + 1]] <- function(parameters, ...) {
@@ -5590,7 +5590,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         } else {
           start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
-          parm[[i]][[paste0("s.", j)]][1L, ] <- beta[[i]][[paste0("s.", j)]]
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
       }
@@ -5849,7 +5848,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       for(i in nx) {
         for(j in names(parm[[i]])) {
-          parm[[i]][[j]][iter2, ] <- beta[[i]][[j]]
+          jj <- gsub("s.", "", j, fixed = TRUE)
+          tedf <- medf[[i]][[paste0(j, ".edf")]]
+          tpar <- c(beta[[i]][[j]], tau2[[i]][[jj]], tedf[length(tedf)])
+          names(tpar) <- NULL
+          parm[[i]][[j]] <- rbind(parm[[i]][[j]], tpar)
         }
       }
 
@@ -5903,7 +5906,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     parm[[i]] <- do.call("cbind", parm[[i]])
   }
   parm <- do.call("cbind", parm)
-  parm <- parm[-1L, , drop = FALSE]
+  rownames(parm) <- NULL
 
   rval <- list()
   rval$parameters <- c(unlist(beta), unlist(medf))
