@@ -273,11 +273,10 @@ The model is estimated by
 <<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor)
 @
-using 12000 iterations with a burnin-phase of 2000 and a thinning parameter of 10. Note that
-the defaults are 1200 iterations, burnin of 200 and thinning 1. The reason is that during the modeling
-process, users usually want to obtain first results rather quickly. Afterwards, if a final
-model is estimated the number of iterations of the MCMC sampler is usually set much higher to
-get close to i.i.d.\ samples from the posterior distribution.
+Note that the default number of iterations for the MCMC sampler is 1200, the burnin-phase is 200 and
+thinning is 1. The reason is that during the modeling process, users usually want to obtain first
+results rather quickly. Afterwards, if a final model is estimated the number of iterations of the
+sampler is usually set much higher to get close to i.i.d.\ samples from the posterior distribution.
 To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
 optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
 engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
@@ -318,10 +317,12 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
   auto-correlation for the intercept (middle panel), maximum auto-correlation for all
   parameters (right panel).}
 \end{figure}
-These are visualized in Figure~\ref{fig:logit_traceplots} and reveal convergence of
+These are visualized in Figure~\ref{fig:logit_traceplots} and reveal approximate convergence of
 the MCMC chains, i.e., there is no visible trend and the very low
 auto-correlation shown for the intercept and the maximum auto-correlation of all
-parameters suggest close to i.i.d.\ samples from the posterior distribution.
+parameters suggest close to i.i.d.\ samples from the posterior distribution. As mentioned above, the
+user could also increase the number iterations and the burnin-phase, as well as adapt the thinning
+parameter, to make the significant bar at lag one disappear.
 Note that the function call would compute all trace- and auto-correlation plots, however,
 for convenience we only show plots for the intercept. In addition, samples can also be
 extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},

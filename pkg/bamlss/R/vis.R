@@ -46,6 +46,8 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
     stop("x must be a matrix!")
   if(!is.list(x) && ncol(x) < 2L)
     stop("x must have at least 2 columns!")
+  if(ncol(x) < 3L)
+    scheme <- 1
   if(scheme != 1)
     col.lines <- c(NA, "black", NA)
   args <- list(...)
