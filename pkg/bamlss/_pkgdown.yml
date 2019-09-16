@@ -123,6 +123,7 @@ reference:
     - '`plotmap`'
     - '`predict.bamlss`'
     - '`randomize`'
+    - '`response_name`'
     - '`residuals.bamlss`'
     - '`results.bamlss.default`'
     - '`rmf`'
