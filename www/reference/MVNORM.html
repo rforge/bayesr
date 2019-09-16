@@ -229,14 +229,14 @@
 <span class='no'>bf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.frame.html'>bamlss.frame</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
 
 <span class='co'>## First, find starting values with optimizer.</span>
-<span class='no'>o</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'><a href='bfit.html'>bfit</a></span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))</div><div class='output co'>#&gt; AICc 404.3066 logPost -193.413 logLik -195.504 edf 6.5488 eps 1.7233 iteration   1
-#&gt; AICc 403.4691 logPost -183.129 logLik -196.623 edf 5.0496 eps 0.0995 iteration   2
-#&gt; AICc 402.6634 logPost -174.683 logLik -197.456 edf 3.8380 eps 0.0314 iteration   3
-#&gt; AICc 402.5737 logPost -174.086 logLik -197.745 edf 3.5094 eps 0.0269 iteration   4
-#&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0001 iteration   5
-#&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0000 iteration   6
-#&gt; AICc 402.5737 logPost -174.089 logLik -197.746 edf 3.5081 eps 0.0000 iteration   6
-#&gt; elapsed time:  0.32sec</div><div class='input'>
+<span class='no'>o</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'><a href='bfit.html'>bfit</a></span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))</div><div class='output co'>#&gt; AICc 310.9125 logPost -146.281 logLik -148.601 edf 6.7482 eps 2.4418 iteration   1
+#&gt; AICc 308.4063 logPost -135.263 logLik -148.941 edf 5.1966 eps 0.1422 iteration   2
+#&gt; AICc 306.2649 logPost -126.116 logLik -149.144 edf 3.9490 eps 0.0221 iteration   3
+#&gt; AICc 305.0141 logPost -136.724 logLik -149.282 edf 3.1979 eps 0.0667 iteration   4
+#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0184 iteration   5
+#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0000 iteration   6
+#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0000 iteration   6
+#&gt; elapsed time:  0.34sec</div><div class='input'>
 <span class='co'>## Sample.</span>
 <span class='no'>samps</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>MVNORM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='no'>o</span>$<span class='no'>parameters</span>))</div><div class='output co'>#&gt; </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>samps</span>)</div><div class='img'><img src='MVNORM-1.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-2.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-3.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-4.png' alt='' width='700' height='433' /></div></pre>
   </div>

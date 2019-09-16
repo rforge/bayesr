@@ -371,12 +371,12 @@
 #&gt;   .. ..$ cat </div><div class='input'>
 <span class='co'>## The response is a matrix per default.</span>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>bf</span>$<span class='no'>y</span>)</div><div class='output co'>#&gt;   cat.none cat.medium cat.high cat.low
-#&gt; 1        0          0        1       0
+#&gt; 1        0          0        0       1
 #&gt; 2        0          0        1       0
-#&gt; 3        1          0        0       0
-#&gt; 4        0          1        0       0
-#&gt; 5        0          0        0       1
-#&gt; 6        1          0        0       0</div><div class='input'>
+#&gt; 3        0          0        0       1
+#&gt; 4        1          0        0       0
+#&gt; 5        0          1        0       0
+#&gt; 6        0          0        1       0</div><div class='input'>
 <span class='co'>## 0/1 responses.</span>
 <span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/cbind'>cbind</a></span>(<span class='no'>d</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/model.matrix'>model.matrix</a></span>(~ -<span class='fl'>1</span> + <span class='no'>cat</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>))
 

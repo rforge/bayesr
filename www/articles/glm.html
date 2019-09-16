@@ -470,7 +470,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <span class="st">  </span><span class="kw">s</span>(cos1,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +<span class="st"> </span><span class="kw">s</span>(cos2,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +
 <span class="st">  </span><span class="kw">s</span>(sin1,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>) +<span class="st"> </span><span class="kw">s</span>(sin2,<span class="dt">bs=</span><span class="st">"re"</span>,<span class="dt">fx=</span><span class="ot">TRUE</span>)</code></pre></div>
 <p>Which is a bit of a hack using the random effects smooth constructor and setting <code>fx = TRUE</code>, forcing the smoother to use fixed effects (linear effects) estimation. However, by doing so, the resulting number of unique observations for the harmonic part is only 365 and for elevation only 46, which saves quite a lot of memory storage.</p>
-<p>In this example, we are interested if it is more likely to rain on weekends than during the week (see also <span class="citation">Umlauf et al. (2012)</span> and <span class="citation">Umlauf, Klein, and Zeileis (2017)</span> for a more detailed analysis). The model summary suggests</p>
+<p>In this example, we are interested if it is more likely to rain on weekends than during the week (see also <span class="citation">Umlauf et al. (2012)</span> and <span class="citation">Umlauf, Klein, and Zeileis (2018)</span> for a more detailed analysis). The model summary suggests</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
 <pre><code>## 
 ## Call:
@@ -515,7 +515,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <p>Deb, Partha, and P. K. Trivedi. 1997. “Demand for Medical Care by the Elderly: A Finite Mixture Approach.” <em>Journal of Applied Econometrics</em> 12 (3): 313–36. doi:<a href="https://doi.org/10.1002/(SICI)1099-1255(199705)12:3&lt;313::AID-JAE440&gt;3.0.CO;2-G">10.1002/(SICI)1099-1255(199705)12:3&lt;313::AID-JAE440&gt;3.0.CO;2-G</a>.</p>
 </div>
 <div id="ref-bamlss:Dunn+Gordon:1996">
-<p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: pp. 236–44. doi:<a href="https://doi.org/10.2307/1390802">10.2307/1390802</a>.</p>
+<p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: 236–44. doi:<a href="https://doi.org/10.2307/1390802">10.2307/1390802</a>.</p>
 </div>
 <div id="ref-bamlss:Kleiber+Zeileis:2008">
 <p>Kleiber, Christian, and Achim Zeileis. 2008. <em>Applied Econometrics with R</em>. New York: Springer-Verlag. doi:<a href="https://doi.org/10.1007/978-0-387-77318-6">10.1007/978-0-387-77318-6</a>.</p>
@@ -527,7 +527,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <p>Lang, Stefan, Nikolaus Umlauf, Peter Wechselberger, Kenneth Harttgen, and Thomas Kneib. 2014. “Multilevel Structured Additive Regression.” <em>Statistics and Computing</em> 24 (2). Springer-Verlag: 223–38. doi:<a href="https://doi.org/10.1007/s11222-012-9366-0">10.1007/s11222-012-9366-0</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+Klein+Zeileis:2017">
-<p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2017. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em>. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
+<p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2018. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em> 27 (3): 612–27. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>

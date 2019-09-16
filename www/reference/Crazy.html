@@ -159,7 +159,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>Crazy</span>(<span class='no'>n</span>)</pre>
+    <pre class="usage"><span class='fu'>Crazy</span>(<span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -180,7 +180,14 @@
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'>Crazy</span>()</div><div class='output co'>#&gt; <span class='error'>Error in runif(n, -3, 3): argument "n" is missing, with no default</span></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>d</span>)</div><div class='output co'>#&gt; <span class='error'>Error in head(d): object 'd' not found</span></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>d</span>)</div><div class='output co'>#&gt; <span class='error'>Error in plot(d): object 'd' not found</span></div></pre>
+    <pre class="examples"><div class='input'><span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'>Crazy</span>(<span class='fl'>1000</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>d</span>)</div><div class='output co'>#&gt;            x        eta          y
+#&gt; 1 -2.5154992 -1.5000000 -1.5711524
+#&gt; 2  2.0059982 -0.8972532 -0.8310353
+#&gt; 3  0.6045653 -1.8394798 -1.8103668
+#&gt; 4 -2.0567494 -1.5000000 -1.4802042
+#&gt; 5 -2.9556034 -1.5000000 -1.6203566
+#&gt; 6 -0.2016390 -1.4010222 -1.4050039</div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>d</span>)</div><div class='img'><img src='Crazy-1.png' alt='' width='700' height='433' /></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

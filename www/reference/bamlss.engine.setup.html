@@ -260,12 +260,12 @@
 #&gt; [45] "propose"       </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/names'>names</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span><span class='kw'>[[</span><span class='st'>"s(x1)"</span>]]$<span class='no'>state</span>)</div><div class='output co'>#&gt; [1] "parameters"    "fitted.values" "edf"           "do.optim"     </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/lapply'>sapply</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span>, <span class='kw'>function</span>(<span class='no'>x</span>) {
   <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>x</span>$<span class='no'>state</span>$<span class='no'>edf</span>, <span class='fu'><a href='bamlss.engine.helpers.html'>get.state</a></span>(<span class='no'>x</span>, <span class='st'>"tau2"</span>))
 })</div><div class='output co'>#&gt; $`s(x1)`
-#&gt;                   tau21 
-#&gt; 1.00000e+00 3.04519e-05 
+#&gt;                     tau21 
+#&gt; 1.000000e+00 2.994366e-05 
 #&gt; 
 #&gt; $`s(x2)`
 #&gt;               tau21 
-#&gt; 3.0000000 0.6208407 
+#&gt; 3.0000000 0.5014987 
 #&gt; 
 #&gt; $model.matrix
 #&gt;   

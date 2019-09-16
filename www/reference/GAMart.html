@@ -188,20 +188,20 @@
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'>GAMart</span>()
-<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>d</span>)</div><div class='output co'>#&gt;          num     pnum      bnum cnum bin  cat       cens        eta          x1
-#&gt; 1  0.3233366 2.390716 0.6470260   65 yes high 2.28548091  0.5271946 0.080750138
-#&gt; 2 -0.2384057 1.828973 0.3897164   39  no  low 1.08484984 -0.1890600 0.834333037
-#&gt; 3 -0.4298111 1.637568 0.3020420   30  no none 0.00000000 -0.4237318 0.600760886
-#&gt; 4  0.2020300 2.269409 0.5914607   59 yes high 0.00000000  0.1582078 0.157208442
-#&gt; 5 -0.2352916 1.832088 0.3911429   39  no  low 0.03143882 -0.1138024 0.007399441
-#&gt; 6 -0.3442658 1.723113 0.3412265   34  no  low 0.00000000 -0.3941305 0.466393497
-#&gt;          x2        x3    fac id        lon        lat          err
-#&gt; 1 0.2032088 0.2383798   high  1 0.09090909 0.04545455 -0.203857975
-#&gt; 2 0.0683417 0.4116800   high  2 0.04545455 0.63636364 -0.049345763
-#&gt; 3 0.3072737 0.7460717    low  3 1.00000000 0.27272727 -0.006079296
-#&gt; 4 0.9931181 0.7234506 medium  4 0.54545455 0.31818182  0.043822179
-#&gt; 5 0.1163092 0.6145241    low  5 0.18181818 0.45454545 -0.121489123
-#&gt; 6 0.7154231 0.4739806    low  6 0.86363636 0.54545455  0.049864688</div><div class='input'>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>d</span>)</div><div class='output co'>#&gt;           num     pnum      bnum cnum bin    cat      cens          eta
+#&gt; 1 -0.41912697 1.667752 0.3172220   31  no    low 0.0000000 -0.454911527
+#&gt; 2 -0.64290601 1.443973 0.2142649   21  no   none 0.0000000 -0.567387027
+#&gt; 3  0.01258302 2.099462 0.5158447   52 yes medium 0.9366895  0.005914044
+#&gt; 4 -0.56909443 1.517785 0.2482244   24  no   none 0.0000000 -0.594829993
+#&gt; 5  0.13447127 2.221351 0.5719235   57 yes   high 1.3783995  0.143567571
+#&gt; 6 -0.37687959 1.710000 0.3366593   33  no    low 0.1581743 -0.303828789
+#&gt;           x1        x2        x3    fac id       lon       lat          err
+#&gt; 1 0.28145490 0.4715616 0.4339816 medium  1 0.5454545 0.7727273  0.035784558
+#&gt; 2 0.53045091 0.6130908 0.3954608   high  2 0.8636364 0.9090909 -0.075518986
+#&gt; 3 0.43285543 0.9819471 0.5478450 medium  3 0.8181818 0.4545455  0.006668971
+#&gt; 4 0.91717922 0.3550956 0.7618364 medium  4 1.0000000 0.5454545  0.025735565
+#&gt; 5 0.02747746 0.9069297 0.2540708 medium  5 0.0000000 0.1363636 -0.009096306
+#&gt; 6 0.82490547 0.9480849 0.5392890   high  6 0.4090909 0.1818182 -0.073050803</div><div class='input'>
 </div><span class='co'># NOT RUN {</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
