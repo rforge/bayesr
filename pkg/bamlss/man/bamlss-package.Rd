@@ -27,6 +27,12 @@
   Nikolaus Umlauf, Nadja Klein, Achim Zeileis.
 }
 
+\references{
+  Nikolaus Umlauf, Nadja Klein, and Achim Zeileis (2019). BAMLSS: Bayesian Additive Models for Location,
+  Scale and Shape (and Beyond). \emph{Journal of Computational and Graphical Statistics}.
+  \url{http://dx.doi.org/10.1080/10618600.2017.1407325}
+}
+
 \keyword{package}
 
 \seealso{
