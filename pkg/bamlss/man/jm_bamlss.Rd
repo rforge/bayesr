@@ -182,16 +182,13 @@ important distinction between associations which are nonlinear in \eqn{\eta_{\mu
 \note{The indicator \code{nonlinear} for associations with are linear or nonlinear in \eqn{\eta_{\mu}} was named \code{interaction]} in earlier versions stages of the development.}
 
 \references{
-  Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017a). Flexible Bayesian Additive Joint
-  Models with an Application to Type 1 Diabetes Research. Biometrical Journal, 59, 6, http://dx.doi.org/10.1002/bimj.201600224.
+  Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017). Flexible
+  Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research.
+  \emph{Biometrical Journal}, \url{http://dx.doi.org/10.1002/bimj.201600224}.
   
-  Koehler M, Umlauf N, Greven S (2017b). Nonlinear association structures in flexible Bayesian additive 
-  joint models. arXiv:1708.06337 [stat], http://arxiv.org/abs/1708.06337.
-  
-  Umlauf, N., Klein, N., and Zeileis, A. (2017). BAMLSS: Bayesian Additive Models for Location,
-  Scale and Shape (and beyond). Working Paper, Faculty of Economics and Statistics, University of
-  Innsbruck, http://EconPapers.repec.org/RePEc:inn:wpaper:2017-05.
-
+  Meike Koehler, Nikolaus Umlauf, and Sonja Greven (2018). Nonlinear association structures in
+  flexible Bayesian additive joint models. \emph{Statistics in Medicine},
+  \url{http://dx.doi.org/10.1002/sim.7967}.
 }
 
 \seealso{
