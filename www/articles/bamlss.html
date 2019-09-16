@@ -158,13 +158,22 @@
 <div id="running-your-first-model" class="section level2">
 <h2 class="hasAnchor">
 <a href="#running-your-first-model" class="anchor"></a>Running your first model</h2>
-<p>As a startup on how to use <em>bamlss</em>, we illustrate the basic steps on a small textbook example using the well-known simulated motorcycle accident data <span class="citation">(Silverman 1985)</span>. The data contain measurements of the head acceleration (in <span class="math inline">\(g\)</span>, variable <code>accel</code>) in a simulated motorcycle accident, recorded in milliseconds after impact (variable <code>times</code>). To estimate a Gaussian location-scale model with <span class="math display">\[
+<p>As a startup on how to use <em>bamlss</em>, we illustrate the basic steps on a small textbook example using the well-known simulated motorcycle accident data <span class="citation">(Silverman 1985)</span>. The data contain measurements of the head acceleration (in <span class="math inline">\(g\)</span>, variable <code>accel</code>) in a simulated motorcycle accident, recorded in milliseconds after impact (variable <code>times</code>).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"mcycle"</span>, <span class="dt">package =</span> <span class="st">"MASS"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(mcycle))</code></pre></div>
+<pre><code>##   times accel
+## 1   2.4   0.0
+## 2   2.6  -1.3
+## 3   3.2  -2.7
+## 4   3.6   0.0
+## 5   4.0  -2.7
+## 6   6.2  -2.7</code></pre>
+<p>To estimate a Gaussian location-scale model with <span class="math display">\[
 \texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
 \]</span> we use the following model formula</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(accel ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>), sigma ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>))</code></pre></div>
 <p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2019)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A full Bayesian model is the estimated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"mcycle"</span>, <span class="dt">package =</span> <span class="st">"MASS"</span>)
 
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
@@ -172,7 +181,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
   <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
 <p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-4-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-5-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
 <pre><code>## 
 ## Call:
@@ -225,15 +234,15 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). Using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-7-1.png" width="864" style="display: block; margin: auto;"> Note that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-8-1.png" width="864" style="display: block; margin: auto;"> Note that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
 <p>Inspecting randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> is useful for judging how well the model fits to the data</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
 <p>The posterior mean function for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="fl">2.4</span>, <span class="fl">57.6</span>, <span class="dt">length =</span> <span class="dv">100</span>))
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> mean)
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>times, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-11-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-12-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">foo &lt;-<span class="st"> </span>function(x) {
   <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/quantile">quantile</a></span>(x, <span class="dt">probs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))
 }
@@ -252,7 +261,7 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
 <div id="ref-bamlss:Dunn+Gordon:1996">
-<p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: 236–44. doi:<a href="https://doi.org/10.2307/1390802">10.2307/1390802</a>.</p>
+<p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: 236–44.</p>
 </div>
 <div id="ref-bamlss:Plummer+Best+Cowles+Vines:2006">
 <p>Plummer, Martyn, Nicky Best, Kate Cowles, and Karen Vines. 2006. “Coda: Convergence Diagnosis and Output Analysis for MCMC.” <em>R News</em> 6 (1): 7–11. doi:<a href="https://doi.org/10.18637/jss.v021.i11">10.18637/jss.v021.i11</a>.</p>
@@ -264,7 +273,7 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 <p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2018. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em> 27 (3): 612–27. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
-<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
+<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
 </div>
 <div id="ref-bamlss:Wood:2018">
 <p>Wood, S. N. 2019. <em>Mgcv: GAMs with Gcv/Aic/Reml Smoothness Estimation and Gamms by Pql</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
