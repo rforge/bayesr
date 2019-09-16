@@ -23,7 +23,14 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
         data <- as.data.frame(data)
     if(any(grep("+", as.character(x)[2L]))) {
       xch <- as.character(x)
-      x <- model.frame(as.formula(paste("~", xch[2L])), data = data)
+      if(xch[2L] %in% names(data)) {
+        if(inherits(data[[xch[2L]]], "data.frame"))
+          data[[xch[2L]]] <- as.matrix(data[[xch[2L]]])
+      }
+      x <- try(model.frame(as.formula(paste("~", xch[2L])), data = data), silent = TRUE)
+      if(inherits(x, "try-error")) {
+        x <- model.frame(as.formula(paste0("~ as.matrix(", xch[2L], ")")), data = data)
+      }
       x <- cbind(model.frame(as.formula(paste("~", xch[3L])), data = data), x)
     } else x <- model.frame(x, data = data)
     if(ncol(x) < 2L)
