@@ -4824,22 +4824,22 @@ gpareto2_bamlss <- function(...)
 }
 
 
-ipp_bamlss <- function(...)
-{
-  rval <- list(
-    "family" = "IPP",
-    "names" = "lambda",
-    "links" = c(lambda = "identity"),
-    "d" = function(y, par, ...) {
-      f <- function(x,y) {
-        exp(par$lambda)
-      }
-      intL <- rmutil::int2(f, a=c(0,0), b=c(1,1))
-      return(par$lambda - intL)
-    }
-  )
+#ipp_bamlss <- function(...)
+#{
+#  rval <- list(
+#    "family" = "IPP",
+#    "names" = "lambda",
+#    "links" = c(lambda = "identity"),
+#    "d" = function(y, par, ...) {
+#      f <- function(x,y) {
+#        exp(par$lambda)
+#      }
+#      intL <- rmutil::int2(f, a=c(0,0), b=c(1,1))
+#      return(par$lambda - intL)
+#    }
+#  )
 
-  class(rval) <- "family.bamlss"
-  rval
-}
+#  class(rval) <- "family.bamlss"
+#  rval
+#}
 

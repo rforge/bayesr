@@ -89,7 +89,12 @@ As a startup on how to use _bamlss_, we illustrate the basic steps on a small te
 example using the well-known simulated motorcycle accident data [@bamlss:Silverman:1985].
 The data contain measurements of the head acceleration
 (in $g$, variable `accel`) in a simulated motorcycle accident, recorded in milliseconds after
-impact (variable `times`). To estimate a Gaussian location-scale model with
+impact (variable `times`).
+```{r}
+data("mcycle", package = "MASS")
+print(head(mcycle))
+```
+To estimate a Gaussian location-scale model with
 $$
 \texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
 $$
@@ -105,7 +110,6 @@ possible to incorporate user defined model terms. A full Bayesian model is the
 estimated with
 ```{r, eval=FALSE}
 library("bamlss")
-data("mcycle", package = "MASS")
 
 set.seed(123)
 
