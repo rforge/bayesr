@@ -26,7 +26,7 @@ Crazy(n)
 }
 
 \examples{
-d <- Crazy()
+d <- Crazy(1000)
 head(d)
 plot(d)
 }
