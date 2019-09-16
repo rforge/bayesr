@@ -18,6 +18,7 @@ vignette: >
 ```{r preliminaries, echo=FALSE, message=FALSE}
 library("bamlss")
 set.seed(123)
+prefix <- "http://bayesr.R-Forge.R-project.org/articles/" ## ""
 ```
 
 ## Understanding the BAMLSS model frame
@@ -29,8 +30,8 @@ Internally, the function parses model formulae, one for each parameter of the di
 using the _Formula_ package infrastructures [@bamlss:Zeileis+Croissant:2010] in combination
 with `model.matrix()` processing for linear effects and `smooth.construct()` processing of
 the _mgcv_ package to setup design and penalty matrices for unspecified smooth function 
-estimation [@bamlss:Wood:2018] (see also, e.g., the documentation of function `s()` and
-`te()`).
+estimation [@bamlss:Wood:2019], see also, e.g., the documentation of function `s()` and
+`te()`.
 
 The most important arguments are
 ```{r, eval=FALSE}
@@ -38,15 +39,60 @@ bamlss.frame(formula, data = NULL, family = "gaussian",
   weights = NULL, subset = NULL, offset = NULL,
   na.action = na.omit, contrasts = NULL, ...)
 ```
-which basically represent the standard model frame specifications
-[@bamlss:Chambers+Hastie:1992], while argument `formula` can be a classical model
-formulae, e.g., as used by the `lm()` function, or an extended _bamlss_ formula, that is
-internally parsed by function `bamlss.formula()`. Note that the _bamlss_ package uses
-special `family` objects, that can be passed either as a character without the `"_bamlss"`
-extension of the _bamlss_ family name (see the manual `?bamlss.family` for a list of
-families), or the family function itself. In addition,
-all families of the _gamlss_ [@bamlss:gamlss] and _gamlss.dist_ 
-[@bamlss:gamlss.dist] package are supported.
+The argument `formula` can be a classical model formulae, e.g., as used by the `lm()` function,
+or an extended _bamlss_ formula including smooth term specifications like `s()` or `te()`,
+that is internally parsed by function `bamlss.formula()`.
+Note that the _bamlss_ package uses special `family` objects, that can be passed either as
+a character without the `"_bamlss"` extension of the _bamlss_ family name (see the manual
+`?bamlss.family` for a list of available families and the corresponding vignette
+[BAMLSS Families](`r prefix`families.html)), or the family function itself.
+In addition, all families of the _gamlss_ [@bamlss:Stasinopoulos+Rigby:2019] and
+_gamlss.dist_ [@bamlss:gamlss.dist] package are supported.
+
+The returned object, a named list of class `"bamlss.frame"`, can be employed with all model
+fitting engines. The most important elements used for estimation are:
+
+* `x`: A named list, the elements correspond to the parameters that are specified within
+  the `family` object. For each distribution parameter, the list contains all design and
+  penalty matrices needed for modeling (see the upcoming example).
+* `y`: The response data.
+* `family`: The processed \pkg{bamlss} \code{family}.
+
+To better understand the structure of the `"bamlss.frame"` object a print method is provided.
+For illustration, we simulate data
+```{r}
+set.seed(111)
+d <- GAMart()
+```
+and set up a `"bamlss.frame"` object for a Gaussian
+distributional regression model including smooth terms. First, a model formula is needed
+```{r}
+f <- list(
+  num ~ x1 + s(x2) + s(x3) + te(lon,lat),
+  sigma ~ x1 + s(x2) + s(x3) + te(lon,lat)
+)
+```
+Afterwards the model frame can be computed with
+```{r}
+bf <- bamlss.frame(f, data = d, family = "gaussian")
+```
+To keep the overview, there is also an implemented print method for `"bamlss.frame"` objects.
+```{r}
+print(bf)
+```
+For writing a new estimation engine, the user can directly work with the `model.matrix`
+elements, for linear effects, and the `smooth.construct` list, for smooth effects respectively.
+The `smooth.construct` is a named list which is compiled using the `smoothCon()` function
+of the _mgcv_ package using the generic `smooth.construct()` method for setting up
+smooth terms.
+```{r}
+print(names(bf$x$mu$smooth.construct))
+```
+In this example, the list contains three smooth term objects for parameter `mu` and
+`sigma`.
+
+See also the vignette [Estimation Engines](`r prefix`engines.html) presenting more details
+on how to work with the `bamlss.frame()`.
 
 ## References
 
