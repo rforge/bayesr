@@ -134,6 +134,18 @@
 <li>Support for modular and exchangeable updating functions or complete model fitting engines in order to optionally implement either algorithms for maximization of the log-posterior for posterior mode estimation or for solving high-dimensional integrals, e.g., for posterior mean or median estimation. First, an (optional) <code>optimizer</code> function can be run, e.g., for computing posterior mode estimates. Second, a <code>sampler</code> is employed for full Bayesian inference with MCMC, which uses the posterior mode estimates from the <code>optimizer</code> as staring values. An additional step can be used for preparing the <code>results</code>.</li>
 <li>Standard post-modeling extractor functions to create sampling statistics, visualizations, predictions, etc.</li>
 </ul>
+<p>More detailed overviews and examples are provided in the articles:</p>
+<ul>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/terms.html">Available Model Terms</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/glm.html">Generalized Linear Models (+)</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/families.html">BAMLSS Families</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/distregvis.html">Visualization with distreg.vis</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/rent.html">Munich Rent Model</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/bivnorm.html">Bivariate Gaussian models for wind vectors</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/lasso.html">LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/engines.html">Estimation Engines</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/bf.html">BAMLSS Model Frame</a></li>
+</ul>
 </div>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
@@ -150,9 +162,11 @@
 \texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
 \]</span> we use the following model formula</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(accel ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>), sigma ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>))</code></pre></div>
-<p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2018)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A full Bayesian model is the estimated with</p>
+<p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2019)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A full Bayesian model is the estimated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"mcycle"</span>, <span class="dt">package =</span> <span class="st">"MASS"</span>)
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
   <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
@@ -174,14 +188,14 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## Parametric coefficients:
 ##               Mean   2.5%    50%  97.5% parameters
-## (Intercept) -25.13 -29.34 -25.17 -21.24     -25.14
+## (Intercept) -25.17 -28.91 -25.18 -21.23     -25.14
 ## alpha         1.00   1.00   1.00   1.00         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 425513.52 170191.50 390995.34 916762.06   209333.1
+## s(times).tau21 425085.57 174273.68 375068.34 937318.30   209333.1
 ## s(times).alpha      1.00      1.00      1.00      1.00         NA
-## s(times).edf       14.20     12.54     14.14     15.97       13.6
+## s(times).edf       14.24     12.54     14.25     15.92       13.6
 ## ---
 ## Formula sigma:
 ## ---
@@ -189,25 +203,25 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## Parametric coefficients:
 ##               Mean   2.5%    50%  97.5% parameters
-## (Intercept) 2.6862 2.5552 2.6837 2.8299      2.581
-## alpha       0.9678 0.7675 0.9999 1.0000         NA
+## (Intercept) 2.6841 2.5535 2.6816 2.8193      2.581
+## alpha       0.9665 0.7364 0.9997 1.0000         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 1.227e+02 1.243e+01 9.737e+01 4.346e+02     81.399
-## s(times).alpha 5.312e-01 4.299e-04 5.026e-01 1.000e+00         NA
-## s(times).edf   8.981e+00 5.599e+00 9.001e+00 1.240e+01      8.675
+## s(times).tau21 1.328e+02 1.408e+01 1.043e+02 4.142e+02     81.399
+## s(times).alpha 5.040e-01 1.287e-04 4.576e-01 1.000e+00         NA
+## s(times).edf   9.107e+00 5.706e+00 9.166e+00 1.234e+01      8.675
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 1115.567 logLik = -545.856 pd = 23.8553
-## runtime = 42.485
+## DIC = 1115.331 logLik = -545.6219 pd = 24.0874
+## runtime = 28.84
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 1123.881 converged = 1 edf = 24.2716
 ## logLik = -531.9752 logPost = -747.4101 nobs = 133
-## runtime = 0.88
+## runtime = 0.317
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). Using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
@@ -226,12 +240,12 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> foo)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(nd))</code></pre></div>
 <pre><code>##      times     p.2.5%      p.50%    p.97.5%
-## 1 2.400000 -2.2685517 -0.3338592  2.0121098
-## 2 2.957576 -2.4032723 -1.2167286  0.2256118
-## 3 3.515152 -3.3582048 -1.9752305 -0.7446184
-## 4 4.072727 -4.0285472 -2.4734314 -1.0844792
-## 5 4.630303 -4.3516868 -2.6297711 -1.1780513
-## 6 5.187879 -4.1810407 -2.5654621 -1.1680551</code></pre>
+## 1 2.400000 -1.9954767 -0.3120000  1.8381633
+## 2 2.957576 -2.5953925 -1.2247770  0.2324195
+## 3 3.515152 -3.4697040 -1.9688163 -0.7212320
+## 4 4.072727 -4.2644050 -2.4327391 -1.0688515
+## 5 4.630303 -4.5969013 -2.6300907 -1.1079125
+## 6 5.187879 -4.4164904 -2.5617960 -1.0932878</code></pre>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
@@ -250,10 +264,10 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 <p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2017. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em>. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
-<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2018. <em><span class="math inline">\(\phantom{.}\)</span><strong>Bamlss</strong>: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
+<p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>Bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="http://CRAN.R-project.org/package=bamlss" class="uri">http://CRAN.R-project.org/package=bamlss</a>.</p>
 </div>
 <div id="ref-bamlss:Wood:2018">
-<p>Wood, S. N. 2018. <em>Mgcv: GAMs with Gcv/Aic/Reml Smoothness Estimation and Gamms by Pql</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
+<p>Wood, S. N. 2019. <em>Mgcv: GAMs with Gcv/Aic/Reml Smoothness Estimation and Gamms by Pql</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
 </div>
 </div>
 </div>
