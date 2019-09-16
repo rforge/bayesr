@@ -24,7 +24,6 @@ if(!file.exists("toymodel.rda")) {
   set.seed(123)
   b <- bamlss(f, data = mcycle, family = "gaussian",
     n.iter = 12000, burnin = 2000, thin = 10)
-  save(b, file = "toymodel.rda")
 } else {
   load("toymodel.rda")
 }
