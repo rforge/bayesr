@@ -3541,6 +3541,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
   nn <- names(newdata)
+  rn_nn <- rownames(newdata)
   nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+")), env = NULL))
   rn <- response.name(object, keep.functions = TRUE)
   nn <- nn[!(nn %in% rn)]
@@ -3768,6 +3769,28 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
         }
       }
       pred <- pred[[1]]
+    }
+  }
+
+  for(j in seq_along(pred)) {
+    if(!is.null(dim(pred[[j]]))) {
+      if(ncol(pred[[j]]) < 2L) {
+        pred[[j]] <- as.vector(pred[[j]])
+        if(!is.null(rn_nn)) {
+          names(pred[[j]]) <- rn_nn
+        } else {
+          names(pred[[j]]) <- NULL
+        }
+      } else {
+        cn <- colnames(pred[[j]])
+        pred[[j]] <- as.data.frame(pred[[j]])
+        names(pred[[j]]) <- cn
+        if(is.null(rn_nn)) {
+          rownames(pred[[j]]) <- NULL
+        } else {
+          rownames(pred[[j]]) <- rn_nn
+        }
+      }
     }
   }
 
@@ -6798,6 +6821,11 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
   if(!is.null(list(...)$pages))
     ask <- !(list(...)$pages == 1)
+
+  if(prod(par("mfcol")) > 1L) {
+    spar <- FALSE
+    ask <- FALSE
+  }
 
   ## What should be plotted?
   which.match <- c("effects", "samples", "hist-resid", "qq-resid",
