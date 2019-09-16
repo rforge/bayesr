@@ -16,9 +16,19 @@ vignette: >
   %\VignettePackage{bamlss}
 ---
 
-```{r preliminaries, echo=FALSE, message=FALSE}
+```{r preliminaries, echo=FALSE, message=FALSE, results="hide"}
 library("bamlss")
-load("figures/toymodel.rda")
+data("mcycle", package = "MASS")
+f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
+if(!file.exists("toymodel.rda")) {
+  set.seed(123)
+  b <- bamlss(f, data = mcycle, family = "gaussian",
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(b, file = "toymodel.rda")
+} else {
+  load("toymodel.rda")
+}
+prefix <- "http://bayesr.R-Forge.R-project.org/articles/" ## ""
 ```
 
 ## Overview
@@ -26,7 +36,7 @@ load("figures/toymodel.rda")
 The R package _bamlss_ provides a modular computational framework for distributional regression
 models (and beyond). The implementation follows the conceptional framework presented in
 @bamlss:Umlauf+Klein+Zeileis:2017, which supports Bayesian and/or frequentist estimation engines
-using complex possibly nonlinear model terms of any type. The highlights of the package are: 
+using complex possibly nonlinear model terms of any type. The highlights of the package are:  
 
 * A unified model description where a `formula` specifies how to set up the predictors
   from the `data` and `family` objects provide information about the response distribution.
@@ -43,6 +53,18 @@ using complex possibly nonlinear model terms of any type. The highlights of the 
   for preparing the `results`.
 * Standard post-modeling extractor functions to create sampling statistics, visualizations,
   predictions, etc.
+
+More detailed overviews and examples are provided in the articles:
+
+* [Available Model Terms](`r prefix`terms.html)
+* [Generalized Linear Models (+)](`r prefix`glm.html)
+* [BAMLSS Families](`r prefix`families.html)
+* [Visualization with distreg.vis](`r prefix`distregvis.html)
+* [Munich Rent Model](`r prefix`rent.html)
+* [Bivariate Gaussian models for wind vectors](`r prefix`bivnorm.html)
+* [LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape](`r prefix`lasso.html)
+* [Estimation Engines](`r prefix`engines.html)
+* [BAMLSS Model Frame](`r prefix`bf.html)
 
 ## Installation
 
@@ -84,6 +106,8 @@ estimated with
 ```{r, eval=FALSE}
 library("bamlss")
 data("mcycle", package = "MASS")
+
+set.seed(123)
 
 b <- bamlss(f, data = mcycle, family = "gaussian",
   n.iter = 12000, burnin = 2000, thin = 10)
