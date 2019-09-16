@@ -506,7 +506,9 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
   optimizer = lasso, sampler = FALSE,
   criterion = "BIC", upper = exp(5), lower = 1)
 @
-The optimum shrinkage parameter $\lambda$ is selected by the BIC.
+The optimum shrinkage parameter $\lambda$ is selected by the BIC. Arguments \code{upper} and
+\code{lower} determine the search interval of $\lambda$, per default \code{nlambda = 100} values
+are generated.
 Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied,
 argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
@@ -603,9 +605,8 @@ if(!file.exists("McycleModel.rda")) {
 set.seed(456)
 b <- bamlss(f, data = mcycle, family = "gaussian")
 @
-again using 12000 iterations for the MCMC chain, a burnin of 2000 and a thinning
-of parameter of 10. After the estimation algorithms are finished, the estimated effects can be
-visualized instantly using the plotting method.
+After the estimation algorithms are finished, the estimated effects can be visualized instantly
+using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma"))
 @
@@ -1040,8 +1041,7 @@ The estimated parameters returned from function \fct{bfit} can then be used as s
 values for the MCMC sampler function \fct{GMCMC}
 <<results=hide>>=
 set.seed(123)
-samps <- with(bf, GMCMC(x, y, family, start = pm$parameters,
-  n.iter = 12000, burnin = 2000, thin = 10))
+samps <- with(bf, GMCMC(x, y, family, start = pm$parameters))
 @
 Using the parameters samples returned from function \fct{GMCMC}, statistics like the DIC are
 computed using the \fct{samplestats} function
