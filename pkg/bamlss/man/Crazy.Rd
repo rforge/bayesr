@@ -10,7 +10,7 @@
 }
 
 \usage{
-Crazy(n)
+Crazy(n = 1000)
 }
 
 \arguments{

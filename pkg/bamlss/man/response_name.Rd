@@ -16,6 +16,7 @@ response_name(object, ...)
 
 \arguments{
   \item{object}{An object of class \code{"bamlss.frame"} or \code{"bamlss"}.}
+  \item{\dots}{Not used.}
 }
 
 \seealso{
