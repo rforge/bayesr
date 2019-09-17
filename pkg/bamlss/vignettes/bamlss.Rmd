@@ -82,11 +82,23 @@ It can be installed via
 install.packages("bamlss", repos = "http://R-Forge.R-project.org")
 ```
 
-## Running your first model
+## Basic Bayesian regression
 
-As a startup on how to use _bamlss_, we illustrate the basic steps on a small textbook
-example using the well-known simulated motorcycle accident data [@bamlss:Silverman:1985].
-The data contain measurements of the head acceleration
+This section gives a first quick overview of the functionality of the package and
+demonstrates that the usual "look & feel" when using well-established model fitting 
+functions like `glm()` is an elementary part of _bamlss_, i.e., first steps and
+basic handling of the package should be relatively simple. We illustrate the first steps
+with _bamlss_ using the Munich rent index data that is provided in the _gamlss.data_ package
+[@bamlss:gamlss.data]
+```{r}
+data("rent", package = "gamlss.data")
+```
+
+## Location-scale model
+
+As a startup on how to use _bamlss_ for full distributional regression, we illustrate the basic
+steps on a small textbook example using the well-known simulated motorcycle accident
+data [@bamlss:Silverman:1985]. The data contain measurements of the head acceleration
 (in $g$, variable `accel`) in a simulated motorcycle accident, recorded in milliseconds after
 impact (variable `times`).
 ```{r}
