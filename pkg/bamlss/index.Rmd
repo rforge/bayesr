@@ -62,7 +62,7 @@ plot(b, which = 4, spar = FALSE)
 
 ![](misc/traceplot-03.png){width=100%}
 
-## Extendable model terms and model fitting engines
+## Extensible model terms and model fitting engines
 
 ```{r, eval=FALSE}
 ## Posterior mode optimization.
@@ -77,7 +77,7 @@ GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
 boost <- function(x, y, family, weights = NULL, offset = NULL,
   nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400, ...) { }
 
-## LASSO.
+## Lasso.
 lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL, ...) { }
 ```
