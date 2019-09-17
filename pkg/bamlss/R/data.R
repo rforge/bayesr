@@ -144,6 +144,7 @@ data_Golf <- function(dir = NULL)
   dpath <- "https://www.uni-goettingen.de/de/document/download/062cadfda1c4c295f9460b49c7f5799e.raw/golffull.raw"
   d <- read.table(dpath, header = TRUE)
   Golf <- d[, c("price", "age", "kilometer", "TIA")]
+  names(Golf) <- tolower(names(Golf))
   Golf$abs <- factor(d$extras1, levels = 0:1, labels = c("no", "yes"))
   Golf$sunroof <- factor(d$extras2, levels = 0:1, labels = c("no", "yes"))
 

@@ -13,11 +13,11 @@
 The \code{Golf} data contains the following variables:
 \describe{
   \item{price:}{Numeric, sale price in 1000 Euro.}
-  \item{age:}{Numeric, Age of the car in month.}
-  \item{kilometer:}{Numeric, Kilometer reading in 1000 kilometer.}
-  \item{TIA:}{Numeric, Month until the next TIA appointment.}
-  \item{abs:}{Factor, Does the car have abs?}
-  \item{sunroof:}{Factor, Does the car have a sunroof?}
+  \item{age:}{Numeric, age of the car in month.}
+  \item{kilometer:}{Numeric, kilometer reading in 1000 kilometers.}
+  \item{tia:}{Numeric, month until the next TIA appointment (German TUEV).}
+  \item{abs:}{Factor, does the car have abs?}
+  \item{sunroof:}{Factor, does the car have a sunroof?}
 }
 }
 
@@ -30,6 +30,7 @@ The \code{Golf} data contains the following variables:
 \examples{
 data("Golf")
 plot(price ~ age, data = Golf)
+plot(price ~ kilometer, data = Golf)
 }
 
 \keyword{datasets}
