@@ -18,15 +18,6 @@ vignette: >
 
 ```{r preliminaries, echo=FALSE, message=FALSE, results="hide"}
 library("bamlss")
-data("mcycle", package = "MASS")
-f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
-if(!file.exists("toymodel.rda")) {
-  set.seed(123)
-  b <- bamlss(f, data = mcycle, family = "gaussian",
-    n.iter = 12000, burnin = 2000, thin = 10)
-} else {
-  load("toymodel.rda")
-}
 prefix <- "http://bayesr.R-Forge.R-project.org/articles/" ## ""
 ```
 
@@ -94,8 +85,78 @@ which is about prices of used VW Golf cars. The data is loaded with
 data("Golf", package = "bamlss")
 print(head(Golf))
 ```
+In this example the aim is to model the `price` in 1000 Euro. Using _bamlss_ a first Bayesian
+linear model could be set up by first specifying a model formula
+```{r}
+f <- price ~ age + kilometer + TIA + abs + sunroof
+```
+afterwards the full Bayesian model using MCMC simulation is estimated by
+```{r, message=FALSE, results="hide"}
+library("bamlss")
+
+set.seed(111)
+
+b1 <- bamlss(f, family = "gaussian", data = Golf)
+```
+Note that the default number of iterations for the MCMC sampler is 1200, the burnin-phase is 200 and
+thinning is 1. The reason is that during the modeling process, users usually want to obtain first
+results rather quickly. Afterwards, if a final model is estimated the number of iterations of the
+sampler is usually set much higher to get close to i.i.d. samples from the posterior distribution.
+To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
+optimizes the posterior mode. The _bamlss_ package uses its own families, see also
+[BAMLSS Families](`r prefix`families.html), however, the package also supports all families
+provided from the [_gamlss_ families](https://cran.r-project.org/package=gamlss.dist "CRAN gamlss.dist").
+
+The model summary gives
+```{r}
+summary(b1)
+```
+indicating high acceptance rates as reported by the `alpha` parameter in the linear model
+output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected
+graphically by
+```{r, eval=FALSE}
+plot(b1, which = "samples")
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+bsp <- b1
+bsp$samples <- bsp$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")]
+plot(bsp, which = "samples")
+```
+Note, for convenience we only show the traceplots of the intercepts.
+Considering significance of the estimated effect, only the effects for variable `TIA`
+and `sunroof` seem to have no effect on `price` since the credible intervals contains zero. This
+information can also be extracted using the implemented `confint()` method.
+```{r}
+confint(b1, prob = c(0.025, 0.975))
+```
+
+Since the prices cannot be negative, a possible consideration is to use a logarithmic transformation
+of the response `price`
+```{r, message=FALSE, results="hide"}
+set.seed(111)
+
+f <- log(price) ~ age + kilometer + TIA + abs + sunroof
+
+b2 <- bamlss(f, family = "gaussian", data = Golf)
+```
+and compare the models using the `DIC()`
+```{r}
+DIC(b1, b2)
+```
 
 ## Location-scale model
+
+```{r preliminaries2, echo=FALSE, message=FALSE, results="hide"}
+data("mcycle", package = "MASS")
+f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
+if(!file.exists("toymodel.rda")) {
+  set.seed(123)
+  b <- bamlss(f, data = mcycle, family = "gaussian",
+    n.iter = 12000, burnin = 2000, thin = 10)
+} else {
+  load("toymodel.rda")
+}
+```
 
 As a startup on how to use _bamlss_ for full distributional regression, we illustrate the basic
 steps on a small textbook example using the well-known simulated motorcycle accident
@@ -121,8 +182,6 @@ smooth terms, i.e., `te()`, `ti()`, etc., are supported by _bamlss_. This way, i
 possible to incorporate user defined model terms. A full Bayesian model is the
 estimated with
 ```{r, eval=FALSE}
-library("bamlss")
-
 set.seed(123)
 
 b <- bamlss(f, data = mcycle, family = "gaussian",

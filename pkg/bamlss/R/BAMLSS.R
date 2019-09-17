@@ -2765,12 +2765,13 @@ all.vars.formula <- function(formula, lhs = TRUE, rhs = TRUE, specials = NULL, i
   }
   vars <- unique(vars)
   if(is.null(sid)) {
-    if(type == 2)
+    if(type == 2 & !lhs)
       type <- 1
   }
   if((type == 1) & !is.null(vars))
     vars <- all.vars(as.formula(paste("~", paste(vars, collapse = "+")), env = NULL))
-  unique(vars)
+  vars <- unique(vars)
+  vars
 }
 
 
@@ -2905,7 +2906,7 @@ formula_extend <- function(formula, family, specials = NULL)
       formula[[j]] <- formula_extend(formula[[j]], family, specials)
     return(formula)
   } else {
-    rn <- response.name(formula)
+    rn <- response.name(formula, keep.functions = TRUE)
     ff <- fake.formula(formula, lhs = !(rn %in% family$names), specials = specials)
     return(list("formula" = formula, "fake.formula" = ff))
   }
@@ -7752,7 +7753,7 @@ formula.bamlss.terms <- function(x, model, ...)
         attributes(f[[i]][[j]]$formula) <- NULL
         environment(f[[i]][[j]]$formula) <- env
         vars <- all.vars(x[[i]][[j]])
-        response <- response.name(x[[i]][[j]])
+        response <- response.name(x[[i]][[j]], keep.functions = TRUE)
         if(all(is.na(response)))
           response <- NULL
         if(!is.null(response)) {
@@ -7769,7 +7770,7 @@ formula.bamlss.terms <- function(x, model, ...)
       attributes(f[[i]]$formula) <- NULL
       environment(f[[i]]$formula) <- env
       vars <- all.vars(x[[i]])
-      response <- response.name(x[[i]])
+      response <- response.name(x[[i]], keep.functions = TRUE)
       if(all(is.na(response)))
         response <- NULL
       if(!is.null(response)) {
