@@ -10,13 +10,16 @@ bibentry(bibtype = "Article",
                           family = "Zeileis",
                           email = "Achim.Zeileis@R-project.org")),
   journal  = "Journal of Computational and Graphical Statistics",
-  year         = "2017",
+  year         = "2018",
+  pages        = "612--627",
+  volume       = "27",
+  number       = "3",
   url	       = "http://dx.doi.org/10.1080/10618600.2017.1407325",
 
   header       = "To cite bamlss in publications use:",
   textVersion  =
-  paste("Nikolaus Umlauf, Nadja Klein, Achim Zeileis (2017).",
+  paste("Nikolaus Umlauf, Nadja Klein, Achim Zeileis (2018).",
 	"BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond),",
-        "Journal of Computational and Graphical Statistics.",
+        "Journal of Computational and Graphical Statistics, 27(3):612--627.",
 	"URL http://dx.doi.org/10.1080/10618600.2017.1407325")
 )
