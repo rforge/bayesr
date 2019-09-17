@@ -155,10 +155,119 @@
 <p>The development version of <em>bamlss</em> is hosted on R-Forge at <a href="https://R-Forge.R-project.org/projects/bayesr/" class="uri">https://R-Forge.R-project.org/projects/bayesr/</a> in a Subversion (SVN) repository. It can be installed via</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"bamlss"</span>, <span class="dt">repos =</span> <span class="st">"http://R-Forge.R-project.org"</span>)</code></pre></div>
 </div>
-<div id="running-your-first-model" class="section level2">
+<div id="basic-bayesian-regression" class="section level2">
 <h2 class="hasAnchor">
-<a href="#running-your-first-model" class="anchor"></a>Running your first model</h2>
-<p>As a startup on how to use <em>bamlss</em>, we illustrate the basic steps on a small textbook example using the well-known simulated motorcycle accident data <span class="citation">(Silverman 1985)</span>. The data contain measurements of the head acceleration (in <span class="math inline">\(g\)</span>, variable <code>accel</code>) in a simulated motorcycle accident, recorded in milliseconds after impact (variable <code>times</code>).</p>
+<a href="#basic-bayesian-regression" class="anchor"></a>Basic Bayesian regression</h2>
+<p>This section gives a first quick overview of the functionality of the package and demonstrates that the usual “look &amp; feel” when using well-established model fitting functions like <code><a href="https://www.rdocumentation.org/packages/stats/topics/glm">glm()</a></code> is an elementary part of <em>bamlss</em>, i.e., first steps and basic handling of the package should be relatively simple. We illustrate the first steps with <em>bamlss</em> using a data set taken from the <em>Regression Book</em> <span class="citation">(Fahrmeir et al. 2013)</span> which is about prices of used VW Golf cars. The data is loaded with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"Golf"</span>, <span class="dt">package =</span> <span class="st">"bamlss"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(Golf))</code></pre></div>
+<pre><code>##   price age kilometer TIA abs sunroof
+## 1  7.30  73        10  12 yes     yes
+## 2  3.85 115        30  20 yes      no
+## 3  2.95 127        43   6  no     yes
+## 4  4.80 104        54  25 yes     yes
+## 5  6.20  86        57  23  no      no
+## 6  5.90  74        57  25 yes      no</code></pre>
+<p>In this example the aim is to model the <code>price</code> in 1000 Euro. Using <em>bamlss</em> a first Bayesian linear model could be set up by first specifying a model formula</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span>price ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>TIA +<span class="st"> </span>abs +<span class="st"> </span>sunroof</code></pre></div>
+<p>afterwards the fully Bayesian model using MCMC simulation is estimated by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">111</span>)
+
+b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> <span class="st">"gaussian"</span>, <span class="dt">data =</span> Golf)</code></pre></div>
+<p>Note that the default number of iterations for the MCMC sampler is 1200, the burnin-phase is 200 and thinning is 1 (see the manual of the default MCMC sampler <code><a href="http://bayesr.R-Forge.R-project.org/reference/GMCMC.html">GMCMC()</a></code>). The reason is that during the modeling process, users usually want to obtain first results rather quickly. Afterwards, if a final model is estimated the number of iterations of the sampler is usually set much higher to get close to i.i.d. samples from the posterior distribution. To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that optimizes the posterior mode. The <em>bamlss</em> package uses its own family objects, which can be specified as characters using the <code><a href="http://bayesr.R-Forge.R-project.org/reference/bamlss.html">bamlss()</a></code> wrapper, in this case <code>family = "gaussian"</code> (see also <a href="http://bayesr.R-Forge.R-project.org/articles/families.html">BAMLSS Families</a>). In addition, the package also supports all families provided from the <a href="https://cran.r-project.org/package=gamlss.dist" title="CRAN gamlss.dist"><em>gamlss</em> families</a>.</p>
+<p>The model summary gives</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b1)</code></pre></div>
+<pre><code>## 
+## Call:
+## bamlss(formula = f, family = "gaussian", data = Golf)
+## ---
+## Family: gaussian 
+## Link function: mu = identity, sigma = log
+## *---
+## Formula mu:
+## ---
+## price ~ age + kilometer + TIA + abs + sunroof
+## -
+## Parametric coefficients:
+##                  Mean      2.5%       50%     97.5% parameters
+## (Intercept)  9.333318  8.526293  9.330200 10.173709      9.311
+## age         -0.038461 -0.045355 -0.038341 -0.031706     -0.038
+## kilometer   -0.009686 -0.012547 -0.009667 -0.007061     -0.010
+## TIA         -0.005811 -0.022870 -0.005752  0.010105     -0.005
+## absyes      -0.240481 -0.492048 -0.237776 -0.003060     -0.238
+## sunroofyes  -0.024021 -0.300878 -0.025127  0.238145     -0.010
+## alpha        0.999998  0.999989  1.000000  1.000000         NA
+## ---
+## Formula sigma:
+## ---
+## sigma ~ 1
+## -
+## Parametric coefficients:
+##                Mean    2.5%     50%   97.5% parameters
+## (Intercept) -0.2457 -0.3479 -0.2465 -0.1274     -0.271
+## alpha        0.9703  0.7652  1.0000  1.0000         NA
+## ---
+## Sampler summary:
+## -
+## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
+## runtime = 1.274
+## ---
+## Optimizer summary:
+## -
+## AICc = 409.6319 converged = 1 edf = 7
+## logLik = -197.4745 logPost = -252.2614 nobs = 172
+## runtime = 0.011
+## ---</code></pre>
+<p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Note, for convenience we only show the traceplots of the intercepts. Considering significance of the estimated effects, only variables <code>TIA</code> and <code>sunroof</code> seem to have no effect on <code>price</code> since the credible intervals of estimated parameters contain zero. This information can also be extracted using the implemented <code><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint()</a></code> method.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint</a></span>(b1, <span class="dt">prob =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</code></pre></div>
+<pre><code>##                          2.5%        97.5%
+## mu.(Intercept)     8.52629257 10.173709336
+## mu.age            -0.04535461 -0.031705531
+## mu.kilometer      -0.01254739 -0.007060627
+## mu.TIA            -0.02286985  0.010105028
+## mu.absyes         -0.49204765 -0.003060006
+## mu.sunroofyes     -0.30087769  0.238144948
+## sigma.(Intercept) -0.34791813 -0.127380063</code></pre>
+<p>Since the prices cannot be negative, a possible consideration is to use a logarithmic transformation of the response <code>price</code></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">111</span>)
+
+f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(price) ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>TIA +<span class="st"> </span>abs +<span class="st"> </span>sunroof
+
+b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> <span class="st">"gaussian"</span>, <span class="dt">data =</span> Golf)</code></pre></div>
+<p>and compare the models using the <code><a href="../reference/DIC.html">DIC()</a></code></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2)</code></pre></div>
+<pre><code>##          DIC       pd
+## b1 408.96754 6.893153
+## b2 -15.19596 6.893153</code></pre>
+<p>indicating that the transformation seems to improve the model fit.</p>
+<p>Predictions can be easily computed using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code> method. One major difference compared to other regression model implementations is that predictions can be made for single variables, only, where the user does not have to create a new data frame containing all variables. For example, posterior mean estimates and 95% credible intervals for variable <code>age</code> can be obtained by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"age"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(Golf$age), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(Golf$age), <span class="dt">length =</span> <span class="dv">100</span>))
+
+p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b2, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">term =</span> <span class="st">"age"</span>, <span class="dt">FUN =</span> c95)
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(p))</code></pre></div>
+<pre><code>##       2.5%     Mean    97.5%
+## 1 1.905196 2.065724 2.226153
+## 2 1.898128 2.057578 2.217355
+## 3 1.891059 2.049432 2.208557
+## 4 1.883990 2.041287 2.199759
+## 5 1.876921 2.033141 2.191380
+## 6 1.869516 2.024995 2.183378</code></pre>
+<p>Here, we need to specify for which model predictions should be calculated, and if predictions only for variable <code>age</code> are created, argument <code>term</code> needs also be specified. Argument <code>FUN</code> can be any function that should be applied on the samples of the linear predictor. For more examples see the documentation of the <code><a href="http://bayesr.R-Forge.R-project.org/reference/predict.bamlss.html">predict.bamlss()</a></code> method.</p>
+<p>Then, the estimated effect of <code>age</code> can be visualized with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>age, <span class="dt">data =</span> nd,
+  <span class="dt">fill.select =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>),
+  <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-12-1.png" width="40%" style="display: block; margin: auto;"> The figure clearly shows the negative effect on the logarithmic <code>price</code> for variable <code>age</code>.</p>
+</div>
+<div id="location-scale-model" class="section level2">
+<h2 class="hasAnchor">
+<a href="#location-scale-model" class="anchor"></a>Location-scale model</h2>
+<p>As a second startup on how to use <em>bamlss</em> for full distributional regression, we illustrate the basic steps on a small textbook example using the well-known simulated motorcycle accident data <span class="citation">(Silverman 1985)</span>. The data contain measurements of the head acceleration (in <span class="math inline">\(g\)</span>, variable <code>accel</code>) in a simulated motorcycle accident, recorded in milliseconds after impact (variable <code>times</code>).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"mcycle"</span>, <span class="dt">package =</span> <span class="st">"MASS"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(mcycle))</code></pre></div>
 <pre><code>##   times accel
@@ -173,15 +282,13 @@
 \]</span> we use the following model formula</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(accel ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>), sigma ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>))</code></pre></div>
 <p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2019)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A full Bayesian model is the estimated with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
   <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
 <p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-5-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-17-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
 <pre><code>## 
 ## Call:
@@ -232,29 +339,251 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## logLik = -531.9752 logPost = -747.4101 nobs = 133
 ## runtime = 0.317
 ## ---</code></pre>
-<p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). Using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
+<p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-8-1.png" width="864" style="display: block; margin: auto;"> Note that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-20-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
 <p>Inspecting randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> is useful for judging how well the model fits to the data</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-22-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
 <p>The posterior mean function for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="fl">2.4</span>, <span class="fl">57.6</span>, <span class="dt">length =</span> <span class="dv">100</span>))
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> mean)
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>times, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-12-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-24-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">foo &lt;-<span class="st"> </span>function(x) {
   <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/quantile">quantile</a></span>(x, <span class="dt">probs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))
 }
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> foo)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(nd))</code></pre></div>
-<pre><code>##      times     p.2.5%      p.50%    p.97.5%
-## 1 2.400000 -1.9954767 -0.3120000  1.8381633
-## 2 2.957576 -2.5953925 -1.2247770  0.2324195
-## 3 3.515152 -3.4697040 -1.9688163 -0.7212320
-## 4 4.072727 -4.2644050 -2.4327391 -1.0688515
-## 5 4.630303 -4.5969013 -2.6300907 -1.1079125
-## 6 5.187879 -4.4164904 -2.5617960 -1.0932878</code></pre>
+<pre><code>##      times    p.2.5%     p.50%    p.97.5%
+## 1 2.400000 -1.995477 -0.312000  1.8381633
+## 2 2.957576 -2.595392 -1.224777  0.2324195
+## 3 3.515152 -3.469704 -1.968816 -0.7212320
+## 4 4.072727 -4.264405 -2.432739 -1.0688515
+## 5 4.630303 -4.596901 -2.630091 -1.1079125
+## 6 5.187879 -4.416490 -2.561796 -1.0932878</code></pre>
+</div>
+<div id="spatial-location-scale-model" class="section level2">
+<h2 class="hasAnchor">
+<a href="#spatial-location-scale-model" class="anchor"></a>Spatial location-scale model</h2>
+<p>This example is taken from the <em>R2BayesX</em> package <span class="citation">(Umlauf et al. 2015)</span> and is about undernutrition of new born children in Zambia. The data is loaded with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"ZambiaNutrition"</span>, <span class="dt">package =</span> <span class="st">"R2BayesX"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ZambiaNutrition))</code></pre></div>
+<pre><code>##        stunting  mbmi agechild district memployment meducation urban
+## 1893 -0.6817840 22.33       29       12         yes         no   yes
+## 1894 -1.5876900 22.33       57       12         yes         no   yes
+## 1895  0.3110890 18.66       16       12         yes         no   yes
+## 1896  0.0067044 18.66       46       12         yes         no   yes
+## 1897  1.8765000 24.00       28       12         yes    primary   yes
+## 1898  0.1009190 24.22        9       12         yes    primary   yes
+##      gender
+## 1893   male
+## 1894 female
+## 1895 female
+## 1896   male
+## 1897 female
+## 1898   male</code></pre>
+<p>Here, the primary interest is to model the dependence of <code>stunting</code> of newborn children, with an age ranging from 0 to 5 years, on covariates such as the body mass index of the mother, the age of the child and others. Moreover, we apply a full distributional regression model with <span class="math display">\[
+\texttt{stunting} \sim \mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})),
+\]</span> where the predictors <span class="math inline">\(\eta_{\mu}\)</span> and <span class="math inline">\(\eta_{\sigma}\)</span> are specified by the following formula</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
+  stunting ~<span class="st"> </span>memployment +<span class="st"> </span>urban +<span class="st"> </span>gender +<span class="st"> </span>meducation +
+<span class="st">    </span><span class="kw">s</span>(mbmi) +<span class="st"> </span><span class="kw">s</span>(agechild) +<span class="st"> </span><span class="kw">s</span>(district, <span class="dt">bs =</span> <span class="st">"mrf"</span>, <span class="dt">xt =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="st">"penalty"</span> =<span class="st"> </span>K)) +
+<span class="st">    </span><span class="kw">s</span>(district, <span class="dt">bs =</span> <span class="st">"re"</span>),
+  sigma  ~<span class="st"> </span>memployment +<span class="st"> </span>urban +<span class="st"> </span>gender +<span class="st"> </span>meducation +
+<span class="st">    </span><span class="kw">s</span>(mbmi) +<span class="st"> </span><span class="kw">s</span>(agechild) +<span class="st"> </span><span class="kw">s</span>(district, <span class="dt">bs =</span> <span class="st">"mrf"</span>, <span class="dt">xt =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="st">"penalty"</span> =<span class="st"> </span>K)) +
+<span class="st">    </span><span class="kw">s</span>(district, <span class="dt">bs =</span> <span class="st">"re"</span>)
+)</code></pre></div>
+<p>Note that for setting up the Markov random field smooth term a penalty matrix <code>K</code> needs to be provided. The penalty matrix forces penalization for neighboring regions of the districts in Zambia. To compute the <code>K</code> matrix, we need the spatial information about the regions in Zambia, which is shipped as a <code>"bnd"</code> object in the <em>R2BayesX</em> package and can be loaded with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"ZambiaBnd"</span>, <span class="dt">package =</span> <span class="st">"R2BayesX"</span>)</code></pre></div>
+<p>The <code>K</code> matrix can then be computed using function <code><a href="http://bayesr.R-Forge.R-project.org/reference/neighbormatrix.html">neighbormatrix()</a></code></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">K &lt;-<span class="st"> </span><span class="kw"><a href="../reference/neighbormatrix.html">neighbormatrix</a></span>(ZambiaBnd)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(K))</code></pre></div>
+<pre><code>##    87 76 67 92 97 94 86 85 83 71 45 44 41 32 96 95 91 74 63 65 62 61 53 52
+## 87  1  0  0  0  0 -1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 76  0  3  0  0  0  0  0 -1 -1 -1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 67  0  0  2  0  0  0  0  0  0 -1 -1  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 92  0  0  0  3 -1 -1  0  0  0  0  0  0  0  0 -1  0  0  0  0  0  0  0  0  0
+## 97  0  0  0 -1  5 -1  0  0  0  0  0  0  0  0 -1 -1 -1  0  0  0  0  0  0  0
+## 94 -1  0  0 -1 -1  6 -1  0  0  0  0  0  0  0  0  0 -1 -1  0  0  0  0  0  0
+##    42 34 99 93 98 84 75 88 81 43 89 73 72 68 69 66 36 35 26 23 14 12 13 11
+## 87  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 76  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 67  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 92  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 97  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 94  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+##    33 28 22 21 15 31 25 24 27
+## 87  0  0  0  0  0  0  0  0  0
+## 76  0  0  0  0  0  0  0  0  0
+## 67  0  0  0  0  0  0  0  0  0
+## 92  0  0  0  0  0  0  0  0  0
+## 97  0  0  0  0  0  0  0  0  0
+## 94  0  0  0  0  0  0  0  0  0</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Also need to transform to factor for
+## setting up the MRF smooth.
+ZambiaNutrition$district &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/factor">as.factor</a></span>(ZambiaNutrition$district)
+
+## Now note that not all regions are observed,
+## therefore we need to remove those regions
+## from the penalty matrix
+rn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(K)
+lv &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/levels">levels</a></span>(ZambiaNutrition$district)
+i &lt;-<span class="st"> </span>rn %in%<span class="st"> </span>lv
+K &lt;-<span class="st"> </span>K[i, i]</code></pre></div>
+<p>Then, the model can be estimated with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">321</span>)
+b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ZambiaNutrition, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</code></pre></div>
+<p>and the estimated univariate effects are plotted with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-32-1.png" width="60%" style="display: block; margin: auto;"> The plot indicates that only the effect of variable <code>mbmi</code> on the standard deviation is not significant according the 95% credible intervals and basically follows the zero horizontal line.</p>
+<p>To visualize the structured and unstructured spatial effects we predict using the district information</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## First, note that we have the structured id = 'mrf1' and unstructured
+## spatial effect id = 're2', also indicated in the model summary
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<pre><code>## 
+## Call:
+## bamlss(formula = f, family = "gaussian", data = ZambiaNutrition)
+## ---
+## Family: gaussian 
+## Link function: mu = identity, sigma = log
+## *---
+## Formula mu:
+## ---
+## stunting ~ memployment + urban + gender + meducation + s(mbmi) + 
+##     s(agechild) + s(district, bs = "mrf", xt = list(penalty = K)) + 
+##     s(district, bs = "re")
+## -
+## Parametric coefficients:
+##                        Mean      2.5%       50%     97.5% parameters
+## (Intercept)        0.112453  0.054741  0.112688  0.164649      0.111
+## memploymentno     -0.009098 -0.033846 -0.009121  0.017945     -0.010
+## urbanno           -0.088765 -0.133416 -0.089598 -0.046433     -0.090
+## genderfemale       0.059348  0.034577  0.059318  0.083425      0.059
+## meducationno      -0.180022 -0.236665 -0.180923 -0.124206     -0.176
+## meducationprimary -0.054656 -0.106017 -0.055213 -0.003093     -0.055
+## alpha              1.000000  1.000000  1.000000  1.000000         NA
+## -
+## Smooth terms:
+##                                  Mean      2.5%       50%     97.5%
+## s(mbmi).tau21               2.084e-02 6.699e-05 1.876e-03 1.555e-01
+## s(mbmi).alpha               1.000e+00 1.000e+00 1.000e+00 1.000e+00
+## s(mbmi).edf                 1.371e+00 1.004e+00 1.101e+00 2.995e+00
+## s(agechild).tau21           1.781e+00 3.113e-01 1.137e+00 7.115e+00
+## s(agechild).alpha           1.000e+00 1.000e+00 1.000e+00 1.000e+00
+## s(agechild).edf             6.351e+00 4.844e+00 6.292e+00 8.056e+00
+## s(district,id='mrf1').tau21 3.519e-03 9.780e-04 3.370e-03 6.699e-03
+## s(district,id='mrf1').alpha 1.000e+00 1.000e+00 1.000e+00 1.000e+00
+## s(district,id='mrf1').edf   3.008e+01 1.814e+01 3.066e+01 3.737e+01
+## s(district,id='re2').tau21  4.176e-03 6.933e-05 1.175e-03 2.426e-02
+## s(district,id='re2').alpha  1.000e+00 1.000e+00 1.000e+00 1.000e+00
+## s(district,id='re2').edf    1.104e+01 4.409e-01 6.224e+00 3.601e+01
+##                             parameters
+## s(mbmi).tau21                    0.000
+## s(mbmi).alpha                       NA
+## s(mbmi).edf                      0.968
+## s(agechild).tau21                5.961
+## s(agechild).alpha                   NA
+## s(agechild).edf                  7.956
+## s(district,id='mrf1').tau21      0.006
+## s(district,id='mrf1').alpha         NA
+## s(district,id='mrf1').edf       35.955
+## s(district,id='re2').tau21       0.000
+## s(district,id='re2').alpha          NA
+## s(district,id='re2').edf         0.000
+## ---
+## Formula sigma:
+## ---
+## sigma ~ memployment + urban + gender + meducation + s(mbmi) + 
+##     s(agechild) + s(district, bs = "mrf", xt = list(penalty = K)) + 
+##     s(district, bs = "re")
+## -
+## Parametric coefficients:
+##                        Mean      2.5%       50%     97.5% parameters
+## (Intercept)       -0.136367 -0.177225 -0.136755 -0.092489     -0.165
+## memploymentno     -0.015910 -0.038422 -0.015772  0.004915     -0.017
+## urbanno            0.036322 -0.002975  0.035881  0.071793      0.022
+## genderfemale       0.026088  0.006519  0.025961  0.047295      0.026
+## meducationno       0.031518 -0.017891  0.031465  0.075792      0.032
+## meducationprimary -0.030673 -0.073803 -0.029815  0.009465     -0.029
+## alpha              0.927800  0.657987  0.985169  1.000000         NA
+## -
+## Smooth terms:
+##                                  Mean      2.5%       50%     97.5%
+## s(mbmi).tau21               1.850e-01 8.480e-05 9.515e-03 1.154e+00
+## s(mbmi).alpha               9.611e-01 7.032e-01 9.979e-01 1.000e+00
+## s(mbmi).edf                 2.111e+00 1.007e+00 1.551e+00 5.379e+00
+## s(agechild).tau21           9.199e-02 3.791e-03 3.750e-02 5.667e-01
+## s(agechild).alpha           9.666e-01 8.027e-01 9.965e-01 1.000e+00
+## s(agechild).edf             3.394e+00 1.836e+00 3.218e+00 5.938e+00
+## s(district,id='mrf1').tau21 1.548e-03 5.780e-04 1.437e-03 3.226e-03
+## s(district,id='mrf1').alpha 7.536e-01 1.863e-01 8.365e-01 1.000e+00
+## s(district,id='mrf1').edf   2.588e+01 1.697e+01 2.607e+01 3.447e+01
+## s(district,id='re2').tau21  4.062e-03 9.555e-05 3.259e-03 1.379e-02
+## s(district,id='re2').alpha  8.480e-01 3.013e-01 9.636e-01 1.000e+00
+## s(district,id='re2').edf    1.737e+01 8.979e-01 1.755e+01 3.454e+01
+##                             parameters
+## s(mbmi).tau21                   10.289
+## s(mbmi).alpha                       NA
+## s(mbmi).edf                      7.754
+## s(agechild).tau21                0.018
+## s(agechild).alpha                   NA
+## s(agechild).edf                  2.691
+## s(district,id='mrf1').tau21      0.000
+## s(district,id='mrf1').alpha         NA
+## s(district,id='mrf1').edf        0.001
+## s(district,id='re2').tau21       0.017
+## s(district,id='re2').alpha          NA
+## s(district,id='re2').edf        36.606
+## ---
+## Sampler summary:
+## -
+## DIC = 12616.75 logLik = -6262.522 pd = 91.7017
+## runtime = 139.402
+## ---
+## Optimizer summary:
+## -
+## AICc = 12617.72 converged = 1 edf = 103.9308
+## logLik = -6202.629 logPost = -35164.45 nobs = 4847
+## runtime = 15.869
+## ---</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Now, to predict the spatial effects we set up new data.
+nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"district"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/levels">levels</a></span>(ZambiaNutrition$district))
+
+## Predict for the structured spatial effects.
+p_str &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"s(district,id='mrf1')"</span>, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)
+
+## And the unstructured spatial effect.
+p_unstr &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"s(district,id='re2')"</span>, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</code></pre></div>
+<p>Now, to visualize the effects we plot all maps using the same range for the color legends</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">r_mu &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/range">range</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(p_str$mu, p_unstr$mu))
+r_mu &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(-<span class="dv">1</span> *<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">abs</a></span>(r_mu)), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">abs</a></span>(r_mu)))
+
+r_sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/range">range</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(p_str$sigma, p_unstr$sigma))
+r_sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(-<span class="dv">1</span> *<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">abs</a></span>(r_sigma)), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">abs</a></span>(r_sigma)))</code></pre></div>
+<p>and plot the effects using a diverging color legend.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## MRF smooth effect.
+<span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_str$mu, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_mu,
+  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(mu), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>)
+<span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_str$sigma, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_sigma,
+  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(sigma), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>)
+
+## Random effects.
+<span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_unstr$mu, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_mu,
+  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>)
+<span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_unstr$sigma, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_sigma,
+  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-36-1.png" width="60%" style="display: block; margin: auto;"> The maps clearly show that the unstructured spatial effect seems to very small, if existent at all when looking the 95% credible intervals:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Again predict, but now additionally compute 95% credible intervals
+## using function c95().
+p_unstr &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"s(district,id='re2')"</span>, <span class="dt">intercept =</span> <span class="ot">FALSE</span>, <span class="dt">FUN =</span> c95)
+
+## Test if all effects contain zero, i.e., are not significant
+## according the 95% credible intervals.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/all">all</a></span>(p_unstr$mu[[<span class="st">"2.5%"</span>]] &lt;<span class="st"> </span><span class="dv">0</span> &amp;<span class="st"> </span>p_unstr$mu[[<span class="st">"97.5%"</span>]] &gt;<span class="st"> </span><span class="dv">0</span>)</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/all">all</a></span>(p_unstr$sigma[[<span class="st">"2.5%"</span>]] &lt;<span class="st"> </span><span class="dv">0</span> &amp;<span class="st"> </span>p_unstr$sigma[[<span class="st">"97.5%"</span>]] &gt;<span class="st"> </span><span class="dv">0</span>)</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
@@ -263,11 +592,17 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 <div id="ref-bamlss:Dunn+Gordon:1996">
 <p>Dunn, Peter K., and Gordon K. Smyth. 1996. “Randomized Quantile Residuals.” <em>Journal of Computational and Graphical Statistics</em> 5 (3). American Statistical Association, Institute of Mathematical Statistics,; Interface Foundation of America: 236–44.</p>
 </div>
+<div id="ref-bamlss:Fahrmeir+Kneib+Lang+Marx:2013">
+<p>Fahrmeir, Ludwig, Thomas Kneib, Stefan Lang, and Brian Marx. 2013. <em>Regression – Models, Methods and Applications</em>. Berlin: Springer-Verlag.</p>
+</div>
 <div id="ref-bamlss:Plummer+Best+Cowles+Vines:2006">
 <p>Plummer, Martyn, Nicky Best, Kate Cowles, and Karen Vines. 2006. “Coda: Convergence Diagnosis and Output Analysis for MCMC.” <em>R News</em> 6 (1): 7–11. doi:<a href="https://doi.org/10.18637/jss.v021.i11">10.18637/jss.v021.i11</a>.</p>
 </div>
 <div id="ref-bamlss:Silverman:1985">
 <p>Silverman, B. W. 1985. “Some Aspects of the Spline Smoothing Approach to Non-Parametric Regression Curve Fitting.” <em>Journal of the Royal Statistical Society. Series B (Methodological)</em> 47 (1). [Royal Statistical Society, Wiley]: 1–52.</p>
+</div>
+<div id="ref-bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014">
+<p>Umlauf, Nikolaus, Daniel Adler, Thomas Kneib, Stefan Lang, and Achim Zeileis. 2015. “Structured Additive Regression Models: An R Interface to BayesX.” <em>Journal of Statistical Software</em> 63 (1): 1–46. doi:<a href="https://doi.org/10.18637/jss.v063.i21">10.18637/jss.v063.i21</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+Klein+Zeileis:2017">
 <p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2018. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em> 27 (3): 612–27. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
@@ -289,7 +624,9 @@ nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#overview">Overview</a></li>
       <li><a href="#installation">Installation</a></li>
-      <li><a href="#running-your-first-model">Running your first model</a></li>
+      <li><a href="#basic-bayesian-regression">Basic Bayesian regression</a></li>
+      <li><a href="#location-scale-model">Location-scale model</a></li>
+      <li><a href="#spatial-location-scale-model">Spatial location-scale model</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
