@@ -16,7 +16,7 @@ Description: Infrastructure for estimating probabilistic distributional regressi
   on complex additive terms (fixed, random, smooth, spatial, etc.) similar to a generalized additive model.
   The conceptual and computational framework is introduced in Umlauf, Klein, Zeileis (2018)
   <doi:10.1080/10618600.2017.1407325>.
-Depends: R (>= 3.2.3), coda, colorspace, mgcv
+Depends: R (>= 3.5.0), coda, colorspace, mgcv
 Imports: Formula, MBA, mvtnorm, sp, Matrix, survival, methods, parallel
 Suggests: akima, bit, ff, ffbase, fields, gamlss, geoR, rjags, BayesX, BayesXsrc, mapdata, maps, maptools,
   raster, spatstat, spdep, zoo, keras, splines2, sdPrior, glogis, glmnet, scoringRules, knitr, MASS

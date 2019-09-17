@@ -88,10 +88,11 @@ This section gives a first quick overview of the functionality of the package an
 demonstrates that the usual "look & feel" when using well-established model fitting 
 functions like `glm()` is an elementary part of _bamlss_, i.e., first steps and
 basic handling of the package should be relatively simple. We illustrate the first steps
-with _bamlss_ using the Munich rent index data that is provided in the _gamlss.data_ package
-[@bamlss:gamlss.data]
+with _bamlss_ using a data set taken from the regression book [@bamlss:Fahrmeir+Kneib+Lang+Marx:2013]
+which is about prices of used VW Golf cars. The data is loaded with
 ```{r}
-data("rent", package = "gamlss.data")
+data("Golf", package = "bamlss")
+print(head(Golf))
 ```
 
 ## Location-scale model
