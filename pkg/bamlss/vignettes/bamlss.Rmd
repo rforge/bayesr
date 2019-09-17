@@ -52,6 +52,7 @@ More detailed overviews and examples are provided in the articles:
 * [BAMLSS Families](`r prefix`families.html)
 * [Visualization with distreg.vis](`r prefix`distregvis.html)
 * [Munich Rent Model](`r prefix`rent.html)
+* [Spatial Location-Scale Model](`r prefix`zn.html)
 * [Bivariate Gaussian models for wind vectors](`r prefix`bivnorm.html)
 * [LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape](`r prefix`lasso.html)
 * [Estimation Engines](`r prefix`engines.html)
@@ -293,141 +294,6 @@ foo <- function(x) {
 nd$p <- predict(b, newdata = nd, model = "mu", FUN = foo)
 print(head(nd))
 ```
-
-## Spatial location-scale model
-
-This example is taken from the _R2BayesX_ package [@bamlss:Umlauf+Adler+Kneib+Lang+Zeileis:2014] and
-is about undernutrition of new born children in Zambia. The data is loaded with
-```{r}
-data("ZambiaNutrition", package = "R2BayesX")
-print(head(ZambiaNutrition))
-```
-Here, the primary interest is to model the dependence of `stunting` of newborn children, with an
-age ranging from 0 to 5 years, on covariates such as the body mass index of the mother, the age of
-the child and others. Moreover, we apply a full distributional regression model with
-$$
-\texttt{stunting} \sim \mathcal{N}(\mu = \eta_{\mu}, \log(\sigma) = \eta_{\sigma})),
-$$
-where the predictors $\eta_{\mu}$ and $\eta_{\sigma}$ are specified by the following formula
-```{r}
-f <- list(
-  stunting ~ memployment + urban + gender + meducation +
-    s(mbmi) + s(agechild) + s(district, bs = "mrf", xt = list("penalty" = K)) +
-    s(district, bs = "re"),
-  sigma  ~ memployment + urban + gender + meducation +
-    s(mbmi) + s(agechild) + s(district, bs = "mrf", xt = list("penalty" = K)) +
-    s(district, bs = "re")
-)
-```
-Note that for setting up the Markov random field smooth term a penalty matrix `K` needs to be
-provided. The penalty matrix forces penalization for neighboring regions of the districts in Zambia.
-To compute the `K` matrix, we need the spatial information about the regions in Zambia, which
-is shipped as a `"bnd"` object in the _R2BayesX_ package and can be loaded with
-```{r}
-data("ZambiaBnd", package = "R2BayesX")
-```
-The `K` matrix can then be computed using function
-<code>[neighbormatrix()](`r prefix2`neighbormatrix.html)</code>
-```{r}
-K <- neighbormatrix(ZambiaBnd)
-print(head(K))
-
-## Also need to transform to factor for
-## setting up the MRF smooth.
-ZambiaNutrition$district <- as.factor(ZambiaNutrition$district)
-
-## Now note that not all regions are observed,
-## therefore we need to remove those regions
-## from the penalty matrix
-rn <- rownames(K)
-lv <- levels(ZambiaNutrition$district)
-i <- rn %in% lv
-K <- K[i, i]
-```
-Then, the model can be estimated with
-```{r, eval=FALSE}
-set.seed(321)
-b <- bamlss(f, data = ZambiaNutrition, family = "gaussian")
-```
-and the estimated univariate effects are plotted with
-```{r, eval=FALSE}
-plot(b)
-```
-```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
-dir.create(tdir <- tempfile())
-download.file("http://bayesr.r-forge.r-project.org/misc/ZambiaModel.rda", file.path(tdir, "ZM.rda"))
-load(file.path(tdir, "ZM.rda"))
-unlink(tdir)
-par(mar = c(4.1, 4.1, 1.1, 0.1))
-plot(b, ask = FALSE)
-```
-The plot indicates that only the effect of variable `mbmi` on the standard deviation is not
-significant according the 95% credible intervals and basically follows the zero horizontal line.
-
-To visualize the structured and unstructured spatial effects we predict using the district
-information
-```{r}
-## First, note that we have the structured id = 'mrf1' and unstructured
-## spatial effect id = 're2', also indicated in the model summary
-summary(b)
-
-## Now, to predict the spatial effects we set up new data.
-nd <- data.frame("district" = levels(ZambiaNutrition$district))
-
-## Predict for the structured spatial effects.
-p_str <- predict(b, newdata = nd, term = "s(district,id='mrf1')", intercept = FALSE)
-
-## And the unstructured spatial effect.
-p_unstr <- predict(b, newdata = nd, term = "s(district,id='re2')", intercept = FALSE)
-```
-Now, to visualize the effects we plot all maps using the same range
-for the color legends
-```{r}
-r_mu <- range(c(p_str$mu, p_unstr$mu))
-r_mu <- c(-1 * max(abs(r_mu)), max(abs(r_mu)))
-
-r_sigma <- range(c(p_str$sigma, p_unstr$sigma))
-r_sigma <- c(-1 * max(abs(r_sigma)), max(abs(r_sigma)))
-```
-and plot the effects using a diverging color legend.
-```{r, eval=FALSE}
-## MRF smooth effect.
-plotmap(ZambiaBnd, x = p_str$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  main = expression(mu), shift = 0.1, title = "MRF")
-plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  main = expression(sigma), shift = 0.1, title = "MRF")
-
-## Random effects.
-plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  shift = 0.1, title = "Random effect")
-plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  shift = 0.1, title = "Random effect")
-```
-```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
-par(mfrow = c(2, 2), mar = c(0, 0, 4.1, 0))
-plotmap(ZambiaBnd, x = p_str$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  main = expression(mu), shift = 0.1, title = "MRF")
-plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  main = expression(sigma), shift = 0.1, title = "MRF")
-
-plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  shift = 0.1, title = "Random effect")
-plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  shift = 0.1, title = "Random effect")
-```
-The maps clearly show that the unstructured spatial effect seems to very small, if existent
-at all when looking the 95% credible intervals:
-```{r}
-## Again predict, but now additionally compute 95% credible intervals
-## using function c95().
-p_unstr <- predict(b, newdata = nd, term = "s(district,id='re2')", intercept = FALSE, FUN = c95)
-
-## Test if all effects contain zero, i.e., are not significant
-## according the 95% credible intervals.
-all(p_unstr$mu[["2.5%"]] < 0 & p_unstr$mu[["97.5%"]] > 0)
-all(p_unstr$sigma[["2.5%"]] < 0 & p_unstr$sigma[["97.5%"]] > 0)
-```
-
 
 ## References
 

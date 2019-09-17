@@ -8,6 +8,7 @@ articles:
     - bamlss
     - misc
     - glm
+    - zn
     - families
     - distregvis
     - rent
@@ -34,6 +35,8 @@ navbar:
         href: articles/distregvis.html
       - text: Munich Rent Example
         href: articles/rent.html
+      - text: Spatial Location-Scale Model
+        href: articles/zn.html
       - text: Estimation Engines
         href: articles/engines.html
       - text: BAMLSS Model Frame
@@ -92,6 +95,7 @@ reference:
     - '`LondonFire`'
     - '`Volcano`'
     - '`homstart_data`'
+    - '`Golf`'
   - title: Misc
     contents:
     - '`DIC`'
