@@ -90,7 +90,7 @@ print(head(Golf))
 In this example the aim is to model the `price` in 1000 Euro. Using _bamlss_ a first Bayesian
 linear model could be set up by first specifying a model formula
 ```{r}
-f <- price ~ age + kilometer + TIA + abs + sunroof
+f <- price ~ age + kilometer + tia + abs + sunroof
 ```
 afterwards the fully Bayesian model using MCMC simulation is estimated by
 ```{r, message=FALSE, results="hide"}
@@ -128,7 +128,7 @@ bsp$samples <- bsp$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")]
 plot(bsp, which = "samples")
 ```
 Note, for convenience we only show the traceplots of the intercepts. Considering significance of the
-estimated effects, only variables `TIA` and `sunroof` seem to have no effect on `price` since the
+estimated effects, only variables `tia` and `sunroof` seem to have no effect on `price` since the
 credible intervals of estimated parameters contain zero. This information can also be extracted
 using the implemented `confint()` method.
 ```{r}
@@ -140,7 +140,7 @@ of the response `price`
 ```{r, message=FALSE, results="hide"}
 set.seed(111)
 
-f <- log(price) ~ age + kilometer + TIA + abs + sunroof
+f <- log(price) ~ age + kilometer + tia + abs + sunroof
 
 b2 <- bamlss(f, family = "gaussian", data = Golf)
 ```
