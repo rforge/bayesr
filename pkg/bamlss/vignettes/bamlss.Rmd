@@ -223,13 +223,8 @@ the interval always contains the zero horizontal line.
 ```{r preliminaries2, echo=FALSE, message=FALSE, results="hide"}
 data("mcycle", package = "MASS")
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
-if(!file.exists("toymodel.rda")) {
-  set.seed(123)
-  b <- bamlss(f, data = mcycle, family = "gaussian",
-    n.iter = 12000, burnin = 2000, thin = 10)
-} else {
-  load("toymodel.rda")
-}
+set.seed(123)
+b <- bamlss(f, data = mcycle, family = "gaussian")
 ```
 
 As a second startup on how to use _bamlss_ for full distributional regression, we illustrate the basic
@@ -253,18 +248,18 @@ where `s()` is the smooth term constructor from the _mgcv_ [@bamlss:Wood:2018]. 
 that formulae are provided as `list`s of formulae, i.e., each list entry represents one
 parameter of the response distribution. Also note that all
 smooth terms, i.e., `te()`, `ti()`, etc., are supported by _bamlss_. This way, it is also
-possible to incorporate user defined model terms. A full Bayesian model is the
+possible to incorporate user defined model terms. A fully Bayesian model is the
 estimated with
 ```{r, eval=FALSE}
 set.seed(123)
 
-b <- bamlss(f, data = mcycle, family = "gaussian",
-  n.iter = 12000, burnin = 2000, thin = 10)
+b <- bamlss(f, data = mcycle, family = "gaussian")
 ```
-using `12000` iterations for the MCMC chain, a burnin of `2000` (dropped samples) and a thinning
-of `10`, i.e., only every 10th sample is saved. Note that per defaul `bamlss()` uses a backfitting
-algorithm to compute posterior mode estimates, afterwards these estimates are used as starting
-values for the MCMC chains.
+using the default of 1200 iterations of the MCMC sampler to obtain first results quickly (see
+the documentation <code>[GMCMC()](`r prefix2`GMCMC.html)</code> for further details on tuning
+parameters). Note that per default <code>[bamlss()](`r prefix2`bamlss.html)</code> uses a
+backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as
+starting values for the MCMC chains.
 The returned object is of class `"bamlss"` for which generic extractor functions like
 `summary()`, `plot()`, `predict()`, etc., are provided. For example, the estimated effects
 for distribution paramaters `mu` and `sigma` can be visualized by
@@ -310,26 +305,41 @@ plot(b, which = c("hist-resid", "qq-resid"), spar = FALSE)
 Randomized quantile residuals are the default method in _bamlss_, which are computed using
 the cdf function of the corresponding family object.
 
-The posterior mean function for new data based on MCMC samples for parameter $\mu$ can be computed by
+The posterior mean including 95% credible intervals for new data based on MCMC samples for
+parameter $\mu$ can be computed by
 ```{r, eval=FALSE}
 nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
-nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
-plot2d(p ~ times, data = nd)
+nd$ptimes <- predict(b, newdata = nd, model = "mu", FUN = c95)
+plot2d(ptimes ~ times, data = nd)
 ```
 ```{r, fig.width = 7, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
 par(mar = c(4.1, 4.1, 1.1, 1.1))
 nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
-nd$p <- predict(b, newdata = nd, model = "mu", FUN = mean)
-plot2d(p ~ times, data = nd)
+nd$ptimes <- predict(b, newdata = nd, model = "mu", FUN = c95)
+plot2d(ptimes ~ times, data = nd)
 ```
-where argument `FUN` can be any function, e.g., a function computing credible intervals from
-the empirical quantiles of the MCMC samples
-```{r}
-foo <- function(x) {
-  quantile(x, probs = c(0.025, 0.5, 0.975))
+and as above in the first example, argument `FUN` can be any function, e.g., the `identity()`
+function could be used to calculate other statistics of the distribution, e.g., plot
+the estimated densities for `times = 10` and `times = 40`:
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="40%"}
+nd <- data.frame("times" = c(10, 40))
+ptimes <- predict(b, newdata = nd, FUN = identity, type = "parameter")
+
+dens <- list("t10" = NULL, "t40" = NULL)
+fam <- family(b)
+
+for(i in 1:ncol(ptimes$mu)) {
+  ## Density for times = 10.
+  par <- list("mu" = ptimes$mu[1, i, drop = TRUE], "sigma" = ptimes$sigma[1, i, drop = TRUE])
+  dens$t10 <- cbind(dens$t10, fam$d(mcycle$accel, par))
+
+  ## Density for times = 40.
+  par <- list("mu" = ptimes$mu[2, i, drop = TRUE], "sigma" = ptimes$sigma[2, i, drop = TRUE])
+  dens$t40 <- cbind(dens$t40, fam$d(mcycle$accel, par))
 }
-nd$p <- predict(b, newdata = nd, model = "mu", FUN = foo)
-print(head(nd))
+
+plot2d(dens$t10 ~ accel, data = mcycle, col.lines = rgb(1, 0, 0, alpha = 0.05))
+plot2d(dens$t40 ~ accel, data = mcycle, col.lines = rgb(0, 0, 1, alpha = 0.05), add = TRUE)
 ```
 
 ## References
