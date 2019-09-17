@@ -144,6 +144,7 @@
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/families.html">BAMLSS Families</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/distregvis.html">Visualization with distreg.vis</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/rent.html">Munich Rent Model</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/zn.html">Spatial Location-Scale Model</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/bivnorm.html">Bivariate Gaussian models for wind vectors</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/lasso.html">LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/engines.html">Estimation Engines</a></li>
@@ -215,13 +216,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.495
+## runtime = 1.272
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 409.6319 converged = 1 edf = 7
 ## logLik = -197.4745 logPost = -252.2614 nobs = 172
-## runtime = 0.013
+## runtime = 0.011
 ## ---</code></pre>
 <p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
