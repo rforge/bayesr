@@ -156,9 +156,9 @@
 <img src="misc/traceplot-03.png" style="width:100.0%">
 </div>
 </div>
-<div id="extendable-model-terms-and-model-fitting-engines" class="section level2">
+<div id="extensible-model-terms-and-model-fitting-engines" class="section level2">
 <h2 class="hasAnchor">
-<a href="#extendable-model-terms-and-model-fitting-engines" class="anchor"></a>Extendable model terms and model fitting engines</h2>
+<a href="#extensible-model-terms-and-model-fitting-engines" class="anchor"></a>Extensible model terms and model fitting engines</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Posterior mode optimization.
 bfit &lt;-<span class="st"> </span>function(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,
   <span class="dt">update =</span> <span class="st">"iwls"</span>, <span class="dt">criterion =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"AICc"</span>, <span class="st">"BIC"</span>, <span class="st">"AIC"</span>), ..) { }
@@ -171,7 +171,7 @@ GMCMC &lt;-<span class="st"> </span>function(x, y, family, <span class="dt">star
 boost &lt;-<span class="st"> </span>function(x, y, family, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,
   <span class="dt">nu =</span> <span class="fl">0.1</span>, <span class="dt">nu.adapt =</span> <span class="ot">TRUE</span>, <span class="dt">df =</span> <span class="dv">4</span>, <span class="dt">maxit =</span> <span class="dv">400</span>, ...) { }
 
-## LASSO.
+## Lasso.
 lasso &lt;-<span class="st"> </span>function(x, y, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">adaptive =</span> <span class="ot">TRUE</span>,
   <span class="dt">lower =</span> <span class="fl">0.001</span>, <span class="dt">upper =</span> <span class="dv">1000</span>,  <span class="dt">nlambda =</span> <span class="dv">100</span>, <span class="dt">lambda =</span> <span class="ot">NULL</span>, ...) { }</code></pre></div>
 </div>
