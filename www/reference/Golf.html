@@ -168,11 +168,11 @@
 
     <p>The <code>Golf</code> data contains the following variables:</p><dl class='dl-horizontal'>
   <dt>price:</dt><dd><p>Numeric, sale price in 1000 Euro.</p></dd>
-  <dt>age:</dt><dd><p>Numeric, Age of the car in month.</p></dd>
-  <dt>kilometer:</dt><dd><p>Numeric, Kilometer reading in 1000 kilometer.</p></dd>
-  <dt>TIA:</dt><dd><p>Numeric, Month until the next TIA appointment.</p></dd>
-  <dt>abs:</dt><dd><p>Factor, Does the car have abs?</p></dd>
-  <dt>sunroof:</dt><dd><p>Factor, Does the car have a sunroof?</p></dd>
+  <dt>age:</dt><dd><p>Numeric, age of the car in month.</p></dd>
+  <dt>kilometer:</dt><dd><p>Numeric, kilometer reading in 1000 kilometers.</p></dd>
+  <dt>tia:</dt><dd><p>Numeric, month until the next TIA appointment (German TUEV).</p></dd>
+  <dt>abs:</dt><dd><p>Factor, does the car have abs?</p></dd>
+  <dt>sunroof:</dt><dd><p>Factor, does the car have a sunroof?</p></dd>
 </dl>
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
@@ -184,7 +184,7 @@
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='st'>"Golf"</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>price</span> ~ <span class='no'>age</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>Golf</span>)</div><div class='img'><img src='Golf-1.png' alt='' width='700' height='433' /></div></pre>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>price</span> ~ <span class='no'>age</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>Golf</span>)</div><div class='img'><img src='Golf-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>price</span> ~ <span class='no'>kilometer</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>Golf</span>)</div><div class='img'><img src='Golf-2.png' alt='' width='700' height='433' /></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

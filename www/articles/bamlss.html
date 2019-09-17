@@ -165,7 +165,7 @@
 <p>This section gives a first quick overview of the functionality of the package and demonstrates that the usual “look &amp; feel” when using well-established model fitting functions like <code><a href="https://www.rdocumentation.org/packages/stats/topics/glm">glm()</a></code> is an elementary part of <em>bamlss</em>, i.e., first steps and basic handling of the package should be relatively simple. We illustrate the first steps with <em>bamlss</em> using a data set taken from the <em>Regression Book</em> <span class="citation">(Fahrmeir et al. 2013)</span> which is about prices of used VW Golf cars. The data is loaded with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"Golf"</span>, <span class="dt">package =</span> <span class="st">"bamlss"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(Golf))</code></pre></div>
-<pre><code>##   price age kilometer TIA abs sunroof
+<pre><code>##   price age kilometer tia abs sunroof
 ## 1  7.30  73        10  12 yes     yes
 ## 2  3.85 115        30  20 yes      no
 ## 3  2.95 127        43   6  no     yes
@@ -173,7 +173,7 @@
 ## 5  6.20  86        57  23  no      no
 ## 6  5.90  74        57  25 yes      no</code></pre>
 <p>In this example the aim is to model the <code>price</code> in 1000 Euro. Using <em>bamlss</em> a first Bayesian linear model could be set up by first specifying a model formula</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span>price ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>TIA +<span class="st"> </span>abs +<span class="st"> </span>sunroof</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span>price ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>tia +<span class="st"> </span>abs +<span class="st"> </span>sunroof</code></pre></div>
 <p>afterwards the fully Bayesian model using MCMC simulation is estimated by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
 
@@ -192,14 +192,14 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## *---
 ## Formula mu:
 ## ---
-## price ~ age + kilometer + TIA + abs + sunroof
+## price ~ age + kilometer + tia + abs + sunroof
 ## -
 ## Parametric coefficients:
 ##                  Mean      2.5%       50%     97.5% parameters
 ## (Intercept)  9.333318  8.526293  9.330200 10.173709      9.311
 ## age         -0.038461 -0.045355 -0.038341 -0.031706     -0.038
 ## kilometer   -0.009686 -0.012547 -0.009667 -0.007061     -0.010
-## TIA         -0.005811 -0.022870 -0.005752  0.010105     -0.005
+## tia         -0.005811 -0.022870 -0.005752  0.010105     -0.005
 ## absyes      -0.240481 -0.492048 -0.237776 -0.003060     -0.238
 ## sunroofyes  -0.024021 -0.300878 -0.025127  0.238145     -0.010
 ## alpha        0.999998  0.999989  1.000000  1.000000         NA
@@ -216,57 +216,81 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.272
+## runtime = 1.522
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 409.6319 converged = 1 edf = 7
 ## logLik = -197.4745 logPost = -252.2614 nobs = 172
-## runtime = 0.011
+## runtime = 0.014
 ## ---</code></pre>
 <p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Note, for convenience we only show the traceplots of the intercepts. Considering significance of the estimated effects, only variables <code>TIA</code> and <code>sunroof</code> seem to have no effect on <code>price</code> since the credible intervals of estimated parameters contain zero. This information can also be extracted using the implemented <code><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint()</a></code> method.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Note, for convenience we only show the traceplots of the intercepts. Considering significance of the estimated effects, only variables <code>tia</code> and <code>sunroof</code> seem to have no effect on <code>price</code> since the credible intervals of estimated parameters contain zero. This information can also be extracted using the implemented <code><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint()</a></code> method.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint</a></span>(b1, <span class="dt">prob =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</code></pre></div>
 <pre><code>##                          2.5%        97.5%
 ## mu.(Intercept)     8.52629257 10.173709336
 ## mu.age            -0.04535461 -0.031705531
 ## mu.kilometer      -0.01254739 -0.007060627
-## mu.TIA            -0.02286985  0.010105028
+## mu.tia            -0.02286985  0.010105028
 ## mu.absyes         -0.49204765 -0.003060006
 ## mu.sunroofyes     -0.30087769  0.238144948
 ## sigma.(Intercept) -0.34791813 -0.127380063</code></pre>
 <p>Since the prices cannot be negative, a possible consideration is to use a logarithmic transformation of the response <code>price</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">111</span>)
 
-f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(price) ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>TIA +<span class="st"> </span>abs +<span class="st"> </span>sunroof
+f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(price) ~<span class="st"> </span>age +<span class="st"> </span>kilometer +<span class="st"> </span>tia +<span class="st"> </span>abs +<span class="st"> </span>sunroof
 
 b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> <span class="st">"gaussian"</span>, <span class="dt">data =</span> Golf)</code></pre></div>
-<p>and compare the models using the <code><a href="../reference/DIC.html">DIC()</a></code></p>
+<p>and compare the models using the <code><a href="http://bayesr.R-Forge.R-project.org/reference/DIC.html">DIC()</a></code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2)</code></pre></div>
 <pre><code>##          DIC       pd
 ## b1 408.96754 6.893153
 ## b2 -15.19596 6.893153</code></pre>
 <p>indicating that the transformation seems to improve the model fit.</p>
-<p>Predictions can be easily computed using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code> method. One major difference compared to other regression model implementations is that predictions can be made for single variables, only, where the user does not have to create a new data frame containing all variables. For example, posterior mean estimates and 95% credible intervals for variable <code>age</code> can be obtained by</p>
+<p>Instead of using linear effects, another option would be to use polynomial regression for covariates <code>age</code>, <code>kilometer</code> and <code>tia</code>. A polynomial model using polynomials of order 3 is estimated with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">222</span>)
+
+f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(price) ~<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(age, <span class="dv">3</span>) +<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(kilometer, <span class="dv">3</span>) +<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(tia, <span class="dv">3</span>) +<span class="st"> </span>abs +<span class="st"> </span>sunroof
+
+b3 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">family =</span> <span class="st">"gaussian"</span>, <span class="dt">data =</span> Golf)</code></pre></div>
+<p>Comparing the models using the <code><a href="http://bayesr.R-Forge.R-project.org/reference/DIC.html">DIC()</a></code> function</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2, b3)</code></pre></div>
+<pre><code>##          DIC        pd
+## b1 408.96754  6.893153
+## b2 -15.19596  6.893153
+## b3 -10.78925 13.186991</code></pre>
+<p>suggests that the polynomial model is not really an improvement, however, this is probably caused by an insignificant <code>tia</code> effect. The effects can be inspected graphically, to better understand their influence on <code>price</code>. Using the polynomial model, graphical inspections can be done using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code> method.</p>
+<p>One major difference compared to other regression model implementations is that predictions can be made for single variables, only, where the user does not have to create a new data frame containing all variables. For example, posterior mean estimates and 95% credible intervals for variable <code>age</code> can be obtained by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"age"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(Golf$age), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(Golf$age), <span class="dt">length =</span> <span class="dv">100</span>))
 
-p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b2, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">term =</span> <span class="st">"age"</span>, <span class="dt">FUN =</span> c95)
+nd$page &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b3, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">term =</span> <span class="st">"age"</span>,
+  <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)
 
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(p))</code></pre></div>
-<pre><code>##       2.5%     Mean    97.5%
-## 1 1.905196 2.065724 2.226153
-## 2 1.898128 2.057578 2.217355
-## 3 1.891059 2.049432 2.208557
-## 4 1.883990 2.041287 2.199759
-## 5 1.876921 2.033141 2.191380
-## 6 1.869516 2.024995 2.183378</code></pre>
-<p>Here, we need to specify for which model predictions should be calculated, and if predictions only for variable <code>age</code> are created, argument <code>term</code> needs also be specified. Argument <code>FUN</code> can be any function that should be applied on the samples of the linear predictor. For more examples see the documentation of the <code><a href="http://bayesr.R-Forge.R-project.org/reference/predict.bamlss.html">predict.bamlss()</a></code> method.</p>
-<p>Then, the estimated effect of <code>age</code> can be visualized with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>age, <span class="dt">data =</span> nd,
-  <span class="dt">fill.select =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>),
-  <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-12-1.png" width="40%" style="display: block; margin: auto;"> The figure clearly shows the negative effect on the logarithmic <code>price</code> for variable <code>age</code>.</p>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(nd))</code></pre></div>
+<pre><code>##        age page.2.5% page.Mean page.97.5%
+## 1 65.00000 0.3085312 0.4849915  0.6592331
+## 2 65.77778 0.3120472 0.4757206  0.6362999
+## 3 66.55556 0.3167776 0.4663256  0.6152946
+## 4 67.33333 0.3172396 0.4568109  0.5950657
+## 5 68.11111 0.3201536 0.4471811  0.5742218
+## 6 68.88889 0.3202023 0.4374406  0.5555146</code></pre>
+<p>Note that the prediction does not include the model intercept. Similarly for variables <code>kilometer</code> and <code>tia</code></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd$kilometer &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(Golf$kilometer), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(Golf$kilometer), <span class="dt">length =</span> <span class="dv">100</span>)
+nd$tia &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">min</a></span>(Golf$tia), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(Golf$tia), <span class="dt">length =</span> <span class="dv">100</span>)
+
+nd$pkilometer &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b3, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">term =</span> <span class="st">"kilometer"</span>,
+  <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)
+nd$ptia &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b3, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">term =</span> <span class="st">"tia"</span>,
+  <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</code></pre></div>
+<p>Here, we need to specify for which <code>model</code> predictions should be calculated, and if predictions only for variable <code>age</code> are created, argument <code>term</code> needs also be specified. Argument <code>FUN</code> can be any function that should be applied on the samples of the linear predictor. For more examples see the documentation of the <code><a href="http://bayesr.R-Forge.R-project.org/reference/predict.bamlss.html">predict.bamlss()</a></code> method.</p>
+<p>Then, the estimated effects can be visualized with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>, <span class="dv">3</span>))
+ylim &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/range">range</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(nd$page, nd$pkilometer, nd$ptia))
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(page ~<span class="st"> </span>age, <span class="dt">data =</span> nd, <span class="dt">ylim =</span> ylim)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(pkilometer ~<span class="st"> </span>kilometer, <span class="dt">data =</span> nd, <span class="dt">ylim =</span> ylim)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(ptia ~<span class="st"> </span>tia, <span class="dt">data =</span> nd, <span class="dt">ylim =</span> ylim)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-15-1.png" width="80%" style="display: block; margin: auto;"> The figure clearly shows the negative effect on the logarithmic <code>price</code> for variable <code>age</code> and <code>kilometer</code>. The effect of <code>tia</code> is not significant according the 95% credible intervals, since the interval always contains the zero horizontal line.</p>
 </div>
 <div id="location-scale-model" class="section level2">
 <h2 class="hasAnchor">
@@ -292,7 +316,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
   <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
 <p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-17-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-20-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
 <pre><code>## 
 ## Call:
@@ -345,15 +369,15 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-20-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-23-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
 <p>Inspecting randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> is useful for judging how well the model fits to the data</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-22-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-25-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
 <p>The posterior mean function for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="fl">2.4</span>, <span class="fl">57.6</span>, <span class="dt">length =</span> <span class="dv">100</span>))
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> mean)
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>times, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-24-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-27-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">foo &lt;-<span class="st"> </span>function(x) {
   <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/quantile">quantile</a></span>(x, <span class="dt">probs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))
 }

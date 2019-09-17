@@ -195,11 +195,6 @@ K &lt;-<span class="st"> </span>K[i, i]</code></pre></div>
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ZambiaNutrition, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</code></pre></div>
 <p>and the estimated univariate effects are plotted with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b)</code></pre></div>
-<pre><code>## Warning in gam.side(smooth, obj$model.matrix, tol = .Machine
-## $double.eps^0.5): model has repeated 1-d smooths of same variable.
-
-## Warning in gam.side(smooth, obj$model.matrix, tol = .Machine
-## $double.eps^0.5): model has repeated 1-d smooths of same variable.</code></pre>
 <p><img src="zn_files/figure-html/unnamed-chunk-7-1.png" width="60%" style="display: block; margin: auto;"> The plot indicates that only the effect of variable <code>mbmi</code> on the standard deviation is not significant according the 95% credible intervals and basically follows the zero horizontal line.</p>
 <p>To visualize the structured and unstructured spatial effects we predict using the district information</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## First, note that we have the structured id = 'mrf1' and unstructured
