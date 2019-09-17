@@ -46,8 +46,8 @@
 
 %% Authors: NU + rest in alphabetical order
 \author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
-        Achim Zeileis\\Universit\"at Innsbruck \AND
-        Nadja Klein\\Humboldt Universit\"at zu Berlin \And
+        Achim Zeileis\\Universit\"at Innsbruck \And
+        Nadja Klein\\Humboldt Universit\"at\\zu Berlin \And
         Thorsten Simon\\Universit\"at Innsbruck}
 \Plainauthor{Nikolaus Umlauf, Achim Zeileis, Nadja Klein, Thorsten Simon}
 
@@ -55,25 +55,30 @@
 \Plaintitle{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond)}
 \Shorttitle{\pkg{bamlss}: A Lego Toolbox for Flexible Bayesian Regression}
 	
-\Keywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO, MCMC, \proglang{R}}
-\Plainkeywords{GAMLSS, distributional regression, backfitting, gradient boosting, LASSO, MCMC, R}
+\Keywords{GAMLSS, distributional regression, probabilistic forecasting, backfitting, gradient boosting, lasso, MCMC, \proglang{R}}
+\Plainkeywords{GAMLSS, distributional regression, probabilistic forecasting, backfitting, gradient boosting, lasso, MCMC, R}
 
 \Abstract{
-  Over the last decades, there has been an increasing interest in flexible regression models.
-  There are several reasons for this development: On the one hand, the number of data sets is
-  constantly increasing and thus the number of problems as well as their complexity, on the other hand,
-  infrastructures that can deal with ever larger data sets are needed, so that efficient estimation
-  algorithms gain more and more importance. Particularly in this environment, models for full
-  probabilistic forecasting, that allow to model the entire data distribution conditional on
-  covariates, are necessary in a variety of applications. However, the implementation of new models
-  is usually time-consuming and complex, especially using Bayesian estimation algorithms. We propose
-  an unified modeling architecture, which is implemented in the \proglang{R} package \pkg{bamlss},
-  that makes it possible to embed many different approaches suggested in literature and software. We
-  show that implementing (new) algorithms, non-standard distributions or effect types, or the
-  integration of already existing software, is relatively straightforward in this setting. We
-  illustrate the usefulness of the approach by implementing highly efficient algorithms for fully
-  Bayesian inference based on MCMC simulation, backfitting algorithms, gradient boosting and
-  LASSO-type penalized models.
+  Over the last decades, the challenges in applied regression and in predictive modeling have
+  been changing considerably: (1)~More flexible model specifications are needed as big(ger) data as
+  well as more powerful computing infrastructure become available. (2)~Full probabilistic modeling
+  rather than predicting just means or expectations is crucial in many applications.
+  (3)~Interest in Bayesian inference has been increasing both as an appealing framework for
+  regularizing or penalizing model estimation as well as a natural alternative to classical
+  frequentist inference. However, while there has been a lot of research in all three areas,
+  also leading to associated software packages, a modular software implementation that
+  allows to easily combine all three aspects has not yet been available. For filling this gap,
+  the \proglang{R} package \pkg{bamlss} is introduced for Bayesian additive models for location,
+  scale, and shape. At the core of the package are algorithms for highly-efficient Bayesian
+  estimation and inference that can be applied to generalized additive models (GAMs) or
+  generalized additive models for location, scale, and shape (GAMLSS), also known as
+  distributional regression. However, its building blocks are designed as ``Lego bricks''
+  encompassing various
+  distributions (exponential family, Cox, joint models, \dots),
+  regression terms (linear, splines, random effects, tensor products, \dots), and
+  estimators (MCMC, backfitting, gradient boosting, lasso, \dots).
+  It is demonstrated how these can be easily recombined to make classical models more
+  flexible or create new custom models for specific modeling challenges.
 }
 
 \Address{
