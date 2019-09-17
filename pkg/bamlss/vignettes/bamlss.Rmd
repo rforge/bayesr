@@ -262,7 +262,7 @@ backfitting algorithm to compute posterior mode estimates, afterwards these esti
 starting values for the MCMC chains.
 The returned object is of class `"bamlss"` for which generic extractor functions like
 `summary()`, `plot()`, `predict()`, etc., are provided. For example, the estimated effects
-for distribution paramaters `mu` and `sigma` can be visualized by
+for distribution parameters `mu` and `sigma` can be visualized by
 ```{r, eval=FALSE}
 plot(b, model = c("mu", "sigma"))
 ```
@@ -287,11 +287,12 @@ bsp$samples <- bsp$samples[, c("mu.p.(Intercept)", "sigma.p.(Intercept)")]
 plot(bsp, which = "samples")
 ```
 Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts.
-In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter `"mu"`
-still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning
-parameter). Further inspections are the maximum autocorrelation of all parameters, `which = "max-acf"`,
-besides other convergence diagnostics, e.g., diagnostics that are part of the _coda_ package
-[@bamlss:Plummer+Best+Cowles+Vines:2006].
+In this case, the traceplots do not indicate convergence of the Markov chains for parameter `"mu"`.
+To fix this, the number of iterations can be increased and also the burnin and thinning parameters
+can be adapted (see <code>[GMCMC()](`r prefix2`GMCMC.html)</code>). Further inspections are the
+maximum autocorrelation of all parameters, using <code>[plot.bamlss()](`r prefix2`plot.bamlss.html)</code>
+setting argument `which = "max-acf"`, besides other convergence diagnostics, e.g., diagnostics that
+are part of the _coda_ package [@bamlss:Plummer+Best+Cowles+Vines:2006].
 
 Inspecting randomized quantile residuals [@bamlss:Dunn+Gordon:1996] is useful for judging how
 well the model fits to the data
@@ -303,7 +304,7 @@ par(mfrow = c(1, 2))
 plot(b, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
 Randomized quantile residuals are the default method in _bamlss_, which are computed using
-the cdf function of the corresponding family object.
+the CDF function of the corresponding family object.
 
 The posterior mean including 95% credible intervals for new data based on MCMC samples for
 parameter $\mu$ can be computed by
@@ -320,26 +321,41 @@ plot2d(ptimes ~ times, data = nd)
 ```
 and as above in the first example, argument `FUN` can be any function, e.g., the `identity()`
 function could be used to calculate other statistics of the distribution, e.g., plot
-the estimated densities for `times = 10` and `times = 40`:
-```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="40%"}
+the estimated densities for each iteration of the MCMC sampler for `times = 10` and `times = 40`:
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="60%"}
+## Predict for the two scenarios.
 nd <- data.frame("times" = c(10, 40))
 ptimes <- predict(b, newdata = nd, FUN = identity, type = "parameter")
 
-dens <- list("t10" = NULL, "t40" = NULL)
+## Extract the family object.
 fam <- family(b)
 
+## Compute densities.
+dens <- list("t10" = NULL, "t40" = NULL)
 for(i in 1:ncol(ptimes$mu)) {
-  ## Density for times = 10.
-  par <- list("mu" = ptimes$mu[1, i, drop = TRUE], "sigma" = ptimes$sigma[1, i, drop = TRUE])
+  ## Densities for times = 10.
+  par <- list(
+    "mu" = ptimes$mu[1, i, drop = TRUE],
+    "sigma" = ptimes$sigma[1, i, drop = TRUE]
+  )
   dens$t10 <- cbind(dens$t10, fam$d(mcycle$accel, par))
 
-  ## Density for times = 40.
-  par <- list("mu" = ptimes$mu[2, i, drop = TRUE], "sigma" = ptimes$sigma[2, i, drop = TRUE])
+  ## Densities for times = 40.
+  par <- list(
+    "mu" = ptimes$mu[2, i, drop = TRUE],
+    "sigma" = ptimes$sigma[2, i, drop = TRUE]
+  )
   dens$t40 <- cbind(dens$t40, fam$d(mcycle$accel, par))
 }
 
-plot2d(dens$t10 ~ accel, data = mcycle, col.lines = rgb(1, 0, 0, alpha = 0.05))
-plot2d(dens$t40 ~ accel, data = mcycle, col.lines = rgb(0, 0, 1, alpha = 0.05), add = TRUE)
+## Visualize.
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+plot2d(dens$t10 ~ accel, data = mcycle,
+  col.lines = rgb(1, 0, 0, alpha = 0.05),
+  ylab = "Density")
+plot2d(dens$t40 ~ accel, data = mcycle,
+  col.lines = rgb(0, 0, 1, alpha = 0.05),
+  add = TRUE)
 ```
 
 ## References
