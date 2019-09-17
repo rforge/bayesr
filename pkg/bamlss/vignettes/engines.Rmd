@@ -346,20 +346,20 @@ summary(b)
 ## Predict for all terms including 95% credible intervals
 nd$x1 <- nd$x3 <- seq(0, 1, length = 100)
 for(j in c("x1", "x2", "x3"))
-  nd[[paste0("p.", j)]] <- predict(b, newdata = nd, term = j, FUN = c95, intercept = FALSE)
+  nd[[paste0("p", j)]] <- predict(b, newdata = nd, term = j, FUN = c95, intercept = FALSE)
 ```
 The estimated effects can be plotted with.
 ```{r, eval = FALSE}
 par(mfrow = c(1, 3))
-plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
-plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
-plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(px1 ~ x1, data = nd)
+plot2d(px2 ~ x2, data = nd)
+plot2d(px3 ~ x3, data = nd)
 ```
 ```{r, fig.width = 10, fig.height = 4, fig.align = "center", dev = "png", echo = FALSE}
 par(mar = c(4.1, 4.1, 0.5, 1.1), mfrow = c(1, 3))
-plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
-plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
-plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(px1 ~ x1, data = nd)
+plot2d(px2 ~ x2, data = nd)
+plot2d(px3 ~ x3, data = nd)
 ```
 
 ## References
