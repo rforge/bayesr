@@ -1,5 +1,5 @@
 ---
-title: "Distributional Regression with _bamlss_"
+title: "A Lego Toolbox for Flexible Bayesian Regression (and Beyond)"
 author: "Nikolaus Umlauf, Nadja Klein, Achim Zeileis, Thorsten Simon"
 output:
   html_document:
