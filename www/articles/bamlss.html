@@ -216,13 +216,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.522
+## runtime = 1.279
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 409.6319 converged = 1 edf = 7
 ## logLik = -197.4745 logPost = -252.2614 nobs = 172
-## runtime = 0.014
+## runtime = 0.011
 ## ---</code></pre>
 <p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
@@ -309,19 +309,17 @@ ylim &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 \texttt{accel} \sim \mathcal{N}(\mu = f(\texttt{times}), \log(\sigma) = f(\texttt{times}))
 \]</span> we use the following model formula</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(accel ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>), sigma ~<span class="st"> </span><span class="kw">s</span>(times, <span class="dt">k =</span> <span class="dv">20</span>))</code></pre></div>
-<p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2019)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A full Bayesian model is the estimated with</p>
+<p>where <code>s()</code> is the smooth term constructor from the <em>mgcv</em> <span class="citation">(Wood 2019)</span>. Note, that formulae are provided as <code>list</code>s of formulae, i.e., each list entry represents one parameter of the response distribution. Also note that all smooth terms, i.e., <code>te()</code>, <code>ti()</code>, etc., are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms. A fully Bayesian model is the estimated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
-  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
-<p>using <code>12000</code> iterations for the MCMC chain, a burnin of <code>2000</code> (dropped samples) and a thinning of <code>10</code>, i.e., only every 10th sample is saved. Note that per defaul <code><a href="../reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution paramaters <code>mu</code> and <code>sigma</code> can be visualized by</p>
+b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</code></pre></div>
+<p>using the default of 1200 iterations of the MCMC sampler to obtain first results quickly (see the documentation <code><a href="http://bayesr.R-Forge.R-project.org/reference/GMCMC.html">GMCMC()</a></code> for further details on tuning parameters). Note that per default <code><a href="http://bayesr.R-Forge.R-project.org/reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution parameters <code>mu</code> and <code>sigma</code> can be visualized by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-20-1.png" width="864" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
 <pre><code>## 
 ## Call:
-## bamlss(formula = f, family = "gaussian", data = mcycle, n.iter = 12000, 
-##     burnin = 2000, thin = 10)
+## bamlss(formula = f, family = "gaussian", data = mcycle)
 ## ---
 ## Family: gaussian 
 ## Link function: mu = identity, sigma = log
@@ -332,14 +330,14 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## Parametric coefficients:
 ##               Mean   2.5%    50%  97.5% parameters
-## (Intercept) -25.17 -28.91 -25.18 -21.23     -25.14
+## (Intercept) -25.13 -29.36 -25.35 -20.34     -25.14
 ## alpha         1.00   1.00   1.00   1.00         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 425085.57 174273.68 375068.34 937318.30   209333.1
+## s(times).tau21 425657.47 175634.81 372121.15 914429.32   209333.1
 ## s(times).alpha      1.00      1.00      1.00      1.00         NA
-## s(times).edf       14.24     12.54     14.25     15.92       13.6
+## s(times).edf       14.24     12.64     14.22     15.97       13.6
 ## ---
 ## Formula sigma:
 ## ---
@@ -347,49 +345,71 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## Parametric coefficients:
 ##               Mean   2.5%    50%  97.5% parameters
-## (Intercept) 2.6841 2.5535 2.6816 2.8193      2.581
-## alpha       0.9665 0.7364 0.9997 1.0000         NA
+## (Intercept) 2.6800 2.5487 2.6757 2.8311      2.581
+## alpha       0.9664 0.7510 1.0000 1.0000         NA
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 1.328e+02 1.408e+01 1.043e+02 4.142e+02     81.399
-## s(times).alpha 5.040e-01 1.287e-04 4.576e-01 1.000e+00         NA
-## s(times).edf   9.107e+00 5.706e+00 9.166e+00 1.234e+01      8.675
+## s(times).tau21 1.458e+02 2.384e+01 1.213e+02 4.604e+02     81.399
+## s(times).alpha 5.385e-01 7.903e-04 5.069e-01 1.000e+00         NA
+## s(times).edf   9.415e+00 6.491e+00 9.500e+00 1.259e+01      8.675
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 1115.331 logLik = -545.6219 pd = 24.0874
-## runtime = 28.84
+## DIC = 1115.068 logLik = -545.2265 pd = 24.6149
+## runtime = 3.064
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 1123.881 converged = 1 edf = 24.2716
 ## logLik = -531.9752 logPost = -747.4101 nobs = 133
-## runtime = 0.317
+## runtime = 0.301
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-23-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots indicate convergence of the Markov chains (only the ACF for parameter <code>"mu"</code> still shows some autocorrelation, which could be further reduced, e.g., by increasing the thinning parameter). Further inspections are the maximum autocorrelation of all parameters, <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-23-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots do not indicate convergence of the Markov chains for parameter <code>"mu"</code>. To fix this, the number of iterations can be increased and also the burnin and thinning parameters can be adapted (see <code><a href="http://bayesr.R-Forge.R-project.org/reference/GMCMC.html">GMCMC()</a></code>). Further inspections are the maximum autocorrelation of all parameters, using <code><a href="http://bayesr.R-Forge.R-project.org/reference/plot.bamlss.html">plot.bamlss()</a></code> setting argument <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
 <p>Inspecting randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> is useful for judging how well the model fits to the data</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-25-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the cdf function of the corresponding family object.</p>
-<p>The posterior mean function for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-25-1.png" width="768" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the CDF function of the corresponding family object.</p>
+<p>The posterior mean including 95% credible intervals for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="fl">2.4</span>, <span class="fl">57.6</span>, <span class="dt">length =</span> <span class="dv">100</span>))
-nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> mean)
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>times, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="bamlss_files/figure-html/unnamed-chunk-27-1.png" width="60%" style="display: block; margin: auto;"> where argument <code>FUN</code> can be any function, e.g., a function computing credible intervals from the empirical quantiles of the MCMC samples</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">foo &lt;-<span class="st"> </span>function(x) {
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/quantile">quantile</a></span>(x, <span class="dt">probs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))
+nd$ptimes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> c95)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(ptimes ~<span class="st"> </span>times, <span class="dt">data =</span> nd)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-27-1.png" width="60%" style="display: block; margin: auto;"> and as above in the first example, argument <code>FUN</code> can be any function, e.g., the <code><a href="https://www.rdocumentation.org/packages/base/topics/identity">identity()</a></code> function could be used to calculate other statistics of the distribution, e.g., plot the estimated densities for each iteration of the MCMC sampler for <code>times = 10</code> and <code>times = 40</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Predict for the two scenarios.
+nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">10</span>, <span class="dv">40</span>))
+ptimes &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">FUN =</span> identity, <span class="dt">type =</span> <span class="st">"parameter"</span>)
+
+## Extract the family object.
+fam &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/family">family</a></span>(b)
+
+## Compute densities.
+dens &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="st">"t10"</span> =<span class="st"> </span><span class="ot">NULL</span>, <span class="st">"t40"</span> =<span class="st"> </span><span class="ot">NULL</span>)
+for(i in <span class="dv">1</span>:<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(ptimes$mu)) {
+  ## Densities for times = 10.
+  par &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
+    <span class="st">"mu"</span> =<span class="st"> </span>ptimes$mu[<span class="dv">1</span>, i, <span class="dt">drop =</span> <span class="ot">TRUE</span>],
+    <span class="st">"sigma"</span> =<span class="st"> </span>ptimes$sigma[<span class="dv">1</span>, i, <span class="dt">drop =</span> <span class="ot">TRUE</span>]
+  )
+  dens$t10 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">cbind</a></span>(dens$t10, fam$<span class="kw">d</span>(mcycle$accel, par))
+
+  ## Densities for times = 40.
+  par &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
+    <span class="st">"mu"</span> =<span class="st"> </span>ptimes$mu[<span class="dv">2</span>, i, <span class="dt">drop =</span> <span class="ot">TRUE</span>],
+    <span class="st">"sigma"</span> =<span class="st"> </span>ptimes$sigma[<span class="dv">2</span>, i, <span class="dt">drop =</span> <span class="ot">TRUE</span>]
+  )
+  dens$t40 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">cbind</a></span>(dens$t40, fam$<span class="kw">d</span>(mcycle$accel, par))
 }
-nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">model =</span> <span class="st">"mu"</span>, <span class="dt">FUN =</span> foo)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(nd))</code></pre></div>
-<pre><code>##      times    p.2.5%     p.50%    p.97.5%
-## 1 2.400000 -1.995477 -0.312000  1.8381633
-## 2 2.957576 -2.595392 -1.224777  0.2324195
-## 3 3.515152 -3.469704 -1.968816 -0.7212320
-## 4 4.072727 -4.264405 -2.432739 -1.0688515
-## 5 4.630303 -4.596901 -2.630091 -1.1079125
-## 6 5.187879 -4.416490 -2.561796 -1.0932878</code></pre>
+
+## Visualize.
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.1</span>, <span class="fl">4.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>))
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(dens$t10 ~<span class="st"> </span>accel, <span class="dt">data =</span> mcycle,
+  <span class="dt">col.lines =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dt">alpha =</span> <span class="fl">0.05</span>),
+  <span class="dt">ylab =</span> <span class="st">"Density"</span>)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(dens$t40 ~<span class="st"> </span>accel, <span class="dt">data =</span> mcycle,
+  <span class="dt">col.lines =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">alpha =</span> <span class="fl">0.05</span>),
+  <span class="dt">add =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<p><img src="bamlss_files/figure-html/unnamed-chunk-28-1.png" width="60%" style="display: block; margin: auto;"></p>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
