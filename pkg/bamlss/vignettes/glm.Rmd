@@ -77,7 +77,8 @@ f <- participation ~ income + age + education + youngkids + oldkids + foreign + 
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 12000, burnin = 2000, thin = 10)
 ```
-Note, to capture nonlinearities, a quadratic term for variable `age` is added to the model. The model summary gives
+Note, to capture nonlinearities, a quadratic term for variable `age` is added to the model. The
+model summary gives
 ```{r}
 summary(b)
 ```
@@ -123,7 +124,7 @@ nd <- data.frame(income = 11, age = 3.3,
 
 ## Predicted probabilities.
 predict(b, newdata = nd, type = "parameter")
-nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
+nd$foreign <- "yes"
 predict(b, newdata = nd, type = "parameter")
 ```
 To visualize the effect of age on the probability we can do the following:
@@ -133,13 +134,13 @@ nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1,
   foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
 
-nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
-nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
-nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- "yes"
+nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 
 plot2d(p.no ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
-plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
+  ylim = range(c(nd$p.no, nd$pForeign)), lty = c(2, 1, 2))
+plot2d(pForeign ~ age, data = nd, col.lines = "blue", add = TRUE,
   lty = c(2, 1, 2))
 legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   col = c("blue", "black"))
@@ -149,16 +150,20 @@ nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1,
   foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
 
-nd$p.no <- predict(b, newdata = nd, type = "parameter", FUN = c95)
-nd$foreign <- factor(2, levels = 1:2, labels = c("no", "yes"))
-nd$p.yes <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- "yes"
+nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+
+myblue <- function(n, ...) {
+  rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
+}
 
 par(mar = c(4.5, 4, 0.5, 0.5))
-plot2d(p.no ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p.no, nd$p.yes)), lty = c(2, 1, 2))
-plot2d(p.yes ~ age, data = nd, col.lines = "blue", add = TRUE,
+plot2d(pSwiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p.no, nd$pForeign)), lty = c(2, 1, 2))
+plot2d(pForeign ~ age, data = nd, s2.col = myblue, add = TRUE,
   lty = c(2, 1, 2))
-legend("topright", c("foreign yes", "foreign no"), lwd = 1,
+legend("topright", c("Foreigner", "Swiss"), lwd = 1,
   col = c("blue", "black"))
 ```
 The plot nicely depicts the nonlinear effect of variable `age` for the two levels
