@@ -2853,6 +2853,7 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
           all.vars(as.formula(paste("~", tl[j])))[1], ")")
       } else {
         tcall <- parse(text = tl[j])[[1]]
+        id <- tcall$id
         tcall[c("k","fx","bs","m","xt","sp","pc","d","mp","np")] <- NULL
         tcall <- eval(tcall)
         if(is.null(tcall$label)) {
@@ -2868,6 +2869,12 @@ all.labels.formula <- function(formula, specials = NULL, full.names = FALSE)
               tlt <- paste(tlt[1:(length(tlt) - 1)], collapse = "")
               tl[j] <- paste(tlt, ",by=", tcall$by, ")", sep = "")
             }
+          }
+        }
+        if(!is.null(id)) {
+          if(grepl("mrf", id) | grepl("re", id)) {
+            tlt <- paste0(",id='", id, "')")
+            tl[j] <- gsub(")", tlt, tl[j], fixed = TRUE)
           }
         }
       }

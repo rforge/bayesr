@@ -17,7 +17,7 @@ vignette: >
 ---
 
 ```{r preliminaries, include=FALSE}
-library("zoo")
+library("zoo") 
 library("bamlss")
 
 if (! dir.exists("figures")) dir.create("figures")
