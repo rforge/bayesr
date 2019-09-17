@@ -454,7 +454,7 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 105.551 pd = 48.6437 runtime = 1.898
+## DIC = 105.551 pd = 48.6437 runtime = 2.006
 ## ---
 ## Optimizer summary:
 ## -
@@ -463,12 +463,12 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Predict for all terms including 95% credible intervals
 nd$x1 &lt;-<span class="st"> </span>nd$x3 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">length =</span> <span class="dv">100</span>)
 for(j in <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span>))
-  nd[[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"p."</span>, j)]] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> j, <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</code></pre></div>
+  nd[[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"p"</span>, j)]] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> j, <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</code></pre></div>
 <p>The estimated effects can be plotted with.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>, <span class="dv">3</span>))
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p.x1 ~<span class="st"> </span>x1, <span class="dt">data =</span> nd, <span class="dt">fill.select =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p.x2 ~<span class="st"> </span>x2, <span class="dt">data =</span> nd, <span class="dt">fill.select =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p.x3 ~<span class="st"> </span>x3, <span class="dt">data =</span> nd, <span class="dt">fill.select =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))</code></pre></div>
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px1 ~<span class="st"> </span>x1, <span class="dt">data =</span> nd)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px2 ~<span class="st"> </span>x2, <span class="dt">data =</span> nd)
+<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px3 ~<span class="st"> </span>x3, <span class="dt">data =</span> nd)</code></pre></div>
 <p><img src="engines_files/figure-html/unnamed-chunk-16-1.png" width="960" style="display: block; margin: auto;"></p>
 </div>
 <div id="references" class="section level2 unnumbered">
