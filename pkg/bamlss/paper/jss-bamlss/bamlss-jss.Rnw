@@ -141,10 +141,13 @@ library("bamlss")
 Nowadays, regression models must be able to capture a variety of different dependencies in order to
 provide reliable predictions and inference. Moreover, the great interest in models for full
 probabilistic forecasting that alleviate the risk of misspecification, means that the underlying
-methods are becoming increasingly complex. This is not an easy problem to solve and sometimes
-requires a flexible development environment to avoid reinventing the wheel. Although some
-implementations for regression modeling seem to be quite flexible in the first place, the
-possibilities are usually limited, e.g., concerning models and estimation algorithms.
+methods are becoming increasingly complex. Following the recent discussion on p-values
+by the American Statistical Association \citep{bamlss:ASA:2016}, models estimated using a Bayesian
+framework become will become more and more important, hence, further driving model complexity.
+This is not an easy problem to solve and sometimes requires a flexible development environment to
+avoid reinventing the wheel. Although some implementations for regression modeling seem to be quite
+flexible in the first place, the possibilities are usually limited, e.g., concerning models and
+estimation algorithms.
 
 Probably the first implementations that allow for some flexibility concerning the choice of response
 distribution where developed for generalized linear models
@@ -188,8 +191,12 @@ GAM-type distributional regression models using MCMC is the standalone package
 which provides highly efficient sampling schemes for very large
 data sets as well as (spatial) multilevel models. However, the implementation of new response
 distributions (models) in \pkg{BayesX} is not straightforward and users usually have to ask the
-maintainers to do so. Recently, the \proglang{R} package \pkg{brms}
-\citep{bamlss:Buerkner:2017, bamlss:Buerkner:2018}
+maintainers to do so. Another quite flexible Bayesian implementation is the \proglang{R} package
+\pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009, bamlss:INLA} which uses integrated nested Laplace
+approximations to compute the high dimensional integrals, e.g., for posterior mean estimation.
+The \pkg{INLA} package infrastructures are in principle flexible, but new models or
+features can usually only be implemented by the package authors, too. Recently, the \proglang{R}
+package \pkg{brms} \citep{bamlss:Buerkner:2017, bamlss:Buerkner:2018}
 provides infrastructures for estimating Bayesian multilevel models using \pkg{Stan}. The software
 supports a variety of models and is also capable to estimate distributional regression models.
 However, as already mentioned above, estimation time is usually quite long and \pkg{Stan}
