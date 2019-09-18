@@ -23,16 +23,16 @@ set.seed(123)
 if(!file.exists("figures/lasso.rda")) {
   file_url <- "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"
   rent99 <- read.table(file_url, header = TRUE)
-  rent99$yearc <- as.factor(floor(rent99$yearc/10)*10)
-  rent99$area <- cut(rent99$area, breaks = c(0, seq(30, 140, by = 10), Inf),
-    include.lowest = TRUE, right = FALSE)
+  rent99$yearc <- ordered(floor(rent99$yearc/10)*10)
+  rent99$area <- cut(rent99$area, breaks = seq(20, 160, by = 20),
+    include.lowest = TRUE, right = FALSE, ordered = TRUE)
   rent99$location <- as.factor(rent99$location)
   f <- list(
     rentsqm ~ la(area,fuse=2) + la(yearc,fuse=2) + la(location,fuse=1),
     sigma ~ la(area,fuse=2) + la(yearc,fuse=2) + la(location,fuse=1)
   )
   rentmodel <- bamlss(f, data = rent99, optimizer = lasso, sampler = FALSE,
-    criterion = "BIC", nlambda = 30, multiple = TRUE)
+    criterion = "BIC", nlambda = 100, multiple = TRUE, upper = exp(6), lower = exp(0))
 
   rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
     criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
@@ -75,9 +75,9 @@ we use the year of construction (`yearc`), area (`area`) and the location classi
 [@bamlss:Groll+Hambuckers+Kneib+Umlauf:2019], the two continuous covariates are categorized 
 ```{r}
 ## Create factors of continuous covariates.
-rent99$yearc <- as.factor(floor(rent99$yearc / 10) * 10)
-rent99$area <- cut(rent99$area, breaks = c(0, seq(30, 140, by = 10), Inf),
-  include.lowest = TRUE, right = FALSE)
+rent99$yearc <- ordered(floor(rent99$yearc / 10) * 10)
+rent99$area <- cut(rent99$area, breaks = seq(20, 160, by = 20),
+  include.lowest = TRUE, right = FALSE, ordered = TRUE)
 
 ## Also transform to factor.
 rent99$location <- as.factor(rent99$location)
@@ -95,36 +95,36 @@ f <- list(
 ## LASSO model based on lambda grid,
 ## use special lasso() estimation engine.
 rentmodel <- bamlss(f, data = rent99, optimizer = lasso, sampler = FALSE,
-  upper = exp(30), lower = 0.223102, criterion = "BIC", nlambda = 30, multiple = TRUE)
+  criterion = "BIC", nlambda = 100, multiple = TRUE, upper = exp(6), lower = exp(0))
 ```
 where arguments `upper` and `lower` define the limits of the LASSO tuning parameters. Estimation
-in this case is based on the BIC using a two dimensional grid search with $30 \times 30$ iterations.
+in this case is based on the BIC using a two dimensional grid search with $200 \times 200$ iterations.
 Note that `fuse=1` is used for nominal fusion and `fuse=2` for ordinal fusion within the special
 `la()` model term constructor function.
 
 The resulting marginal BIC curves can be visualized with
 ```{r, eval=FALSE}
-lasso_plot(rentmodel, which = "criterion")
+pathplot(rentmodel, which = "criterion")
 ```
 ```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
 par(mfrow = c(1, 2))
-lasso_plot(rentmodel, which = "criterion", spar = FALSE)
+pathplot(rentmodel, which = "criterion", spar = FALSE)
 ```
 In this example both tuning parameters have the same value, also indicated by the gray dashed
 vertical lines. The coefficient paths w.r.t.\ the tuning parameters can be plotted, e.g.,
 for parameter $\mu$, with
 ```{r, eval=FALSE}
-lasso_plot(rentmodel, which = "parameters", model = "mu")
+pathplot(rentmodel, which = "parameters", model = "mu")
 ```
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
 par(mfrow = c(1, 2))
-lasso_plot(rentmodel, which = "parameters", model = "mu")
+pathplot(rentmodel, which = "parameters", model = "mu")
 ```
 The legend on the right hand side of the plot is not necessarily very nice (too long). One option
-to select specific paths for plotting is to set the `name` argument in `lasso_plot()`, e.g.,
+to select specific paths for plotting is to set the `name` argument in `pathplot()`, e.g.,
 plotting the coefficient paths for the year of construction for parameter $\mu$ can be done by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
-lasso_plot(rentmodel, which = "parameters", model = "mu",
+pathplot(rentmodel, which = "parameters", model = "mu",
   name = "mu.s.la(yearc).yearc")
 ```
 The plotting function also replaces the names of the coefficients such that the labeling
@@ -134,7 +134,7 @@ not fused.
 
 Similarly, the effect on parameter $\sigma$ for the `area` of the apartment can be plotted by
 ```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", results = 'hide'}
-lasso_plot(rentmodel, which = "parameters", model = "sigma",
+pathplot(rentmodel, which = "parameters", model = "sigma",
   name = "sigma.s.la(area).area")
 ```
 The plot shows that almost all categories of covariate `area` are fused using the BIC for tuning
