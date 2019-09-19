@@ -479,10 +479,10 @@ sparse_Matrix_setup <- function(x, sparse = TRUE, force = FALSE, take, nonlinear
 
 
 jm_mode <- function(x, y, start = NULL, weights = NULL, offset = NULL,
-                    criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
-                    nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
-                    update.nu = TRUE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
-                    verbose = TRUE, digits = 4, ...)
+  criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1),
+  nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, "alpha" = 0.1, "dalpha" = 0.1),
+  update.nu = FALSE, eps = 0.0001, alpha.eps = 0.001, ic.eps = 1e-08, nback = 40,
+  verbose = TRUE, digits = 4, ...)
 {
   ## Hard coded.
   fix.lambda <- FALSE
@@ -1885,8 +1885,8 @@ update_jm_dalpha <- function(x, eta, eta_timegrid,
 
 ## (5) Joint model MCMC.
 jm_mcmc <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
-                    n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, 
-                    digits = 4, step = 20, ...)
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, 
+  digits = 4, step = 20, ...)
 {
   ## Hard coded.
   fixed <- NULL
