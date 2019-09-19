@@ -144,4 +144,5 @@ reference:
     - '`surv_transform`'
     - '`terms.bamlss`'
     - '`WAIC`'
+    - '`smooth_check`'
 
