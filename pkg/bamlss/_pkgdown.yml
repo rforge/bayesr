@@ -140,9 +140,9 @@ reference:
     - '`smooth.construct`'
     - '`smooth.construct.ms.smooth.spec`'
     - '`smooth.construct.sr.smooth.spec`'
+    - '`smooth_check`'
     - '`summary.bamlss`'
     - '`surv_transform`'
     - '`terms.bamlss`'
     - '`WAIC`'
-    - '`smooth_check`'
 
