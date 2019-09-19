@@ -10259,3 +10259,25 @@ compute_WAIC <- function(object, newdata = NULL) {
   return(rval)
 }
 
+
+smooth_check <- function(object, newdata = NULL, ...)
+{
+  if(is.null(object$samples) | !inherits(object, "bamlss")) {
+    warning("nothing to do!")
+    return(NULL)
+  }
+  nx <- names(object$x)
+  eff <- list()
+  for(i in nx) {
+    if(!is.null(object$x[[i]]$smooth.construct)) {
+      eff[[i]] <- list()
+      for(j in names(object$x[[i]]$smooth.construct)) {
+        p <- predict(object, newdata = newdata, model = i, term = j, intercept = FALSE, FUN = c95, ...)
+        eff[[i]][[j]] <- mean(!((p[, "2.5%"] < 0) & (p[, "97.5%"] > 0)))
+      }
+      eff[[i]] <- unlist(eff[[i]])
+    }
+  }
+  return(eff)
+}
+

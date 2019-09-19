@@ -210,7 +210,8 @@ export(
   "pathplot",
 
   ## misc
-  "response_name"
+  "response_name",
+  "smooth_check"
 )
 
 S3method("plot", "bamlss")
