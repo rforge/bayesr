@@ -205,7 +205,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
     doCmat <- FALSE
 
   if(is.null(gam.side))
-    gam.side <- if(binning) FALSE else TRUE
+    gam.side <- FALSE
 
   if(inherits(formula, "bamlss.frame")) {
     data <- if(is.null(data)) model.frame(formula) else data
