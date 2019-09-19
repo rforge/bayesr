@@ -10268,24 +10268,36 @@ compute_WAIC <- function(object, newdata = NULL) {
 }
 
 
-smooth_check <- function(object, newdata = NULL, ...)
+smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
 {
   if(is.null(object$samples) | !inherits(object, "bamlss")) {
     warning("nothing to do!")
     return(NULL)
   }
   nx <- names(object$x)
+  if(!is.null(model))
+    nx <- nx[grep2(model, nx, fixed = TRUE)]
   eff <- list()
   for(i in nx) {
     if(!is.null(object$x[[i]]$smooth.construct)) {
       eff[[i]] <- list()
-      for(j in names(object$x[[i]]$smooth.construct)) {
-        p <- predict(object, newdata = newdata, model = i, term = j, intercept = FALSE, FUN = c95, ...)
-        eff[[i]][[j]] <- mean(!((p[, "2.5%"] < 0) & (p[, "97.5%"] > 0)))
+      nt <- names(object$x[[i]]$smooth.construct)
+      if(!is.null(term))
+        nt <- nt[grep2(term, nt, fixed = TRUE)]
+      for(j in nt) {
+        p <- as.matrix(predict(object, newdata = newdata, model = i, term = j, intercept = FALSE, FUN = c95, ...))
+        minp <- min(p[, "Mean"])
+        maxp <- max(p[, "Mean"])
+        pp <- (maxp - minp)
+        se <- as.matrix(samples(object, model = i, term = j))
+        secheck <- if(nrow(unique(se)) < 2L) FALSE else TRUE
+        eff[[i]][[j]] <- mean(!((p[, "2.5%"] <= 0) & (p[, "97.5%"] >= 0)) & (pp > 1e-10) & secheck)
       }
       eff[[i]] <- unlist(eff[[i]])
     }
   }
+  if(length(eff) < 2L)
+    eff <- eff[[1L]]
   return(eff)
 }
 
