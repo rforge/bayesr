@@ -3290,8 +3290,9 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
 
   ## New x values for which effect should
   ## be calculated, n = 100.
+  any_f <- any(sapply(data[tterms], is.factor))
   if(!is.na(grid)) {
-    if(!is.factor(data[[tterms[1]]]) & !any(grepl("mrf", class(x))) &
+    if(!any_f & !any(grepl("mrf", class(x))) &
       !any(grepl("re.", class(x), fixed = TRUE)) & !any(grepl("random", class(x)))) {
       xsmall <- TRUE
       nd <- list()
@@ -3423,7 +3424,9 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   }
 
   ## Assign class and attributes.
-  smf <- unique(smf)
+  if(!any_f)
+    smf <- unique(smf)
+
   class(smf) <- c(class(x), "data.frame")
 
   # this code does not work with environments/r6 classes:
@@ -7354,7 +7357,12 @@ bamlss_factor2d_plot <- function(x, ids = NULL, add = FALSE, rug = FALSE, ...)
   }
   isf <- sapply(x[, specs$term], is.factor)
   xd <- x[, specs$term]
-  fx <- unlist(x[, grepl("50", colnames(x), fixed = TRUE)])
+  mw <- any(grepl("mean", tolower(colnames(x)), fixed = TRUE))
+  if(mw) {
+    fx <- unlist(x[, grepl("mean", tolower(colnames(x)), fixed = TRUE)])
+  } else {
+    fx <- unlist(x[, grepl("50", colnames(x), fixed = TRUE)])
+  }
   isf <- isf[1:length(specs$term)]
   xlab <- if(is.null(args$xlab)) colnames(xd)[!isf] else args$xlab
   ylab <- if(is.null(args$ylab)) specs$label else args$ylab

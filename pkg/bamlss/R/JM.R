@@ -14,9 +14,9 @@ jm_bamlss <- function(...)
     "transform" = function(x, jm.start = NULL, timevar = NULL, idvar = NULL, init.models = FALSE, 
                            plot = FALSE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...) {
       rval <- jm_transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
-                           formula = x$formula, family = x$family, data = x$model.frame,
-                           jm.start = jm.start, timevar = timevar, idvar = idvar, 
-                           nonlinear = nonlinear, edf_alt = edf_alt, start_mu = start_mu, k_mu = k_mu, ...)
+                formula = x$formula, family = x$family, data = x$model.frame,
+                jm.start = jm.start, timevar = timevar, idvar = idvar, 
+                nonlinear = nonlinear, edf_alt = edf_alt, start_mu = start_mu, k_mu = k_mu, ...)
       if(init.models) {
         x2 <- rval$x[c("mu", "sigma")]
         for(i in names(x2)) {
@@ -62,9 +62,9 @@ jm_bamlss <- function(...)
 
 ## (2) The transformer function.
 jm_transform <- function(x, y, data, terms, knots, formula, family,
-                         subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
-                         timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
-                         sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...)
+  subdivisions = 25, timedependent = c("lambda", "mu", "alpha", "dalpha"), 
+  timevar = NULL, idvar = NULL, alpha = .Machine$double.eps, mu = NULL, sigma = NULL,
+  sparse = TRUE, nonlinear = FALSE, edf_alt = FALSE, start_mu = NULL, k_mu = 6, ...)
 {
   rn <- names(y)
   y0 <- y
@@ -201,13 +201,13 @@ jm_transform <- function(x, y, data, terms, knots, formula, family,
   for(j in c("lambda", "gamma", "alpha", if(dalpha) "dalpha" else NULL)) {
     if(nonlinear & (j =="alpha")){
       x[[j]]<- design.construct(terms, data = data[take_last, , drop = FALSE], knots = list(mu = k),
-                                model.matrix = TRUE, smooth.construct = TRUE, model = j,
-                                scale.x = FALSE, absorb.cons = TRUE, C = C)[[j]]
+                 model.matrix = TRUE, smooth.construct = TRUE, model = j,
+                 scale.x = FALSE, absorb.cons = TRUE, C = C)[[j]]
     } else {
-    x[[j]]<- design.construct(terms, data = data[take, , drop = FALSE], knots = knots,
-                              model.matrix = TRUE, smooth.construct = TRUE, model = j,
-                              scale.x = FALSE)[[j]]
-  }
+      x[[j]]<- design.construct(terms, data = data[take, , drop = FALSE], knots = knots,
+                 model.matrix = TRUE, smooth.construct = TRUE, model = j,
+                 scale.x = FALSE)[[j]]
+    }
   }
   
   ## Degrees of freedom to 1 for lambda, gamma and alpha smooths.
@@ -287,7 +287,6 @@ jm_transform <- function(x, y, data, terms, knots, formula, family,
   }
   
   ## Assign time grid predict functions.
-
   for(i in seq_along(ntd)) {
     if(has_pterms(x[[ntd[i]]]$terms)) {
       if(ntd[i] %in% c("lambda", if(nonlinear) "alpha")) {
