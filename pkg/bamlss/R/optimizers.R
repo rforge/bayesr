@@ -5508,6 +5508,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(lasso))
     lasso <- FALSE
 
+  OL <- list(...)$OL
+  if(is.null(OL))
+    OL <- FALSE
+  if(OL)
+    lasso <- TRUE
+
+  K <- list(...)$K
+  if(is.null(K))
+    K <- 2
+
   always <- list(...)$always
   if(is.null(always))
     always <- FALSE
@@ -5571,6 +5581,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- NA
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        if(OL) {
+          x[[i]]$smooth.construct[[j]]$S <- list()
+        }
         ncS <- length(x[[i]]$smooth.construct[[j]]$S) + if(lasso) 1L else 0L
         parm[[i]][[paste0("s.", j)]] <- matrix(nrow = 0L, ncol = ncX + ncS + 1L)
         colnames(parm[[i]][[paste0("s.", j)]]) <- c(paste0("b", 1:ncX), paste0("tau2", 1:ncS), "edf")
@@ -5697,7 +5710,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
             if(aic | loglik) {
               if(aic) {
-                ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * ncol(Xt)
+                ll <- -2 * family$loglik(yt, family$map2par(etas)) + K * ncol(Xt)
               } else {
                 ll <- -1 * family$loglik(yt, family$map2par(etas))
               }
@@ -5778,7 +5791,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               if(aic | loglik) {
                 if(aic) {
                   iedf <- sum_diag(XWX %*% P)
-                  ll <- -2 * family$loglik(yt, family$map2par(etas)) + 2 * iedf
+                  ll <- -2 * family$loglik(yt, family$map2par(etas)) + K * iedf
                 } else {
                   ll <- -1 * family$loglik(yt, family$map2par(etas))
                 }
@@ -5789,7 +5802,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]],
-              optim = if(length(tau2[[i]][[j]]) > 1) TRUE else FALSE), silent = TRUE)
+              optim = FALSE), silent = TRUE)
             ll_contrib[[i]][["p"]] <- NA
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)

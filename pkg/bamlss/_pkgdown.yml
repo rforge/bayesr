@@ -16,6 +16,7 @@ articles:
     - lasso
     - engines
     - bf
+    - jm
 
 navbar:
   left:
@@ -49,6 +50,8 @@ navbar:
         href: articles/bivnorm.html
       - text: LASSO-Type Penalization in the Framework of GAMLSS
         href: articles/lasso.html
+      - text: Bayesian Joint Models for Longitudinal and Survival Data
+        href: articles/jm.html
     - text: Reference
       href: reference/index.html
     - text: Changelog
