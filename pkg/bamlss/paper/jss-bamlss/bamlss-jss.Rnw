@@ -60,8 +60,8 @@
 
 \Abstract{
   Over the last decades, the challenges in applied regression and in predictive modeling have
-  been changing considerably: (1)~More flexible model specifications are needed as big(ger) data as
-  well as more powerful computing infrastructure become available. (2)~Full probabilistic modeling
+  been changing considerably: (1)~More flexible model specifications are needed as big(ger) data
+  become available, facilitated by more powerful computing infrastructure. (2)~Full probabilistic modeling
   rather than predicting just means or expectations is crucial in many applications.
   (3)~Interest in Bayesian inference has been increasing both as an appealing framework for
   regularizing or penalizing model estimation as well as a natural alternative to classical
@@ -69,13 +69,13 @@
   also leading to associated software packages, a modular software implementation that
   allows to easily combine all three aspects has not yet been available. For filling this gap,
   the \proglang{R} package \pkg{bamlss} is introduced for Bayesian additive models for location,
-  scale, and shape. At the core of the package are algorithms for highly-efficient Bayesian
+  scale, and shape (and beyond). At the core of the package are algorithms for highly-efficient Bayesian
   estimation and inference that can be applied to generalized additive models (GAMs) or
   generalized additive models for location, scale, and shape (GAMLSS), also known as
   distributional regression. However, its building blocks are designed as ``Lego bricks''
   encompassing various
   distributions (exponential family, Cox, joint models, \dots),
-  regression terms (linear, splines, random effects, tensor products, \dots), and
+  regression terms (linear, splines, random effects, tensor products, spatial fields, \dots), and
   estimators (MCMC, backfitting, gradient boosting, lasso, \dots).
   It is demonstrated how these can be easily recombined to make classical models more
   flexible or create new custom models for specific modeling challenges.
@@ -119,115 +119,109 @@ library("bamlss")
 
 \section{Introduction}
 
-%  Over the last decades there has been an increasing interest in distributional
-%  regression  models that allow to model the entire data distribution
-%  conditional on covariates. In particular, the  framework of structured
-%  additive distributional regression models enables to specify  different types
-%  of effects such as linear, non-linear or interaction effects on all the 
-%  distribution parameters (such as location scale and shape) hence providing a
-%  very flexible and generic framework suited for  many complex real data
-%  problems. However, the implementation of new models is usually time-consuming
-%  and complex, especially using Bayesian estimation algorithms. We propose an
-%  unified modeling architecture, which is implemented in the \proglang{R}
-%  package \pkg{bamlss}, that makes it possible to embed many different
-%  approaches suggested in literature and software. We show that implementing
-%  (new) algorithms, non-standard distributions or effect types, or the
-%  integration of already existing software, is relatively straightforward in
-%  this setting. We illustrate the usefulness of the approach by implementing
-%  highly efficient algorithms for fully Bayesian inference based on MCMC
-%  simulation, backfitting algorithms, gradient boosting and LASSO-type penalized
-%  models.
+Many modern modeling tasks necessitate flexible regression tools that can deal with:
+(1)~Big data sets that can be both long (many observations) and wide (many variables and/or complex effect types).
+(2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
+(3)~Enhanced inference infrastructure, typically Bayesian, beyond classical frequentist significance tests.
+A popular framework to combine flexible regression with probabilistic modeling
+are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
+to generalized additive models for location, scale, and shape \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
+also known as distributional regression \citep{bamlss:Klein+Kneib+Lang+Sohn:2015} which
+encompasses basic (generalized) linear models \citep{bamlss:Nelder+Wedderburn:1972} as special cases.
+These regression approaches can also be combined with Bayesian inference
+\citep[see e.g.,][]{bamlss:Fahrmeir+Kneib+Lang+Marx:2013} as a natural framework
+for penalizing flexible model terms and to overcome potential problems with $p$~values
+and classical null hypothesis significance testing \citep{bamlss:ASA:2016}. However,
+when fitting such models to big data -- long and/or wide -- classical estimation
+techniques using standard algorithms like iteratively weighted least squares (IWLS) or
+Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized estimation
+techniques such as lasso or boosting \citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
+might be necessary or custom algorithms \citep{bamlss:Wood:2017}. Hence,
+to facilitate combining all three aspects discussed above with different estimation
+techniques and fitting algorithms the \pkg{bamlss} package for the \proglang{R}
+system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox''
+as proposed in \citep{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
+not only the response distribution or the regression terms are ``Lego bricks''
+but also estimation algorithm or the MCMC sampler.
 
-Nowadays, regression models must be able to capture a variety of different dependencies in order to
-provide reliable predictions and inference. Moreover, the great interest in models for full
-probabilistic forecasting that alleviate the risk of misspecification, means that the underlying
-methods are becoming increasingly complex. Following the recent discussion on p-values
-by the American Statistical Association \citep{bamlss:ASA:2016}, models estimated using a Bayesian
-framework become will become more and more important, hence, further driving model complexity.
-This is not an easy problem to solve and sometimes requires a flexible development environment to
-avoid reinventing the wheel. Although some implementations for regression modeling seem to be quite
-flexible in the first place, the possibilities are usually limited, e.g., concerning models and
-estimation algorithms.
 
-Probably the first implementations that allow for some flexibility concerning the choice of response
-distribution where developed for generalized linear models
-(GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}). The next extension of GLMs was to
-allow for different (user specified) smooth model terms within the framework of generalized additive
-models (GAM,~\citealp{bamlss:Hastie+Tibshirani:1990}). Further development was the extension away
-from the pure exponential family of distributions to the so called generalized additive models for
-location, scale and shape (GAMLSS,~\citealp{bamlss:Rigby+Stasinopoulos:2005}), also known as
-distributional regression models
-\citep{bamlss:Klein+Kneib+Lang+Sohn:2015, bamlss:Klein+Kneib+Klasen+Lang:2015}, which enable
-modeling all parameters of a response distribution in terms of covariates. Besides, there are also
-some implementations for nonparametric quantile regression models \citep{bamlss:Koenker:2005}, but
-with rather limited support for flexible model terms.
-
-The statistical environment \proglang{R} \citep{bamlss:R} provides a rich number of packages
-that support a quite flexible regression modeling approach.
-The \proglang{R} package \pkg{gamlss}
-\citep{bamlss:Stasinopoulos:Rigby:2007, bamlss:Stasinopoulos+Rigby:2019} and \pkg{VGAM}
-\citep{bamlss:Yee:2009, bamlss:Yee:2019} were the first packages
-to follow the distributional regression approach and comprise a quite flexible framework for
-implementing response distributions. Variable selection algorithms for GAMLSS based on gradient
-boosting were then introduced by the \pkg{gamboostLSS} package
-\citep{bamlss:Hofner+Mayr+Schmid:2014, bamlss:Hofner:2018} and more recently, the contributed
-base \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2017, bamlss:Wood:2019} provides a
-fitting routine for the estimation of general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}.
-The inferential framework of the packages mentioned is based on maximum likelihood, however, if
-taken into account at all. For complex models, e.g., with response
-distributions outside the exponential family combined with complex predictor structures of
-several smooth effects \citep{bamlss:Klein+Kneib+Lang:2015}, the \pkg{gamlss} package may
-suffer from numerical instabilities. In such situations the fully Bayesian approach using Markov chain
-Monte Carlo (MCMC) simulation techniques is particularly attractive since valid credible intervals
-are easily obtained from the posterior samples. While Bayesian distributional regression models
-can in principle be estimated using general purpose MCMC software like
-\pkg{JAGS}~\citep{bamlss:Plummer:2013}, \pkg{Stan}~\citep{bamlss:stan-software:2016} or
-\pkg{WinBUGS}~\citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}, they all have the drawback
-that sampling time is usually quite long, or it is even impossible to estimate distributional
-regression models with GAM-type predictors, e.g., when using large data sets, modeling spatial
-effects or complex higher-order interactions. The first software capable of estimating such
-GAM-type distributional regression models using MCMC is the standalone package
-\pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005, bamlss:Umlauf:2015, bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017},
-which provides highly efficient sampling schemes for very large
-data sets as well as (spatial) multilevel models. However, the implementation of new response
-distributions (models) in \pkg{BayesX} is not straightforward and users usually have to ask the
-maintainers to do so. Another quite flexible Bayesian implementation is the \proglang{R} package
-\pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009, bamlss:INLA} which uses integrated nested Laplace
-approximations to compute the high dimensional integrals, e.g., for posterior mean estimation.
-The \pkg{INLA} package infrastructures are in principle flexible, but new models or
-features can usually only be implemented by the package authors, too. Recently, the \proglang{R}
-package \pkg{brms} \citep{bamlss:Buerkner:2017, bamlss:Buerkner:2018}
-provides infrastructures for estimating Bayesian multilevel models using \pkg{Stan}. The software
-supports a variety of models and is also capable to estimate distributional regression models.
-However, as already mentioned above, estimation time is usually quite long and \pkg{Stan}
-does not easily handle models with a lot of observations.
-
-To summarize the above: although supposedly quite flexible, most implementations follow a very
-specific focus and are therefore not easy to use to implement new methods, e.g., a new efficient
-sampling scheme or numerical optimization algorithm. Therefore, we present
-the \proglang{R} package \pkg{bamlss}, a ``Lego toolbox'' for flexible Bayesian regression models
-(and beyond), which was first introduced in \citet{bamlss:Umlauf+Klein+Zeileis:2018} within
-the framework of Bayesian additive model for location, scale and shape (BAMLSS).
-Since then, the package has undergone significant further development. The focus has shifted
-tremendously from the pure Bayesian viewpoint to virtually a mixture of state-of-the-art estimation
-techniques from machine learning and statistics. The main contributions of \pkg{bamlss} are the
-following:
+In terms of software infrastructure, the \proglang{R} ecosystem already provides a
+rich variety of packages that combine several -- but not all -- of the aspects discussed above.
 %
 \begin{itemize}
-\item With the usual \proglang{R} modeling ``look \& feel'',
-\item estimation of classic (GAM-type) regression models (Bayesian or frequentist),
-\item estimation of flexible distributional regression models,
-\item easy interchangeability of model terms.
-\item easy implementation of (new) models and algorithms,
+
+\item \emph{GAMs and GAMLSSs}
+are available in a number of packages, most notably the \pkg{mgcv} package \citep{bamlss:Wood:2017}
+and also the \pkg{gamlss} family of packages \citep{bamlss:Stasinopoulos:Rigby:2007}
+and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
+of a wide range of response distributions. However, for complex predictor structures
+and response distributions beyond the exponential family, estimation may be challenging
+or subject to numerical instabilities. In contrast, \pkg{mgcv} excels at providing
+highly-optimized algorithms for general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}
+as well as the dedicated \fct{bam} function for big data that is long and/or wide
+\citep{bamlss:Wood+Li+Shaddick:2017}.
+
+\item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
+frequentist inference, it is also particularly attractive for hierarchical or multilevel
+models and for penalizing regression effects through suitable prior distributions. Fully
+Bayesian approaches using MCMC are particularly attractive for flexible regression models
+in order to obtain credible intervals from the posterior samples etc. The \pkg{brms} package
+\citep{bamlss:Buerkner:2017} is notable for providing a standard \proglang{R} workflow
+for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan-software:2016}.
+Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAMs via its
+\fct{jagam} function \citep{bamlss:Wood:2016b} based on \pkg{JAGS} \citep{bamlss:Plummer:2013}.
+
+For more flexibility, going beyond these capabilities, it is in principle possible to 
+directly implement custom models using general purpose MCMC software like
+\pkg{JAGS}, \pkg{Stan}, or \pkg{WinBUGS} \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}.
+However, for complex models -- e.g., using data sets, spatial effects, or higher-order interactions --
+sampling times from these generic MCMC engines can become long, sometimes prohibitively so.
+This has been addressed by dedicated packages for Bayesian additive models with the standalone
+package \pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005} being the first to provide highly-efficient
+sampling schemes for very large data sets as well as spatial/multilevel models. An \proglang{R}
+interface is available in \pkg{R2BayesX} \citep{bamlss:Umlauf:2015}. Instead of doing
+fully Bayesian MCMC another approach to estimate flexible Bayesian regression models is
+posterior mean estimation via the integrated nested Laplace approximations. This is provided
+in the comprehensive \proglang{R} package \pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009},
+popular for estimating complex spatial Bayesian regression models
+\citep[see e.g.,][]{bamlss:Lindgren+Rue:2015,bamlss:Bivand+GomezRubio+Rue:2015}.
+
+\item \emph{Regularized estimation} might be necessary, though, for going beyond the models
+described above, especially for large/wide data with many potential regressors and corresponding
+effects/interactions/etc. Widely-used approaches for this include the lasso, e.g., as available
+for GLM-type models in the \proglang{R} package \pkg{glmnet} \citep{bamlss:Friedmann+Hastie+Tibshirani:2010},
+or gradient boosting as available for GAMLSS-type models in the \proglang{R} package
+\pkg{gamboostLSS} \citep{bamlss:Hofner+Mayr+Schmid:2014}. However, obtaining MCMC samples from
+the posterior distributions corresponding to such models is not easily available in these
+packages.
+
 \end{itemize}
 %
-The package builds on the well-established \pkg{mgcv} infrastructures using
-\proglang{R}'s formula syntax for model specification. Moreover, the package provides
-commonly used extractor functions like \fct{summary}, \fct{plot}, \fct{predict}, etc., such
-that users interested in developing new models or algorithms (Bayesian or frequentist) can
-really concentrate on it.
-The package is made available from the Comprehensive
-\proglang{R} Archive Network (CRAN) at \url{http://CRAN.R-project.org/package=bamlss}.
+In summary, the discussion above highlights that many different packages with different strengths
+are already available in \proglang{R}. However, a package combining all the aspects above in a single
+framework is not readily available as there are typically limitations with respect to the 
+inferential framework, the distributions and/or complexity of the models supported, or the
+estimation techniques and fitting algorithms. The package {bamlss}, available from the Comprehensive
+\proglang{R} Archive Network at \url{https://CRAN.R-project.org/package=bamlss}, tries to 
+fill this gap and provide a modular ``Lego'' approach to flexible Bayesian regression providing:
+%
+\begin{itemize}
+\item The usual \proglang{R} ``look \& feel'' for regression modeling.
+\item Estimation of classic (GAM-type) regression models (Bayesian or frequentist).
+\item Estimation of flexible (GAMLSS-type) distributional regression models.
+\item An extensible ``plug \& play'' approach for regression terms.
+\item Modular combinations of fitting algorithms and samplers.
+\end{itemize}
+%
+Especially the last item is notable because the models in \pkg{bamlss} are not limited to
+a specific estimation algorithm but different engines can be plugged in without necessitating
+changes in other aspects of the model specification (such as response distributions or
+regression terms). By default \pkg{bamlss} is using IWLS-based backfitting for optimizing
+the model and IWLS-based MCMC for sampling from the posterior distribution. However,
+alternative optimizers and samplers are also implemented that support Bayesian lasso
+or boosting etc. Moreover, the package builds on the well-established \pkg{mgcv} infrastructure
+for smooth model terms, uses \proglang{R}'s formula syntax for model specification, and provides
+standard extractor methods like \fct{summary}, \fct{plot}, \fct{predict}, etc.
 
 The remainder of this paper is as follows. In Section~\ref{sec:motivation},
 three motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
@@ -246,7 +240,7 @@ example demonstrates that the usual ``look \& feel'' when using well-established
 functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
 basic handling of the package should be relatively simple. The second example shows that the
 package can deal with a variety of different model terms and that model fitting functions
-can easily be exchanged, here, we exemplify this feature by applying a LASSO-type estimation engine.
+can easily be exchanged, here, we exemplify this feature by applying a lasso-type estimation engine.
 The third example then explains how full distributional regression models can be estimated and show
 cases once more the flexibility of the provided modeling infrastructures.
 
@@ -492,26 +486,26 @@ implement completely new model terms that may follow different setups compared t
 functions approach (see also Appendix~\ref{appendix:specialterms} for an example using growth curves).
 Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
 an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
-a fused LASSO algorithm (see also Section~\ref{sec:application} for a complex example using gradient
+a fused lasso algorithm (see also Section~\ref{sec:application} for a complex example using gradient
 boosting optimization).
 The algorithm performs variable selection in combination with factor fusion (clustering) and can also
-be used to identify interpretable nonlinearities. Methodological details on LASSO-type penalization
+be used to identify interpretable nonlinearities. Methodological details on lasso-type penalization
 using \pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
-To apply the fused LASSO, the numeric variable \code{age} is categorized using empirical quantiles,
+To apply the fused lasso, the numeric variable \code{age} is categorized using empirical quantiles,
 e.g., with
 <<eval=FALSE>>=
 SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
   include.lowest = TRUE, order.results = TRUE)
 @
-The formula for the fused LASSO model is then specified with the
+The formula for the fused lasso model is then specified with the
 special \fct{la} model term constructor function provided in \pkg{bamlss}
 <<>>=
 f <- participation ~ income + education + youngkids + oldkids + foreign + 
   la(cage, fuse = 2)
 @
 where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse = 1},
-ordered fusion \code{fuse = 2}). To estimate the fused LASSO model only the default \code{optimizer}
+ordered fusion \code{fuse = 2}). To estimate the fused lasso model only the default \code{optimizer}
 function in the \fct{bamlss} wrapper function call needs to exchanged
 <<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
@@ -546,7 +540,7 @@ plot2d(page ~ age, data = SwissLabor, rug = TRUE, lwd = 2,
 mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
 @
 \caption{\label{fig:lasso} Left panel, BIC curve with optimum shrinkage parameter $\lambda$
-  of the LASSO example model. The middle panel shows the corresponding coefficient paths for
+  of the lasso example model. The middle panel shows the corresponding coefficient paths for
   variable \code{cage}. The right panel displays the respective estimated effect.}
 \end{figure}
 
@@ -571,7 +565,7 @@ The figure is then created using the untransformed original covariate on the x-a
 <<eval=FALSE>>=
 plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
-Using the fused LASSO estimation some nonlinearities can be identified again, however, the
+Using the fused lasso estimation some nonlinearities can be identified again, however, the
 BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
 in the right panel of Figure~\ref{fig:logit_effects}.
 
@@ -730,7 +724,7 @@ is a typical GAM-type or so-called structured additive predictor
 (STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}). \citet{bamlss:Umlauf+Klein+Zeileis:2018}
 relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
 and regression coefficients. For example, functions $f_{jk}(\cdot)$ could also represent nonlinear
-growth curves, a regression tree, a neural network or LASSO-penalized model terms as shown
+growth curves, a regression tree, a neural network or lasso-penalized model terms as shown
 in Section~\ref{sec:flexm}.
 
 For full Bayesian inference, priors need to be assigned to the regression coefficients
@@ -824,7 +818,7 @@ based on the survival function,
 \citet{bamlss:Koehler+Umlauf+Greven:2016} and \citet{bamlss:Koehler+Umlauf+Greven:2018} implement
 Bayesian joint models for survival and longitudinal data. Moreover, the updating schemes do not
 restrict to any particular estimation engine, e.g.,
-\citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019} use the framework to implement LASSO-type
+\citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019} use the framework to implement lasso-type
 penalization for GAMLSS and \citet{bamlss:Simon+Fabsic+Mayr+Umlauf+Zeileis:2018}
 investigate gradient boosting with stability selection algorithms
 (see also Section~\ref{sec:application}). Very recently, \citet{bamlss:Umlauf+Klein:2019}
@@ -1814,7 +1808,7 @@ Gompertz curve
 $$
 f(x; \boldsymbol{\beta}) = \beta_1 \cdot \exp(-\beta_2 \cdot \exp(-\beta_3 \cdot x)),
 $$
-but also the LASSO model term constructor \fct{la} presented in Section~\ref{sec:flexm} is a
+but also the lasso model term constructor \fct{la} presented in Section~\ref{sec:flexm} is a
 special \pkg{bamlss} model term. The special model term constructor is needed in this case, since
 the growth curve is nonlinear in the parameters $\boldsymbol{\beta}$, hence, the default backfitting
 and sampling strategies cannot be applied. Fortunately, estimation algorithms in distributional
