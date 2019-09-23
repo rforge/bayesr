@@ -140,9 +140,9 @@ might be necessary or custom algorithms \citep{bamlss:Wood:2017}. Hence,
 to facilitate combining all three aspects discussed above with different estimation
 techniques and fitting algorithms the \pkg{bamlss} package for the \proglang{R}
 system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox''
-as proposed in \citep{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
+as proposed in \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
 not only the response distribution or the regression terms are ``Lego bricks''
-but also estimation algorithm or the MCMC sampler.
+but also the estimation algorithm or the MCMC sampler.
 
 
 In terms of software infrastructure, the \proglang{R} ecosystem already provides a
@@ -174,7 +174,7 @@ Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAM
 For more flexibility, going beyond these capabilities, it is in principle possible to 
 directly implement custom models using general purpose MCMC software like
 \pkg{JAGS}, \pkg{Stan}, or \pkg{WinBUGS} \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}.
-However, for complex models -- e.g., using data sets, spatial effects, or higher-order interactions --
+However, for complex models -- e.g., using large data sets, spatial effects, or higher-order interactions --
 sampling times from these generic MCMC engines can become long, sometimes prohibitively so.
 This has been addressed by dedicated packages for Bayesian additive models with the standalone
 package \pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005} being the first to provide highly-efficient
@@ -201,7 +201,7 @@ In summary, the discussion above highlights that many different packages with di
 are already available in \proglang{R}. However, a package combining all the aspects above in a single
 framework is not readily available as there are typically limitations with respect to the 
 inferential framework, the distributions and/or complexity of the models supported, or the
-estimation techniques and fitting algorithms. The package {bamlss}, available from the Comprehensive
+estimation techniques and fitting algorithms. The package \pkg{bamlss}, available from the Comprehensive
 \proglang{R} Archive Network at \url{https://CRAN.R-project.org/package=bamlss}, tries to 
 fill this gap and provide a modular ``Lego'' approach to flexible Bayesian regression providing:
 %
@@ -218,7 +218,7 @@ a specific estimation algorithm but different engines can be plugged in without 
 changes in other aspects of the model specification (such as response distributions or
 regression terms). By default \pkg{bamlss} is using IWLS-based backfitting for optimizing
 the model and IWLS-based MCMC for sampling from the posterior distribution. However,
-alternative optimizers and samplers are also implemented that support Bayesian lasso
+alternative optimizers and samplers are also implemented that support lasso
 or boosting etc. Moreover, the package builds on the well-established \pkg{mgcv} infrastructure
 for smooth model terms, uses \proglang{R}'s formula syntax for model specification, and provides
 standard extractor methods like \fct{summary}, \fct{plot}, \fct{predict}, etc.
@@ -231,6 +231,9 @@ introduces the flexible regression framework in more detail. A thorough introduc
 families, model terms and estimation algorithms, is then given in Section~\ref{sec:package}. In
 Section~\ref{sec:application} we highlight the unified modeling approach using a complex
 distributional regression model for lighting counts in complex terrain.
+
+Further details and examples about the \pkg{bamlss} package can be found at
+\url{http://bamlss.org/}.
 
 
 \section{Motivating examples} \label{sec:motivation}
@@ -409,7 +412,6 @@ plot(b, term = "s(age)", spar = FALSE, ylab = expression(paste("Effect on Logi",
   The solid lines represent mean estimates, the shaded areas show 95\% credible intervals.}
 \end{figure}
 
-\newpage
 
 \subsection{Flexible model terms and estimators} \label{sec:flexm}
 
@@ -675,9 +677,6 @@ distributions. Moreover, the Appendix~\ref{appendix:crps} provides a code snippe
 the CRPS using numerical integration.
 
 
-\newpage
-
-
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
@@ -860,9 +859,6 @@ number of candidate models. The following lists commonly used tools:
   the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
-
-
-\newpage
 
 
 \section{The bamlss package} \label{sec:package}
@@ -1324,9 +1320,6 @@ given in Appendix~\ref{appendix:engine}. The example also provides details on th
 and return values of optimizer and sampler functions.
 
 
-\newpage
-
-
 \section{Flexible count regression for lightning reanalysis} \label{sec:application}
 
 This section illustrates the workflow with \pkg{bamlss} along a small case study.
@@ -1716,8 +1709,6 @@ Alps has increased.
 T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
-
-\clearpage
 
 \begin{appendix}
 
