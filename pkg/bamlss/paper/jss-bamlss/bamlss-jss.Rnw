@@ -2004,11 +2004,11 @@ As noted above, the object is a named list with elements \code{"x"} and \code{"y
 passed to the estimation functions. For the moment, since we only implement a linear 
 model, we need to work with the linear model matrix that is part of the \code{bf} object.
 <<>>=
-print(head(bf$x$mu$model.matrix))
+head(bf$x$mu$model.matrix)
 @
 and the response \code{y}
 <<>>=
-print(head(bf$y))
+head(bf$y)
 @
 to setup the optimizer function with:
 <<>>=

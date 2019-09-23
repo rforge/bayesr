@@ -57,7 +57,7 @@ _bamlss_ package. The data contains of a couple of different response types and 
 used for internal tests, only.
 ```{r}
 d <- GAMart()
-print(head(d))
+head(d)
 ```
 The first column holding variable `num` is a Gaussian response, all subsequent columns up to
 variable `cens` are basically transformations of variable `num`. Variables `x1` to `lat` are
@@ -158,7 +158,7 @@ d$ID <- over(SpatialPoints(d[c("lon", "lat")]), hexpolys)
 ## Note, over() only returns the index of the polygons,
 ## but for the MRF we need the polygon names.
 d$ID <- as.factor(names(hexpolys)[d$ID])
-print(head(d))
+head(d)
 ```
 However, there is still a small problem, because not all coordinates could be assigned to polygons.
 Unfortunately we get some `NA`'s
@@ -181,7 +181,7 @@ sum(is.na(d$ID))
 
 ## Get the polygon names.
 pn <- names(hexpolys)
-print(head(pn))
+head(pn)
 
 ## Ok, we need to modify the names a bit.
 pn <- gsub("buffer ID", "", pn)

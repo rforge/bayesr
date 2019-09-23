@@ -48,7 +48,7 @@ This example is taken from the _AER_ package
 participation (yes/no) of women in Switzerland 1981. The data can be loaded with
 ```{r}
 data("SwissLabor", package = "AER")
-print(head(SwissLabor))
+head(SwissLabor)
 ```
 The data frame contains of 872 observations on 7 variables, where some of them might have
 a nonlinear influence on the response labor `participation`. Now, a standard Bayesian 
@@ -180,7 +180,7 @@ download.file(
 )
 unzip("DebTrivedi.rda.zip")
 load("DebTrivedi.rda")
-print(head(DebTrivedi))
+head(DebTrivedi)
 ```
 The response variable in this data is the number of physician office visits, variable `ofp`. A
 histogram of the count data response can be plotted with
@@ -317,8 +317,8 @@ if(!file.exists("figures/homstart.rda")) {
 }
 ```
 ```{r}
-print(head(homstart))
-print(dim(homstart))
+head(homstart)
+dim(homstart)
 ```
 The data consists of 1063610 observations. To illustrate how large models can be fitted using
 _bamlss_, we estimate a logit model using the binary response variable `bin`, which indicates if

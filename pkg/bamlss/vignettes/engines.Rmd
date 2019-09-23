@@ -136,11 +136,11 @@ As noted above, the object is a named list with elements `"x"` and `"y"`, which 
 passed to the estimation functions. For the moment, since we only implement a linear 
 model, we need to work with the linear model matrix that is part of the `bf` object.
 ```{r}
-print(head(bf$x$mu$model.matrix))
+head(bf$x$mu$model.matrix)
 ```
 and the response `"y"`
 ```{r}
-print(head(bf$y))
+head(bf$y)
 ```
 to setup the optimizer function with:
 ```{r}

@@ -82,7 +82,7 @@ with _bamlss_ using a data set taken from the _Regression Book_ [@bamlss:Fahrmei
 which is about prices of used VW Golf cars. The data is loaded with
 ```{r}
 data("Golf", package = "bamlss")
-print(head(Golf))
+head(Golf)
 ```
 In this example the aim is to model the `price` in 1000 Euro. Using _bamlss_ a first Bayesian
 linear model could be set up by first specifying a model formula
@@ -176,7 +176,7 @@ nd <- data.frame("age" = seq(min(Golf$age), max(Golf$age), length = 100))
 nd$page <- predict(b3, newdata = nd, model = "mu", term = "age",
   FUN = c95, intercept = FALSE)
 
-print(head(nd))
+head(nd)
 ```
 Note that the prediction does not include the model intercept. Similarly for variables `kilometer`
 and `tia`
@@ -231,7 +231,7 @@ data [@bamlss:Silverman:1985]. The data contain measurements of the head acceler
 impact (variable `times`).
 ```{r}
 data("mcycle", package = "MASS")
-print(head(mcycle))
+head(mcycle)
 ```
 To estimate a Gaussian location-scale model with
 $$
