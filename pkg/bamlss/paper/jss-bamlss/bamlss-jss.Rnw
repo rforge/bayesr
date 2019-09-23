@@ -120,7 +120,7 @@ library("bamlss")
 \section{Introduction}
 
 Many modern modeling tasks necessitate flexible regression tools that can deal with:
-(1)~Big data sets that can be both long (many observations) and wide (many variables and/or complex effect types).
+(1)~Big data sets that can be both long (many observations) and/or wide (many variables or complex effect types).
 (2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
 (3)~Enhanced inference infrastructure, typically Bayesian, beyond classical frequentist significance tests.
 A popular framework to combine flexible regression with probabilistic modeling
@@ -138,7 +138,7 @@ Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized esti
 techniques such as lasso or boosting \citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
 might be necessary or custom algorithms \citep{bamlss:Wood:2017}. Hence,
 to facilitate combining all three aspects discussed above with different estimation
-techniques and fitting algorithms the \pkg{bamlss} package for the \proglang{R}
+techniques and fitting algorithms, the \pkg{bamlss} package for the \proglang{R}
 system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox''
 as proposed in \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
 not only the response distribution or the regression terms are ``Lego bricks''
@@ -163,9 +163,9 @@ as well as the dedicated \fct{bam} function for big data that is long and/or wid
 
 \item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
 frequentist inference, it is also particularly attractive for hierarchical or multilevel
-models and for penalizing regression effects through suitable prior distributions. Fully
-Bayesian approaches using MCMC are particularly attractive for flexible regression models
-in order to obtain credible intervals from the posterior samples etc. The \pkg{brms} package
+models and for penalizing regression effects through suitable prior distributions. Also, fully
+Bayesian approaches using MCMC are appealing in flexible regression models
+for obtaining credible intervals from the posterior samples etc. The \pkg{brms} package
 \citep{bamlss:Buerkner:2017} is notable for providing a standard \proglang{R} workflow
 for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan}.
 Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAMs via its
@@ -179,9 +179,9 @@ sampling times from these generic MCMC engines can become long, sometimes prohib
 This has been addressed by dedicated packages for Bayesian additive models with the standalone
 package \pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005} being the first to provide highly-efficient
 sampling schemes for very large data sets as well as spatial/multilevel models. An \proglang{R}
-interface is available in \pkg{R2BayesX} \citep{bamlss:Umlauf:2015}. Instead of doing
-fully Bayesian MCMC another approach to estimate flexible Bayesian regression models is
-posterior mean estimation via the integrated nested Laplace approximations. This is provided
+interface is available in \pkg{R2BayesX} \citep{bamlss:Umlauf:2015}. Instead of fully Bayesian MCMC
+it is also possible to employ posterior mean estimation via the integrated nested Laplace
+approximation to estimate flexible Bayesian regression models. This is provided
 in the comprehensive \proglang{R} package \pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009},
 popular for estimating complex spatial Bayesian regression models
 \citep[see e.g.,][]{bamlss:Lindgren+Rue:2015,bamlss:Bivand+GomezRubio+Rue:2015}.
@@ -203,7 +203,7 @@ framework is not readily available as there are typically limitations with respe
 inferential framework, the distributions and/or complexity of the models supported, or the
 estimation techniques and fitting algorithms. The package \pkg{bamlss}, available from the Comprehensive
 \proglang{R} Archive Network at \url{https://CRAN.R-project.org/package=bamlss}, tries to 
-fill this gap and provide a modular ``Lego'' approach to flexible Bayesian regression providing:
+fill this gap with a modular ``Lego'' approach to flexible Bayesian regression providing:
 %
 \begin{itemize}
 \item The usual \proglang{R} ``look \& feel'' for regression modeling.
@@ -231,8 +231,8 @@ introduces the flexible regression framework in more detail. A thorough introduc
 families, model terms and estimation algorithms, is then given in Section~\ref{sec:package}. In
 Section~\ref{sec:application} we highlight the unified modeling approach using a complex
 distributional regression model for lighting counts in complex terrain.
-
-Further details and examples about the \pkg{bamlss} package can be found at
+%
+Further details and examples about the \pkg{bamlss} package can be found online at
 \url{http://bamlss.org/}.
 
 
@@ -446,19 +446,19 @@ To give a better impression what type of model terms can be used with the \pkg{b
 Table~\ref{tab:modelterms} lists commonly used specifications.
 \begin{table}[t!]
 \centering
-\begin{tabular}{p{6cm}p{8cm}}
+\begin{tabular}{p{6cm}p{8.3cm}}
 \hline
 Description & Formula \\ \hline
 Linear effects: $\mathbf{X}\boldsymbol{\beta}$ & \code{x1 + x2 + x3} \\
 Nonlinear effects of continuous\newline covariates: $f(\mathbf{x}) = f(x_1)$ & \multirow{2}{*}{\code{s(x1)}} \\ \hline
 Two-dimensional surfaces:\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{s(x1,x2)}, \code{te(x1,x2)} or \code{ti(x1,x2)} 
 \newline(higher dimensional terms possible). \\ \hline
-Spatially correlated effects:\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{s(xs,bs="mrf",xt=list(penalty=K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()}. \\ \hline
-Varying coefficients:\newline $f(\mathbf{x}) = x_1f(x_2)$ & \multirow{2}{*}{\code{s(x2,by=x1)}} \\ \hline
+Spatially correlated effects:\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{s(xs, bs = "mrf", xt = list(penalty = K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()}. \\ \hline
+Varying coefficients:\newline $f(\mathbf{x}) = x_1f(x_2)$ & \multirow{2}{*}{\code{s(x2, by = x1)}} \\ \hline
 Spatially varying effects:\newline $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or\newline $f(\mathbf{x}) = x_1f(x_2, x_3)$ &
-  \code{s(xs,bs="mrf",xt=list(penalty=K),by=x1)}, \code{s(x2,x3,by=x1)} or\newline \code{te(x2,x3,by=x1)} \\ \hline
-Random intercepts with cluster\newline index $c$: $f(\mathbf{x}) = \beta_c$ & \code{s(id,bs="re")}, where \code{id} is a factor of cluster indices. \\ \hline
-Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id,x1,bs="re")}, as above with continuous covariate \code{x1}. \\ \hline
+  \code{s(xs, bs = "mrf", xt = list(penalty = K), by = x1)}, \code{s(x2, x3, by = x1)} or\newline \code{te(x2, x3, by = x1)} \\ \hline
+Random intercepts with cluster\newline index $c$: $f(\mathbf{x}) = \beta_c$ & \code{s(id, bs = "re")}, where \code{id} is a factor of cluster indices. \\ \hline
+Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id, x1, bs = "re")}, as above with continuous covariate \code{x1}. \\ \hline
 \end{tabular}
 \caption{\label{tab:modelterms} Commonly used model term specifications with respective \proglang{R}
   formula syntax.}
@@ -501,7 +501,10 @@ SwissLabor$cage <- cut(SwissLabor$age,
   include.lowest = TRUE, order.results = TRUE)
 @
 The formula for the fused lasso model is then specified with the
-special \fct{la} model term constructor function provided in \pkg{bamlss}
+special \fct{la} model term constructor function provided in \pkg{bamlss}:
+
+\pagebreak
+
 <<>>=
 f <- participation ~ income + education + youngkids + oldkids + foreign + 
   la(cage, fuse = 2)
@@ -520,7 +523,7 @@ are generated.
 Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied,
 argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
-\begin{figure}[!b]
+\begin{figure}[t!]
 \centering
 \setkeys{Gin}{width=0.24\textwidth}
 <<echo=FALSE, fig=TRUE, width=3, height=5>>=
@@ -887,7 +890,8 @@ package are:
 \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
   predictions, etc.
 \end{itemize}
-\begin{figure}[ht!]
+%
+\begin{figure}[p!]
 \centering
 \begin{tikzpicture}[node distance=1.5cm,
     every node/.style={fill=white, font=\sffamily}, align=center]
@@ -979,6 +983,26 @@ package are:
   run an \fct{optimizer} function prior running the \fct{sampler}, or run the \fct{sampler}
   function directly.}
 \end{figure}
+%
+\begin{table}[p!]
+\centering
+\begin{tabular}{lll}
+\hline
+Step & Type        & Function \\ \hline
+\multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
+ & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
+ & & \code{lasso\_transform()} \\ \hline
+\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{bfit()}, \code{bbfit()},
+                              \code{boost()}, \code{lasso()} \\
+ & &\code{cox\_mode()}, \code{jm\_mode()}  \\ \cline{2-3}
+ & \multirow{2}{*}{Sampler} & \code{GMCMC()}, \code{BayesX()}, \code{JAGS()} \\
+ & & \code{cox\_mcmc()}, \code{jm\_mcmc()} \\ \hline
+Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
+\end{tabular}
+\caption{\label{tab:functions} Current available functions that can be used for
+  pre-processing, estimation and post-processing within the \pkg{bamlss} framework.}
+\end{table}
+%
 The modular architecture of \pkg{bamlss} is illustrated in Figure~\ref{fig:flowchart}. As
 mentioned above, the first
 step in model development is to setup design and penalty matrices for a model that is specified
@@ -1000,26 +1024,8 @@ estimation step, i.e., write \fct{optimizer} or \fct{sampler} functions and get 
 and extractor functionalities ``for free''. This way, prototyping
 becomes relatively easy, but also the integration/implementation of (new) high-performance
 estimation engines is facilitated.
-
+%
 Table~\ref{tab:functions} provides an overview of current available functions.
-\begin{table}[ht!]
-\centering
-\begin{tabular}{lll}
-\hline
-Step & Type        & Function \\ \hline
-\multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
- & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
- & & \code{lasso\_transform()} \\ \hline
-\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{bfit()}, \code{bbfit()},
-                              \code{boost()}, \code{lasso()} \\
- & &\code{cox\_mode()}, \code{jm\_mode()}  \\ \cline{2-3}
- & \multirow{2}{*}{Sampler} & \code{GMCMC()}, \code{BayesX()}, \code{JAGS()} \\
- & & \code{cox\_mcmc()}, \code{jm\_mcmc()} \\ \hline
-Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
-\end{tabular}
-\caption{\label{tab:functions} Current available functions that can be used for
-  pre-processing, estimation and post-processing within the \pkg{bamlss} framework.}
-\end{table}
 
 To exemplify the presented ``Lego toolbox'', the following \proglang{R} code estimates the
 logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logitmodel}. First,
@@ -1064,9 +1070,9 @@ To ease the modeling process, all the single modeling steps presented in the abo
 using the \pkg{bamlss} wrapper function \fct{bamlss}. The main arguments of \fct{bamlss} are
 \begin{Code}
   bamlss(formula, family = "gaussian", data = NULL,
-    transform = NULL,                         ## Pre-processing.
-    optimizer = NULL, sampler = NULL,         ## Estimation.
-    samplestats = NULL, results = NULL, ...)  ## Post-processing.
+    transform = NULL,                         ## Pre-processing
+    optimizer = NULL, sampler = NULL,         ## Estimation
+    samplestats = NULL, results = NULL, ...)  ## Post-processing
 \end{Code}
 where the first line basically represents the standard model frame specifications
 \citep[see][]{bamlss:Chambers+Hastie:1992}. All other arguments represent functions presented
@@ -1702,13 +1708,13 @@ by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
 Alps has increased.
 
 
-\newpage
+\section*{Acknowledgments}
 
-
-\section{Achknowledgements}
-T.~Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
+Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
+
+\pagebreak
 
 \begin{appendix}
 
@@ -1879,7 +1885,7 @@ $$
 \texttt{y} \sim \mathcal{N}(\mu = 2 + 1 / (1 + \exp(0.5 \cdot (15 - \texttt{time}))),
   \log(\sigma) = -3 + 2 \cdot \cos(\texttt{time}/30 \cdot 6 - 3))
 $$
-and estimate the model with slice sampling \citep{bamlss:Neal:2003} for $\boldsymbol{\beta}$ in the
+and subsequently estimate the model with slice sampling \citep{bamlss:Neal:2003} for $\boldsymbol{\beta}$ in the
 MCMC algorithm using the following \proglang{R} code
 <<echo=FALSE, results=hide>>=
 set.seed(111)
@@ -1919,23 +1925,15 @@ plot(b, model = "sigma", spar = FALSE, main = expression(log(sigma)))
   simulated growth curve example. Gray shaded areas represent 95\% credible intervals.}
 \end{figure}
 <<eval=FALSE>>=
-## Simulate data.
 set.seed(111)
-
 d <- data.frame("time" = 1:30)
 d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
   rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
-
-## Special model terms must be called with s2()!
 f <- list(
   y ~ s2(time, bs = "gc"),
   sigma ~ s(time)
 )
-
-## Fit model with special model term.
 b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
-
-## Plot estimated effects.
 plot(b)
 @
 The estimated effects are shown in Figure~\ref{fig:gcurve}.
@@ -1981,14 +1979,8 @@ lm_bamlss <- function(...) {
 Now, for setting up the estimation functions we first simulate some data using the
 \fct{GAMart} function, afterwards the necessary \code{"bamlss.frame"} can be created with
 <<>>=
-## Simulate some data.
 d <- GAMart()
-
-## Setup a "bamlss.frame" object, that is used for
-## developing the estimation functions for the linear model.
 bf <- bamlss.frame(num ~ x1 + x2, data = d, family = "lm")
-
-## Print the structure of the "bamlss.frame".
 print(bf)
 @
 As noted above, the object is a named list with elements \code{"x"} and \code{"y"}, which will be
@@ -2003,7 +1995,6 @@ head(bf$y)
 @
 to setup the optimizer function with:
 <<>>=
-## Linear model optimizer function.
 lm.opt <- function(x, y, ...)
 {
   ## Only univariate response.
@@ -2036,16 +2027,9 @@ lm.opt <- function(x, y, ...)
 This optimizer function can already be used with the \fct{bamlss} wrapper function and
 all extractor functions are readily available.
 <<>>=
-## Model formula with polynomial model terms.
 f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
-
-## Estimate model with new optimizer function.
 b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = FALSE)
-
-## Summary output.
 summary(b)
-
-## Predict for term x2.
 nd <- data.frame("x2" = seq(0, 1, length = 100))
 nd$p <- predict(b, newdata = nd, term = "x2")
 @
