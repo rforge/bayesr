@@ -4114,11 +4114,11 @@ jm_survplot <- function(object, id = 1, dt = NULL, steps = 10,
   box()
   mtext("Prob(T > t + dt |T > t)", side = 2, line = 2.5)
   plot2d(p_long[time2 <= tmax, ] ~ time2[time2 <= tmax], fill.select = c(0, 1, 0, 1),
-         scheme = 1, axes = FALSE, xlim = c(0, maxtime),
+         scheme = 2, axes = FALSE, xlim = c(0, maxtime),
          xlab = "", ylab = "",
          ylim = if(points) range(c(p_long, object$y[[1]][ii, "obs"])) else range(p_long))
   plot2d(p_long[time2 >= tmax, ] ~ time2[time2 >= tmax], fill.select = c(0, 1, 0, 1),
-         scheme = 1, axes = FALSE, add = TRUE, s2.col = s2.col,
+         scheme = 2, axes = FALSE, add = TRUE, s2.col = s2.col,
          xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   if(points)
