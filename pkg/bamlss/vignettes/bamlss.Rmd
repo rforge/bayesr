@@ -24,26 +24,23 @@ prefix2 <- "http://bayesr.R-Forge.R-project.org/reference/" ## ""
 
 ## Overview
 
-The R package _bamlss_ provides a modular computational framework for distributional regression
-models (and beyond). The implementation follows the conceptional framework presented in
-@bamlss:Umlauf+Klein+Zeileis:2017, which supports Bayesian and/or frequentist estimation engines
-using complex possibly nonlinear model terms of any type. The highlights of the package are:  
+The R package _bamlss_ provides a modular computational framework for flexible Bayesian
+regression models (and beyond). The implementation follows the conceptional framework presented in
+@bamlss:Umlauf+Klein+Zeileis:2017 and provides a modular "Lego toolbox" for setting
+up regression models. In this setting not only the response distribution or the regression terms
+are "Lego bricks" but also estimation algorithms or the MCMC samplers.
 
-* A unified model description where a `formula` specifies how to set up the predictors
-  from the `data` and `family` objects provide information about the response distribution.
-* A generic method for setting up model terms and a `model.frame` along with the
-  corresponding prior structures. A `transformer` can optionally set up modified terms, e.g.,
-  using mixed model representation for smooth terms.
-* Support for modular and exchangeable updating functions or complete model fitting engines
-  in order to optionally implement either algorithms for maximization of the log-posterior for
-  posterior mode estimation or for solving high-dimensional integrals, e.g., for posterior mean
-  or median estimation.
-  First, an (optional) `optimizer` function can be run, e.g., for computing posterior mode
-  estimates. Second, a `sampler` is employed for full Bayesian inference with MCMC, which uses the
-  posterior mode estimates from the `optimizer` as staring values. An additional step can be used
-  for preparing the `results`.
-* Standard post-modeling extractor functions to create sampling statistics, visualizations,
-  predictions, etc.
+The highlights of the package are:  
+
+* The usual R "look & feel" for regression modeling.
+* Estimation of classic (GAM-type) regression models (Bayesian or frequentist).
+* Estimation of flexible (GAMLSS-type) distributional regression models.
+* An extensible "plug & play" approach for regression terms.
+* Modular combinations of fitting algorithms and samplers.
+
+Especially the last item is notable because the models in _bamlss_ are not limited to
+a specific estimation algorithm but different engines can be plugged in without necessitating
+changes in other aspects of the model specification.
 
 More detailed overviews and examples are provided in the articles:
 
