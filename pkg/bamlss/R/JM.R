@@ -4107,7 +4107,7 @@ jm_survplot <- function(object, id = 1, dt = NULL, steps = 10,
   par(mfrow = c(2, 1), mar = rep(0, 4),
       oma = c(4.1, 4.1, 1.1, 4.1))
   plot2d(p_surv ~ time, fill.select = c(0, 1, 0, 1),
-         scheme = 1, axes = FALSE, ylim = c(0, 1),
+         scheme = 2, axes = FALSE, ylim = c(0, 1),
          xlim = c(0, maxtime), s2.col = s2.col, xlab = "", ylab = "")
   abline(v = tmax, lty = 2)
   axis(2)
