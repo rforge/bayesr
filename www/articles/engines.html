@@ -204,7 +204,7 @@ bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.f
 ##   ..$ y 
 ##   .. ..$ num</code></pre>
 <p>As noted above, the object is a named list with elements <code>"x"</code> and <code>"y"</code>, which will be passed to the estimation functions. For the moment, since we only implement a linear model, we need to work with the linear model matrix that is part of the <code>bf</code> object.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$x$mu$model.matrix))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$x$mu$model.matrix)</code></pre></div>
 <pre><code>##   (Intercept)        x1         x2
 ## 1           1 0.2875775 0.35360608
 ## 2           1 0.7883051 0.36644144
@@ -213,7 +213,7 @@ bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.f
 ## 5           1 0.9404673 0.36545427
 ## 6           1 0.0455565 0.17801381</code></pre>
 <p>and the response <code>"y"</code></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$y))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$y)</code></pre></div>
 <pre><code>##            num
 ## 1  0.341704542
 ## 2 -0.373302161
@@ -457,7 +457,7 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 105.551 pd = 48.6437 runtime = 2.134
+## DIC = 105.551 pd = 48.6437 runtime = 2.026
 ## ---
 ## Optimizer summary:
 ## -

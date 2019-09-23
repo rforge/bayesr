@@ -204,7 +204,7 @@
 <a href="#basics" class="anchor"></a>Basics</h2>
 <p>To better introduce the standard types of model terms we use simulated data that is part of the <em>bamlss</em> package. The data contains of a couple of different response types and is usually used for internal tests, only.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(d))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(d)</code></pre></div>
 <pre><code>##            num     pnum      bnum cnum bin    cat       cens          eta
 ## 1  0.341704542 2.317364 0.6462574   65 yes   high 1.50241790  0.313833175
 ## 2 -0.373302161 1.602357 0.3009252   30  no   none 0.00000000 -0.207359234
@@ -286,7 +286,7 @@ hexpolys &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
 ## Note, over() only returns the index of the polygons,
 ## but for the MRF we need the polygon names.
 d$ID &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/factor">as.factor</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(hexpolys)[d$ID])
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(d))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(d)</code></pre></div>
 <pre><code>##            num     pnum      bnum cnum bin    cat       cens          eta
 ## 1  0.341704542 2.317364 0.6462574   65 yes   high 1.50241790  0.313833175
 ## 2 -0.373302161 1.602357 0.3009252   30  no   none 0.00000000 -0.207359234
@@ -325,7 +325,7 @@ d$ID &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 <pre><code>## [1] 0</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Get the polygon names.
 pn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(hexpolys)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pn))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pn)</code></pre></div>
 <pre><code>## [1] "buffer ID14" "buffer ID15" "buffer ID16" "buffer ID17" "buffer ID18"
 ## [6] "buffer ID19"</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Ok, we need to modify the names a bit.

@@ -152,7 +152,7 @@
 <a href="#logit-model" class="anchor"></a>Logit model</h2>
 <p>This example is taken from the <em>AER</em> package <span class="citation">(Kleiber and Zeileis 2018; Kleiber and Zeileis 2008)</span> and is about labor force participation (yes/no) of women in Switzerland 1981. The data can be loaded with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"SwissLabor"</span>, <span class="dt">package =</span> <span class="st">"AER"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(SwissLabor))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(SwissLabor)</code></pre></div>
 <pre><code>##   participation   income age education youngkids oldkids foreign
 ## 1            no 10.78750 3.0         8         1       1      no
 ## 2           yes 10.52425 4.5         8         0       1      no
@@ -276,7 +276,7 @@ nd$pForeign &lt;-<span class="st"> </span><span class="kw"><a href="https://www.
 )
 <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/unzip">unzip</a></span>(<span class="st">"DebTrivedi.rda.zip"</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/load">load</a></span>(<span class="st">"DebTrivedi.rda"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(DebTrivedi))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(DebTrivedi)</code></pre></div>
 <pre><code>##   ofp ofnp opp opnp emer hosp  health numchron adldiff region age black
 ## 1   5    0   0    0    0    1 average        2      no  other 6.9   yes
 ## 2   1    0   2    0    2    0 average        2      no  other 7.4    no
@@ -439,7 +439,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 <a href="#large-data-sets" class="anchor"></a>Large data sets</h2>
 <p>The R package <em>bamlss</em> provides infrastructures to estimate models using large data sets. The default algorithms for posterior mode estimation (see function <code><a href="../reference/bfit.html">bfit()</a></code>) and MCMC simulation (function <code><a href="../reference/GMCMC.html">GMCMC()</a></code>) can be utilized in these situations. More precisely, the algorithms make advantage of the fact that usually the number of unique observations is much smaller than the number of total observations in the data (for a detailed description of the algorithms see <span class="citation">Lang et al. (2014)</span>). For illustration, we load the precipitation data of the HOMSTART-project which was first analyzed in <span class="citation">Umlauf et al. (2012)</span> (note, an internet connection is required).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/homstart_data.html">homstart_data</a></span>(<span class="dt">load =</span> <span class="ot">TRUE</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(homstart))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(homstart)</code></pre></div>
 <pre><code>##    raw cens  bin    cat     trend month year day   lon  lat id      cos1
 ## 1   NA   NA &lt;NA&gt;   &lt;NA&gt; -22.00000   Jan 1948   1 14.75 47.6  1 0.9998518
 ## 2 37.0 37.0  yes   high -21.99726   Jan 1948   2 14.75 47.6  1 0.9994074
@@ -454,7 +454,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## 4 0.9905325 0.06880243 0.13727877     yes       779
 ## 5 0.9852201 0.08596480 0.17129314      no       779
 ## 6 0.9787401 0.10310170 0.20510450      no       779</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(homstart))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(homstart)</code></pre></div>
 <pre><code>## [1] 1063610      17</code></pre>
 <p>The data consists of 1063610 observations. To illustrate how large models can be fitted using <em>bamlss</em>, we estimate a logit model using the binary response variable <code>bin</code>, which indicates if it rained or not.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibly.

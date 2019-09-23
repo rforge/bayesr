@@ -151,7 +151,7 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 <p>This example is taken from the <em>JMbayes</em> package <span class="citation">(Rizopoulos 2016)</span>. The serum bilirubin level is one of the most important body markers associated with the PBC liver disease. Here, we try to investigate how the mean bilirubin level influences survival. Therefore, we decompose the time-varying effect in parameter <span class="math inline">\(\mu\)</span> into a main effect and a functional random intercept, to account for individual deviations.</p>
 <p>The data can be loaded with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"pbc2"</span>, <span class="dt">package =</span> <span class="st">"JMbayes"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pbc2))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pbc2)</code></pre></div>
 <pre><code>##   id    years status      drug      age    sex      year ascites
 ## 1  1  1.09517   dead D-penicil 58.76684 female 0.0000000     Yes
 ## 2  1  1.09517   dead D-penicil 58.76684 female 0.5256817     Yes

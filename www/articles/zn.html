@@ -130,7 +130,7 @@
     
 <p>This example is taken from the <em>R2BayesX</em> package <span class="citation">(Umlauf et al. 2015)</span> and is about undernutrition of new born children in Zambia. The data is loaded with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"ZambiaNutrition"</span>, <span class="dt">package =</span> <span class="st">"R2BayesX"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ZambiaNutrition))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ZambiaNutrition)</code></pre></div>
 <pre><code>##        stunting  mbmi agechild district memployment meducation urban
 ## 1893 -0.6817840 22.33       29       12         yes         no   yes
 ## 1894 -1.5876900 22.33       57       12         yes         no   yes
@@ -160,7 +160,7 @@
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"ZambiaBnd"</span>, <span class="dt">package =</span> <span class="st">"R2BayesX"</span>)</code></pre></div>
 <p>The <code>K</code> matrix can then be computed using function <code><a href="../reference/neighbormatrix.html">neighbormatrix()</a></code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">K &lt;-<span class="st"> </span><span class="kw"><a href="../reference/neighbormatrix.html">neighbormatrix</a></span>(ZambiaBnd)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(K))</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(K)</code></pre></div>
 <pre><code>##    87 76 67 92 97 94 86 85 83 71 45 44 41 32 96 95 91 74 63 65 62 61 53 52
 ## 87  1  0  0  0  0 -1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
 ## 76  0  3  0  0  0  0  0 -1 -1 -1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
