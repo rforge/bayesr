@@ -23,5 +23,5 @@ Suggests: akima, bit, ff, ffbase, fields, gamlss, geoR, rjags, BayesX, BayesXsrc
 License: GPL-2 | GPL-3
 LazyLoad: yes
 RoxygenNote: 6.1.1
-URL: http://bayesr.R-Forge.R-project.org
+URL: http://bamlss.org/
 VignetteBuilder: knitr
