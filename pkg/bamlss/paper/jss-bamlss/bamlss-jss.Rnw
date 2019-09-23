@@ -867,10 +867,10 @@ number of candidate models. The following lists commonly used tools:
 \section{The bamlss package} \label{sec:package}
 
 The \proglang{R} package \pkg{bamlss} provides a modular software architecture for
-distributional regression models (and beyond). The implementation follows the conceptional framework
-presented in \citet{bamlss:Umlauf+Klein+Zeileis:2018}, which supports Bayesian and/or frequentist
-estimation engines using complex possibly nonlinear model terms of any type. The highlights of the
-package are:
+flexible Bayesian regression models (and beyond). The implementation follows the 
+conceptional framework presented in \citet{bamlss:Umlauf+Klein+Zeileis:2018}, which 
+supports Bayesian and/or frequentist estimation engines using complex possibly nonlinear 
+model terms of any type. The highlights of the package are:
 \begin{itemize}
 \item A unified model description where a \code{formula} specifies how to set up the predictors
   from the \code{data} and the \code{family}, which holds information about the response
