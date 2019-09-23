@@ -167,7 +167,7 @@ models and for penalizing regression effects through suitable prior distribution
 Bayesian approaches using MCMC are particularly attractive for flexible regression models
 in order to obtain credible intervals from the posterior samples etc. The \pkg{brms} package
 \citep{bamlss:Buerkner:2017} is notable for providing a standard \proglang{R} workflow
-for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan-software:2016}.
+for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan}.
 Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAMs via its
 \fct{jagam} function \citep{bamlss:Wood:2016b} based on \pkg{JAGS} \citep{bamlss:Plummer:2013}.
 
@@ -637,7 +637,7 @@ The estimated effects are shown in Figure~\ref{fig:toy_effects} depicting a clea
 relationship for parameter $\mu$ and $\sigma$.
 
 For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn:Smyth:1996} using histograms or quantile-quantile plots. 
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile plots. 
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
 <<eval=FALSE>>=
@@ -749,7 +749,7 @@ more detailed discussions on priors for $\boldsymbol{\beta}_{jk}$ and $\boldsymb
 framework are the ones for: \label{somerefs2}
 \begin{itemize}
   \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as
-    proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz:Klein+Strumann:2016},
+    proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz+Klein+Strumann:2016},
     continuous responses with spikes, skewness, heavy tails or bounded support as in
     \citet{bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Klein+Denuit+Kneib+Lang:2014}, as well as
     responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}.
@@ -838,7 +838,7 @@ number of candidate models. The following lists commonly used tools:
   For MCMC based estimation, model choice mainly relies on the deviance information criterion
   (DIC, \citealp{SpiBesCarLin2002}) and the widely applicable information criterion
   (WAIC, \citealp{watanabe2010asymptotic}). 
-\item \emph{Quantile residuals} \citep{bamlss:Dunn:Smyth:1996} can be used to evaluate the model
+\item \emph{Quantile residuals} \citep{bamlss:Dunn+Smyth:1996} can be used to evaluate the model
   fit. The residuals can be assessed by quantile-quantile-plots, probability integral transforms
   (PIT) histograms \citep{bamlss:Gneiting+Balabdaoui+Raftery:2007} or worm plots
   \citep{bamlss:Buuren+Miranda:2001}.
