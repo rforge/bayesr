@@ -28,7 +28,7 @@ The R package _bamlss_ provides a modular computational framework for flexible B
 regression models (and beyond). The implementation follows the conceptional framework presented in
 @bamlss:Umlauf+Klein+Zeileis:2017 and provides a modular "Lego toolbox" for setting
 up regression models. In this setting not only the response distribution or the regression terms
-are "Lego bricks" but also estimation algorithms or the MCMC samplers.
+are "Lego bricks" but also the estimation algorithm or the MCMC sampler.
 
 The highlights of the package are:  
 
