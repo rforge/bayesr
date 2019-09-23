@@ -131,6 +131,9 @@
     <li>
       <a href="../articles/lasso.html">LASSO-Type Penalization in the Framework of GAMLSS</a>
     </li>
+    <li>
+      <a href="../articles/jm.html">Bayesian Joint Models for Longitudinal and Survival Data</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -254,13 +257,12 @@
 #&gt;  [9] "id"             "sp"             "drop.null"      "X"             
 #&gt; [13] "S"              "UZ"             "Xu"             "df"            
 #&gt; [17] "shift"          "rank"           "null.space.dim" "plot.me"       
-#&gt; [21] "side.constrain" "S.scale"        "vn"             "X.dim"         
-#&gt; [25] "fit.fun"        "prior"          "grad"           "hess"          
-#&gt; [29] "binning"        "nobs"           "weights"        "rres"          
-#&gt; [33] "fit.reduced"    "fxsp"           "a"              "b"             
-#&gt; [37] "edf"            "lower"          "upper"          "state"         
-#&gt; [41] "sparse.setup"   "added"          "pid"            "update"        
-#&gt; [45] "propose"       </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/names'>names</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span><span class='kw'>[[</span><span class='st'>"s(x1)"</span>]]$<span class='no'>state</span>)</div><div class='output co'>#&gt; [1] "parameters"    "fitted.values" "edf"           "do.optim"     </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/lapply'>sapply</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span>, <span class='kw'>function</span>(<span class='no'>x</span>) {
+#&gt; [21] "side.constrain" "S.scale"        "X.dim"          "fit.fun"       
+#&gt; [25] "prior"          "grad"           "hess"           "binning"       
+#&gt; [29] "nobs"           "weights"        "rres"           "fit.reduced"   
+#&gt; [33] "fxsp"           "a"              "b"              "edf"           
+#&gt; [37] "lower"          "upper"          "state"          "sparse.setup"  
+#&gt; [41] "added"          "pid"            "update"         "propose"       </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/names'>names</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span><span class='kw'>[[</span><span class='st'>"s(x1)"</span>]]$<span class='no'>state</span>)</div><div class='output co'>#&gt; [1] "parameters"    "fitted.values" "edf"           "do.optim"     </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/lapply'>sapply</a></span>(<span class='no'>bf</span>$<span class='no'>x</span>$<span class='no'>mu</span>$<span class='no'>smooth.construct</span>, <span class='kw'>function</span>(<span class='no'>x</span>) {
   <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>x</span>$<span class='no'>state</span>$<span class='no'>edf</span>, <span class='fu'><a href='bamlss.engine.helpers.html'>get.state</a></span>(<span class='no'>x</span>, <span class='st'>"tau2"</span>))
 })</div><div class='output co'>#&gt; $`s(x1)`
 #&gt;                     tau21 

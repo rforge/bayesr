@@ -130,6 +130,9 @@
     <li>
       <a href="../articles/lasso.html">LASSO-Type Penalization in the Framework of GAMLSS</a>
     </li>
+    <li>
+      <a href="../articles/jm.html">Bayesian Joint Models for Longitudinal and Survival Data</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -241,7 +244,7 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/str'>str</a></span>(<span class='no'>sc</span>)</div><div class='output co'>#&gt; List of 2
 #&gt;  $ mu   :List of 1
 #&gt;   ..$ smooth.construct:List of 2
-#&gt;   .. ..$ s(x1):List of 24
+#&gt;   .. ..$ s(x1):List of 23
 #&gt;   .. .. ..$ term          : chr "x1"
 #&gt;   .. .. ..$ bs.dim        : num 10
 #&gt;   .. .. ..$ fixed         : logi FALSE
@@ -267,7 +270,6 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..$ plot.me       : logi TRUE
 #&gt;   .. .. ..$ side.constrain: logi TRUE
 #&gt;   .. .. ..$ S.scale       : num 20.5
-#&gt;   .. .. ..$ vn            : chr "x1"
 #&gt;   .. .. ..$ X.dim         : int 9
 #&gt;   .. .. ..- attr(*, "class")= chr [1:2] "tprs.smooth" "mgcv.smooth"
 #&gt;   .. .. ..- attr(*, "qrc")=List of 4
@@ -277,7 +279,7 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. .. ..$ pivot: int 1
 #&gt;   .. .. .. ..- attr(*, "class")= chr "qr"
 #&gt;   .. .. ..- attr(*, "nCons")= int 1
-#&gt;   .. ..$ s(x2):List of 24
+#&gt;   .. ..$ s(x2):List of 23
 #&gt;   .. .. ..$ term          : chr "x2"
 #&gt;   .. .. ..$ bs.dim        : num 10
 #&gt;   .. .. ..$ fixed         : logi FALSE
@@ -303,7 +305,6 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..$ plot.me       : logi TRUE
 #&gt;   .. .. ..$ side.constrain: logi TRUE
 #&gt;   .. .. ..$ S.scale       : num 17.4
-#&gt;   .. .. ..$ vn            : chr "x2"
 #&gt;   .. .. ..$ X.dim         : int 9
 #&gt;   .. .. ..- attr(*, "class")= chr [1:2] "tprs.smooth" "mgcv.smooth"
 #&gt;   .. .. ..- attr(*, "qrc")=List of 4
@@ -324,7 +325,7 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/str'>str</a></span>(<span class='no'>sc</span>)</div><div class='output co'>#&gt; List of 2
 #&gt;  $ mu   :List of 1
 #&gt;   ..$ smooth.construct:List of 2
-#&gt;   .. ..$ s(x1)      :List of 24
+#&gt;   .. ..$ s(x1)      :List of 23
 #&gt;   .. .. ..$ term          : chr "x1"
 #&gt;   .. .. ..$ bs.dim        : num 10
 #&gt;   .. .. ..$ fixed         : logi FALSE
@@ -350,7 +351,6 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..$ plot.me       : logi TRUE
 #&gt;   .. .. ..$ side.constrain: logi TRUE
 #&gt;   .. .. ..$ S.scale       : num 20.5
-#&gt;   .. .. ..$ vn            : chr "x1"
 #&gt;   .. .. ..$ X.dim         : int 9
 #&gt;   .. .. ..- attr(*, "class")= chr [1:2] "tprs.smooth" "mgcv.smooth"
 #&gt;   .. .. ..- attr(*, "qrc")=List of 4
@@ -360,7 +360,7 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. .. ..$ pivot: int 1
 #&gt;   .. .. .. ..- attr(*, "class")= chr "qr"
 #&gt;   .. .. ..- attr(*, "nCons")= int 1
-#&gt;   .. ..$ te(lon,lat):List of 23
+#&gt;   .. ..$ te(lon,lat):List of 22
 #&gt;   .. .. ..$ margin        :List of 2
 #&gt;   .. .. .. ..$ :List of 18
 #&gt;   .. .. .. .. ..$ term          : chr "lon"
@@ -430,7 +430,6 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..$ XP            : list()
 #&gt;   .. .. ..$ side.constrain: logi TRUE
 #&gt;   .. .. ..$ S.scale       : num [1:2] 0.368 0.368
-#&gt;   .. .. ..$ vn            : chr [1:2] "lon" "lat"
 #&gt;   .. .. ..$ X.dim         : int 24
 #&gt;   .. .. ..- attr(*, "class")= chr [1:2] "tensor.smooth" "mgcv.smooth"
 #&gt;   .. .. ..- attr(*, "qrc")=List of 4
@@ -442,7 +441,7 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..- attr(*, "nCons")= int 1
 #&gt;  $ sigma:List of 1
 #&gt;   ..$ smooth.construct:List of 1
-#&gt;   .. ..$ s(x2):List of 24
+#&gt;   .. ..$ s(x2):List of 23
 #&gt;   .. .. ..$ term          : chr "x2"
 #&gt;   .. .. ..$ bs.dim        : num 10
 #&gt;   .. .. ..$ fixed         : logi FALSE
@@ -468,7 +467,6 @@ see function <code><a href='bamlss.frame.html'>bamlss.frame</a></code> for more 
 #&gt;   .. .. ..$ plot.me       : logi TRUE
 #&gt;   .. .. ..$ side.constrain: logi TRUE
 #&gt;   .. .. ..$ S.scale       : num 17.4
-#&gt;   .. .. ..$ vn            : chr "x2"
 #&gt;   .. .. ..$ X.dim         : int 9
 #&gt;   .. .. ..- attr(*, "class")= chr [1:2] "tprs.smooth" "mgcv.smooth"
 #&gt;   .. .. ..- attr(*, "qrc")=List of 4
