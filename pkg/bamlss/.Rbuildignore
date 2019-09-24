@@ -32,6 +32,7 @@ vignettes/jm.Rmd
 vignettes/zn.Rmd
 vignettes/multinomial.Rmd
 vignettes/bdrp.Rmd
+vignettes/cox.Rmd
 
 vignettes/DebTrivedi.rda.zip
 vignettes/DebTrivedi.rda
