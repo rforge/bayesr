@@ -176,7 +176,7 @@ directly implement custom models using general purpose MCMC software like
 \pkg{JAGS}, \pkg{Stan}, or \pkg{WinBUGS} \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}.
 However, for complex models -- e.g., using large data sets, spatial effects, or higher-order interactions --
 sampling times from these generic MCMC engines can become long, sometimes prohibitively so.
-This has been addressed by dedicated packages for Bayesian additive models with the standalone
+This has been addressed by dedicated packages for Bayesian additive models, e.g., with the standalone
 package \pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005} being the first to provide highly-efficient
 sampling schemes for very large data sets as well as spatial/multilevel models. An \proglang{R}
 interface is available in \pkg{R2BayesX} \citep{bamlss:Umlauf:2015}. Instead of fully Bayesian MCMC
@@ -247,7 +247,7 @@ can easily be exchanged, here, we exemplify this feature by applying a lasso-typ
 The third example then explains how full distributional regression models can be estimated and show
 cases once more the flexibility of the provided modeling infrastructures.
 
-\subsection{Basic Bayesian regression: Logit Model} \label{sec:logitmodel}
+\subsection{Basic Bayesian regression: Logit model} \label{sec:logitmodel}
 
 This example data is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
 labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
@@ -256,7 +256,7 @@ The \pkg{bamlss} package and the data can be loaded with
 library("bamlss")
 data("SwissLabor", package = "AER")
 @
-The data frame contains of 872 observations on 6 variables, where some of them might have
+The data frame contains 872 observations of 6 variables, where some of them might have
 a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
 binomial logit model using the default MCMC algorithm can be fitted. First, the model formula
 specified with
@@ -449,7 +449,7 @@ Table~\ref{tab:modelterms} lists commonly used specifications.
 \begin{tabular}{p{6cm}p{8.3cm}}
 \hline
 Description & Formula \\ \hline
-Linear effects: $\mathbf{X}\boldsymbol{\beta}$ & \code{x1 + x2 + x3} \\
+Linear effects: $\mathbf{X}\boldsymbol{\beta}$ & \code{x1 + x2 + x3} \\ \hline
 Nonlinear effects of continuous\newline covariates: $f(\mathbf{x}) = f(x_1)$ & \multirow{2}{*}{\code{s(x1)}} \\ \hline
 Two-dimensional surfaces:\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{s(x1,x2)}, \code{te(x1,x2)} or \code{ti(x1,x2)} 
 \newline(higher dimensional terms possible). \\ \hline
@@ -467,7 +467,7 @@ Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id,
 <<echo=FALSE, results=hide>>=
 SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
-  include.lowest = TRUE, order.results = TRUE)
+  include.lowest = TRUE, ordered_result = TRUE)
 
 if(!file.exists("SwissLaborModel-lasso.rda")) {
   f <- participation ~ income + education + youngkids + oldkids + foreign + 
@@ -498,7 +498,7 @@ e.g., with
 <<eval=FALSE>>=
 SwissLabor$cage <- cut(SwissLabor$age,
   breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
-  include.lowest = TRUE, order.results = TRUE)
+  include.lowest = TRUE, ordered_result = TRUE)
 @
 The formula for the fused lasso model is then specified with the
 special \fct{la} model term constructor function provided in \pkg{bamlss}:
@@ -614,7 +614,7 @@ if(!file.exists("McycleModel.rda")) {
 @
 <<eval=FALSE>>=
 set.seed(456)
-b <- bamlss(f, data = mcycle, family = "gaussian")
+b <- bamlss(f, family = "gaussian", data = mcycle)
 @
 After the estimation algorithms are finished, the estimated effects can be visualized instantly
 using the plotting method.
@@ -1008,7 +1008,7 @@ mentioned above, the first
 step in model development is to setup design and penalty matrices for a model that is specified
 by the \code{family} object. Therefore a \code{formula} is processed together with the \code{data}
 using the \fct{bamlss.frame} function. In a second pre-processing step, the returned model frame
-may also transformed. The BAMLSS model frame can then be used with \fct{optimizer} and/or
+may also be transformed. The BAMLSS model frame can then be used with \fct{optimizer} and/or
 \fct{sampler} functions in the estimation step. This is probably the main advantage of the
 architecture, users can easily exchange and integrate user defined estimation functions.
 The only requirement is to keep the structure of the \fct{bamlss.frame} function, as well for
@@ -1057,7 +1057,7 @@ computed using the \fct{samplestats} function
 stats <- with(bf, samplestats(samps, x, y, family))
 print(unlist(stats))
 @
-As can be seen in the code above, estimation engines have common arguments \code{x} (holding the
+As one can see in the code above, estimation engines have common arguments \code{x} (holding the
 design and penalty matrices), \code{y} (the response data) and \code{family} (the \pkg{bamlss}
 family object). For implementing new estimation engines, users only need to keep the argument
 structures and the return values, i.e., for \fct{optimizer} functions a named numeric vector
@@ -1086,7 +1086,7 @@ standard methods and extractor functions, such as \fct{plot}, \fct{summary} and 
 As already exemplified in Section~\ref{sec:motivation}, using the model fitting wrapper function
 \fct{bamlss} it is straightforward to use different modeling approaches by simply exchanging
 the estimation engines. This feature can be particularly important in complex modeling situation,
-where good mixing of the MCMC algorithm requires very good starting values. A use case is presented
+where good mixing of the MCMC algorithm requires very good starting values. One use case is presented
 in Section~\ref{sec:application}, where for stability reasons posterior mode estimates are obtained
 using the gradient boosting optimizer function \fct{boost}. Afterwards the MCMC sampling engine
 \fct{GMCMC} is applied with the boosting estimates as starting values.
@@ -1388,11 +1388,11 @@ distribution.
 
 The zero-truncated negative binomial distribution is implemented as
 \code{ztnbinom_bamlss()} within \pkg{bamlss}.  In order to specify smooth terms
-form both distributional parameter, the formula has to be a \code{list}. The
-first element is named \code{mu} and specifies terms for the paramter $\mu$,
-but also specifies that \code{counts} is the response of the regression model.
-The second element is named \code{theta} and specifies a smooth term for the
-paramter $\theta$. Hence well known for their sampling properties, we are
+form both distributional parameter, the formula has to be a \code{list}.
+The first element specifies terms for the response \code{counts}, which is named $\mu$ in the
+\pkg{bamlss} familiy object.
+The second element specifies the formula for parameter $\theta$. Hence well known
+for their sampling properties, we are
 applying P-splines \citep{bamlss:Eilers+Marx:1996} for all terms. Specifying
 smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructure
 \citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
@@ -1551,7 +1551,7 @@ associated with the small amount of data in that range. Physically the shape of 
 effect is meaningful as more convective available potential energy has the
 potential to lead to heavier lightning events.
 \code{s(q_prof_PC1)} reveals areas of large credible intervals at the left and
-right bounds of the range due to small amount of data. In the mid-range a
+right bounds of the range due to small amount of data. In the mid-range an
 increasing effect is identified. As \code{q_prof_PC1} is the leading principal
 component of the vertical profile of specific humidity, one has to consider the
 corresponding spatial mode (not shown) for interpretation: Higher values of
