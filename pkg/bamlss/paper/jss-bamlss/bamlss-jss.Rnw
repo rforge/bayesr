@@ -1420,22 +1420,12 @@ to $1000$. For the sampling we allow another $1000$ iterations as burn-in
 phase, and apply a thinning of the resulting chain of $5$.  Running
 \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples in the
 end:
-
-%%% <<eval=FALSE>>=
-%%% ## Fit model.
-%%% b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
-%%%   optimizer = boost, maxit = 1000,                ## Boosting arguments.
-%%%   thin = 5, burnin = 1000, n.iter = 6000          ## Sampler arguments.
-%%% )
-%%% @
-%%% 
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(111)
 R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
-+    optimizer = boost, maxit = 1000,        ## Boosting arguments.
-+    thin = 5, burnin = 1000, n.iter = 6000  ## Sampler arguments.
-+  )
++    optimizer = boost, maxit = 1000,         ## Boosting arguments.
++    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
 \end{Sinput}
 \begin{Soutput}
 logLik -36924.3 eps 0.0007 iteration 1000 qsel 7
