@@ -1,0 +1,198 @@
+---
+title: "Complex Space-Time Interactions in a Cox Model"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{Cox}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, survival, cox model}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+load("figures/firemodel.rda")
+firemodel$family <- cox_bamlss()
+```
+
+## Intro
+
+In the article **BAMLSS: Bayesian Additive Models for Location, Scale, and Shape (and Beyond)**
+[@bamlss:Umlauf+Klein+Zeileis:2017] an example based on the article of @bamlss:Taylor:2015 is
+used to illustrate the BAMLSS framework with complex space-time interactions in a Cox model.
+
+The example uses data from the _London Fire Brigade_
+(LFB, [http://www.london-fire.gov.uk/](http://www.london-fire.gov.uk/)), which is one of largest
+fire brigades  in the world. Each year, the LFB is called thousands of times, in most cases due to
+dwelling fires. To prevent further damage or fatal casualties, a short arrival time is important,
+i.e., the time it takes until a fire engine arrives at the scene after an emergency call has been
+received. The aim of this analysis is to explore the drivers of arrival times.
+
+## Model
+
+The response times are analyzed within a survival context where the
+hazard of an event (fire engine arriving) at time $t$ follows a relative risk model of the form
+$$
+\lambda(t) = \exp\left(\eta(t)\right) =  \exp\left( \eta_{\lambda}(t) + \eta_{\gamma} \right),
+$$
+i.e., a model for the instantaneous arrival rate conditional on the engine not having arrived before
+time $t$. Here, the hazard function is assumed to depend on a time-varying predictor
+$\eta_{\lambda}(t)$ and a time-constant predictor $\eta_{\gamma}$.
+
+We set up a model with the time-constant predictor
+$$
+\eta_{\gamma} = \beta_0 + f_1(\texttt{fsintens}) + f_2(\texttt{daytime}) +
+  f_3(\texttt{lon}, \texttt{lat}) + f_4(\texttt{daytime}, \texttt{lon}, \texttt{lat}),
+$$
+where $\beta_0$ is an intercept and function $f_1( \cdot )$ is the effect of fire station intensity
+(`fsintens`, computed with a kernel density estimate of all fire stations in London). The other
+variables represent: The time of the day (`daytime`), exact spatial coordinates of the fire
+(`lon` and `lat`). Here function $f_4( \cdot )$ is a three-dimensional interaction effect.
+
+The time-varying additive predictor has the following form
+$$
+\eta_{\lambda}(\texttt{arrivaltime}) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}),
+$$
+where $f_0( \cdot )$ is the baseline hazard for variable `arrivaltime`, the waiting time until the
+first fire engine arrives after the received emergency call.
+
+The probability that the engine will arrive on the scene after time $t$ is described by the survival
+function
+\begin{equation} \label{eqn:surv}
+S(t) = \mathrm{Prob}(T > t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
+\end{equation}
+which is of prime interest in this analysis.
+
+## Data
+
+The data is freely available from the London DataStore
+([http://data.london.gov.uk/](http://data.london.gov.uk/)) under the UK
+Open Government Licence (OGL v2). It can be downloaded from
+[http://data.london.gov.uk/dataset/london-fire-brigade-incident-records](http://data.london.gov.uk/dataset/london-fire-brigade-incident-records)
+which also contains previous years. The preprocessed data is part of the _bamlss_ package and
+can be loaded with
+```{r}
+data(LondonFire, package = "bamlss")
+head(LondonFire)
+```
+and is stored as a `"SpatialPointsDataFrame"`. Therefore, the spatial distribution of fires in
+London along with boundary polygons and station locations can be plotted instantly with:
+```{r, fig.width = 6, fig.height = 5, fig.align = "center", dev = "png", out.width="60%"}
+library("sp")
+par(mar = rep(0, 4))
+plot(LondonBoundaries)
+plot(LondonFire, col = "red", add = TRUE)
+plot(LondonBoroughs, add = TRUE)
+plot(LondonFStations, col = "blue", add = TRUE, pch = 16)
+```
+
+## Estimation
+
+The Cox model is implemented in the `cox_bamlss()` family and uses a special optimizer function
+`cox_mode()` and sampling engine `cox_mcmc()`. Note that the optimizer and sampler function do
+not need to be called explicitly within the `bamlss()` wrapper call, because the `cox_bamlss()`
+family specifies this already in its return value, such that internally function `bamlss()`
+nows to only use the estimation engines that are supplied by the family.
+```{r}
+fam <- cox_bamlss()
+names(fam)
+```
+There is also an additional transformer function, which is needed for computing the (numerical)
+integrals that are part of the log-likelihood. Predictions are also based on integrals, therefore
+the `predict()` function is also part of this family object and will be used by `predict.bamlss()`
+instead of the default methods.
+
+The model formula has two parts, the time-dependent for $\eta_{\lambda}$ and the time-constant
+part for $\eta_{\gamma}$ and can be set up with
+```{r}
+f <- list(
+  Surv(arrivaltime) ~ ti(arrivaltime,k=20) + ti(arrivaltime,lon,lat,d=c(1,2),k=c(5,30)),
+  gamma ~ s(fsintens) + ti(daytime,bs="cc",k=30) + ti(lon,lat,k=80,d=2) +
+    ti(daytime,lon,lat,bs=c("cc","cr"),d=c(1,2),k=c(10,30))
+)
+```
+Note that the `Surv()` function from the _survival_ package [@bamlss:Therneau:2016] is used to
+set up the formula for $\eta_{\lambda}$. Also note that the arrival times are not censored
+in this application. The model is estimated with
+```{r, eval=FALSE}
+## Set the seed for reproducibility.
+set.seed(222)
+
+## Start estimation
+firemodel <- bamlss(f, data = LondonFire, family = "cox",
+  subdivisions = 25, maxit = 1000,
+  n.iter = 6000, burnin = 3000, thin = 20, cores = 8)
+```
+Note, due to the complexity of the model and model terms estimation takes quite long. On a Linux
+system with 8 Intel i7-2600 3.40GHz processors estimation takes approximately 1.2 days.
+
+Good practice after fitting the model is to do some convergence checks of the MCMC chains, e.g.,
+by looking at traceplots
+```{r, eval=FALSE}
+plot(firemodel, which = "samples")
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+bsp <- firemodel
+bsp$samples <- bsp$samples[[1]][, "gamma.p.model.matrix.(Intercept)", drop = FALSE]
+colnames(bsp$samples) <- "gamma.p.(Intercept)"
+plot(bsp, which = "samples")
+```
+Note, for convenience we only show the traceplot of the intercept term of predictor $\eta_{\gamma}$.
+The traceplot indicates convergence of the MCMC chains and have close to i.i.d. behavior.
+The model summary gives
+```{r}
+summary(firemodel)
+```
+and indicates that the three-dimensional effects in `lambda` and `gamma` have an effect on the
+response times. The estimated effects can be plotted with
+```{r, eval=FALSE}
+par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
+plot(firemodel, scale = 0)
+```
+```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
+par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
+plot(firemodel, scale = 0)
+```
+The upper left plot shows the estimated baseline hazard effect. The upper right plot the time-constant
+effect of fire station intensity. The lower left plot the estimated effect of the time of the day
+and the lower right plot the estimated time-constant spatial effect.
+
+## Prediction
+
+Predictions in for an estimated Cox model are based on the custom predict function `cox_predict()`.
+Here, predicted probabilities are based on numerical integration, therefore, the user can specify
+the subdivisions that are used in the integration routine. For example, let's pick a sample
+location within the boundaries of London and predict the corresponding probability that the
+fire engine arrives at 15pm within 0 to 20 minutes.
+```{r}
+## Extract the 150th sample.
+i <- 150
+
+## Create a new data frame for prediction.
+nd <- data.frame(
+  "arrivaltime" = seq(0, 20, length = 100),
+  "daytime" = 15
+)
+nd$fsintens <- LondonFire$fsintens[i]
+nd$lon <- LondonFire$lon[i]
+nd$lat <- LondonFire$lat[i]
+
+## Predict probabilities.
+nd$p <- 1 - t(predict(firemodel, newdata = nd,
+  type = "probabilities", subdivisions = 100, FUN = c95))
+```
+The estimated probabilities that the fire engine arrives after $t$ minutes can then be plotted with
+```{r, fig.width = 6, fig.height = 5, fig.align = "center", dev = "png", out.width="60%"}
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+plot2d(p ~ arrivaltime, data = nd, ylab = "1 - Prob(T > t)")
+```
+
+## References
+
