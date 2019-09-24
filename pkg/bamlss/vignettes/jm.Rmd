@@ -1,0 +1,209 @@
+---
+title: "Bayesian Joint Models for Longitudinal and Survival Data"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+bibliography: bamlss.bib
+nocite: '@bamlss:Umlauf+bamlss:2018'
+vignette: >
+  %\VignetteIndexEntry{LASSO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteDepends{bamlss}
+  %\VignetteKeywords{distributional regression, joint models}
+  %\VignettePackage{bamlss}
+---
+
+```{r preliminaries, echo=FALSE, message=FALSE}
+library("bamlss")
+set.seed(123)
+```
+
+## Intro
+
+The articles **Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes
+Research** [@bamlss:Koehler+Umlauf+Greven:2016] and **Nonlinear Association Structures in Flexible
+Bayesian Additive Joint Models** [@bamlss:Koehler+Umlauf+Greven:2018] present a flexible
+framework for estimating joint models for longitudinal and survival data using MCMC.
+This vignette provides some example code how to set up joint models using _bamlss_.
+
+This vignette explains how to estimate joint models with the following hazard rate model:
+$$
+h_{i}(t) = \exp\left[\eta_{i}(t)\right] =
+   \exp [\eta_{\lambda i}(t) + \eta_{\gamma i} + \eta_{\alpha i}(\eta_{\mu i}(t), t) ]
+$$
+The longitudinal response $y_{ij}$ at time points $t_{ij}$ is modeled as
+$$
+y_{ij}=\eta_{\mu i}(t_{ij}) + \varepsilon_{ij}                  
+$$   
+with independent normal errors $\varepsilon_{ij} \sim N(0, \exp[\eta_{\sigma_i}(t_{ij})]^2)$.
+
+In this model the predictors $\eta_k = \left( \eta^{\lambda}, \eta^{\gamma}, \eta^{\alpha},
+\eta^{\mu}, \eta^{\sigma} \right)$ are a composition of
+$$
+\eta_k=\eta_k\left(\mathbf{x}; \boldsymbol{\beta}_k\right) = f_k(\mathbf{x}) =
+  f_{1k}(\mathbf{x}_{1k})+\ldots+f_{J_kk}(\mathbf{x}_{J_kk}),
+$$
+where functions $f_{jk}( \cdot )$, $j = 1, \ldots, J_k$ are unspecified functions of generic
+covariates $\mathbf{x}$, e.g., that are modeled by splines. There are two types of parameters
+in this model, time-varying ($\lambda$, $\alpha$ and $\mu$) and time-constant
+($\gamma$ and $\sigma$) parameters. Note that parameter $\lambda$ includes the baseline hazard
+effect.
+
+For more details on model specifications and methodology see
+@bamlss:Koehler+Umlauf+Greven:2016 and @bamlss:Koehler+Umlauf+Greven:2018.
+
+## Mayo Clinic Primary Biliary Cirrhosis Data
+
+This example is taken from the _JMbayes_ package [@bamlss:JMbayes:2016]. The serum bilirubin level
+is one of the most important body markers associated with the PBC liver disease. Here, we try to
+investigate how the mean bilirubin level influences survival. Therefore, we decompose the
+time-varying effect in parameter $\mu$ into a main effect and a functional random intercept, to
+account for individual deviations.
+
+The data can be loaded with
+```{r}
+data("pbc2", package = "JMbayes")
+head(pbc2)
+```
+and contains several potentially relevant covariates explaining the disease. Note that for the
+survival part, the time variable is `years` and for the longitudinal part `year` in this
+data set. To set up the joint model we need to specify formulas for each parameter
+($\lambda$, $\gamma$, $\mu$, $\sigma$, $\alpha$) of the model.
+```{r}
+## Set up the model formula including
+## functional random intercepts using ti().
+f <- list(
+  Surv2(years, status2, obs = log(serBilir)) ~ s(years,k=20),
+  gamma ~ s(age,k=20) + drug + sex,
+  mu ~ ti(id,bs="re") + 
+       ti(year,k=20) + 
+       ti(id,year,bs=c("re","cr"),k=c(nlevels(pbc2$id),8)),
+  sigma ~ 1,
+  alpha ~ s(years,k=20),
+  dalpha ~ -1
+)
+```
+The model is estimated by first running a backfitting algorithm, to find appropriate
+starting values, afterwards the MCMC sampler is started.
+```{r, eval=FALSE}
+## Set the seed for reproducibility.
+set.seed(123)
+
+## Estimate model.
+b <- bamlss(f, data = pbc2, family = "jm",
+  timevar = "year", idvar = "id")
+```
+```{r, echo=FALSE, results="hide", message=FALSE}
+if(!file.exists("figures/JointModel.rda")) {
+  set.seed(123)
+  b <- bamlss(f, data = pbc2, family = "jm",
+    timevar = "year", idvar = "id")
+  save(b, file = "figures/JointModel.rda")
+} else {
+  load("figures/JointModel.rda")
+}
+```
+The model summary gives
+```{r}
+summary(b)
+```
+Here, the estimated parameters from the backfitting step are quite different from the posterior
+mean calculated from the MCMC samples. This might indicate that the default number of iterations,
+`n.iter = 1200`, is not enough to obtain convergence of the MCMC chains. To check this issue
+we look at some traceplots.
+```{r, eval=FALSE}
+plot(b, which = "samples")
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+bsp <- b
+bsp$samples <- bsp$samples[[1]][, c("gamma.p.model.matrix.(Intercept)", "mu.p.model.matrix.(Intercept)")]
+plot(bsp, which = "samples")
+```
+For convenience, we only show the traceplots of the intercept for parameter $\gamma$ and $\mu$.
+The traceplot for parameter $\mu$ clearly shows an upwards trend of the MCMC chain. To overcome
+this issue, we estimate the model again and increase the burnin-in phase and the thinning parameter.
+```{r, echo=FALSE, results="hide", message=FALSE}
+if(!file.exists("figures/JointModel.rda")) {
+  set.seed(321)
+  m <- bamlss(f, data = pbc2, family = "jm",
+    timevar = "year", idvar = "id",
+    n.iter = 12000, burnin = 2000, thin = 10)
+  save(m, file = "figures/JointModel2.rda")
+} else {
+  load("figures/JointModel2.rda")
+}
+```
+```{r, eval=FALSE}
+set.seed(321)
+
+## Run model
+m <- bamlss(f, data = pbc2, family = "jm",
+  timevar = "year", idvar = "id", optimizer = FALSE,
+  jm.start = coef(b), n.iter = 12000, burnin = 2000, thin = 10)
+```
+Note, executing the code will take some time because of the large number of parameters for the
+functional random intercept terms ($> 2500$). Another solution to speed up estimation is
+to use multiple cores for sampling. This can be done using the `bamlss()` wrapper by setting, e.g.,
+`cores = 4`. Then, internally the `mclapply()` function of the _parallel_ [@bamlss:R] package is
+called. Now, the samples from model `m` look much better.
+```{r, eval=FALSE}
+plot(m, which = "samples", lag = 100)
+```
+```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+bsp <- m
+bsp$samples <- bsp$samples[[1]][, c("gamma.p.model.matrix.(Intercept)", "mu.p.model.matrix.(Intercept)")]
+plot(bsp, which = "samples", lag = 100)
+```
+However, there is still some autocorrelation for parameter $\mu$, which could be further reduced by,
+e.g., increasing the thinning parameter.
+
+The estimated effects can be plotted instantly, e.g., for the time-varying parameters $\lambda$
+and $\alpha$:
+```{r, eval=FALSE}
+plot(m, model = c("lambda", "alpha"))
+```
+```{r, fig.width = 8, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="80%"}
+par(mfrow = c(1, 2), mar = c(4.1, 4.1, 0.1, 1.1))
+plot(m, model = c("lambda", "alpha"))
+```
+The left plot is the estimated baseline hazard effect, the right plot the estimated association
+parameter. Both effects seem to be quite linear, however, according the 95% credible intervals the
+effect for parameter `alpha` is not significant.
+
+The `age` effect for the time-constant parameter $\gamma$ of the risk model is plotted with:
+```{r, eval=FALSE}
+plot(m, model = "gamma")
+```
+```{r, fig.width = 4, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="40%"}
+par(mfrow = c(1, 1), mar = c(4.1, 4.1, 0.1, 1.1))
+plot(m, model = "gamma")
+```
+Again, the effect of age on the logarithmic risk scale is basically linear and increasing. The
+estimated effects for the bodymarker model in the $\mu$ parameter are plotted in similar fashion:
+```{r, eval=FALSE}
+plot(m, model = "mu")
+```
+```{r, fig.width = 8, fig.height = 3, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="100%"}
+par(mfrow = c(1, 3), mar = c(4.1, 4.1, 0.1, 1.1))
+plot(m, model = "mu", term = c("ti(id)", "ti(id,year)", "ti(year)"))
+```
+The left plot shows the estimated random effect for each individual, the middle plot the
+estimated functional random intercepts and the right plot the corresponding main effect of
+`year`, which is linearly increasing.
+
+Another feature that is implemented is the plot of estimated survival probabilities for
+single individuals.
+```{r, eval=FALSE}
+jm_survplot(m, id = 21)
+```
+```{r, fig.width = 5, fig.height = 6, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="50%"}
+jm_survplot(m, id = 21)
+```
+The upper plot shows the predicted survival probability up to 14 years of individual 21. The lower
+plot is the predicted effect of time in the longitudinal model $\mu$. Here, the dots represent
+the observed bilirubin level of this individual.
+
+## References
+
