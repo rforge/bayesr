@@ -1,5 +1,4 @@
 inst/tscript.R
-inst/JSS
 
 R/devtools.R
 R/STAN.R
