@@ -71,6 +71,9 @@
       <a href="../articles/zn.html">Spatial Location-Scale Model</a>
     </li>
     <li>
+      <a href="../articles/multinomial.html">Bayesian Multinomial Regression</a>
+    </li>
+    <li>
       <a href="../articles/engines.html">Estimation Engines</a>
     </li>
     <li>
@@ -150,6 +153,7 @@
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/distregvis.html">Visualization with distreg.vis</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/rent.html">Munich Rent Model</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/zn.html">Spatial Location-Scale Model</a></li>
+<li><a href="http://bayesr.R-Forge.R-project.org/articles/multinomial.html">Bayesian Multinomial Regression</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/bivnorm.html">Bivariate Gaussian models for wind vectors</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/lasso.html">LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape</a></li>
 <li><a href="http://bayesr.R-Forge.R-project.org/articles/jm.html">Bayesian Joint Models for Longitudinal and Survival Data</a></li>
@@ -222,13 +226,13 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.226
+## runtime = 1.748
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 409.6319 converged = 1 edf = 7
 ## logLik = -197.4745 logPost = -252.2614 nobs = 172
-## runtime = 0.011
+## runtime = 0.014
 ## ---</code></pre>
 <p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
@@ -363,13 +367,13 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## Sampler summary:
 ## -
 ## DIC = 1115.068 logLik = -545.2265 pd = 24.6149
-## runtime = 3.596
+## runtime = 4.919
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 1123.881 converged = 1 edf = 24.2716
 ## logLik = -531.9752 logPost = -747.4101 nobs = 133
-## runtime = 0.341
+## runtime = 0.467
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
