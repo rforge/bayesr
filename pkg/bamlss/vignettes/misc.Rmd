@@ -11,7 +11,7 @@ vignette: >
   %\VignetteIndexEntry{Model Terms}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteDepends{bamlss}
-  %\VignetteKeywords{distributional regression, model terms}
+  %\VignetteKeywords{distributional regression, miscellaneous topics}
   %\VignettePackage{bamlss}
 ---
 
@@ -19,6 +19,10 @@ vignette: >
   Using a Censored Additive Regression Models" 
   [@bamlss:Stauffer+Mayr+Messner+Umlauf+Zeileis:2016].
   Download [precipitation_clim.tar.gz](../misc/precipitation_clim.tar.gz).
+
+* Precipitation data from the article "A Primer on Bayesian Distributional Regression"
+  [@bamlss:Umlauf+Kneib:2018].
+  Download [RainGermany.rds](../misc/RainGermany.rds).
 
 
 ## References

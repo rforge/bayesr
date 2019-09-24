@@ -10291,7 +10291,11 @@ smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
         pp <- (maxp - minp)
         se <- as.matrix(samples(object, model = i, term = j))
         secheck <- if(nrow(unique(se)) < 2L) FALSE else TRUE
-        eff[[i]][[j]] <- mean(!((p[, "2.5%"] <= 0) & (p[, "97.5%"] >= 0)) & (pp > 1e-10) & secheck)
+        eff[[i]][[j]] <- if(secheck) {
+          mean(!((p[, "2.5%"] <= 0) & (p[, "97.5%"] >= 0)) & (pp > 1e-10))
+        } else {
+          mean(!((p[, "Mean"] <= 1e-20) & (p[, "Mean"] >= -1e-20)))
+        }
       }
       eff[[i]] <- unlist(eff[[i]])
     }

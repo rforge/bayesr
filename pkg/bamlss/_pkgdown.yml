@@ -9,6 +9,7 @@ articles:
     - misc
     - glm
     - zn
+    - multinomial
     - families
     - distregvis
     - rent
@@ -38,6 +39,8 @@ navbar:
         href: articles/rent.html
       - text: Spatial Location-Scale Model
         href: articles/zn.html
+      - text: Bayesian Multinomial Regression
+        href: articles/multinomial.html
       - text: Estimation Engines
         href: articles/engines.html
       - text: BAMLSS Model Frame
