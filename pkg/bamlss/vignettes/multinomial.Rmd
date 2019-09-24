@@ -82,7 +82,7 @@ nd <- data.frame("age" = seq(20, 90, length = 100))
 p <- predict(b, newdata = nd, type = "parameter")
 ```
 Now, note that the specification of the predictors in the `multinomial_bamlss()` family
-is based on logarithmic link, therefore, to compute the probabilities we run the
+is based on a logarithmic link, therefore, to compute the probabilities we run the
 following code:
 ```{r}
 probs <- list()
