@@ -1161,7 +1161,7 @@ print(names(bf$x$mu$smooth.construct))
 In this example, the list contains three smooth term objects for parameter \code{mu} and
 \code{sigma}.
 
-As shown in Section~\ref{appendix:specialterms} the \fct{bamlss.frame} function can also
+As shown in Appendix~\ref{appendix:specialterms} the \fct{bamlss.frame} function can also
 process special model terms, i.e., model terms that are not necessarily represented by
 a linear matrix vector product.
 
