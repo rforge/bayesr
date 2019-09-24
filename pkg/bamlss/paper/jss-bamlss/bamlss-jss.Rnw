@@ -139,8 +139,8 @@ techniques such as lasso or boosting \citep{bamlss:Friedmann+Hastie+Tibshirani:2
 might be necessary or custom algorithms \citep{bamlss:Wood:2017}. Hence,
 to facilitate combining all three aspects discussed above with different estimation
 techniques and fitting algorithms, the \pkg{bamlss} package for the \proglang{R}
-system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox''
-as proposed in \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
+system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox'',
+extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
 not only the response distribution or the regression terms are ``Lego bricks''
 but also the estimation algorithm or the MCMC sampler.
 
@@ -233,7 +233,7 @@ Section~\ref{sec:application} we highlight the unified modeling approach using a
 distributional regression model for lighting counts in complex terrain.
 %
 Further details and examples about the \pkg{bamlss} package can be found online at
-\url{http://bamlss.org/}.
+\url{http://www.bamlss.org/}.
 
 
 \section{Motivating examples} \label{sec:motivation}
@@ -684,7 +684,8 @@ the CRPS using numerical integration.
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
 methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
-as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}.
+as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}
+that discuss various applications and extensions that are also implemented in \pkg{bamlss}.
 The following outlines the framework from the viewpoint of distributional regression models,
 however, please note that model classes like, e.g., GLMs and GAMs or even survival joint models
 \citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}
@@ -864,7 +865,7 @@ number of candidate models. The following lists commonly used tools:
  \end{itemize}
 
 
-\section{The bamlss package} \label{sec:package}
+\section[The bamlss package]{The \pkg{bamlss} package} \label{sec:package}
 
 The \proglang{R} package \pkg{bamlss} provides a modular software architecture for
 flexible Bayesian regression models (and beyond). The implementation follows the 
@@ -1211,7 +1212,7 @@ $$
 s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\partial\sigma} \cdot
 \frac{\partial\sigma}{\partial\eta_\sigma} = -1 + \frac{(y-\mu)^2}{\sigma^2}.
 $$
-
+%
 \begin{table}[ht!]
 \centering
 \begin{tabular}{lp{12cm}}
@@ -1229,7 +1230,7 @@ Name of element & Value \\ \hline
 \end{tabular}
 \caption{\label{tab:families} Elements of the Gaussian distribution \code{"bamlss.family"} object.}
 \end{table}
-
+%
 For the second derivative of the log-likelihood we are able to obtain the
 negative expectation,
 $$
@@ -1239,7 +1240,6 @@ and
 $$
 \mathsf{E}(-\partial^2\ell / \partial\eta_{\sigma}^{2} ) = 2.
 $$
-
 Now we have to write a function that returns a \code{family.bamlss} object (S3)
 which encapsulates functions for density, score and Hessian, and the names of
 the family, parameter and link functions. The required elements are listed
@@ -1345,7 +1345,7 @@ from 1979 to present.
 In this example application we work only with a small subset of the data, which
 can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 \citep{FlashAustria}. The data is loaded with
-
+%
 <<echo=FALSE>>=
 ## Load the data.
 # data("FlashAustria", package = "FlashAustria")
@@ -1360,13 +1360,13 @@ f <- list(
   theta ~ s(sqrt_lsp, bs = "ps")
 )
 @
-
+%
 <<>>=
 data("FlashAustria", package = "FlashAustria")
 head(FlashAustriaTrain)
 nrow(FlashAustriaTrain)
 @
-
+%
 The motivation for this application is as follows: Lightning counts are not
 modeled within the atmospheric reanalyses. Lightning observations are only
 available for the period 2010--2018. With a statistical model on hand one could
@@ -1397,7 +1397,7 @@ applying P-splines \citep{bamlss:Eilers+Marx:1996} for all terms. Specifying
 smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructure
 \citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
 specification of the model (formula):
-
+%
 <<eval=FALSE>>=
 f <- list(
   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
@@ -1406,7 +1406,7 @@ f <- list(
   theta ~ s(sqrt_lsp, bs = "ps")
 )
 @
-
+%
 Now we have all ingredients on hand to feed the standard interface for
 statistical models in \proglang{R}: A formula \code{f}, a family
 \code{ztnbinom_bamlss()}, and a data set \code{FlashAustriaTrain}. Within the
@@ -1420,6 +1420,7 @@ to $1000$. For the sampling we allow another $1000$ iterations as burn-in
 phase, and apply a thinning of the resulting chain of $5$.  Running
 \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples in the
 end:
+%
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(111)
@@ -1434,32 +1435,29 @@ Starting the sampler...
 |********************| 100%  0.00sec 27.73min
 \end{Soutput}
 \end{Schunk}
-
+%
 The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
-on which the boosting took less than 6~minutes and the MCMC sampling took less the
+on which the boosting took less than 6~minutes and the MCMC sampling took less than
 30~minutes. As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
-
+%
 <<eval=FALSE>>=
 pathplot(b, which = "loglik.contrib", intercept = FALSE)
 @
-
+%
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
 \begin{center}
 <<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
-pathplot(b, c("loglik.contrib"), intercept = FALSE, spar = FALSE)
-# layout(matrix(c(rep(1,2), rep(2,3)), nrow = 1))
-# pathplot(b, "loglik")
-# pathplot(b, "loglik.contrib")
+pathplot(b, which = "loglik.contrib", intercept = FALSE, spar = FALSE)
 @
 \end{center}
 \caption{Contribution to the log-likelihood of individual terms during
 gradient boosting.}
 \label{fig:appboost}
 \end{figure}
-
+%
 After 1000~iterations the term \code{s(sqrt_cape).mu} has the highest contribution
 to the log-likelihood with %
 \Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])} %
@@ -1475,11 +1473,11 @@ reasonable initial values for the MCMC sampling.
 
 The MCMC chains are investigated by looking directly at the traces of the chains
 and with the auto-correlation function of the chains.
-
+%
 <<fig=FALSE, eval=FALSE>>=
 plot(b, model = "mu", term = "s(sqrt_cape)", which = "samples")
 @
-
+%
 Figure \ref{fig:apptrace} shows the traces and the auto-correlation functions
 for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
@@ -1489,7 +1487,7 @@ reveal that after the thinning hardly any correlation remains between
 consecutive samples.
 
 \begin{figure}[t!]
-\begin{center}
+\centering
 <<echo=FALSE, fig=TRUE>>=
 b2 <- b
 b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1]]), fixed = TRUE)][, 1:2]
@@ -1497,7 +1495,6 @@ b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
 @
-\end{center}
 \caption{MCMC trace (left panels) and auto-correlation (right panels) for two
 splines from the term \code{s(sqrt\_cape)} of the model \code{mu}.}
 \label{fig:apptrace}
@@ -1513,11 +1510,11 @@ of the reanalyses are related to lightning events (Figure~\ref{fig:appeffect}),
 and thus help to understand the physics associated with lightning events.
 The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
-
+%
 <<fig=FALSE, eval=FALSE>>=
 plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"))
 @
-
+%
 \begin{figure}[t!]
 \begin{center}
 \setkeys{Gin}{width=1\textwidth}
@@ -1533,7 +1530,7 @@ from the model \code{mu} and term \code{s(sqrt\_lsp)} from model \code{theta}.
 Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
-
+%
 \code{s(sqrt_cape)} reveals a monotonic increasing shape. In the
 range from $0$--$30$ the effect increases linearly with small credible intervals.
 For higher values the effect flattens and shows large credible intervals which are
@@ -1563,24 +1560,24 @@ popular for the evaluation of count data regression models
 \citep{kleiber2016visualizing}. First we predict the distributional parameter
 on out-of-sample data \code{FlashAustriaEval} for which lightning
 observations are on hand
-
+%
 <<>>=
 fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
 str(fit)
 @
-
+%
 \code{predict()} returns a \code{list}, of which each element is named
 as a distributional parameter and contains by default a vector of
 predictions. Each prediction is the average of the predictions obtained
 by all MCMC samples. The resulting \code{list} can be used to
 derive further quantities by employing the functions of the \pkg{bamlss}
 family that can be extracted using \code{family()},
-
+%
 <<>>=
 fam <- family(b)
 fam
 @
-
+%
 The family contains functions to map the predictors to the parameter
 scale, density, cumulative distribution function, log-likelihood, and
 scores and Hessian. We apply the density to compute the expected
@@ -1588,15 +1585,15 @@ frequencies of the positive counts. The function \code{...$d()} takes the
 quantile as first argument, and the \code{list} with the parameters,
 as returned by \code{predict()}, as a second argument. The expected frequencies can then be computed
 by
-
+%
 <<>>=
 expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
 @
-
+%
 In order to plot the rootogram, we have to name the vector and
 coerce it to an object of class \code{table}. The verifying
 observed frequencies can be directly obtained by \code{table}.
-
+%
 <<>>=
 names(expect) <- 1:50
 expect <- as.table(expect)
@@ -1619,15 +1616,35 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
+\begin{figure}[t!]
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{center}
+<<fig=TRUE, echo=FALSE, width=7, height=5>>=
+library("ggplot2")
+world <- rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+  colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+  facet_wrap(~time, nrow = 2) + theme_minimal() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+@
+\end{center}
+\caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
+September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
+13~UTC, i.e., the probability of having observed $10$ or more counts within one
+grid box.}
+\end{figure}
+
 The observed and expected frequencies can be plugged into the
 default method of \code{rootogram} from the \pkg{countreg}
 package \citep{zeileis2008regression}.
-
+%
 <<eval=FALSE>>=
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
 @
-
+%
 The rootogram reveals reasonable calibration of the model though it is slightly
 underestimating the number of events with a single lightning discharge.
 Now given good convergence and sample characteristics of the gradient
@@ -1641,55 +1658,28 @@ time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
 by applying the cumulative distribution function \code{...$p} of the family
-
+%
 <<>>=
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 @
-
-\begin{figure}[t!]
-\setkeys{Gin}{width=0.8\textwidth}
-\begin{center}
-<<fig=TRUE, echo=FALSE, width=7, height=5>>=
-library("ggplot2")
-library("colorspace")
-
-library("rnaturalearth")
-library("rnaturalearthdata")
-world <- ne_countries(scale = "medium", returnclass = "sf")
-
-ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
-  geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-  facet_wrap(~time, nrow = 2) + theme_minimal() +
-  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0)) # +
-#  theme(legend.position = "bottom")
-@
-\end{center}
-\caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
-September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
-13~UTC, i.e., the probability of having observed $10$ or more counts within one
-grid box.}
-\end{figure}
-
+%
 We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
 and the Oslo color scale from the \pkg{colorspace} package
 \citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
 from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
-
+%
 <<eval=FALSE>>=
 library("ggplot2")
-library("colorspace")
-
+world <- rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+  colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(8, 17), ylim = c(45.5, 50), expand = FALSE) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
   facet_wrap(~time) + theme_minimal()
 @
-
+%
 The maps are shown in Figure~\ref{fig:appcase} and reveal that the probability for strong
 lightning events increases during 2001-09-15 between 6 and 17~UTC. During night time the front
 occurs, which can be nicely seen at 23~UTC. The propagation of the front is blocked
