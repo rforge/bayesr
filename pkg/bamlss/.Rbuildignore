@@ -27,4 +27,6 @@ vignettes/terms.Rmd
 vignettes/toymodel.rda
 vignettes/jm.Rmd
 vignettes/zn.Rmd
+vignettes/multinomial.Rmd
+vignettes/bdrp.Rmd
 
