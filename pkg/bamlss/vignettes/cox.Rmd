@@ -138,7 +138,7 @@ by looking at traceplots
 ```{r, eval=FALSE}
 plot(firemodel, which = "samples")
 ```
-```{r, fig.width = 9, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+```{r, fig.width = 9.5, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
 bsp <- firemodel
 bsp$samples <- bsp$samples[[1]][, "gamma.p.model.matrix.(Intercept)", drop = FALSE]
 colnames(bsp$samples) <- "gamma.p.(Intercept)"
@@ -156,8 +156,8 @@ response times. The estimated effects can be plotted with
 par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
 plot(firemodel, scale = 0)
 ```
-```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
-par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
+```{r, fig.width = 7.2, fig.height = 5.8, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(2, 2))
 plot(firemodel, scale = 0)
 ```
 The upper left plot shows the estimated baseline hazard effect. The upper right plot the time-constant
@@ -189,7 +189,7 @@ nd$p <- 1 - t(predict(firemodel, newdata = nd,
   type = "probabilities", subdivisions = 100, FUN = c95))
 ```
 The estimated probabilities that the fire engine arrives after $t$ minutes can then be plotted with
-```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="60%"}
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="50%"}
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 plot2d(p ~ arrivaltime, data = nd, ylab = "1 - Prob(T > t)")
 ```
