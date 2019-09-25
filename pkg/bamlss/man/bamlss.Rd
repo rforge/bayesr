@@ -195,9 +195,13 @@ bamlss(formula, family = "gaussian", data = NULL,
 }
 
 \references{
-  Nikolaus Umlauf, Nadja Klein, and Achim Zeileis (2019). BAMLSS: Bayesian Additive Models for Location,
-  Scale and Shape (and Beyond). \emph{Journal of Computational and Graphical Statistics}.
-  \url{http://dx.doi.org/10.1080/10618600.2017.1407325}
+  Umlauf N, Klein N, Zeileis A (2019). BAMLSS: Bayesian Additive Models for Location,
+  Scale and Shape (and Beyond). \emph{Journal of Computational and Graphical Statistics}, \bold{27}(3), 612--627.
+  \doi{10.1080/10618600.2017.1407325}
+
+  Umlauf N, Klein N, Simon T, Zeileis A (2019).
+  \dQuote{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond).}
+  arXiv:1909.12345, arXiv.org E-Print Archive. \url{http://arxiv.org/abs/1909.12345}
 }
 
 \author{
