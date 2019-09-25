@@ -57,7 +57,7 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
     if(is.null(col.lines)) {
       col.lines <- c(NA, "black", NA)
     } else {
-      col.lines <- c(NA, col.lines[1L], NA)
+      col.lines <- c(NA, col.lines[!is.na(col.lines)][1L], NA)
     }
   }
   args <- list(...)
