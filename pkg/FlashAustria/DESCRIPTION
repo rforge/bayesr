@@ -1,11 +1,14 @@
 Package: FlashAustria
-Version: 0.1-0
-Date: 2019-09-125
-Title: Data and Model for Predicting Flash Counts in Austria
+Version: 0.2-0
+Date: 2019-09-25
+Title: Data and Model for Re-Analysing Flash Counts in Austria
 Authors@R: c(
     person(given = "Thorsten", family = "Simon", role = c("aut", "cre"),
            email = "thorsten.simon@uibk.ac.at",
            comment = c(ORCID = "0000-0002-3778-7738")),
+    person(given = "Achim", family = "Zeileis", role = "aut",
+           email = "Achim.Zeileis@R-project.org",
+           comment = c(ORCID = "0000-0003-0918-3766")),
     person(given = "Wolfgang", family = "Schulz", role = "ctb", email = "w.schulz@ove.at")
   )
 Description: Lightning discharges counted on 32 x 32 sq-km grid over Austria, Europe,
