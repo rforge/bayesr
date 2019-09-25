@@ -360,19 +360,14 @@ however, in this case we additionally extract the empirical 2.5\% and 97.5\% qua
 using function \fct{c95} to obtain credible intervals (note, individual samples can be
 extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
-<<eval=FALSE>>=
-myblue <- function(n, ...) {
-  rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
-}
-
+<<plot2d, eval=FALSE>>=
+blues <- function(n, ...) sequential_hcl(n, "Blues", rev = TRUE)
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)),
   fill.select = c(0, 1, 0, 1))
 plot2d(pForeign ~ age, data = nd, add = TRUE,
   fill.select = c(0, 1, 0, 1), axes = FALSE,
-  s2.col = myblue, col.lines = "blue", )
-legend("topright", c("Foreign", "Swiss"), lwd = 1,
-  col = c("blue", "black"), box.col = NA, bg = NA)
+  s2.col = blues, col.lines = blues(1), )
 @
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
@@ -382,19 +377,9 @@ for the effect of \code{age} between both cases of factor variable \code{foreign
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-
-myblue <- function(n, ...) {
-  rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
-}
-
-plot2d(pSwiss ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$pSwiss, nd$pForeign)),
-  fill.select = c(0, 1, 0, 1))
-plot2d(pForeign ~ age, data = nd, add = TRUE,
-  fill.select = c(0, 1, 0, 1), axes = FALSE,
-  s2.col = myblue, col.lines = "blue", )
+<<plot2d>>
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
-  col = c("blue", "black"), box.col = NA, bg = NA)
+  col = c(blues(1), "black"), bty = "n")
 @
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8, results=hide>>=
 f <- participation ~ income + education +
@@ -1633,7 +1618,7 @@ FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 library("ggplot2")
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
   facet_wrap(~time, nrow = 2) + theme_minimal() +
@@ -1684,7 +1669,7 @@ from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}.
 library("ggplot2")
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
   facet_wrap(~time) + theme_minimal()
