@@ -45,18 +45,19 @@ changes in other aspects of the model specification.
 More detailed overviews and examples are provided in the articles:
 
 * [Available Model Terms](`r prefix`terms.html)
-* [Generalized Linear Models (+)](`r prefix`glm.html)
 * [BAMLSS Families](`r prefix`families.html)
-* [Visualization with distreg.vis](`r prefix`distregvis.html)
-* [Munich Rent Model](`r prefix`rent.html)
-* [Spatial Location-Scale Model](`r prefix`zn.html)
-* [Bayesian Multinomial Regression](`r prefix`multinomial.html)
-* [Bivariate Gaussian models for wind vectors](`r prefix`bivnorm.html)
-* [LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape](`r prefix`lasso.html)
-* [Bayesian Joint Models for Longitudinal and Survival Data](`r prefix`jm.html)
-* [Complex Space-Time Interactions in a Cox Model](`r prefix`cox.html)
 * [BAMLSS Model Frame](`r prefix`bf.html)
 * [Estimation Engines](`r prefix`engines.html)
+* [Visualization with distreg.vis](`r prefix`distregvis.html)
+
+* [Bayesian Joint Models for Longitudinal and Survival Data](`r prefix`jm.html)
+* [Bayesian Multinomial Regression](`r prefix`multinomial.html)
+* [Bivariate Gaussian models for wind vectors](`r prefix`bivnorm.html)
+* [Complex Space-Time Interactions in a Cox Model](`r prefix`cox.html)
+* [Generalized Linear Models (+)](`r prefix`glm.html)
+* [LASSO-Type Penalization in the Framework of Generalized Additive Models for Location, Scale and Shape](`r prefix`lasso.html)
+* [Munich Rent Model](`r prefix`rent.html)
+* [Spatial Location-Scale Model](`r prefix`zn.html)
 
 
 ## Installation
