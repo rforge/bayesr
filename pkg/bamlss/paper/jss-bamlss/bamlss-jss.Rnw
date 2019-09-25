@@ -367,9 +367,13 @@ myblue <- function(n, ...) {
 }
 
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$pSwiss, nd$pForeign)), lty = c(2, 1, 2))
-plot2d(pForeign ~ age, data = nd, col.lines = "blue", s2.col = myblue,
-  add = TRUE, lty = c(2, 1, 2))
+  ylim = range(c(nd$pSwiss, nd$pForeign)),
+  fill.select = c(0, 1, 0, 1))
+plot2d(pForeign ~ age, data = nd, add = TRUE,
+  fill.select = c(0, 1, 0, 1), axes = FALSE
+  s2.col = myblue, col.lines = "blue", )
+legend("topright", c("Foreign", "Swiss"), lwd = 1,
+  col = c("blue", "black"), box.col = NA, bg = NA)
 @
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
@@ -388,9 +392,8 @@ plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)),
   fill.select = c(0, 1, 0, 1))
 plot2d(pForeign ~ age, data = nd, add = TRUE,
-  fill.select = c(0, 1, 0, 1), s2.col = myblue, axes = FALSE)
-plot2d(pForeign[, "Mean"] ~ age, data = nd, add = TRUE,
-  col.lines = "blue", axes = FALSE)
+  fill.select = c(0, 1, 0, 1), axes = FALSE
+  s2.col = myblue, col.lines = "blue", )
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
 @
