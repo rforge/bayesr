@@ -1429,10 +1429,10 @@ R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
 +    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
 \end{Sinput}
 \begin{Soutput}
-logLik -36924.3 eps 0.0007 iteration 1000 qsel 7
-elapsed time:  5.43min
+logLik -36930.0 eps 0.0003 iteration 1000 qsel 7
+elapsed time:  5.31min
 Starting the sampler...
-|********************| 100%  0.00sec 27.73min
+|********************| 100%  0.00sec 27.76min
 \end{Soutput}
 \end{Schunk}
 %
