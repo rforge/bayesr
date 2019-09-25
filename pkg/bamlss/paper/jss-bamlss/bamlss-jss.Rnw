@@ -362,10 +362,14 @@ using function \fct{c95} to obtain credible intervals (note, individual samples 
 extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
 <<eval=FALSE>>=
+myblue <- function(n, ...) {
+  rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
+}
+
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)), lty = c(2, 1, 2))
-plot2d(pForeign ~ age, data = nd, col.lines = "blue", add = TRUE,
-  lty = c(2, 1, 2))
+plot2d(pForeign ~ age, data = nd, col.lines = "blue", s2.col = myblue,
+  add = TRUE, lty = c(2, 1, 2))
 @
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.

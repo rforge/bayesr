@@ -53,8 +53,13 @@ plot2d <- function(x, residuals = FALSE, rug = FALSE, jitter = TRUE,
     scheme <- 1
   if(ncol(x) > 10L)
     scheme <- 1
-  if(scheme != 1)
-    col.lines <- c(NA, "black", NA)
+  if(scheme != 1) {
+    if(is.null(col.lines)) {
+      col.lines <- c(NA, "black", NA)
+    } else {
+      col.lines <- c(NA, col.lines[1L], NA)
+    }
+  }
   args <- list(...)
   nc <- ncol(x)
   if(is.null(c.select)) {
