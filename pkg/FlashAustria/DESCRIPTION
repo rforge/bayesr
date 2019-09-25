@@ -1,7 +1,7 @@
 Package: FlashAustria
 Version: 0.2-0
 Date: 2019-09-25
-Title: Data and Model for Re-Analysing Flash Counts in Austria
+Title: Data and Model for Reanalyzing Flash Counts in Austria
 Authors@R: c(
     person(given = "Thorsten", family = "Simon", role = c("aut", "cre"),
            email = "thorsten.simon@uibk.ac.at",
