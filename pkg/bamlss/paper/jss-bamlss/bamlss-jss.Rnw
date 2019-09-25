@@ -367,7 +367,7 @@ plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   fill.select = c(0, 1, 0, 1))
 plot2d(pForeign ~ age, data = nd, add = TRUE,
   fill.select = c(0, 1, 0, 1), axes = FALSE,
-  s2.col = blues, col.lines = blues(1), )
+  s2.col = blues, col.lines = blues(1))
 @
 The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
 for the effect of \code{age} between both cases of factor variable \code{foreign}.
@@ -494,8 +494,6 @@ SwissLabor$cage <- cut(SwissLabor$age,
 The formula for the fused lasso model is then specified with the
 special \fct{la} model term constructor function provided in \pkg{bamlss}:
 
-\pagebreak
-
 <<>>=
 f <- participation ~ income + education + youngkids + oldkids + foreign + 
   la(cage, fuse = 2)
@@ -519,13 +517,12 @@ argument \code{sampler = FALSE} in the \fct{bamlss} call.
 \setkeys{Gin}{width=0.24\textwidth}
 <<echo=FALSE, fig=TRUE, width=3, height=5>>=
 par(mar = c(4.1, 4.1, 4.1, 0.5))
-lwd <- 2
-pathplot(b, 1, spar = FALSE, main = "Criterion", lwd = lwd)
+pathplot(b, 1, spar = FALSE, main = "Criterion", lwd = 2)
 @
 \setkeys{Gin}{width=0.36\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=5, results=hide>>=
 par(mar = c(4.1, 4.1, 4.1, 7.3))
-pathplot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "Coefficient paths age", lwd = lwd)
+pathplot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "Coefficient paths age", lwd = 2)
 @
 \setkeys{Gin}{width=0.32\textwidth}
 <<echo=FALSE, fig=TRUE, width=4, height=5, results=hide>>=
@@ -545,7 +542,8 @@ be visualized with
 <<eval=FALSE>>=
 pathplot(b)
 @
-and are shown in Figure~\ref{fig:lasso}. The BIC curve shows a clear minimum at the vertical
+and are shown in Figure~\ref{fig:lasso} (note that only the coefficient paths for
+variable \code{cage} are shown). The BIC curve shows a clear minimum at the vertical
 gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
 categories out of the model (shrink to zero), or even fuses them. In the right panel of
 Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
