@@ -164,8 +164,8 @@ and $\alpha$:
 ```{r, eval=FALSE}
 plot(m, model = c("lambda", "alpha"))
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="80%"}
-par(mfrow = c(1, 2), mar = c(4.1, 4.1, 0.1, 1.1))
+```{r, fig.width = 7, fig.height = 3, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(1, 2))
 plot(m, model = c("lambda", "alpha"))
 ```
 The left plot is the estimated baseline hazard effect, the right plot the estimated association
@@ -176,8 +176,8 @@ The `age` effect for the time-constant parameter $\gamma$ of the risk model is p
 ```{r, eval=FALSE}
 plot(m, model = "gamma")
 ```
-```{r, fig.width = 4, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="40%"}
-par(mfrow = c(1, 1), mar = c(4.1, 4.1, 0.1, 1.1))
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="50%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1))
 plot(m, model = "gamma")
 ```
 Again, the effect of age on the logarithmic risk scale is basically linear and increasing. The
@@ -185,7 +185,7 @@ estimated effects for the bodymarker model in the $\mu$ parameter are plotted in
 ```{r, eval=FALSE}
 plot(m, model = "mu")
 ```
-```{r, fig.width = 8, fig.height = 3, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="100%"}
+```{r, fig.width = 8, fig.height = 2.4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="100%"}
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 0.1, 1.1))
 plot(m, model = "mu", term = c("ti(id)", "ti(id,year)", "ti(year)"))
 ```

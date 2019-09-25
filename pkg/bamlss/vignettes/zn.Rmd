@@ -141,10 +141,10 @@ plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district,
 mtext(expression(sigma), side = 3, line = 1, cex = 2)
 
 plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district,
-  color = diverge_hcl, range = r_mu, mdensity = 20
+  color = diverge_hcl, range = r_mu, mdensity = 20,
   shift = 0.1, title = "Random effect")
 plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district,
-  color = diverge_hcl, range = r_sigma, mdensity = 20
+  color = diverge_hcl, range = r_sigma, mdensity = 20,
   shift = 0.1, title = "Random effect")
 ```
 The maps clearly show that the unstructured spatial effect seems to very small, if existent
