@@ -270,7 +270,7 @@ nd$pForeign &lt;-<span class="st"> </span><span class="kw"><a href="https://www.
   <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">"topright"</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"foreign yes"</span>, <span class="st">"foreign no"</span>), <span class="dt">lwd =</span> <span class="dv">1</span>,
   <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"blue"</span>, <span class="st">"black"</span>))</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-10-1.png" width="480" style="display: block; margin: auto;"> The plot nicely depicts the nonlinear effect of variable <code>age</code> for the two levels of <code>foreign</code>.</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-10-1.png" width="50%" style="display: block; margin: auto;"> The plot nicely depicts the nonlinear effect of variable <code>age</code> for the two levels of <code>foreign</code>.</p>
 </div>
 <div id="countreg" class="section level2">
 <h2 class="hasAnchor">
@@ -301,7 +301,7 @@ nd$pForeign &lt;-<span class="st"> </span><span class="kw"><a href="https://www.
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(DebTrivedi$ofp),
   <span class="dt">xlab =</span> <span class="st">"Number of physician office visits"</span>,
   <span class="dt">ylab =</span> <span class="st">"Frequency"</span>)</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-13-1.png" width="480" style="display: block; margin: auto;"> which shows very large counts and also a large number of zero counts. Our first model is a Poisson regression, which can be estimated with</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-13-1.png" width="50%" style="display: block; margin: auto;"> which shows very large counts and also a large number of zero counts. Our first model is a Poisson regression, which can be estimated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibly.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
 
@@ -352,7 +352,7 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
 <pre><code>## Warning in residuals.bamlss(x, ...): non finite quantiles from
 ## probabilities, set to NA!</code></pre>
-<p><img src="glm_files/figure-html/unnamed-chunk-18-1.png" width="768" style="display: block; margin: auto;"> Clearly, the plots shows that the model performance is not very good at the tails of the data, this might be caused by the large amount of zero counts in the data, which is not accounted for using the Poisson distribution.</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-18-1.png" width="80%" style="display: block; margin: auto;"> Clearly, the plots shows that the model performance is not very good at the tails of the data, this might be caused by the large amount of zero counts in the data, which is not accounted for using the Poisson distribution.</p>
 <p>Therefore, another possible candidate for the response distribution is the zero-inflated negative binomial distribution, which is implemented in the <em>gamlss</em> package <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Stasinopoulos+Rigby:2018"><strong>???</strong></span>)</span> in the function <code>ZINBI</code>. The family has 3 parameters <code>mu</code>, <code>sigma</code> and <code>nu</code>. In this example we model distributional parameters <code>mu</code> and <code>sigma</code> in terms of covariates by setting up the model formula with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
   ofp ~<span class="st"> </span>hosp +<span class="st"> </span>health +<span class="st"> </span>numchron +<span class="st"> </span>gender +<span class="st"> </span>school +<span class="st"> </span>privins,
@@ -433,7 +433,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## ---</code></pre>
 <p>and the corresponding randomized quantile residuals plots are created with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
-<p><img src="glm_files/figure-html/unnamed-chunk-24-1.png" width="768" style="display: block; margin: auto;"> The plots indicate a better model fit compared to the Poisson model, however, for very large counts the model performance could probably be improved further. The corresponding DIC values are</p>
+<p><img src="glm_files/figure-html/unnamed-chunk-24-1.png" width="80%" style="display: block; margin: auto;"> The plots indicate a better model fit compared to the Poisson model, however, for very large counts the model performance could probably be improved further. The corresponding DIC values are</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2)</code></pre></div>
 <pre><code>##         DIC        pd
 ## b1 35958.86  7.813035

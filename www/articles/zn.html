@@ -204,7 +204,7 @@ K &lt;-<span class="st"> </span>K[i, i]</code></pre></div>
 b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ZambiaNutrition, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</code></pre></div>
 <p>and the estimated univariate effects are plotted with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b)</code></pre></div>
-<p><img src="zn_files/figure-html/unnamed-chunk-7-1.png" width="60%" style="display: block; margin: auto;"> The plot indicates that only the effect of variable <code>mbmi</code> on the standard deviation is not significant according the 95% credible intervals and basically follows the zero horizontal line.</p>
+<p><img src="zn_files/figure-html/unnamed-chunk-7-1.png" width="80%" style="display: block; margin: auto;"> The plot indicates that only the effect of variable <code>mbmi</code> on the standard deviation is not significant according the 95% credible intervals and basically follows the zero horizontal line.</p>
 <p>To visualize the structured and unstructured spatial effects we predict using the district information</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## First, note that we have the structured id = 'mrf1' and unstructured
 ## spatial effect id = 're2', also indicated in the model summary
@@ -332,15 +332,15 @@ r_sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdoc
 <p>and plot the effects using a diverging color legend.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## MRF smooth effect.
 <span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_str$mu, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_mu,
-  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(mu), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>)
+  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(mu), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>, <span class="dt">mdensity =</span> <span class="dv">20</span>)
 <span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_str$sigma, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_sigma,
-  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(sigma), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>)
+  <span class="dt">main =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/expression">expression</a></span>(sigma), <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"MRF"</span>, <span class="dt">mdensity =</span> <span class="dv">20</span>)
 
 ## Random effects.
 <span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_unstr$mu, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_mu,
-  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>)
+  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>, <span class="dt">mdensity =</span> <span class="dv">20</span>)
 <span class="kw"><a href="../reference/plotmap.html">plotmap</a></span>(ZambiaBnd, <span class="dt">x =</span> p_unstr$sigma, <span class="dt">id =</span> nd$district, <span class="dt">color =</span> diverge_hcl, <span class="dt">range =</span> r_sigma,
-  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>)</code></pre></div>
+  <span class="dt">shift =</span> <span class="fl">0.1</span>, <span class="dt">title =</span> <span class="st">"Random effect"</span>, <span class="dt">mdensity =</span> <span class="dv">20</span>)</code></pre></div>
 <p><img src="zn_files/figure-html/unnamed-chunk-11-1.png" width="60%" style="display: block; margin: auto;"> The maps clearly show that the unstructured spatial effect seems to very small, if existent at all when looking the 95% credible intervals:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Again predict, but now additionally compute 95% credible intervals
 ## using function c95().

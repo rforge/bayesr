@@ -302,7 +302,7 @@ nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocument
 nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"x2"</span>)</code></pre></div>
 <p>Plot the estimated effect of <code>x2</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>x2, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="engines_files/figure-html/unnamed-chunk-12-1.png" width="480" style="display: block; margin: auto;"></p>
+<p><img src="engines_files/figure-html/unnamed-chunk-12-1.png" width="50%" style="display: block; margin: auto;"></p>
 <p>The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we assume multivariate normal priors for the regression coefficients and an inverse Gamma prior for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals can be created. The MCMC algorithm consecutively samples for <span class="math inline">\(t = 1, \ldots, T\)</span> from the full conditionals <span class="math display">\[
 \boldsymbol{\beta}^{(t)} | \cdot \sim N\left(\boldsymbol{\mu}_{\boldsymbol{\beta}}^{(t - 1)}, 
   \boldsymbol{\Sigma}_{\boldsymbol{\beta}}^{(t - 1)}\right)
@@ -463,7 +463,7 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 105.551 pd = 48.6437 runtime = 2.117
+## DIC = 105.551 pd = 48.6437 runtime = 2.045
 ## ---
 ## Optimizer summary:
 ## -
@@ -478,7 +478,7 @@ for(j in <span class="kw"><a href="https://www.rdocumentation.org/packages/base/
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px1 ~<span class="st"> </span>x1, <span class="dt">data =</span> nd)
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px2 ~<span class="st"> </span>x2, <span class="dt">data =</span> nd)
 <span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px3 ~<span class="st"> </span>x3, <span class="dt">data =</span> nd)</code></pre></div>
-<p><img src="engines_files/figure-html/unnamed-chunk-16-1.png" width="960" style="display: block; margin: auto;"></p>
+<p><img src="engines_files/figure-html/unnamed-chunk-16-1.png" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
