@@ -208,7 +208,7 @@ plot2d(page ~ age, data = nd, ylim = ylim)
 plot2d(pkilometer ~ kilometer, data = nd, ylim = ylim)
 plot2d(ptia ~ tia, data = nd, ylim = ylim)
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="80%"}
+```{r, fig.width = 8, fig.height = 2.4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="100%"}
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 0.1, 1.1))
 ylim <- range(c(nd$page, nd$pkilometer, nd$ptia))
 plot2d(page ~ age, data = nd, ylim = ylim)
@@ -268,7 +268,7 @@ for distribution parameters `mu` and `sigma` can be visualized by
 ```{r, eval=FALSE}
 plot(b, model = c("mu", "sigma"))
 ```
-```{r, fig.width = 9, fig.height = 3.5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+```{r, fig.width = 7, fig.height = 3, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
 par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(1, 2))
 plot(b, pages = 1, spar = FALSE, scheme = 2, grid = 100)
 ```
@@ -301,7 +301,7 @@ well the model fits to the data
 ```{r, eval = FALSE}
 plot(b, which = c("hist-resid", "qq-resid"))
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+```{r, fig.width = 7.5, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
 par(mfrow = c(1, 2))
 plot(b, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
@@ -315,7 +315,7 @@ nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
 nd$ptimes <- predict(b, newdata = nd, model = "mu", FUN = c95)
 plot2d(ptimes ~ times, data = nd)
 ```
-```{r, fig.width = 7, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="50%"}
 par(mar = c(4.1, 4.1, 1.1, 1.1))
 nd <- data.frame("times" = seq(2.4, 57.6, length = 100))
 nd$ptimes <- predict(b, newdata = nd, model = "mu", FUN = c95)
@@ -324,7 +324,7 @@ plot2d(ptimes ~ times, data = nd)
 and as above in the first example, argument `FUN` can be any function, e.g., the `identity()`
 function could be used to calculate other statistics of the distribution, e.g., plot
 the estimated densities for each iteration of the MCMC sampler for `times = 10` and `times = 40`:
-```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="60%"}
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="50%"}
 ## Predict for the two scenarios.
 nd <- data.frame("times" = c(10, 40))
 ptimes <- predict(b, newdata = nd, FUN = identity, type = "parameter")
@@ -352,12 +352,11 @@ for(i in 1:ncol(ptimes$mu)) {
 
 ## Visualize.
 par(mar = c(4.1, 4.1, 0.1, 0.1))
+col <- rainbow_hcl(2, alpha = 0.01)
 plot2d(dens$t10 ~ accel, data = mcycle,
-  col.lines = rgb(1, 0, 0, alpha = 0.05),
-  ylab = "Density")
+  col.lines = col[1], ylab = "Density")
 plot2d(dens$t40 ~ accel, data = mcycle,
-  col.lines = rgb(0, 0, 1, alpha = 0.05),
-  add = TRUE)
+  col.lines = col[2], add = TRUE)
 ```
 
 ## References

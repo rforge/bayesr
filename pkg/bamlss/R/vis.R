@@ -1351,8 +1351,16 @@ plotmap <- function(map, x = NA, id = NULL, select = NULL,
     args$x <- map@data[[select[1]]]
     args$plot <- FALSE
     pal <- do.call("colorlegend", delete.args("colorlegend", args))
-
-    plot(map, col = pal$map(map@data[[select[1]]]), border = args$border, add = args$add,
+    missing <- any(is.na(map@data[[select[1]]]))
+    if(missing) {
+      if(is.null(args$mdensity))
+        args$mdensity <- 20
+      plot(map, density = args$mdensity, border = args$border, xlim = args$xlim,
+        ylim = args$ylim, xpd = args$xpd, angle = args$angle, pbg = args$pbg,
+        axes = args$axes, lty = args$lty, lwd = args$lwd, xlab = args$xlab,
+        ylab = args$ylab, main = args$main)
+    }
+    plot(map, col = pal$map(map@data[[select[1]]]), border = args$border, add = args$add | missing,
       xlim = args$xlim, ylim = args$ylim, xpd = args$xpd, density = args$density,
       angle = args$angle, pbg = args$pbg, axes = args$axes, lty = args$lty,
       lwd = args$lwd, xlab = args$xlab, ylab = args$ylab, main = args$main)

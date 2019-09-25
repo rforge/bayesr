@@ -76,7 +76,8 @@ and the estimated univariate effects are plotted with
 ```{r, eval=FALSE}
 plot(b)
 ```
-```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
+```{r, fig.width = 7.2, fig.height = 5.8, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(2, 2))
 if(!file.exists("figures/ZambiaModel.rda")) {
   set.seed(321)
   b <- bamlss(f, data = ZambiaNutrition, family = "gaussian")
@@ -84,7 +85,6 @@ if(!file.exists("figures/ZambiaModel.rda")) {
 } else {
   load("figures/ZambiaModel.rda")
 }
-par(mar = c(4.1, 4.1, 1.1, 0.1))
 plot(b, ask = FALSE)
 ```
 The plot indicates that only the effect of variable `mbmi` on the standard deviation is not
@@ -119,26 +119,32 @@ and plot the effects using a diverging color legend.
 ```{r, eval=FALSE}
 ## MRF smooth effect.
 plotmap(ZambiaBnd, x = p_str$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  main = expression(mu), shift = 0.1, title = "MRF")
+  main = expression(mu), shift = 0.1, title = "MRF", mdensity = 20)
 plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  main = expression(sigma), shift = 0.1, title = "MRF")
+  main = expression(sigma), shift = 0.1, title = "MRF", mdensity = 20)
 
 ## Random effects.
 plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  shift = 0.1, title = "Random effect")
+  shift = 0.1, title = "Random effect", mdensity = 20)
 plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  shift = 0.1, title = "Random effect")
+  shift = 0.1, title = "Random effect", mdensity = 20)
 ```
 ```{r, fig.width = 7, fig.height = 7, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="60%"}
 par(mfrow = c(2, 2), mar = c(0, 0, 4.1, 0))
-plotmap(ZambiaBnd, x = p_str$mu, id = nd$district, color = diverge_hcl, range = r_mu,
-  main = expression(mu), shift = 0.1, title = "MRF")
-plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
-  main = expression(sigma), shift = 0.1, title = "MRF")
+plotmap(ZambiaBnd, x = p_str$mu, id = nd$district,
+  color = diverge_hcl, range = r_mu, shift = 0.1, title = "MRF",
+  mdensity = 20)
+mtext(expression(mu), side = 3, line = 1, cex = 2)
+plotmap(ZambiaBnd, x = p_str$sigma, id = nd$district,
+  color = diverge_hcl, range = r_sigma, shift = 0.1, title = "MRF",
+  mdensity = 20)
+mtext(expression(sigma), side = 3, line = 1, cex = 2)
 
-plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district, color = diverge_hcl, range = r_mu,
+plotmap(ZambiaBnd, x = p_unstr$mu, id = nd$district,
+  color = diverge_hcl, range = r_mu, mdensity = 20
   shift = 0.1, title = "Random effect")
-plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district, color = diverge_hcl, range = r_sigma,
+plotmap(ZambiaBnd, x = p_unstr$sigma, id = nd$district,
+  color = diverge_hcl, range = r_sigma, mdensity = 20
   shift = 0.1, title = "Random effect")
 ```
 The maps clearly show that the unstructured spatial effect seems to very small, if existent

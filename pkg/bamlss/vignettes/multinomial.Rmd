@@ -68,7 +68,7 @@ summary(b)
 and suggests reasonable acceptance rates. However, for a final model run it is recommend to
 increase the number of iteration, the burn-in phase as well as the thinning parameter of the
 sampling engine function `GMCMC()`. The estimated effects can be plotted with
-```{r, fig.width = 8, fig.height = 3, fig.align = "center", dev = "png", out.width="100%"}
+```{r, fig.width = 8, fig.height = 2.4, fig.align = "center", dev = "png", out.width="100%"}
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b)
 ```
@@ -92,8 +92,8 @@ probs <- as.data.frame(probs)
 probs[["MarriedPartnered"]] <- 1 - rowSums(probs)
 ```
 The estimated probabilities can then be visualized with:
-```{r, fig.width = 6, fig.height = 5, fig.align = "center", dev = "png", out.width="60%"}
-par(mar = c(4.1, 4.1, 0.1, 0.1))
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="50%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1))
 plot2d(probs ~ age, data = nd, col.lines = rainbow_hcl(4),
   lwd = 2, scheme = 1, ylab = "Fitted probabilities", ylim = c(0, 1))
 legend("center", names(probs), lty = 1, lwd = 2, col = rainbow_hcl(4))

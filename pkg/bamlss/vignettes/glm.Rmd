@@ -145,7 +145,7 @@ plot2d(pForeign ~ age, data = nd, col.lines = "blue", add = TRUE,
 legend("topright", c("foreign yes", "foreign no"), lwd = 1,
   col = c("blue", "black"))
 ```
-```{r, fig.width = 5, fig.height = 5, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="50%"}
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1,
   foreign = factor(1, levels = 1:2, labels = c("no", "yes")))
@@ -158,7 +158,7 @@ myblue <- function(n, ...) {
   rev(diverge_hcl(n * 2, h = c(260, 260), p1 = 0.8)[1:n])
 }
 
-par(mar = c(4.5, 4, 0.5, 0.5))
+par(mar = c(4.1, 4.1, 1.1, 1.1))
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$p.no, nd$pForeign)), lty = c(2, 1, 2))
 plot2d(pForeign ~ age, data = nd, s2.col = myblue, add = TRUE,
@@ -189,8 +189,8 @@ plot(table(DebTrivedi$ofp),
   xlab = "Number of physician office visits",
   ylab = "Frequency")
 ```
-```{r, fig.width = 5, fig.height = 5, fig.align = "center", dev = "png", echo = FALSE, dev = "png", results = 'hide', message=FALSE}
-par(mar = c(4.5, 4, 0.5, 0.5))
+```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", results='hide', message=FALSE, echo=FALSE, out.width="50%"}
+par(mar = c(4.1, 4.1, 1.1, 1.1))
 plot(table(DebTrivedi$ofp),
   xlab = "Number of physician office visits",
   ylab = "Frequency")
@@ -229,7 +229,7 @@ to evaluate how good the models fits to the data.
 ```{r, eval = FALSE}
 plot(b1, which = c("hist-resid", "qq-resid"))
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", echo=FALSE}
+```{r, fig.width = 7.5, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
 par(mfrow = c(1, 2))
 plot(b1, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
@@ -281,7 +281,7 @@ and the corresponding randomized quantile residuals plots are created with
 ```{r, eval = FALSE}
 plot(b2, which = c("hist-resid", "qq-resid"))
 ```
-```{r, fig.width = 8, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png"}
+```{r, fig.width = 7.5, fig.height = 4, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
 par(mfrow = c(1, 2))
 plot(b2, which = c("hist-resid", "qq-resid"), spar = FALSE)
 ```
