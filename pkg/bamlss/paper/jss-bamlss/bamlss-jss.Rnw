@@ -542,8 +542,7 @@ be visualized with
 <<eval=FALSE>>=
 pathplot(b)
 @
-and are shown in Figure~\ref{fig:lasso} (note that only the coefficient paths for
-variable \code{cage} are shown). The BIC curve shows a clear minimum at the vertical
+Figure~\ref{fig:lasso} shows the BIC curve and coefficient paths for \code{cage}. The BIC curve assumes a clear minimum at the vertical
 gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
 categories out of the model (shrink to zero), or even fuses them. In the right panel of
 Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
@@ -1256,7 +1255,7 @@ For a list of all implemented families, please see the documentation of \code{?b
 
 \subsection{Estimation engines} \label{sec:engines}
 
-Estimation engines in \pkg{bamlss} are usually based on the model frame setup function
+Estimation engines in \pkg{bamlss} are usually based on the model frame setup function\linebreak
 \fct{bamlss.frame} (see Section~\ref{sec:bf}), i.e., the functions all have a \code{x} argument,
 which contains all the necessary model and penalty matrices, and a \code{y} argument, which is the
 response (univariate or multivariate). In addition, an estimation engine usually has a \code{family}
@@ -1436,12 +1435,11 @@ pathplot(b, which = "loglik.contrib", intercept = FALSE)
 %
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
-\begin{center}
+\centering
 <<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
 pathplot(b, which = "loglik.contrib", intercept = FALSE, spar = FALSE)
 @
-\end{center}
 \caption{Contribution to the log-likelihood of individual terms during
 gradient boosting.}
 \label{fig:appboost}
@@ -1505,7 +1503,7 @@ plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"))
 @
 %
 \begin{figure}[t!]
-\begin{center}
+\centering
 \setkeys{Gin}{width=1\textwidth}
 <<echo=FALSE, fig=TRUE, height=3, width=6, png=TRUE, pdf=FALSE>>=
 par(mfrow = c(1, 3))
@@ -1513,7 +1511,6 @@ plot(b, term = c("s(sqrt_cape)", "s(q_prof_PC1)", "s(sqrt_lsp)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
 @
-\end{center}
 \caption{Effect of the terms \code{s(sqrt\_cape)} and \code{s(q\_prof\_PC1)}
 from the model \code{mu} and term \code{s(sqrt\_lsp)} from model \code{theta}.
 Credible intervals derived from MCMC samples.}
@@ -1589,15 +1586,14 @@ expect <- as.table(expect)
 obsrvd <- table(FlashAustriaEval$counts)[1:50]
 @
 
-\begin{figure}[!t]
+\begin{figure}[p!]
 \setkeys{Gin}{width=.7\textwidth}
-\begin{center}
+\centering
 <<fig=TRUE, height=5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 3.1, 0.1))
 library("countreg")
 rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
 @
-\end{center}
 \caption{Hanging rootogram for evaluating calibration of count data model
 on out-of-sample data. Red line indicates the expected frequencies on the
 square root scale. Gray bars indicate observed frequencies on square root
@@ -1605,9 +1601,9 @@ scale hanging from the red line.}
 \label{fig:approoto}
 \end{figure}
 
-\begin{figure}[t!]
+\begin{figure}[p!]
 \setkeys{Gin}{width=0.8\textwidth}
-\begin{center}
+\centering
 <<fig=TRUE, echo=FALSE, width=7, height=5, png=TRUE, pdf=FALSE>>=
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
@@ -1622,7 +1618,6 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   facet_wrap(~time, nrow = 2) + theme_minimal() +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 @
-\end{center}
 \caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
 September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
 13~UTC, i.e., the probability of having observed $10$ or more counts within one
