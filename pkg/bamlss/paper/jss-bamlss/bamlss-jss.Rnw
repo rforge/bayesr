@@ -1458,11 +1458,11 @@ gradient boosting.}
 \label{fig:appboost}
 \end{figure}
 %
-After 1000~iterations the term \code{s(sqrt_cape).mu} has the highest contribution
+After 1000~iterations the term \code{s(q_prof_PC1).mu} has the highest contribution
 to the log-likelihood with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])} %
-followed by \code{s(q_prof_PC1).mu} with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])} %
+followed by \code{s(sqrt_cape).mu} with %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}.
 The term of the parameter $\theta$ \code{s(sqrt_lsp).theta} has a relatively small
 contribution with %
 \Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$theta["s(sqrt_lsp)",2])}.
@@ -1620,8 +1620,12 @@ scale hanging from the red line.}
 \setkeys{Gin}{width=0.8\textwidth}
 \begin{center}
 <<fig=TRUE, echo=FALSE, width=7, height=5>>=
+library("sf")
+fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
+
 library("ggplot2")
-world <- rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
@@ -1672,7 +1676,7 @@ from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}.
 %
 <<eval=FALSE>>=
 library("ggplot2")
-world <- rnaturalearth:: ne_countries(scale = "medium", returnclass = "sf")
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   colorspace::scale_fill_continuous_sequential("Oslo", rev = TRUE) +
   geom_sf(data = world, col = "white", fill = NA) +
