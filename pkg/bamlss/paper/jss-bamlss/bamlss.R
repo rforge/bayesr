@@ -1,8 +1,9 @@
 # ----Packages------------------------------------------------------------
 library("bamlss")
-library("countreg")
 library("ggplot2")
 library("sf")
+## from R-Forge
+library("countreg")
 
 
 # ----Section 2.1: Basic Bayesian regression: Logit model-----------------
@@ -12,13 +13,8 @@ data("SwissLabor", package = "AER")
 f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
 
 ## Estimate model.
-if(!file.exists("SwissLaborModel.rda")) {
-  set.seed(123)
-  b <- bamlss(f, family = "binomial", data = SwissLabor)
-  save(b, file = "SwissLaborModel.rda")
-} else {
-  load("SwissLaborModel.rda")
-}
+set.seed(123)
+b <- bamlss(f, family = "binomial", data = SwissLabor)
 
 ## Model summary.
 summary(b)
@@ -29,7 +25,6 @@ plot(b, which = c("samples", "max-acf"))
 ## Predictions on probability scale.
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1, foreign = "no")
-
 nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
 nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
@@ -52,13 +47,8 @@ f <- participation ~ income + education +
   youngkids + oldkids + foreign + s(age, k = 10)
 
 ## Estimate model.
-if(!file.exists("SwissLaborModel-spline.rda")) {
-  set.seed(123)
-  b <- bamlss(f, family = "binomial", data = SwissLabor)
-  save(b, file = "SwissLaborModel-spline.rda")
-} else {
-  load("SwissLaborModel-spline.rda")
-}
+set.seed(123)
+b <- bamlss(f, family = "binomial", data = SwissLabor)
 
 ## Plot estimated smooth effect.
 plot(b, term = "s(age)",
@@ -73,15 +63,9 @@ SwissLabor$cage <- cut(SwissLabor$age,
 f <- participation ~ income + education + youngkids + oldkids + foreign + la(cage, fuse = 2)
 
 ## Estimate model using the lasso optimizer function.
-if(!file.exists("SwissLaborModel-lasso.rda")) {    
-  b <- bamlss(f, family = "binomial", data = SwissLabor,
-    optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
-    criterion = "BIC")
-
-  save(b, file = "SwissLaborModel-lasso.rda")
-} else {
-  load("SwissLaborModel-lasso.rda")
-}
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
+  criterion = "BIC")
 
 ## Figure 3: BIC path, paths of coefficients and estimated effect.
 par(mfrow = c(1, 3), mar = c(4.1, 4.1, 5, 7.3))
@@ -102,13 +86,8 @@ data("mcycle", package = "MASS")
 f <- list(accel ~ s(times, k = 20), sigma ~ s(times, k = 20))
 
 ## Estimate model.
-if(!file.exists("McycleModel.rda")) {
-  set.seed(456)
-  b <- bamlss(f, data = mcycle, family = "gaussian")
-  save(b, file = "McycleModel.rda")
-} else {
-  load("McycleModel.rda")
-}
+set.seed(456)
+b <- bamlss(f, data = mcycle, family = "gaussian")
 
 ## Visualize estimated effects.
 par(mfrow = c(1, 2))
@@ -174,10 +153,11 @@ paste0("mu.s.s(x3)", ".b", 1:10)
 
 
 # ----Section 5: Flexible count regression for lightning reanalysis ------
-## Load the data and model.
+## FlashAustria package can be installed from R-Forge
+## install.packages("FlashAustria", repos = "http://R-Forge.R-project.org")
+
+## Load the data.
 data("FlashAustria", package = "FlashAustria")
-data("FlashAustriaModel", package = "FlashAustria")
-b <- FlashAustriaModel
 
 ## Show some aspects if the data set.
 head(FlashAustriaTrain)
@@ -191,8 +171,11 @@ f <- list(
   theta ~ s(sqrt_lsp, bs = "ps")
 )
 
-## Estimate model.
-if(FALSE) {
+## Load pre-computed model (or re-estimate).
+if(TRUE) {
+  data("FlashAustriaModel", package = "FlashAustria")
+  b <- FlashAustriaModel
+} else {
   set.seed(111)
   b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
     optimizer = boost, maxit = 1000,         ## Boosting arguments.
@@ -356,12 +339,7 @@ f <- list(
   sigma ~ s(time)
 )
 
-if(!file.exists("GrowthCurveModel.rda")) {
-  b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
-  save(b, file = "GrowthCurveModel.rda")
-} else {
-  load("GrowthCurveModel.rda")
-}
+b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
 
 ## Plot estimated effects.
 par(mfrow = c(1, 2))
