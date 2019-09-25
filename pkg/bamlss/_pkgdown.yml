@@ -30,34 +30,34 @@ navbar:
       menu:
       - text: Available Model Terms
         href: articles/terms.html
-      - text: Generalized Linear Models (+)
-        href: articles/glm.html
       - text: Families
         href: articles/families.html
+      - text: BAMLSS Model Frame
+        href: articles/bf.html
+      - text: Estimation Engines
+        href: articles/engines.html
       - text: Visualization with distreg.vis
         href: articles/distregvis.html
+      - text: Generalized Linear Models (+)
+        href: articles/glm.html
+      - text: Bayesian Multinomial Regression
+        href: articles/multinomial.html
       - text: Munich Rent Example
         href: articles/rent.html
       - text: Spatial Location-Scale Model
         href: articles/zn.html
-      - text: Bayesian Multinomial Regression
-        href: articles/multinomial.html
-      - text: Estimation Engines
-        href: articles/engines.html
-      - text: BAMLSS Model Frame
-        href: articles/bf.html
       - text: Miscellaneous Topics
         href: articles/misc.html
     - text: Publications
-      menu: 
-      - text: Bivariate Gaussian Models for Wind Vectors
-        href: articles/bivnorm.html
-      - text: LASSO-Type Penalization in the Framework of GAMLSS
-        href: articles/lasso.html
+      menu:
       - text: Bayesian Joint Models for Longitudinal and Survival Data
         href: articles/jm.html
+      - text: Bivariate Gaussian Models for Wind Vectors
+        href: articles/bivnorm.html
       - text: Complex Space-Time Interactions in a Cox Model
         href: articles/cox.html
+      - text: LASSO-Type Penalization in the Framework of GAMLSS
+        href: articles/lasso.html
     - text: Reference
       href: reference/index.html
     - text: Changelog

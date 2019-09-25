@@ -175,8 +175,8 @@ parameters(b, mstop = 100)
 head(do.call("cbind", predict(b, mstop = 1)))
 head(do.call("cbind", predict(b, mstop = 100)))
 
-## Another example using the modified liklihood
-## bootsing algorithm.
+## Another example using the modified likelihood
+## boosting algorithm.
 f <- list(
   num ~ x1 + x2 + x3 + lon + lat +
     s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),

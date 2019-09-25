@@ -25,7 +25,7 @@ prefix <- "http://bayesr.R-Forge.R-project.org/articles/" ## ""
 
 Similar to the well-known `model.frame()` function that is used, e.g., by the linear model 
 fitting function `lm()`, or for generalized linear models `glm()`, the `bamlss.frame()`
-function extracts a ``model frame'' for fitting distributional regression models. 
+function extracts a "model frame" for fitting distributional regression models. 
 Internally, the function parses model formulae, one for each parameter of the distribution,
 using the _Formula_ package infrastructures [@bamlss:Zeileis+Croissant:2010] in combination
 with `model.matrix()` processing for linear effects and `smooth.construct()` processing of
