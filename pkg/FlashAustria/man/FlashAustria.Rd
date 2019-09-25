@@ -4,7 +4,7 @@
 \alias{FlashAustriaEval}
 \alias{FlashAustriaCase}
 
-\title{Flash Counts for Austria}
+\title{Flash Counts in Austria 2010--2018}
 
 \description{
 Lightning discharges counted on 32 x 32 sq-km grid over Austria, Europe,
@@ -20,29 +20,29 @@ The temporal resolution of the data is hourly.
 Only a random subset of the data given positive counts
 is provided for training and evaluation:
 \code{FlashAustriaTrain} and \code{FlashAustriaEval} contain 12000 and 6000
-observations, respectively.
-As prediction cases 2019-09-15 06 UTC, 2001-09-15 17 UTC, 2001-09-15 23 UTC and
-2001-09-16 13 UTC are provided.
+observations, respectively. 
+The following prediction cases are provided: 2019-09-15 06 UTC, 2001-09-15 17 UTC, 2001-09-15 23 UTC and
+2001-09-16 13 UTC.
 }
 
 \format{
 Three objects \code{FlashAustriaTrain}, \code{FlashAustriaEval} and
 \code{FlashAustriaCase} are added to the environment. \code{FlashAustriaTrain} and
-\code{FlashAustriaEval} are \code{data.frame}s. \code{FlashAustriaCase} is a
-\code{"sf"} object---which contains a geometry column providing the 32 x 32 sq-km grid
+\code{FlashAustriaEval} are \code{data.frame}s. \code{FlashAustriaCase} is an
+\code{"sf"} object, containing a geometry column providing the 32 x 32 sq-km grid
 as polygons.
 
 \describe{
-  \item{counts}{ALDIS counts of cloud-to-ground lightning discharges}
-  \item{d2m}{2m dewpoint temperature}
-  \item{q_prof_PC1}{first principal component of the vertical profile of specific humidity}
-  \item{cswc_prof_PC4}{fourth principal component of the vertical profile of
-                       specific snow water content}
-  \item{t_prof_PC1}{first principal component of the vertical profile of temperature}
-  \item{v_prof_PC2}{second principal component of the vertical profile of v
-                    component of wind}
-  \item{sqrt_cape}{square root of convective available potential energy}
-  \item{sqrt_lsp}{square root of large scale precipitation}
+  \item{counts}{ALDIS counts of cloud-to-ground lightning discharges.}
+  \item{d2m}{2m dewpoint temperature.}
+  \item{q_prof_PC1}{First principal component of the vertical profile of specific humidity.}
+  \item{cswc_prof_PC4}{Fourth principal component of the vertical profile of
+                       specific snow water content.}
+  \item{t_prof_PC1}{First principal component of the vertical profile of temperature.}
+  \item{v_prof_PC2}{Second principal component of the vertical profile of v
+                    component of wind.}
+  \item{sqrt_cape}{Square root of convective available potential energy.}
+  \item{sqrt_lsp}{Square root of large scale precipitation.}
 }
 }
 
