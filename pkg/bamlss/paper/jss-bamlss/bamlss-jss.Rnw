@@ -370,7 +370,7 @@ plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)),
   fill.select = c(0, 1, 0, 1))
 plot2d(pForeign ~ age, data = nd, add = TRUE,
-  fill.select = c(0, 1, 0, 1), axes = FALSE
+  fill.select = c(0, 1, 0, 1), axes = FALSE,
   s2.col = myblue, col.lines = "blue", )
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
@@ -392,7 +392,7 @@ plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)),
   fill.select = c(0, 1, 0, 1))
 plot2d(pForeign ~ age, data = nd, add = TRUE,
-  fill.select = c(0, 1, 0, 1), axes = FALSE
+  fill.select = c(0, 1, 0, 1), axes = FALSE,
   s2.col = myblue, col.lines = "blue", )
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c("blue", "black"), box.col = NA, bg = NA)
