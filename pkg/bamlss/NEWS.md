@@ -1,4 +1,6 @@
-## bamlss 1.0-3
+## bamlss 1.1-0
+
+* New features.
 
 * Bug fixing.
 
