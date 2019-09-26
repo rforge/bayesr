@@ -188,7 +188,7 @@ nd$lat <- LondonFire$lat[i]
 nd$p <- 1 - t(predict(firemodel, newdata = nd,
   type = "probabilities", subdivisions = 100, FUN = c95))
 ```
-The estimated probabilities that the fire engine arrives after $t$ minutes can then be plotted with
+The estimated probabilities that the fire engine arrives in $t$ minutes can then be plotted with
 ```{r, fig.width = 5, fig.height = 4, fig.align = "center", dev = "png", out.width="50%"}
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 plot2d(p ~ arrivaltime, data = nd, ylab = "1 - Prob(T > t)")
