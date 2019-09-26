@@ -157,8 +157,11 @@ par(mar = c(4.5, 4, 0.5, 0.5), mfrow = c(2, 2))
 plot(firemodel, scale = 0)
 ```
 ```{r, fig.width = 7.2, fig.height = 5.8, fig.align = "center", echo = FALSE, dev = "png", results = 'hide', message=FALSE, out.width="80%"}
+warn <- getOption("warn")
+options(warn = -1)
 par(mar = c(4.1, 4.1, 1.1, 1.1), mfrow = c(2, 2))
 plot(firemodel, scale = 0)
+options(warn = warn)
 ```
 The upper left plot shows the estimated baseline hazard effect. The upper right plot the time-constant
 effect of fire station intensity. The lower left plot the estimated effect of the time of the day
