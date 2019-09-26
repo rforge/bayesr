@@ -294,8 +294,6 @@ firemodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/b
 <p>and indicates that the three-dimensional effects in <code>lambda</code> and <code>gamma</code> have an effect on the response times. The estimated effects can be plotted with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.5</span>, <span class="dv">4</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>), <span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">2</span>))
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(firemodel, <span class="dt">scale =</span> <span class="dv">0</span>)</code></pre></div>
-<pre><code>## Warning in persp.default(zlim = c(-0.785225721646938, 1.58545579809221), :
-## surface extends beyond the box</code></pre>
 <p><img src="cox_files/figure-html/unnamed-chunk-10-1.png" width="80%" style="display: block; margin: auto;"> The upper left plot shows the estimated baseline hazard effect. The upper right plot the time-constant effect of fire station intensity. The lower left plot the estimated effect of the time of the day and the lower right plot the estimated time-constant spatial effect.</p>
 </div>
 <div id="prediction" class="section level2">
