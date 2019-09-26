@@ -1,4 +1,4 @@
-# A 'Lego' Toolbox for Flexible Regression Models
+# A Lego Toolbox for Flexible Bayesian Regression (and Beyond)
 
 ```{r, echo=FALSE, message=FALSE, results='hide'}
 if(!file.exists("../../www/misc")) {
@@ -8,7 +8,7 @@ figs <- dir("vignettes/figures", full.names = TRUE)
 file.copy(figs, file.path("../../www/misc/", basename(figs)))
 ```
 
-The _bamlss_ package provides a modular computational framework for distributional regression
+The _bamlss_ package provides a modular computational framework for flexible Bayesian regression
 models (and beyond). Users can specify complex models using the familiar formula syntax of R. The
 package supports commonly used extractor functions like `plot()`, `summary()`, `predict()`, etc.
 Moreover, users can specify their own model term constructors or even model fitting engines, 
