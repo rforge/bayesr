@@ -4,9 +4,13 @@
 
 * Bug fixing.
 
-* Adding vignettes.
-
 * New paper introducing bamlss at <https://arxiv.org/abs/1909.11784>
+
+* In addition, there is now a new website <http://www.bamlss.org/> with technical examples, textbook
+  examples, as well as examples from publications. The website will be expanded in the future and
+  will serve as the main source for presenting new features of the bamlss package.
+
+* Adding a vignette to CRAN which links to the new website.
 
 
 # bamlss 1.0-2

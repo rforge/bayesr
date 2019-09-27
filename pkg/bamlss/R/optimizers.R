@@ -5802,7 +5802,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
-            ll_contrib[[i]][["p"]] <- NA
+            ll_contrib[[i]][[paste0("s.", j)]] <- NA
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
