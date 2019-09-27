@@ -9,8 +9,8 @@ bibentry(bibtype = "TechReport",
          type = "arXiv",
          number = "1909.12345",
          month = "September",
-         url = "http://arxiv.org/abs/1909.12345",
-         header = "To cite bamlss in publications use"
+         url = "https://arxiv.org/abs/1909.11784",
+         header = "To cite bamlss in publications use:"
 )
 
 bibentry(bibtype = "Article",

@@ -1,4 +1,4 @@
-## bamlss 1.1-0
+# bamlss 1.1-0
 
 * New features.
 
@@ -6,7 +6,10 @@
 
 * Adding vignettes.
 
-## bamlss 1.0-2
+* New paper introducing bamlss at <https://arxiv.org/abs/1909.11784>
+
+
+# bamlss 1.0-2
 
 * Bug fixing.
 
@@ -16,13 +19,15 @@
 
 * Experimental batchwise backfitting algorithm `bbfit()`.
 
-## bamlss 1.0-1
+
+# bamlss 1.0-1
 
 * Bug fixing.
 
 * More model fitting engines: `lasso()`, `stabsel()`
 
-## bamlss 0.1-2
+
+# bamlss 0.1-2
 
 * Fixed some issues with `tx()` for BayesX.
 

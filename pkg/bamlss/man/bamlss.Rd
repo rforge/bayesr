@@ -201,7 +201,7 @@ bamlss(formula, family = "gaussian", data = NULL,
 
   Umlauf N, Klein N, Simon T, Zeileis A (2019).
   \dQuote{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond).}
-  arXiv:1909.12345, arXiv.org E-Print Archive. \url{http://arxiv.org/abs/1909.12345}
+  arXiv:1909.11784, arXiv.org E-Print Archive. \url{https://arxiv.org/abs/1909.11784}
 }
 
 \author{
