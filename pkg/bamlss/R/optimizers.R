@@ -5597,7 +5597,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
         }
-        tau2[[i]][[j]] <- rep(0.01, length(x[[i]]$smooth.construct[[j]]$S))
+        tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
         } else {
