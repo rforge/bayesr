@@ -230,7 +230,7 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.217
+## runtime = 1.228
 ## ---
 ## Optimizer summary:
 ## -
@@ -371,13 +371,13 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## Sampler summary:
 ## -
 ## DIC = 1115.068 logLik = -545.2265 pd = 24.6149
-## runtime = 3.063
+## runtime = 3.778
 ## ---
 ## Optimizer summary:
 ## -
 ## AICc = 1123.881 converged = 1 edf = 24.2716
 ## logLik = -531.9752 logPost = -747.4101 nobs = 133
-## runtime = 0.293
+## runtime = 0.472
 ## ---</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
