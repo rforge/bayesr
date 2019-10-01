@@ -10270,10 +10270,6 @@ compute_WAIC <- function(object, newdata = NULL) {
 
 smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
 {
-  if(is.null(object$samples) | !inherits(object, "bamlss")) {
-    warning("nothing to do!")
-    return(NULL)
-  }
   nx <- names(object$x)
   if(!is.null(model))
     nx <- nx[grep2(model, nx, fixed = TRUE)]
