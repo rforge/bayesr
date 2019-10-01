@@ -5547,10 +5547,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
-  batch <- floor(N/nbatch)
-
-  if(batch > N/2)
-    stop("The batch size may not exceed half the number of observations!")
+  batch <- seq.int(1, N, length = nbatch + 1L)[-1]
 
   y  <- y[[1]]
 
@@ -5587,7 +5584,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
           }
-          take <- 1L:batch
+          take <- 1L:batch[1L]
           yn <- y[shuffle_id[take]]
           if(i %in% names(family$initialize)) {
             yinit <- make.link2(family$links[i])$linkfun(family$initialize[[i]](yn))
@@ -5652,17 +5649,17 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       }
     }
 
-    k <- batch
+    k <- batch[1L]
     iter <- 1L
     edf <- NA
 
     while((k <= N) & (iter2 <= maxit)) {
-      take <- (k - batch + 1L):k
+      take <- (k - batch[iter] + 1L):k
 
       take2 <- if(iter < 2) {
-        take + batch
+        take + batch[iter]
       } else {
-        take - batch
+        take - batch[iter]
       }
 
       ## Extract responses.
@@ -5911,7 +5908,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       if(k == N) {
         k <- k + 1L
       } else {
-        k <- min(c(k + batch, N))
+        k <- min(c(k + batch[iter], N))
       }
       iter <- iter + 1L
       iter2 <- iter2 + 1L
