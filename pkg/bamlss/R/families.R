@@ -712,7 +712,12 @@ gaussian_bamlss <- function(...)
       "sigma" = function(y, ...) { rep(sd(y), length(y)) }
     ),
     "mean"      = function(par) par$mu,
-    "variance"  = function(par) par$sigma^2
+    "variance"  = function(par) par$sigma^2,
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -740,7 +745,12 @@ Gaussian_bamlss <- function(...)
     },
     "initialize" = list(
       "mu" = function(y, ...) { (y + mean(y)) / 2 }
-    )
+    ),
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
+    }
   )
 
   class(rval) <- "family.bamlss"
@@ -1398,6 +1408,11 @@ truncgaussian_bamlss <- function(...)
     "loglik" = function(y, par, ...) {
       rval <- with(par, sum(-0.5 * log(2 * pi) - log(sigma) - (y - mu)^2 / (2*sigma^2) - log(pnorm(mu / sigma))))
       return(rval)
+    },
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
     }
   )
 
@@ -1966,6 +1981,11 @@ invgaussian_bamlss <- function(...)
       lq <- sqrt(lambda / y)
       qm <- y / mu
       pnorm(lq * (qm - 1)) + exp(2 * lambda / mu) * pnorm(-lq * (qm + 1), ...)
+    },
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
     }
   )
 
@@ -2289,6 +2309,11 @@ gamma_bamlss <- function(...)
       s <- par$mu / par$sigma
       vx <- a * s^2
       return(vx)
+    },
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
     }
   )
 
@@ -3185,7 +3210,14 @@ poisson_bamlss <- function(...)
       }
     ),
     "mean" = function(par) par$lambda,
-    "variance" = function(par) par$lambda
+    "variance" = function(par) par$lambda,
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      if(any(x < 0))
+        stop("response values < 0 are not allowed!")
+      return(TRUE)
+    }
   )
 
   class(rval) <- "family.bamlss"

@@ -938,6 +938,13 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             
             ## Score.
             score <- process.derivs(family$score[[nx[j]]](y, peta, id = nx[j]), is.weight = FALSE)
+
+            if(length(score) != nobs) { 
+              stop("something wrong in processing the family $score() function! More elements in return value of $score() than the response!")
+            }
+            if(length(hess) != nobs) { 
+              stop("something wrong in processing the family $hess() function! More elements in return value of $hess() than the response!")
+            }
           } else {
             ## Same for large files.
             hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
@@ -1456,6 +1463,8 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
 
   no_ff <- !inherits(y, "ff")
   peta <- family$map2par(eta)
+
+  nobs <- length(eta[[1L]])
   
   if(is.null(args$hess)) {
     ## Compute weights.
@@ -1465,6 +1474,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       hess <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
         process.derivs(family$hess[[id]](y, par, id = id), is.weight = TRUE)
       })
+    }
+
+    if(length(hess) != nobs) { 
+      stop("something wrong in processing the family $hess() function! More elements in return value of $hess() than the response!")
     }
   } else hess <- args$hess
   
@@ -1479,6 +1492,10 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       score <- ffdf_eval_sh(y, peta, FUN = function(y, par) {
         process.derivs(family$score[[id]](y, par, id = id), is.weight = FALSE)
       })
+    }
+
+    if(length(score) != nobs) { 
+      stop("something wrong in processing the family $score() function! More elements in return value of $score() than the response!")
     }
     
     ## Compute working observations.
@@ -2525,6 +2542,9 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
       
       ## Actual gradient.
       grad <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
+
+      if(length(grad) != nobs)
+        stop("something wrong in processing the family $score() function! More elements in return value of $score() than the response!")
       
       ## Fit to gradient.
       for(j in names(x[[i]]$smooth.construct)) {
@@ -2543,8 +2563,8 @@ boost <- function(x, y, family, weights = NULL, offset = NULL,
               hatmatrix = hatmatrix, weights = if(!is.null(weights)) weights[, i] else NULL,
               nthreads = nthreads)
           } else {
-            .Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu2,
-              if(!is.null(weights)) as.numeric(weights[, i]) else numeric(0), rho, PACKAGE = "bamlss")
+            try(.Call("boost_fit", x[[i]]$smooth.construct[[j]], grad, nu2,
+              if(!is.null(weights)) as.numeric(weights[, i]) else numeric(0), rho, PACKAGE = "bamlss"), silent = TRUE)
           }
         } else {
           x[[i]]$smooth.construct[[j]][["boost.fit"]](x = x[[i]]$smooth.construct[[j]],
