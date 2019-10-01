@@ -10270,6 +10270,11 @@ compute_WAIC <- function(object, newdata = NULL) {
 
 smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
 {
+  if(!inherits(object, "bamlss")) {
+    warning("nothing to do!")
+    return(NULL)
+  }
+  samps <- !is.null(object$samples)
   nx <- names(object$x)
   if(!is.null(model))
     nx <- nx[grep2(model, nx, fixed = TRUE)]
@@ -10285,8 +10290,12 @@ smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
         minp <- min(p[, "Mean"])
         maxp <- max(p[, "Mean"])
         pp <- (maxp - minp)
-        se <- as.matrix(samples(object, model = i, term = j))
-        secheck <- if(nrow(unique(se)) < 2L) FALSE else TRUE
+        if(samps) {
+          se <- as.matrix(samples(object, model = i, term = j))
+          secheck <- if(nrow(unique(se)) < 2L) FALSE else TRUE
+        } else {
+          secheck <- FALSE
+        }
         eff[[i]][[j]] <- if(secheck) {
           mean(!((p[, "2.5%"] <= 0) & (p[, "97.5%"] >= 0)) & (pp > 1e-10))
         } else {
