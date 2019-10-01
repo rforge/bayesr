@@ -5657,7 +5657,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       take <- (k - batch[iter] + 1L):k
 
       take2 <- if(iter < 2) {
-        take + batch[iter]
+        take + (batch[iter] - 1L)
       } else {
         take - batch[iter]
       }
