@@ -5547,7 +5547,20 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
-  batch <- seq.int(1, N, length = nbatch + 1L)[-1]
+  random <- (nbatch < 1) & (nbatch > 0)
+  if(!random) {
+    batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
+    batch[length(batch)] <- N
+    batch <- as.list(batch)
+    start <- 1L
+    for(i in 1:length(batch)) {
+      batch[[i]] <- c(start, batch[[i]])
+      start <- batch[[i]][-1L] + 1L
+    }
+  } else {
+    batch <- floor(N * nbatch)
+    batch <- list(c(1, batch), c(batch + 1L, N))
+  }
 
   y  <- y[[1]]
 
@@ -5584,7 +5597,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
           }
-          take <- 1L:batch[1L]
+          take <- batch[[1L]][1L]:batch[[1L]][2L]
           yn <- y[shuffle_id[take]]
           if(i %in% names(family$initialize)) {
             yinit <- make.link2(family$links[i])$linkfun(family$initialize[[i]](yn))
@@ -5628,7 +5641,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   tbeta <- if(select) beta else NA
   tau2f <- 100
 
-  iter2 <- 1L
+  iter <- 1L
   nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
 
   ptm <- proc.time()
@@ -5636,7 +5649,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     if(verbose)
       cat("starting epoch", ej, "\n")
 
-    ## nu <- 1/(1 + iter2)
+    ## nu <- 1/(1 + iter)
 
     ## Shuffle observations.
     if(noff) {
@@ -5649,17 +5662,19 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       }
     }
 
-    k <- batch[1L]
-    iter <- 1L
     edf <- NA
 
-    while((k <= N) & (iter2 <= maxit)) {
-      take <- (k - batch[iter] + 1L):k
+    bind <- if(!random) {
+      seq_along(batch)
+    } else 1L
 
-      take2 <- if(iter < 2) {
-        take + (batch[iter] - 1L)
+    for(bid in bind) {
+      take <- batch[[bid]][1L]:batch[[bid]][2L]
+
+      take2 <- if(bid < 2) {
+        batch[[bid + 1L]][1L]:batch[[bid + 1L]][2L]
       } else {
-        take - batch[iter]
+        batch[[bid - 1L]][1L]:batch[[bid - 1L]][2L]
       }
 
       ## Extract responses.
@@ -5898,20 +5913,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       eps <- mean(abs((eta01 - eta00) / eta00), na.rm = TRUE)
 
       if(verbose) {
-        if(iter2 < 2) {
-          cat(sprintf("   * no. obs %i, edf %f\r", k, round(edf, 4)))
+        if(iter < 2) {
+          cat(sprintf("   * iter %i, no. obs %i, edf %f\r", iter, batch[[bid]][2L], round(edf, 4)))
         } else {
-          cat(sprintf("   * no. obs %i, eps %f, edf %f\r", k, round(eps, 4), round(edf, 2)))
+          cat(sprintf("   * iter %i, no. obs %i, eps %f, edf %f\r", iter, batch[[bid]][2L], round(eps, 4), round(edf, 2)))
         }
       }
 
-      if(k == N) {
-        k <- k + 1L
-      } else {
-        k <- min(c(k + batch[iter], N))
-      }
       iter <- iter + 1L
-      iter2 <- iter2 + 1L
     }
 
     cat("\n")
