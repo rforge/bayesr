@@ -33,7 +33,7 @@ bbfitp(x, y, family, mc.cores = 1, ...)
   \item{nbatch}{Number of batches.}
   \item{maxit}{Maximum number of iterations of the inner loop.}
   \item{verbose}{Print information during runtime of the algorithm.}
-  \item{}
+  \item{mc.cores}{On how many cores should estimation be started?}
   \item{\dots}{For function \code{bbfit()} not used, for \code{bbfitp} all arguments are
     passed to \code{bbfit()}.}
 }
