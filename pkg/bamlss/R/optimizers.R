@@ -5504,7 +5504,7 @@ sgd_grep_X <- function(x) {
 
 
 bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
-  epochs = 1, nbatch = 10, maxit = Inf, verbose = TRUE, ...)
+  epochs = 1, nbatch = 10, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
   aic <- list(...)$aic
