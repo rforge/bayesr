@@ -5542,6 +5542,18 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(always))
     always <- FALSE
 
+  slice <- list(...)$slice
+  if(is.null(slice))
+    slice <- FALSE
+
+  nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
+
+  if(slice) {
+    eps_loglik <- -Inf
+    always <- TRUE
+    nu <- 1
+  }
+
   nx <- family$names
   if(!all(nx %in% names(x)))
     stop("parameter names mismatch with family names!")
@@ -5635,6 +5647,15 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
         }
         names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+
+        x[[i]]$smooth.construct[[j]]$xt[["prior"]] <- "ig"
+        x[[i]]$smooth.construct[[j]]$xt[["a"]] <- 0.0001
+        x[[i]]$smooth.construct[[j]]$xt[["b"]] <- 10
+
+        priors <- make.prior(x[[i]]$smooth.construct[[j]])
+        x[[i]]$smooth.construct[[j]]$prior <- priors$prior
+        x[[i]]$smooth.construct[[j]]$grad <- priors$grad
+        x[[i]]$smooth.construct[[j]]$hess <- priors$hess
       }
     }
   }
@@ -5642,7 +5663,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   tau2f <- 100
 
   iter <- 1L
-  nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
 
   ptm <- proc.time()
   for(ej in 1:epochs) {
@@ -5833,12 +5853,30 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return(ll)
             }
 
-            tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+            if(!slice) {
+              tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+            } else {
+              theta <- c(b0, "tau2" = tau2[[i]][[j]])
+              ii <- grep("tau2", names(theta))
+              logP <- function(g, x, ll, ...) {
+                ll + x$prior(g)
+              }
+              for(jj in ii) {
+                theta <- uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
+                  NULL, i, jj, logPost = logP, lower = 0, ll = ll0)
+              }
+              tau2s <- as.numeric(get.par(theta, "tau2"))
+            }
             ll_contrib[[i]][[paste0("s.", j)]] <- NA
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
-              if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
+              accept <- if(!slice) {
+                TRUE
+              } else {
+                epsll < 0.5
+              }
+              if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
                 for(l in 1:length(tau2[[i]][[j]])) {

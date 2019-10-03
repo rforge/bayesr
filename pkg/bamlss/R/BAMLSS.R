@@ -585,7 +585,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
                 priors <- make.prior(formula[[i]][[j]]$smooth.construct[[k]])
                 formula[[i]][[j]]$smooth.construct[[k]]$prior <- priors$prior
                 formula[[i]][[j]]$smooth.construct[[k]]$grad <- priors$grad
-                formula[[i]][[j]]$smooth.construct[[k]]$hesss <- priors$hess
+                formula[[i]][[j]]$smooth.construct[[k]]$hess <- priors$hess
               }
             }
           }
