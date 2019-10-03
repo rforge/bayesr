@@ -34,7 +34,7 @@ bbfitp(x, y, family, mc.cores = 1, ...)
     the fraction of observations that should be used for fitting.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{mc.cores}{On how many cores should estimation be started?}
-  \item{\dots}{For \code{bbfitp} all arguments to be passed to \code{bbfit()}.}
+  \item{\dots}{For \code{bbfitp()} all arguments to be passed to \code{bbfit()}.}
 }
 
 \details{
