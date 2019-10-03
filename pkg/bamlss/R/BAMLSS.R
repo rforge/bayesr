@@ -2160,6 +2160,8 @@ bamlss.model.frame <- function(formula, data, family = gaussian_bamlss(),
       }
       return(data_ff)
     }
+    if(inherits(data, "ffdf"))
+      return(data)
   } else data <- NULL
 
   if(inherits(formula, "bamlss.frame") | inherits(formula, "bamlss")) {
