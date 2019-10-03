@@ -188,7 +188,7 @@ data_spam <- function(...)
   dnames <- gsub("3d", "n3d", dnames)
   dnames <- c(dnames, "spam")
   names(data) <- dnames
-  data$spam <- factor(data$spam, levels = c(0, 1), labels = c("no", "yes"))
+  data$spam <- factor(data$spam, levels = c(1, 0), labels = c("yes", "no"))
   id <- read.table("https://web.stanford.edu/~hastie/ElemStatLearn/datasets/spam.traintest")
   data$set <- factor(unlist(id), levels = c(0, 1), labels = c("train", "test"))
   return(data)
