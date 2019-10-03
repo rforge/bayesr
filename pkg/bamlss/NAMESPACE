@@ -54,6 +54,7 @@ export(
   "bamlss.family",
   "bfit",
   "bbfit",
+  "bbfitp",
   "bfit_iwls",
   "bfit_iwls_Matrix",
   "bfit_lm",

@@ -1767,8 +1767,10 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
       bf$fitted.values <- opt$fitted.values
     if(!is.null(opt$hessian))
       bf$hessian <- opt$hessian
+    if(!is.null(opt$samples))
+      bf$samples <- opt$samples
     ne <- names(opt)
-    bf$model.stats <- opt[ne[!(ne %in% c("parameters", "fitted.values", "hessian"))]]
+    bf$model.stats <- opt[ne[!(ne %in% c("parameters", "fitted.values", "hessian", "samples"))]]
     rm(opt)
   }
 

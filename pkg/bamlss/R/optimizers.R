@@ -6004,6 +6004,25 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 }
 
 
+bbfitp <- function(x, y, family, mc.cores = 1, ...)
+{
+  seeds <- ceiling(runif(mc.cores, 1, 1000000))
+  parallel_fun <- function(i) {
+    set.seed(seeds[i])
+    bbfit(x, y, family, ...)
+  }
+  b <- parallel::mclapply(1:mc.cores, parallel_fun, mc.cores = mc.cores)
+  rval <- list()
+  rval$samples <- do.call("rbind", lapply(b, function(x) x$parameters))
+  rval$parameters <- colMeans(rval$samples)
+  rval$samples <- as.mcmc(rval$samples)
+  rval$nbatch <- b[[1]]$nbatch
+  rval$runtime <- mean(sapply(b, function(x) x$runtime))
+  rval$epochs <- b[[1]]$epochs
+  rval
+}
+
+
 bbfit_plot <- function(x, name = NULL, ...)
 {
   x <- x$model.stats$optimizer$parpaths

@@ -1,15 +1,20 @@
 \name{bbfit}
 \alias{bbfit}
+\alias{bbfitp}
 
-\title{Batch-Wise Backfitting}
+\title{Batchwise Backfitting}
 
 \description{
   Batch-wise backfitting estimation engine for GAMLSS using very large data sets.
 }
 
 \usage{
+## Batchwise Backfitting engine.
 bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   epochs = 1, nbatch = 10, maxit = Inf, verbose = TRUE, ...)
+
+## Parallel version.
+bbfitp(x, y, family, mc.cores = 1, ...)
 }
 
 \arguments{
@@ -28,7 +33,9 @@ bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   \item{nbatch}{Number of batches.}
   \item{maxit}{Maximum number of iterations of the inner loop.}
   \item{verbose}{Print information during runtime of the algorithm.}
-  \item{\dots}{Not used.}
+  \item{}
+  \item{\dots}{For function \code{bbfit()} not used, for \code{bbfitp} all arguments are
+    passed to \code{bbfit()}.}
 }
 
 \details{
