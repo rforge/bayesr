@@ -5,11 +5,11 @@
 \title{Batchwise Backfitting}
 
 \description{
-  Batch-wise backfitting estimation engine for GAMLSS using very large data sets.
+  Batchwise backfitting estimation engine for GAMLSS using very large data sets.
 }
 
 \usage{
-## Batchwise Backfitting engine.
+## Batchwise backfitting engine.
 bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   epochs = 1, nbatch = 10, maxit = Inf, verbose = TRUE, ...)
 
