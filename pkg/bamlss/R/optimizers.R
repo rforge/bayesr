@@ -5859,7 +5859,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               theta <- c(b0, "tau2" = tau2[[i]][[j]])
               ii <- grep("tau2", names(theta))
               logP <- function(g, x, ll, ...) {
-                ll + x$prior(g)
+                -1 * objfun(get.par(g, "tau2"))
               }
               for(jj in ii) {
                 theta <- uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
