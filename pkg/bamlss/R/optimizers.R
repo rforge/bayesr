@@ -6013,9 +6013,8 @@ bbfitp <- function(x, y, family, mc.cores = 1, ...)
   }
   b <- parallel::mclapply(1:mc.cores, parallel_fun, mc.cores = mc.cores)
   rval <- list()
-  rval$samples <- do.call("rbind", lapply(b, function(x) x$parameters))
-  rval$parameters <- colMeans(rval$samples)
-  rval$samples <- as.mcmc(rval$samples)
+  rval$samples <- as.mcmc.list(lapply(b, function(x) as.mcmc(x$parpaths)))
+  rval$parameters <- colMeans(do.call("rbind", lapply(b, function(x) x$parpaths)))
   rval$nbatch <- b[[1]]$nbatch
   rval$runtime <- mean(sapply(b, function(x) x$runtime))
   rval$epochs <- b[[1]]$epochs

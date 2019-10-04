@@ -3184,12 +3184,24 @@ randomize <- function(x)
 
 
 ## Combine sample chains.
-process.chains <- function(x, combine = TRUE, drop = FALSE)
+process.chains <- function(x, combine = TRUE, drop = FALSE, burnin = NULL, thin = NULL)
 {
   if(is.null(x)) return(NULL)
   if(!is.list(x))
     x <- list(x)
   n <- sapply(x, nrow)
+  if(!is.null(burnin) | !is.null(thin)) {
+    for(i in seq_along(x)) {
+      if(!is.null(burnin)) {
+        x[[i]] <- x[[i]][-c(1:burnin), , drop = FALSE]
+      }
+      if(!is.null(thin)) {
+        n.iter <- nrow(x[[i]])
+        iterthin <- as.integer(seq(1, n.iter, by = thin))
+        x <- x[iterthin, , drop = FALSE]
+      }
+    }
+  }
   if((length(unique(n)) > 1) & combine) {
     x <- lapply(x, as.matrix)
     x <- list(as.mcmc(do.call("rbind", x)))
@@ -8390,7 +8402,7 @@ samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = 
     stop("no samples to extract!")
   tx <- terms(object, drop = FALSE)
   x <- object$samples
-  x <- process.chains(x, combine, drop = FALSE)
+  x <- process.chains(x, combine, drop = FALSE, burnin, thin)
 
   if(coef.only) {
     cdrop <- c(".accepted", ".alpha", "logLik", "logPost", "AIC", 
