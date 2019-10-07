@@ -10326,3 +10326,25 @@ smooth_check <- function(object, newdata = NULL, model = NULL, term = NULL, ...)
   return(eff)
 }
 
+
+ecdf_transform <- function(data, trans = NULL, notrans = NULL) {
+  nt <- is.null(trans)
+  if(nt)
+    trans <- list()
+  for(j in names(data)) {
+    if(!(j %in% notrans)) {
+      if(nt)
+        trans[[j]] <- identity
+      if(is.numeric(data[[j]]) | is.integer(data[[j]]) | !nt) {
+        if((length(unique(data[[j]])) > 50L) | !nt) {
+          if(nt)
+            trans[[j]] <- ecdf(data[[j]])
+          data[[j]] <- trans[[j]](data[[j]])
+        }
+      }
+    }
+  }
+  attr(data, "ecdf_transform") <- trans
+  return(data)
+}
+
