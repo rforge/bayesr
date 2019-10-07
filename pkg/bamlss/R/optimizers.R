@@ -5538,6 +5538,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(K))
     K <- 2
 
+  batch_ids <- list(...)$batch_ids
+
   always <- list(...)$always
   if(is.null(always))
     always <- FALSE
@@ -5560,18 +5562,28 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
   N  <- nrow(y)
   random <- (nbatch < 1) & (nbatch > 0)
-  if(!random) {
-    batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
-    batch[length(batch)] <- N
-    batch <- as.list(batch)
-    start <- 1L
-    for(i in 1:length(batch)) {
-      batch[[i]] <- c(start, batch[[i]])
-      start <- batch[[i]][-1L] + 1L
+  if(is.null(batch_ids)) {
+    if(!random) {
+      batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
+      batch[length(batch)] <- N
+      batch <- as.list(batch)
+      start <- 1L
+      for(i in 1:length(batch)) {
+        batch[[i]] <- c(start, batch[[i]])
+        start <- batch[[i]][-1L] + 1L
+      }
+    } else {
+      batch <- floor(N * nbatch)
+      batch <- list(c(1, batch), c(batch + 1L, N))
     }
   } else {
-    batch <- floor(N * nbatch)
-    batch <- list(c(1, batch), c(batch + 1L, N))
+    if(is.factor(batch_ids)) {
+      batch <- split(1:N, batch_ids)
+      batch <- lapply(batch, range)
+    }
+    if(!is.list(batch))
+      stop("argument batch_ids specified wrong!")
+    nbatch <- length(batch)
   }
 
   y  <- y[[1]]
