@@ -5698,8 +5698,13 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       }
 
       ## Extract responses.
-      yn <- y[shuffle_id[take]]
-      yt <- y[shuffle_id[take2]]
+      if(is.null(dim(y))) {
+        yn <- y[shuffle_id[take]]
+        yt <- y[shuffle_id[take2]]
+      } else {
+        yn <- y[shuffle_id[take], , drop = FALSE]
+        yt <- y[shuffle_id[take2], , drop = FALSE]
+      }
 
       for(i in nx) {
         eta[[i]] <- etas[[i]] <- 0
@@ -5735,11 +5740,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           ll0 <- family$loglik(yt, petas)
 
-          score <- process.derivs(family$score[[i]](yn, peta), is.weight = FALSE)
-          hess <- process.derivs(family$hess[[i]](yn, peta), is.weight = TRUE)
+          score <- process.derivs(family$score[[i]](yn, peta, id = i), is.weight = FALSE)
+          hess <- process.derivs(family$hess[[i]](yn, peta, id = i), is.weight = TRUE)
 
-          scores <- process.derivs(family$score[[i]](yt, petas), is.weight = FALSE)
-          hesss <- process.derivs(family$hess[[i]](yt, petas), is.weight = TRUE)
+          scores <- process.derivs(family$score[[i]](yt, petas, id = i), is.weight = FALSE)
+          hesss <- process.derivs(family$hess[[i]](yt, petas, id = i), is.weight = TRUE)
 
           b0 <- beta[[i]][["p"]]
 
@@ -5748,6 +5753,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           eta[[i]] <- eta[[i]] - drop(Xn %*% b0)
           e <- z - eta[[i]]
+
           XWX <- crossprod(Xn * hess, Xn)
           I <- diag(1, ncol(XWX))
 
@@ -5808,11 +5814,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
             ll0 <- family$loglik(yt, petas)
 
-            score <- process.derivs(family$score[[i]](yn, peta), is.weight = FALSE)
-            hess <- process.derivs(family$hess[[i]](yn, peta), is.weight = TRUE)
+            score <- process.derivs(family$score[[i]](yn, peta, id = i), is.weight = FALSE)
+            hess <- process.derivs(family$hess[[i]](yn, peta, id = i), is.weight = TRUE)
 
-            scores <- process.derivs(family$score[[i]](yt, petas), is.weight = FALSE)
-            hesss <- process.derivs(family$hess[[i]](yt, petas), is.weight = TRUE)
+            scores <- process.derivs(family$score[[i]](yt, petas, id = i), is.weight = FALSE)
+            hesss <- process.derivs(family$hess[[i]](yt, petas, id = i), is.weight = TRUE)
 
             b0 <- beta[[i]][[paste0("s.", j)]]
 
