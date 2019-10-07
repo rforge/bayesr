@@ -5562,6 +5562,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
   N  <- nrow(y)
   random <- (nbatch < 1) & (nbatch > 0)
+  batch_select <- FALSE
   if(is.null(batch_ids)) {
     if(!random) {
       batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
@@ -5584,6 +5585,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     if(!is.list(batch))
       stop("argument batch_ids specified wrong!")
     nbatch <- length(batch)
+    batch_select <- TRUE
   }
 
   y  <- y[[1]]
@@ -5684,14 +5686,18 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     ## nu <- 1/(1 + iter)
 
     ## Shuffle observations.
-    if(noff) {
-      shuffle_id <- sample(1:N)
-    } else {
-      shuffle_id <- NULL
-      for(ii in bit::chunk(y)) {
-        ind <- ii[1]:ii[2]
-        shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+    if(!batch_select) {
+      if(noff) {
+        shuffle_id <- sample(1:N)
+      } else {
+        shuffle_id <- NULL
+        for(ii in bit::chunk(y)) {
+          ind <- ii[1]:ii[2]
+          shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+        }
       }
+    } else {
+      shuffle_id <- 1:N
     }
 
     edf <- NA
