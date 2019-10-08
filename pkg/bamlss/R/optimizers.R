@@ -2084,6 +2084,12 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 }
 
 
+xcenter <- function(x)
+{
+  .Call("xcenter", as.numeric(x), PACKAGE = "bamlss")
+}
+
+
 ## Modified likelihood based boosting.
 boostm <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,

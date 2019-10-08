@@ -2887,6 +2887,24 @@ SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
 }
 
 
+/* Center vector. */
+SEXP xcenter(SEXP x)
+{
+  int i, n = length(x);
+  double *xptr = REAL(x);
+  double xm = 0.0;
+  for(i = 0; i < n; i++) {
+    xm += xptr[i];
+  }
+  xm = xm/n;
+  for(i = 0; i < n; i++) {
+    xptr[i] = xptr[i] - xm;
+  }
+
+  return x;
+}
+
+
 /* Log-likelihood multivariate normal distribution. */
 SEXP mvn_logdens(SEXP y1, SEXP y2, SEXP mu1, SEXP mu2, SEXP sigma1, SEXP sigma2, SEXP rho)
 {
