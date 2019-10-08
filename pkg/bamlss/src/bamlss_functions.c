@@ -2891,17 +2891,24 @@ SEXP scale_matrix(SEXP x, SEXP center, SEXP scale)
 SEXP xcenter(SEXP x)
 {
   int i, n = length(x);
+
+  SEXP rval;
+  PROTECT(rval = allocVector(REALSXP, n));
+  double *rvalptr = REAL(rval);
+
   double *xptr = REAL(x);
   double xm = 0.0;
+
   for(i = 0; i < n; i++) {
     xm += xptr[i];
   }
   xm = xm/n;
   for(i = 0; i < n; i++) {
-    xptr[i] = xptr[i] - xm;
+    rvalptr[i] = xptr[i] - xm;
   }
 
-  return x;
+  UNPROTECT(1);
+  return rval;
 }
 
 

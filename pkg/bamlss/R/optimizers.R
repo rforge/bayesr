@@ -5567,8 +5567,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
-  random <- (nbatch < 1) & (nbatch > 0)
-  batch_select <- FALSE
+  random <- all(nbatch < 1) & all(nbatch > 0)
+  batch_select <- srandom <- samp_ids <- FALSE
   if(is.null(batch_ids)) {
     if(!random) {
       batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
@@ -5580,8 +5580,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         start <- batch[[i]][-1L] + 1L
       }
     } else {
-      batch <- floor(N * nbatch)
-      batch <- list(c(1, batch), c(batch + 1L, N))
+      if(length(nbatch) < 2L) {
+        batch <- floor(N * nbatch)
+        batch <- list(c(1, batch), c(batch + 1L, N))
+      } else {
+        batch <- list(nbatch)
+        srandom <- TRUE
+        samp_ids <- 1:N
+      }
     }
   } else {
     if(is.factor(batch_ids)) {
@@ -5629,8 +5635,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
           }
-          take <- batch[[1L]][1L]:batch[[1L]][2L]
-          yn <- y[shuffle_id[take]]
+          if(!srandom) {
+            take <- batch[[1L]][1L]:batch[[1L]][2L]
+          } else {
+            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
+          }
+          if(is.null(dim(y))) {
+            yn <- y[shuffle_id[take]]
+          } else {
+            yn <- y[shuffle_id[take], , drop = FALSE]
+          }
           if(i %in% names(family$initialize)) {
             yinit <- make.link2(family$links[i])$linkfun(family$initialize[[i]](yn))
             beta[[i]][["p"]]["(Intercept)"] <- mean(yinit, na.rm = TRUE)
@@ -5708,17 +5722,21 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
     edf <- NA
 
-    bind <- if(!random) {
+    bind <- if(!random & !srandom) {
       seq_along(batch)
     } else 1L
 
     for(bid in bind) {
-      take <- batch[[bid]][1L]:batch[[bid]][2L]
-
-      take2 <- if(bid < 2) {
-        batch[[bid + 1L]][1L]:batch[[bid + 1L]][2L]
+      if(!srandom) {
+        take <- batch[[bid]][1L]:batch[[bid]][2L]
+        take2 <- if(bid < 2) {
+          batch[[bid + 1L]][1L]:batch[[bid + 1L]][2L]
+        } else {
+          batch[[bid - 1L]][1L]:batch[[bid - 1L]][2L]
+        }
       } else {
-        batch[[bid - 1L]][1L]:batch[[bid - 1L]][2L]
+        take <- sample(samp_ids, floor(batch[[bid]][1L] * N))
+        take2 <- sample(samp_ids, floor(batch[[bid]][2L] * N))
       }
 
       ## Extract responses.
@@ -5866,7 +5884,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               }
               P <- matrix_inv(XWX + S)
               b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
-              etas[[i]] <- etas[[i]] + drop(Xt %*% b)
+              etas[[i]] <- etas[[i]] + xcenter(Xt %*% b)
               if(retLL) {
                 return(family$loglik(yt, family$map2par(etas)))
               }
@@ -5931,8 +5949,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             if(!select) {
-              eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][[paste0("s.", j)]])
-              etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][[paste0("s.", j)]])
+              eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]])
+              etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]])
             }
           }
         }
@@ -5953,8 +5971,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             Xn <- x[[llc[1]]]$model.matrix[shuffle_id[take], , drop = FALSE]
             Xt <- x[[llc[1]]]$model.matrix[shuffle_id[take2], , drop = FALSE]
           }
-          eta[[llc[1]]] <- eta[[llc[1]]] + drop(Xn %*% beta[[llc[1]]][[llc[2]]])
-          etas[[llc[1]]] <- etas[[llc[1]]] + drop(Xt %*% beta[[llc[1]]][[llc[2]]])
+          eta[[llc[1]]] <- eta[[llc[1]]] + xcenter(Xn %*% beta[[llc[1]]][[llc[2]]])
+          etas[[llc[1]]] <- etas[[llc[1]]] + xcenter(Xt %*% beta[[llc[1]]][[llc[2]]])
         }
       }
 
@@ -5981,10 +5999,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       eps <- mean(abs((eta01 - eta00) / eta00), na.rm = TRUE)
 
       if(verbose) {
+        btxt <- if(srandom) NA else batch[[bid]][2L]
         if(iter < 2) {
-          cat(sprintf("   * iter %i, no. obs %i, edf %f\r", iter, batch[[bid]][2L], round(edf, 4)))
+          cat(sprintf("   * iter %i, no. obs %i, edf %f\r", iter, btxt, round(edf, 4)))
         } else {
-          cat(sprintf("   * iter %i, no. obs %i, eps %f, edf %f\r", iter, batch[[bid]][2L], round(eps, 4), round(edf, 2)))
+          cat(sprintf("   * iter %i, no. obs %i, eps %f, edf %f\r", iter, btxt, round(eps, 4), round(edf, 2)))
         }
       }
 
