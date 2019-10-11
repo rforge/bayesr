@@ -4505,7 +4505,7 @@ nmult_bamlss <- function(K)
       probs_alpha <- alpha / (rowSums(alpha) + 1)
       probs_alpha <- cbind(probs_alpha, 1 - rowSums(probs_alpha))
 
-      probs_w <- pgev(w, xi)
+      probs_w <- 1 - pgev(w, xi)
 
       d <- NULL
       for(j in 1:K) {
@@ -4540,21 +4540,21 @@ nmult_bamlss <- function(K)
 
   rval$score <- salpha
 
-  score_w <- function(y, par, id, ...) {
-    if(is.null(dim(y))) {
-      y <- model.matrix(~ y - 1)
-    }
-    i <- as.integer(gsub("w", "", id))
-    ind <- sort(rep(1:K, 2))
-    j <- which(ind == i)
-    j <- j[2]
-    y[, j] * pgev_dw(par[[id]], par[[paste0("xi", i)]]) 
-  }
+#  score_w <- function(y, par, id, ...) {
+#    if(is.null(dim(y))) {
+#      y <- model.matrix(~ y - 1)
+#    }
+#    i <- as.integer(gsub("w", "", id))
+#    ind <- sort(rep(1:K, 2))
+#    j <- which(ind == i)
+#    j <- j[2]
+#    y[, j] * pgev_dw(par[[id]], par[[paste0("xi", i)]]) 
+#  }
 
-  sw <- rep(list(score_w), K - 1L)
-  names(sw) <- paste0("w", K - 1L)
+#  sw <- rep(list(score_w), K - 1L)
+#  names(sw) <- paste0("w", K - 1L)
 
-  rval$score <- c(rval$score, sw)
+#  rval$score <- c(rval$score, sw)
 
 #  score_xi <- function(y, par, id, ...) {
 #    if(is.null(dim(y))) {
