@@ -4611,7 +4611,7 @@ nmult_bamlss <- function(K)
     probs_alpha <- alpha / (rowSums(alpha) + 1)
     probs_alpha <- cbind(probs_alpha, 1 - rowSums(probs_alpha))
 
-    probs_w <- pgev(w, xi)
+    probs_w <- 1 - pgev(w, xi)
 
     d <- NULL
     for(j in 1:K) {
