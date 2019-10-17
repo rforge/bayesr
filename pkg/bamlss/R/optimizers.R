@@ -4133,23 +4133,29 @@ lasso_transform <- function(x, zeromodel, nobs = NULL, ...)
           k <- ncol(x[[i]]$smooth.construct[[j]]$X)
           if(is.null(nobs))
             nobs <- nrow(x[[i]]$smooth.construct[[j]]$X)
-          nref <- nobs - sum(df)
-          for(ff in 1:ncol(Af)) {
-            ok <- which(Af[, ff] != 0)
-            w[ff] <- if(fuse_type == "nominal") {
-              if(length(ok) < 2) {
-                2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+          if(x[[i]]$smooth.construct[[j]]$xt$gfx) {
+            w <- NULL
+            for(ff in 1:ncol(Af))
+              w <- c(w, 1/abs(t(Af[, ff]) %*% beta))
+          } else {
+            nref <- nobs - sum(df)
+            for(ff in 1:ncol(Af)) {
+              ok <- which(Af[, ff] != 0)
+              w[ff] <- if(fuse_type == "nominal") {
+                if(length(ok) < 2) {
+                  2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+                } else {
+                  2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+                }
               } else {
-                2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+                if(length(ok) < 2) {
+                  sqrt((df[ok[1]] + nref) / nobs)
+                } else {
+                  sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+                }
               }
-            } else {
-              if(length(ok) < 2) {
-                sqrt((df[ok[1]] + nref) / nobs)
-              } else {
-                sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-              }
+              w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
             }
-            w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
           }
           names(w) <- paste("lasso", 1:length(w), sep = "")
           w[!is.finite(w)] <- 1e10

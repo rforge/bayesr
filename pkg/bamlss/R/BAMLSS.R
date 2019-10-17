@@ -4701,8 +4701,13 @@ la <- function(formula, type = c("single", "multiple"), ...)
     formula <- as.formula(formula)
   }
   formula <- as.formula(formula)
-  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE)) & is.null(label))
-    label <- paste("la(", paste(all.vars.formula(as.formula(formula)), collapse = "+"), ")", sep = "")
+  if(!any(grepl("+", formula, fixed = TRUE)) & !any(grepl("-", formula, fixed = TRUE)) & is.null(label)) {
+    if(any(grepl(":", formula, fixed = TRUE))) {
+      label <- paste0("la(", paste(as.character(formula), collapse = ""), ")")
+    } else {
+      label <- paste("la(", paste(all.vars.formula(as.formula(formula)), collapse = "+"), ")", sep = "")
+    }
+  }
   vars <- unique(all.vars.formula(formula))
   rval <- list(
     "formula" = formula,
@@ -4886,16 +4891,37 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
       object$S <- A
     }
   }
+  object$xt$gfx <- if(is.null(object$xt$gfx)) FALSE else object$xt$gfx
   if(fuse & !ridge) {
     k <- ncol(object$X)
     if(fuse_type == "nominal") {
-      Af <- matrix(0, ncol = choose(k, 2), nrow = k)
-      combis <- combn(k, 2)
-      for(ff in 1:ncol(combis)){
-        Af[combis[1, ff], ff] <- 1
-        Af[combis[2, ff], ff] <- -1
+      if(any(grep(":", colnames(object$X), fixed = TRUE)) & object$xt$gfx) {
+        cn <- colnames(object$X)
+        cn <- strsplit(cn, ":")
+        cn <- do.call("rbind", cn)
+        ucn1 <- unique(cn[, 1L])
+        ucn2 <- unique(cn[, 2L])
+        combis <- combn(length(ucn2), 2)
+        Af <- NULL ## matrix(0, ncol = ncol(combis), nrow = k)
+        nd <- nrow(cn)
+        for(ff in 1:ncol(combis)) {
+          for(ii in 1:length(ucn1)) {
+            tAf <- rep(0, k)
+            tAf[cn[, 2L] == ucn2[combis[1, ff]] & cn[, 1L] == ucn1[ii]] <- 1
+            tAf[cn[, 2L] == ucn2[combis[2, ff]] & cn[, 1L] == ucn1[ii]] <- -1
+            Af <- cbind(Af, tAf)
+          }
+        }
+        Af <- cbind(diag(nrow(Af)), Af)
+      } else {
+        Af <- matrix(0, ncol = choose(k, 2), nrow = k)
+        combis <- combn(k, 2)
+        for(ff in 1:ncol(combis)){
+          Af[combis[1, ff], ff] <- 1
+          Af[combis[2, ff], ff] <- -1
+        }
+        Af <- cbind(diag(k), Af)
       }
-      Af <- cbind(diag(k), Af)
     } else {
       Af <- diff(diag(k + 1))
       Af[1, 1] <- 1
@@ -4904,32 +4930,38 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     beta <- object$xt$beta
     w <- rep(0, length = ncol(Af))
     nref <- nobs - sum(df)
-    for(ff in 1:ncol(Af)) {
-      ok <- which(Af[, ff] != 0)
-      w[ff] <- if(fuse_type == "nominal") {
-        if(length(ok) < 2) {
-          2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+    if(!object$xt$gfx) {
+      for(ff in 1:ncol(Af)) {
+        ok <- which(Af[, ff] != 0)
+        w[ff] <- if(fuse_type == "nominal") {
+          if(length(ok) < 2) {
+            2 / (k + 1) * sqrt((df[ok[1]] + nref) / nobs)
+          } else {
+            2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+          }
         } else {
-          2 / (k + 1) * sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+          if(length(ok) < 2) {
+            sqrt((df[ok[1]] + nref) / nobs)
+          } else {
+            sqrt((df[ok[1]] + df[ok[2]]) / nobs)
+          }
         }
-      } else {
-        if(length(ok) < 2) {
-          sqrt((df[ok[1]] + nref) / nobs)
-        } else {
-          sqrt((df[ok[1]] + df[ok[2]]) / nobs)
-        }
+        if(!is.null(beta))
+          w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
       }
-      if(!is.null(beta))
-        w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
+    } else {
+      w <- rep(1, length = ncol(Af))
     }
+    names(w) <- paste0("w", 1:length(w))
     object$Af <- Af
     object$S[[ls <- length(object$S) + 1]] <- function(parameters, fixed.hyper = NULL) {
       b <- get.par(parameters, "b")
       if(!is.null(fixed.hyper)) {
         w <- fixed.hyper
       } else {
-        if(length(i <- grep("lasso", names(parameters))))
+        if(length(i <- grep("lasso", names(parameters)))) {
           w <- parameters[i]
+        }
       }
       S <- 0
       for(k in 1:ncol(Af)) {
