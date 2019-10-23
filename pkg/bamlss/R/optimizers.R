@@ -5663,12 +5663,23 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       for(j in names(x[[i]]$smooth.construct)) {
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+          tpar <- x[[i]]$smooth.construct[[j]]$state$parameters
+          tpar <- tpar[!grepl("tau2", names(tpar))]
+          ncX <- length(tpar)
+        }
         if(OL) {
           x[[i]]$smooth.construct[[j]]$S <- list()
         }
         ncS <- length(x[[i]]$smooth.construct[[j]]$S) + if(lasso) 1L else 0L
         parm[[i]][[paste0("s.", j)]] <- matrix(nrow = 0L, ncol = ncX + ncS + 1L)
-        colnames(parm[[i]][[paste0("s.", j)]]) <- c(paste0("b", 1:ncX), paste0("tau2", 1:ncS), "edf")
+        if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+          tpar <- x[[i]]$smooth.construct[[j]]$state$parameters
+          tpar <- tpar[!grepl("tau2", names(tpar))]
+          colnames(parm[[i]][[paste0("s.", j)]]) <- c(names(tpar), paste0("tau2", 1:ncS), "edf")
+        } else {
+          colnames(parm[[i]][[paste0("s.", j)]]) <- c(paste0("b", 1:ncX), paste0("tau2", 1:ncS), "edf")
+        }
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
           x[[i]]$smooth.construct[[j]]$S[[lS + 1]] <- function(parameters, ...) {
@@ -5682,11 +5693,24 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
+          if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+            npar <- x[[i]]$smooth.construct[[j]]$state$parameters
+            npar <- npar[!grepl("tau2", names(npar))]
+            beta[[i]][[paste0("s.", j)]] <- npar
+          }
         } else {
-          start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+          if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+            start2 <- start[grep(paste0(i, ".s.", j, "."), names(start), fixed = TRUE)]
+            start2 <- start2[!grepl("tau2", names(start2))]
+          } else {
+            start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
+          }
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
         }
-        names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+
+        if(!inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+          names(beta[[i]][[paste0("s.", j)]]) <- paste0("b", 1:ncX)
+        }
 
         x[[i]]$smooth.construct[[j]]$xt[["prior"]] <- "ig"
         x[[i]]$smooth.construct[[j]]$xt[["a"]] <- 0.0001
@@ -5762,8 +5786,15 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         }
         if(!is.null(x[[i]]$smooth.construct)) {
           for(j in names(x[[i]]$smooth.construct)) {
-            eta[[i]] <- eta[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
-            etas[[i]] <- etas[[i]] + drop(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
+            if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+              eta[[i]] <- eta[[i]] + x[[i]]$smooth.construct[[j]]$fit.fun(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE],
+                beta[[i]][[paste0("s.", j)]])
+              etas[[i]] <- etas[[i]] + x[[i]]$smooth.construct[[j]]$fit.fun(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE],
+                beta[[i]][[paste0("s.", j)]])
+            } else {
+              eta[[i]] <- eta[[i]] + xcenter(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
+              etas[[i]] <- etas[[i]] + xcenter(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE] %*% beta[[i]][[paste0("s.", j)]])
+            }
           }
         }
         if(!is.null(offset)) {
@@ -5857,6 +5888,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
             Xt <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE]
 
+            b0 <- beta[[i]][[paste0("s.", j)]]
+
+            if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+              Xn <- x[[i]]$smooth.construct[[j]]$getZ(Xn, b0)
+              Xt <- x[[i]]$smooth.construct[[j]]$getZ(Xt, b0)
+              b0 <- b0[1:ncol(Xn)]
+            }
+
             peta <- family$map2par(eta)
             petas <- family$map2par(etas)
 
@@ -5868,16 +5907,22 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             scores <- process.derivs(family$score[[i]](yt, petas, id = i), is.weight = FALSE)
             hesss <- process.derivs(family$hess[[i]](yt, petas, id = i), is.weight = TRUE)
 
-            b0 <- beta[[i]][[paste0("s.", j)]]
-
             z <- eta[[i]] + 1/hess * score
             zs <- etas[[i]] + 1/hesss * scores
 
-            eta[[i]] <- eta[[i]] - drop(Xn %*% b0)
+            eta[[i]] <- eta[[i]] - xcenter(Xn %*% b0)
             e <- z - eta[[i]]
-            XWX <- crossprod(Xn * hess, Xn)
 
-            etas[[i]] <- etas[[i]] - drop(Xt %*% b0)
+            etas[[i]] <- etas[[i]] - xcenter(Xt %*% b0)
+
+            wts <- NULL
+            if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+              wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(x[[i]]$smooth.construct[[j]]$xt[["tx"]]))
+              Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], wts)
+              Xt <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE], wts)
+            }
+
+            XWX <- crossprod(Xn * hess, Xn)
 
             objfun <- function(tau2, retLL = FALSE) {
               S <- 0
@@ -5944,8 +5989,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 P <- matrix_inv(XWX + S)
                 if(select) {
                   tbeta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                  if(!is.null(wts)) {
+                    names(tbeta[[i]][[paste0("s.", j)]]) <- paste0("bb", 1:length(tbeta[[i]][[paste0("s.", j)]]))
+                    tbeta[[i]][[paste0("s.", j)]] <- c(tbeta[[i]][[paste0("s.", j)]], wts)
+                  }
                 } else {
                   beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+                  if(!is.null(wts)) {
+                    names(beta[[i]][[paste0("s.", j)]]) <- paste0("bb", 1:length(beta[[i]][[paste0("s.", j)]]))
+                    beta[[i]][[paste0("s.", j)]] <- c(beta[[i]][[paste0("s.", j)]], wts)
+                  }
                 }
                 tedf <- sum_diag(XWX %*% P)
                 edf <- edf + tedf
@@ -5955,8 +6008,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             if(!select) {
-              eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]])
-              etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]])
+              if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+                nid <- 1:x[[i]]$smooth.construct[[j]]$nodes
+                eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]][nid] )
+                etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]][nid])
+              } else {
+                eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]])
+                etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]])
+              }
             }
           }
         }

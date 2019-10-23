@@ -5252,7 +5252,7 @@ n <- function(..., k = 10, type = 2)
       class(ret) <- "nnet2.smooth.spec"
     }
   } else {
-    class(ret) <- "nnet.smooth.spec"
+    class(ret) <- "nnet0.smooth.spec"
   }
   ret
 }
@@ -5491,9 +5491,12 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$weights)) {
     nobs <- nrow(object$X)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
-    object$n.weights <- n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
-      sint = object$xt$sint[[1]], type = type[1],
-      x = object$xt[["tx"]], dropout = object$xt[["dropout"]])
+    object$sample_weights <- function(x = NULL) {
+      n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
+        sint = object$xt$sint[[1]], type = type[1],
+        x = x, dropout = object$xt[["dropout"]])
+    }
+    object$n.weights <- object$sample_weights(object$xt[["tx"]])
   } else {
     if(length(object$xt$weights) != nodes)
       stop("not enough weights supplied!")
@@ -5550,7 +5553,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$xt$prior <- "ig"
   object$xt$binning <- FALSE
 
-  object$update <- object$xt$update <- nnet2_update
+  object$update <- object$xt$update <- nnet0_update
   object$boost.fit <- function(...) stop("Boost not yet implemented for n()!")
   object$propose <- function(...) stop("MCMC updating not yet implemented for n()!")
 
@@ -5611,7 +5614,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$PredictMat <- Predict.matrix.nnet0.smooth
 
-  class(object) <- c("nnet2.smooth", "no.mgcv", "special")
+  class(object) <- c("nnet0.smooth", "no.mgcv", "special")
 
   object
 }
@@ -6627,20 +6630,24 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   } else object$xt$ntake
   thres <- is.null(object$xt$weights)
   if(thres) {
-    object$xt$weights <- vector(mode = "list", length = k)
-    smp <- if(object$xt$ntake < 5) FALSE else TRUE
-    for(i in 1:k) {
-      object$xt$weights[[i]] <- rnorm(object$xt$ntake)
-      if(!smp) {
-        object$xt$weights[[i]] <- rnorm(object$xt$ntake)
-        attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
-      } else {
-        nid <- sample(3:object$xt$ntake, size = 1)
-        object$xt$weights[[i]] <- rnorm(nid)
-        attr(object$xt$weights[[i]], "id") <- sample(1:ncol(object$X), size = nid, replace = FALSE)
+    object$sample_weights <- function(...) {
+      weights <- vector(mode = "list", length = k)
+      smp <- if(object$xt$ntake < 5) FALSE else TRUE
+      for(i in 1:k) {
+        weights[[i]] <- rnorm(object$xt$ntake)
+        if(!smp) {
+          weights[[i]] <- rnorm(object$xt$ntake)
+          attr(weights[[i]], "id") <- sample(1:ncol(object$X), size = object$xt$ntake, replace = FALSE)
+        } else {
+          nid <- sample(3:object$xt$ntake, size = 1)
+          weights[[i]] <- rnorm(nid)
+          attr(weights[[i]], "id") <- sample(1:ncol(object$X), size = nid, replace = FALSE)
+        }
+        attr(weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
       }
-      attr(object$xt$weights[[i]], "thres") <- sample(1:nrow(object$X), size = 1L)
+      return(weights)
     }
+    object$xt$weights <- object$sample_weights()
   }
   tXw <- BitsMat(object$X, object$xt$weights, thres = thres)
   if(thres) {
@@ -8764,11 +8771,6 @@ samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = 
     x <- as.mcmc.list(rval)
   }
 
-  if(!is.null(burnin)) {
-    for(i in seq_along(x)) {
-      x[[i]] <- mcmc(x[[i]][burnin:nrow(x[[i]]), , drop = FALSE], start = burnin)
-    }
-  }
   if(!is.null(thin)) {
     iterthin <- as.integer(seq(1, nrow(x[[1]]), by = thin))
     for(i in seq_along(x)) {
