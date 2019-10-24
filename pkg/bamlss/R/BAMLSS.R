@@ -5258,26 +5258,39 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 10, k = 100, dropout = NULL)
+t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
 {
   warn <- getOption("warn")
   options("warn" = -1)
   on.exit(options("warn" = warn))
   x <- as.data.frame(x)
   colnames(x) <- nx <- paste0("x", 1:ncol(x))
-  #y <- scale2(y, 0.01, 0.99)
   nw <- ncol(x)
-  n <- max(c(n, nw * 3))
-  if(n > nrow(x))
-    n <- nrow(x)
-  w <- vector(mode = "list", length = k)
-  ind <- 1:nrow(x)
-  ind2 <- 1:nw
-  f <- as.formula(paste("y~", paste(colnames(x), collapse = "+")))
-  xt <- t(as.matrix(x))
-  for(i in 1:k) {
-    do <- TRUE
-    while(do) {
+  if(mob) {
+    x$y <- scale2(y, 0.01, 0.99)
+    fit <- function(y, x, start = NULL, weights = NULL, offset = NULL, ...) {
+       glm(y ~ 0 + x, family = binomial, start = start, ...)
+    }
+    f <- paste(nx, collapse = "+")
+    f <- as.formula(paste("y~", f , "|", f))
+    m <- partykit::mob(f, fit = fit, data = x)
+    w <- as.list(as.data.frame(t(coef(m))))
+    names(w) <- NULL
+    for(i in seq_along(w))
+      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+    nw <- length(w)
+    for(j in (nw + 1):k)
+      w[[j]] <- NA
+  } else {
+    n <- max(c(n, nw * 2))
+    if(n > nrow(x))
+      n <- nrow(x)
+    w <- vector(mode = "list", length = k)
+    ind <- 1:nrow(x)
+    ind2 <- 1:nw
+    f <- as.formula(paste("y~", paste(colnames(x), collapse = "+")))
+    xt <- t(as.matrix(x))
+    for(i in 1:k) {
       tx <- as.numeric(x[sample(ind, size = 1), ])
       cs <- colSums((xt - tx)^2)
       take <- order(cs)[1:n]
@@ -5301,11 +5314,11 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL)
         w[[i]] <- coef(m)
         names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
       }
-      if(!any(is.na(w[[i]])))
-        do <- FALSE
+      if(any(j <- is.na(w[[i]])))
+        w[[i]][j] <- 0
     }
   }
-  w
+  return(w)
 }
 
 
