@@ -5699,7 +5699,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
         }
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-          tau2[[i]][[j]] <- rep(1e+03, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(1e+05, length(x[[i]]$smooth.construct[[j]]$S))
         } else {
           tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         }
