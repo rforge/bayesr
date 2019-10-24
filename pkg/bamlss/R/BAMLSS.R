@@ -5266,22 +5266,22 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
   x <- as.data.frame(x)
   colnames(x) <- nx <- paste0("x", 1:ncol(x))
   nw <- ncol(x)
-  if(mob) {
-    x$y <- scale2(y, 0.01, 0.99)
-    fit <- function(y, x, start = NULL, weights = NULL, offset = NULL, ...) {
-       glm(y ~ 0 + x, family = binomial, start = start, ...)
-    }
-    f <- paste(nx, collapse = "+")
-    f <- as.formula(paste("y~", f , "|", f))
-    m <- partykit::mob(f, fit = fit, data = x)
-    w <- as.list(as.data.frame(t(coef(m))))
-    names(w) <- NULL
-    for(i in seq_along(w))
-      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-    nw <- length(w)
-    for(j in (nw + 1):k)
-      w[[j]] <- NA
-  } else {
+#  if(mob) {
+#    x$y <- scale2(y, 0.01, 0.99)
+#    fit <- function(y, x, start = NULL, weights = NULL, offset = NULL, ...) {
+#       glm(y ~ 0 + x, family = binomial, start = start, ...)
+#    }
+#    f <- paste(nx, collapse = "+")
+#    f <- as.formula(paste("y~", f , "|", f))
+#    m <- partykit::mob(f, fit = fit, data = x)
+#    w <- as.list(as.data.frame(t(coef(m))))
+#    names(w) <- NULL
+#    for(i in seq_along(w))
+#      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+#    nw <- length(w)
+#    for(j in (nw + 1):k)
+#      w[[j]] <- NA
+#  } else {
     n <- max(c(n, nw * 2))
     if(n > nrow(x))
       n <- nrow(x)
@@ -5323,7 +5323,7 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
       if(any(j <- is.na(w[[i]])))
         w[[i]][j] <- 0
     }
-  }
+#  }
   return(w)
 }
 
