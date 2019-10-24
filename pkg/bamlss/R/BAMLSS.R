@@ -5258,7 +5258,7 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, ...)
+t.weights <- function(x, y, n = 10, k = 100, dropout = NULL)
 {
   warn <- getOption("warn")
   options("warn" = -1)
@@ -5268,34 +5268,41 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, ...)
   #y <- scale2(y, 0.01, 0.99)
   nw <- ncol(x)
   n <- max(c(n, nw * 3))
+  if(n > nrow(x))
+    n <- nrow(x)
   w <- vector(mode = "list", length = k)
   ind <- 1:nrow(x)
   ind2 <- 1:nw
   f <- as.formula(paste("y~", paste(colnames(x), collapse = "+")))
   xt <- t(as.matrix(x))
   for(i in 1:k) {
-    tx <- as.numeric(x[sample(ind, size = 1), ])
-    cs <- colSums((xt - tx)^2)
-    take <- order(cs)[1:n]
-    yn <- scale2(y[take], 0.01, 0.99)
-    xn <- x[take, , drop = FALSE]
-    if(!is.null(dropout)) {
-      size <- floor(nw * (1 - dropout))
-      if(size < 1)
-        size <- 1
-      xi <- sample(ind2, size = size)
-      f <- as.formula(paste("y~", paste(nx[xi], collapse = "+")))
-    }
-    xn$y <- yn
-    m <- glm(f, data = xn, family = binomial)
-    if(!is.null(dropout)) {
-      w[[i]] <- rep(0, nw + 1)
-      w[[i]][xi + 1] <- coef(m)[-1]
-      w[[i]][1] <- coef(m)[1]
-      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-    } else {
-      w[[i]] <- coef(m)
-      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+    do <- TRUE
+    while(do) {
+      tx <- as.numeric(x[sample(ind, size = 1), ])
+      cs <- colSums((xt - tx)^2)
+      take <- order(cs)[1:n]
+      yn <- scale2(y[take], 0.01, 0.99)
+      xn <- x[take, , drop = FALSE]
+      if(!is.null(dropout)) {
+        size <- floor(nw * (1 - dropout))
+        if(size < 1)
+          size <- 1
+        xi <- sample(ind2, size = size)
+        f <- as.formula(paste("y~", paste(nx[xi], collapse = "+")))
+      }
+      xn$y <- yn
+      m <- glm(f, data = xn, family = binomial)
+      if(!is.null(dropout)) {
+        w[[i]] <- rep(0, nw + 1)
+        w[[i]][xi + 1] <- coef(m)[-1]
+        w[[i]][1] <- coef(m)[1]
+        names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+      } else {
+        w[[i]] <- coef(m)
+        names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+      }
+      if(!any(is.na(w[[i]])))
+        do <- FALSE
     }
   }
   w
@@ -5319,7 +5326,8 @@ gZ <- function(x, w) {
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
   if(!is.null(y <- list(...)$y) & !is.null(x)) {
-    return(t.weights(x, y, k = nodes, ...))
+    wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout)
+    return(wts)
   }
   type <- match.arg(type)
   dropout <- list(...)$dropout
@@ -5552,10 +5560,12 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   if(is.null(object$xt$weights)) {
     nobs <- nrow(object$X)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
+    if(is.null(object$xt[["nobs"]]))
+      object$xt[["nobs"]] <- 10
     object$sample_weights <- function(x = NULL, y = NULL) {
       n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
         sint = object$xt$sint[[1]], type = type[1],
-        x = x, dropout = object$xt[["dropout"]], y = y)
+        x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]])
     }
     object$n.weights <- object$sample_weights(object$xt[["tx"]])
   } else {
