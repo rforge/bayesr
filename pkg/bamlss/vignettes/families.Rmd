@@ -92,9 +92,9 @@ the family, parameter and link functions:
 | `score`         | a list with functions (one for each parameter) returning the first derivatives of the log-likelihood w.r.t. predictors |
 | `hess`          | a list with functions (one for each parameter) returning the negative second derivatives of the log-likelihood w.r.t. predictors |
 
-Merely all functions take as first argument the response `y` and as second
+Nearly all functions take as first argument the response `y` and as second
 argument a named list holding the evaluated parameters `par` of the
-distribution. 
+distribution on the scale of the predictors $\eta_{\star}$. 
 
 The implementation looks like this:
 ```{r, mygauss}
