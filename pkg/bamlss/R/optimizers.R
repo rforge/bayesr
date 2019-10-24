@@ -457,7 +457,7 @@ tau2interval <- function(x, lower = .Machine$double.eps^0.8, upper = 1e+10)
 
 
 ## Assign degrees of freedom.
-assign.df <- function(x, df, do.part = FALSE)
+assign.df <- function(x, df, do.part = FALSE, ret.tau2 = FALSE)
 {
   if(inherits(x, "special"))
     return(x)
@@ -516,6 +516,8 @@ assign.df <- function(x, df, do.part = FALSE)
     if(inherits(tau2, "try-error"))
       return(x)
   }
+  if(ret.tau2)
+    return(tau2)
   x$state$parameters <- set.par(x$state$parameters, tau2, "tau2")
   x$state$edf <- objfun(tau2, ret.edf = TRUE)
   return(x)
@@ -5699,7 +5701,40 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
         }
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-          tau2[[i]][[j]] <- rep(1e+05, length(x[[i]]$smooth.construct[[j]]$S))
+          if(noff) {
+            shuffle_id <- sample(1:N)
+          } else {
+            shuffle_id <- NULL
+            for(ii in bit::chunk(y)) {
+              ind <- ii[1]:ii[2]
+              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+            }
+          }
+          if(!srandom) {
+            take <- batch[[1L]][1L]:batch[[1L]][2L]
+          } else {
+            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
+          }
+          Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
+          XX <- crossprod(Xn)
+          objfun <- function(tau2) {
+            S <- 0
+            for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
+              S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
+                x[[i]]$smooth.construct[[j]]$S[[l]](c("b" = rep(0, ncol(XX))))
+              } else {
+                x[[i]]$smooth.construct[[j]]$S[[l]]
+              }
+            }
+            edf <- sum_diag(XX %*% matrix_inv(XX + S))
+            return((ncX * 0.5 - edf)^2)
+          }
+          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
+            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
+          if(!inherits(opt, "try-error")) {
+            tau2[[i]][[j]] <- opt
+          }
         } else {
           tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         }
