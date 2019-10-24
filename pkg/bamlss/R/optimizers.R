@@ -5559,6 +5559,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   slice <- list(...)$slice
   if(is.null(slice))
     slice <- FALSE
+  sslice <- NULL
+  if(!is.logical(slice)) {
+    sslice <- slice
+    eps_loglik <- -Inf
+    always <- TRUE
+    nu <- 1
+    slice <- FALSE
+  }
 
   nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
 
@@ -5954,6 +5962,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 ll <- mean((zs - etas[[i]])^2, na.rm = TRUE)
               }
               return(ll)
+            }
+
+            if(!is.null(sslice)) {
+              if(iter > sslice)
+                slice <- TRUE
             }
 
             if(!slice) {
