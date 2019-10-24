@@ -5304,14 +5304,20 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
         f <- as.formula(paste("y~", paste(nx[xi], collapse = "+")))
       }
       xn$y <- yn
-      m <- glm(f, data = xn, family = binomial)
+      m <- coef(glm(f, data = xn, family = binomial))
+      if(any(is.na(m))) {
+        m <- lm(f, data = xn)
+        m <- coef(m)[-1]
+        m <- m * 4
+        m <- c(-sum(m * tx), m)
+      }
       if(!is.null(dropout)) {
         w[[i]] <- rep(0, nw + 1)
-        w[[i]][xi + 1] <- coef(m)[-1]
-        w[[i]][1] <- coef(m)[1]
+        w[[i]][xi + 1] <- m[-1]
+        w[[i]][1] <- m[1]
         names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
       } else {
-        w[[i]] <- coef(m)
+        w[[i]] <- m
         names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
       }
       if(any(j <- is.na(w[[i]])))
