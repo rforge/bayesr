@@ -5580,10 +5580,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
       batch[length(batch)] <- N
       batch <- as.list(batch)
-      start <- 1L
+      start0 <- 1L
       for(i in 1:length(batch)) {
-        batch[[i]] <- c(start, batch[[i]])
-        start <- batch[[i]][-1L] + 1L
+        batch[[i]] <- c(start0, batch[[i]])
+        start0 <- batch[[i]][-1L] + 1L
       }
     } else {
       if(length(nbatch) < 2L) {
@@ -5917,7 +5917,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
             wts <- NULL
             if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-              wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(x[[i]]$smooth.construct[[j]]$xt[["tx"]]))
+              wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(x[[i]]$smooth.construct[[j]]$xt[["tx"]], y = e))
               Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], wts)
               Xt <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE], wts)
             }
@@ -6127,7 +6127,12 @@ bbfitp <- function(x, y, family, mc.cores = 1, ...)
   }
   b <- parallel::mclapply(1:mc.cores, parallel_fun, mc.cores = mc.cores)
   rval <- list()
-  rval$samples <- as.mcmc.list(lapply(b, function(x) as.mcmc(x$parpaths)))
+  rval$samples <- as.mcmc.list(lapply(b, function(x) {
+    if(inherits(x, "try-error"))
+      return(NULL)
+    else
+      return(as.mcmc(x$parpaths))
+  }))
   rval$parameters <- colMeans(do.call("rbind", lapply(b, function(x) x$parpaths)))
   rval$nbatch <- b[[1]]$nbatch
   rval$runtime <- mean(sapply(b, function(x) x$runtime))
