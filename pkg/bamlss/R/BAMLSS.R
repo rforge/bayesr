@@ -5258,30 +5258,44 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
+t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, tree = FALSE)
 {
   warn <- getOption("warn")
   options("warn" = -1)
   on.exit(options("warn" = warn))
-  x <- as.data.frame(x)
+  if(missing(y) | is.null(y))
+    tree <- FALSE
+  if(tree) {
+    if(length(y) != nrow(x))
+      tree <- FALSE
+  }
+  x <- as.data.frame(x[, -1, drop = FALSE])
   colnames(x) <- nx <- paste0("x", 1:ncol(x))
   nw <- ncol(x)
-#  if(mob) {
-#    x$y <- scale2(y, 0.01, 0.99)
-#    fit <- function(y, x, start = NULL, weights = NULL, offset = NULL, ...) {
-#       glm(y ~ 0 + x, family = binomial, start = start, ...)
-#    }
-#    f <- paste(nx, collapse = "+")
-#    f <- as.formula(paste("y~", f , "|", f))
-#    m <- partykit::mob(f, fit = fit, data = x)
-#    w <- as.list(as.data.frame(t(coef(m))))
-#    names(w) <- NULL
-#    for(i in seq_along(w))
-#      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-#    nw <- length(w)
-#    for(j in (nw + 1):k)
-#      w[[j]] <- NA
-#  } else {
+  if(tree) {
+    x$y <- y
+    f <- paste(nx, collapse = "+")
+    f <- as.formula(paste("y~", f ))
+    rownames(x) <- 1:nrow(x)
+    ind <- tree_index(f, data = x, k = k, minsize = 1)
+    w <- vector(mode = "list", length = k)
+    for(i in 1:k) {
+      xn <- x[ind[[i]], , drop = FALSE]
+      yn <- scale2(y[ind[[i]]], 0.01, 0.99)
+      xn$y <- yn
+      m <- coef(glm(f, data = xn, family = binomial))
+      if(any(is.na(m))) {
+        m <- lm(f, data = xn)
+        m <- coef(m)[-1]
+        m <- m * 4
+        m <- c(-sum(m * tx), m)
+      }
+      w[[i]] <- m
+      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
+      if(any(j <- is.na(w[[i]])))
+        w[[i]][j] <- 0
+    }
+  } else {
     n <- max(c(n, nw * 2))
     if(n > nrow(x))
       n <- nrow(x)
@@ -5323,7 +5337,7 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, mob = FALSE)
       if(any(j <- is.na(w[[i]])))
         w[[i]][j] <- 0
     }
-#  }
+  }
   return(w)
 }
 
