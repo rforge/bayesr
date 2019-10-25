@@ -5269,7 +5269,7 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, tree = FALSE)
     if(length(y) != nrow(x))
       tree <- FALSE
   }
-  x <- as.data.frame(x[, -1, drop = FALSE])
+  x <- as.data.frame(x)
   colnames(x) <- nx <- paste0("x", 1:ncol(x))
   nw <- ncol(x)
   if(tree) {
@@ -5596,6 +5596,10 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     if(is.null(object$xt[["nobs"]]))
       object$xt[["nobs"]] <- 10
     object$sample_weights <- function(x = NULL, y = NULL) {
+      if(!is.null(y)) {
+        if(length(unique(y)) < 50)
+          y <- NULL
+      }
       n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
         sint = object$xt$sint[[1]], type = type[1],
         x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]])
