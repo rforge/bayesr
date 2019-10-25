@@ -5258,7 +5258,7 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, tree = FALSE)
+t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
 {
   warn <- getOption("warn")
   options("warn" = -1)
@@ -5319,6 +5319,14 @@ t.weights <- function(x, y, n = 10, k = 100, dropout = NULL, tree = FALSE)
       }
       xn$y <- yn
       m <- coef(glm(f, data = xn, family = binomial))
+
+#xn <- as.numeric(xn[[1]])
+#yn <- as.numeric(yn)
+#plot(xn, yn)
+#fx <- drop(1 / (1 + exp(-(cbind(1, xn) %*% m))))
+#plot2d(fx ~ xn, add = TRUE)
+#Sys.sleep(1)
+
       if(any(is.na(m))) {
         m <- lm(f, data = xn)
         m <- coef(m)[-1]
