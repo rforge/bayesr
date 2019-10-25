@@ -5561,6 +5561,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   slice <- list(...)$slice
   if(is.null(slice))
     slice <- FALSE
+
+  nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
+
   sslice <- NULL
   if(!is.logical(slice)) {
     sslice <- slice
@@ -5569,8 +5572,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     nu <- 1
     slice <- FALSE
   }
-
-  nu <- if(is.null(list(...)$nu)) 0.05 else list(...)$nu
 
   if(slice) {
     eps_loglik <- -Inf
@@ -5727,7 +5728,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               }
             }
             edf <- sum_diag(XX %*% matrix_inv(XX + S))
-            return((ncX * 0.5 - edf)^2)
+            return((min(c(20, ncX)) - edf)^2)
           }
           tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
           opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
@@ -5964,7 +5965,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
             wts <- NULL
             if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-              wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(x[[i]]$smooth.construct[[j]]$xt[["tx"]], y = e))
+              wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(x[[i]]$smooth.construct[[j]]$xt[["tx"]], y = z))
               Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], wts)
               Xt <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE], wts)
             }
