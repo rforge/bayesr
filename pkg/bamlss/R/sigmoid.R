@@ -1,12 +1,13 @@
+exp2 <- function(x) {
+  i <- x > 20
+  x[i] <- 20
+  x <- exp(x)
+  x
+}
+
 sigmoid.fit <- function(X, y, weights = NULL) {
   if(any(is.na(y)) | any(is.na(X)))
     stop("NA values in data!")
-  exp2 <- function(x) {
-    i <- x > 20
-    x[i] <- 20
-    x <- exp(x)
-    x
-  }
   nr <- nrow(X)
   nc <- ncol(X)
   if(is.null(weights))

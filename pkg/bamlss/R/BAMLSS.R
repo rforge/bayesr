@@ -5269,10 +5269,10 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
     if(length(y) != nrow(x))
       tree <- FALSE
   }
-  x <- as.data.frame(x)
-  colnames(x) <- nx <- paste0("x", 1:ncol(x))
   nw <- ncol(x)
   if(tree) {
+    x <- as.data.frame(x)
+    colnames(x) <- nx <- paste0("x", 1:ncol(x))
     x$y <- y
     f <- paste(nx, collapse = "+")
     f <- as.formula(paste("y~", f ))
@@ -5297,9 +5297,10 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
     }
   } else {
     n <- max(c(n, nw * 2))
-    w <- build_net_w(x, y, k = k, n = n, plot = FALSE, eps = 0.9)
-    w <- as.list(as.data.frame(w))
-    for(i in 1:length(w)) {
+    w0 <- build_net_w(cbind(1, x), y, k = k, n = n, plot = FALSE, eps = 0.9)
+    w <- list()
+    for(i in 1:ncol(w0)) {
+      w[[i]] <- w0[, i]
       names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
     }
   }
@@ -5636,14 +5637,14 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
       x
     },
     "sigmoid" = function(x) {
-      1 / (1 + exp(-x))
+      1 / (1 + exp2(-x))
     },
     "tanh" = tanh,
     "sin" = sin,
     "cos" = sin,
-    "gauss" = function(x) { exp(-x^2) },
+    "gauss" = function(x) { exp2(-x^2) },
     "identity" = function(x) { x },
-    "softplus" = function(x) { log(1 + exp(x)) }
+    "softplus" = function(x) { log(1 + exp2(x)) }
   )
 
   nc <- ncol(object$X) - 1L
