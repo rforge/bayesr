@@ -5297,53 +5297,10 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
     }
   } else {
     n <- max(c(n, nw * 2))
-    if(n > nrow(x))
-      n <- nrow(x)
-    w <- vector(mode = "list", length = k)
-    ind <- 1:nrow(x)
-    ind2 <- 1:nw
-    f <- as.formula(paste("y~", paste(colnames(x), collapse = "+")))
-    xt <- t(as.matrix(x))
-    for(i in 1:k) {
-      tx <- as.numeric(x[sample(ind, size = 1), ])
-      cs <- colSums((xt - tx)^2)
-      take <- order(cs)[1:n]
-      yn <- scale2(y[take], 0.01, 0.99)
-      xn <- x[take, , drop = FALSE]
-      if(!is.null(dropout)) {
-        size <- floor(nw * (1 - dropout))
-        if(size < 1)
-          size <- 1
-        xi <- sample(ind2, size = size)
-        f <- as.formula(paste("y~", paste(nx[xi], collapse = "+")))
-      }
-      xn$y <- yn
-      m <- coef(glm(f, data = xn, family = binomial))
-
-#xn <- as.numeric(xn[[1]])
-#yn <- as.numeric(yn)
-#plot(xn, yn)
-#fx <- drop(1 / (1 + exp(-(cbind(1, xn) %*% m))))
-#plot2d(fx ~ xn, add = TRUE)
-#Sys.sleep(1)
-
-      if(any(is.na(m))) {
-        m <- lm(f, data = xn)
-        m <- coef(m)[-1]
-        m <- m * 4
-        m <- c(-sum(m * tx), m)
-      }
-      if(!is.null(dropout)) {
-        w[[i]] <- rep(0, nw + 1)
-        w[[i]][xi + 1] <- m[-1]
-        w[[i]][1] <- m[1]
-        names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-      } else {
-        w[[i]] <- m
-        names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-      }
-      if(any(j <- is.na(w[[i]])))
-        w[[i]][j] <- 0
+    w <- build_net_w(x, y, k = k, n = n, plot = FALSE, eps = 0.9)
+    w <- as.list(as.data.frame(w))
+    for(i in 1:length(w)) {
+      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
     }
   }
   return(w)

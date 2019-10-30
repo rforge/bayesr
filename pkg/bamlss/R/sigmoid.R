@@ -228,7 +228,7 @@ ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = TRUE, ...) {
   }
   i <- ncol(coef)
   if(i < k) {
-    coef <- cbind(coef, build_net(X, y, k = k - i, ..., I = i, plot = plot))
+    coef <- cbind(coef, build_net_w(X, y, k = k - i, ..., I = i, plot = plot))
   }
   i <- ncol(coef)
   if(verbose)
@@ -236,7 +236,7 @@ ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = TRUE, ...) {
   return(coef)
 }
 
-build_net <- function(X, y, k = 10, n = 10, plot = TRUE, eps = 0.9, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.9, ...) {
   I <- list(...)$I
   if(is.null(I))
     I <- 1
