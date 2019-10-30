@@ -237,7 +237,7 @@ ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = TRUE, ...) {
   return(coef)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.9, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.5, ...) {
   I <- list(...)$I
   if(is.null(I))
     I <- 1
@@ -251,7 +251,10 @@ build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.9, ...) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
     cs <- colSums((tX - tx)^2)
-    n2 <- sample(n, size = 1)
+    if(length(n) < 2)
+      n2 <- n
+    else
+      n2 <- sample(n, size = 1)
     take <- order(cs)[1:n2]
     yn <- y[take]
     xn <- X[take, , drop = FALSE]
@@ -266,12 +269,12 @@ build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.9, ...) {
       w <- cbind(w, coef(m))
       i <- ncol(w)
       I <- I + 1
-      eps <- eps * 0.99
     }
+    eps <- eps * 0.99
     iter <- iter + 1
-    if(iter > 2 * k) {
+    if(iter > 100 * k) {
       i <- k
-      warning("could not compute all weights, set argument eps!")
+      stop("could not compute all weights, set argument eps!")
     }
   }
   return(w)
