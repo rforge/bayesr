@@ -6120,6 +6120,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       eps <- mean(abs((eta01 - eta00) / eta00), na.rm = TRUE)
 
       if(verbose) {
+        edf <- abs(edf)
         btxt <- if(srandom) NA else batch[[bid]][2L]
         if(iter < 2) {
           cat(sprintf("   * iter %i, no. obs %i, edf %f\r", iter, btxt, round(edf, 4)))
