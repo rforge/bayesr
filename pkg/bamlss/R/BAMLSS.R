@@ -8132,6 +8132,15 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
         row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
     }
   } else rval <- NULL
+  if(nrow(rval) < 2) {
+    ll <- rval[, "logLik"]
+    for(j in colnames(rval)[-1]) {
+      j <- gsub("edf", "df", j)
+      attr(ll, j) <- rval[, j]
+    }
+    rval <- ll
+    class(rval) <- "logLik"
+  }
   rval
 }
 
