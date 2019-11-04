@@ -55,9 +55,9 @@ sigmoid.fit <- function(X, y, weights = NULL) {
     s1 <- -(2 * (y - eta))
     g <- matrix(0, nrow = nr, ncol = nc + 2)
     g[, 1] <- s1
-    g[, 2] <- s1 * 1 / ez1
+    g[, 2] <- s1 * ez2
     for(j in 1:nc) {
-      g[, j + 2] <- s1 * w[2] * ez2^2 * (1 - ez2) * X[, j]
+      g[, j + 2] <- s1 * w[2] * ez2 * (1 - ez2) * X[, j]
     }
     colSums(g * weights)
   }
