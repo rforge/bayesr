@@ -5297,7 +5297,7 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
     }
   } else {
     n <- max(c(n, nw * 2))
-    w0 <- build_net_w(cbind(1, x), scale2(y, 0, 1), k = k, n = n, plot = FALSE, eps = 0.9)
+    w0 <- build_net_w(cbind(1, x), scale2(y, 0, 1), k = k, n = n, plot = FALSE)
     w <- list()
     for(i in 1:ncol(w0)) {
       w[[i]] <- w0[, i]
