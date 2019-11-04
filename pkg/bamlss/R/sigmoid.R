@@ -5,6 +5,38 @@ exp2 <- function(x) {
   x
 }
 
+sigmoid_shift.fit <- function(X, y, j = 2, weights = NULL) {
+  if(any(is.na(y)) | any(is.na(X)))
+    stop("NA values in data!")
+  nr <- nrow(X)
+  nc <- ncol(X)
+  if(is.null(weights))
+    weights <- rep(1, nr)
+  objfun <- function(w) {
+    X[, j] <- X[, j] - w[length(w)]
+    sum((weights * (y - (w[1] + w[2] / (1 + exp2(-(X %*% w[-c(1:2, length(w))]))))))^2)
+  }
+  opt <- optim(c(rep(0.1, ncol(X) + 2), mean(X[, j])), fn = objfun, method = "L-BFGS-B")
+  w <- opt$par
+  X[, j] <- X[, j] - w[length(w)]
+print(w[length(w)])
+  fit <- drop(w[1] + w[2] / (1 + exp2(-(X %*% w[-c(1:2, length(w))]))))
+  rval <- list(
+    "fitted.values" = fit,
+    "fit.fun" = function(X) {
+      X[, j] <- X[, j] - w[length(w)]
+      drop(w[1] + w[2] / (1 + exp(-(X %*% w[-c(1:2, length(w))]))))
+    },
+    "coefficients" = w[-c(1:2, length(w))],
+    "weights" = weights
+  )
+  attr(rval$coefficients, "shift") <- c("column" = j, "shift" = w[length(w)])
+  rval$rank <- 3 + ncol(X)
+  rval$residuals <- y - rval$fitted.values
+  class(rval) <- "sigmoid"
+  rval
+}
+
 sigmoid.fit <- function(X, y, weights = NULL) {
   if(any(is.na(y)) | any(is.na(X)))
     stop("NA values in data!")
@@ -18,17 +50,18 @@ sigmoid.fit <- function(X, y, weights = NULL) {
   gradfun <- function(w) {
     ez <- exp2(-(X %*% w[-c(1:2)]))
     ez1 <- 1 + ez
+    ez2 <- 1 / ez1
     eta <- w[1] + w[2] / ez1
     s1 <- -(2 * (y - eta))
     g <- matrix(0, nrow = nr, ncol = nc + 2)
     g[, 1] <- s1
     g[, 2] <- s1 * 1 / ez1
     for(j in 1:nc) {
-      g[, j + 2] <- s1 * w[2] * 1 / ez1 * (1 - ez1) * X[, j]
+      g[, j + 2] <- s1 * w[2] * ez2^2 * (1 - ez2) * X[, j]
     }
     colSums(g * weights)
   }
-  opt <- optim(rep(0.1, ncol(X) + 2), fn = objfun, method = "L-BFGS-B")
+  opt <- optim(rep(0.1, ncol(X) + 2), fn = objfun, gr = gradfun, method = "L-BFGS-B")
   w <- opt$par
   rval <- list(
     "fitted.values" = drop(w[1] + w[2] / (1 + exp(-(X %*% w[-c(1:2)])))),
