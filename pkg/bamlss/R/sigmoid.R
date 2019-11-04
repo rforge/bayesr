@@ -157,7 +157,7 @@ split_fun <- function(x, y, X, weights = rep(TRUE, length(y)), plot = FALSE, sma
     "weights" = list("L" = j1, "R" = j2), "b1" = b1, "b2" = b2))
 }
 
-ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = TRUE, ...) {
+ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = FALSE, ...) {
   if(is.null(dim(x))) {
     x <- matrix(x, ncol = 1)
     X <- cbind(1, x)
