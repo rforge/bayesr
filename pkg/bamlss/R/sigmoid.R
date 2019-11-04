@@ -237,7 +237,7 @@ ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = TRUE, ...) {
   return(coef)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.5, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.3, ...) {
   I <- list(...)$I
   if(is.null(I))
     I <- 1
