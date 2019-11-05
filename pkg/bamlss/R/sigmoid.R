@@ -5,33 +5,52 @@ exp2 <- function(x) {
   x
 }
 
-sigmoid_shift.fit <- function(X, y, j = 2, weights = NULL) {
+sigmoid.fit.w <- function(X, y, weights = NULL, j = 2, ...) {
   if(any(is.na(y)) | any(is.na(X)))
     stop("NA values in data!")
   nr <- nrow(X)
   nc <- ncol(X)
   if(is.null(weights))
     weights <- rep(1, nr)
+
+  X <- X[, -1, drop = FALSE]
+  j <- j - 1
+
+  y2 <- scale2(y, 0.01, 0.99)
+
   objfun <- function(w) {
-    X[, j] <- X[, j] - w[length(w)]
-    sum((weights * (y - (w[1] + w[2] / (1 + exp2(-(X %*% w[-c(1:2, length(w))]))))))^2)
+    ws <- w[1]
+    w <- w[-1]
+    X[, j] <- X[, j] - ws
+    wR <- 1 / (1 + exp(-(X %*% w)))
+    wL <- 1 - wR
+    X <- cbind(wL, wR)
+    XX <- crossprod(X * weights)
+    beta <- chol2inv(chol(XX + diag(1e-3, 2))) %*% t(X * weights) %*% y
+    fit <- drop(X %*% beta)
+    sum((y2 - fit)^2)
   }
-  opt <- optim(c(rep(0.1, ncol(X) + 2), mean(X[, j])), fn = objfun, method = "L-BFGS-B")
+
+  opt <- optim(c(sum(X[,j]*weights)/sum(weights), rep(0, nc - 1)), fn = objfun, gr = NULL, method = "L-BFGS-B")
+
   w <- opt$par
-  X[, j] <- X[, j] - w[length(w)]
-print(w[length(w)])
-  fit <- drop(w[1] + w[2] / (1 + exp2(-(X %*% w[-c(1:2, length(w))]))))
+  ws <- w[1]
+  w <- w[-1]
+  X[, j] <- X[, j] - ws
+  wR <- 1 / (1 + exp(-(X %*% w)))
+  wL <- 1 - wR
+  X <- cbind(wL, wR)
+  XX <- crossprod(X * weights)
+  beta <- drop(chol2inv(chol(XX + diag(1e-3, 2))) %*% t(X * weights) %*% y)
+  fit <- drop(X %*% beta)
+
   rval <- list(
     "fitted.values" = fit,
-    "fit.fun" = function(X) {
-      X[, j] <- X[, j] - w[length(w)]
-      drop(w[1] + w[2] / (1 + exp(-(X %*% w[-c(1:2, length(w))]))))
-    },
-    "coefficients" = w[-c(1:2, length(w))],
-    "weights" = weights
+    "residuals" = y - fit,
+    "coefficients" = w,
+    "w" = list("L" = wL, "R" = wR)
   )
-  attr(rval$coefficients, "shift") <- c("column" = j, "shift" = w[length(w)])
-  rval$rank <- 3 + ncol(X)
+
   rval$residuals <- y - rval$fitted.values
   class(rval) <- "sigmoid"
   rval
@@ -143,54 +162,7 @@ estfun.sigmoid <- function(x, ...) {
   return(rval)
 }
 
-
-## Trying to split.
-split_fun <- function(x, y, X, weights = rep(TRUE, length(y)), plot = FALSE, smax = 5)
-{
-  warn <- getOption("warn")
-  options("warn" = -1)
-  on.exit(options("warn" = warn))
-  np <- ncol(X) + 2
-  splits <- sort(unique(x[weights]))
-  if(length(splits) > smax) {
-    splits <- quantile(x[weights], prob = seq(0, 1, length = smax))
-  }
-  sse <- rep(Inf, length(splits))
-  for(i in 1:length(splits)) {
-    if(i > 1 & i < length(splits)) {
-      j1 <- (x <= splits[i]) & weights
-      j2 <- (x > splits[i]) & weights
-      if((sum(j1) > np) & (sum(j2) > np)) {
-        b1 <- sigmoid.fit(X[j1,,drop=FALSE], y[j1])
-        b2 <- sigmoid.fit(X[j2,,drop=FALSE], y[j2])
-        r1 <- diff(range(fitted(b1)))
-        r2 <- diff(range(fitted(b2)))
-        sse[i] <- -1 * (r1 + r2)
-      }
-    }
-  }
-  split_at <- splits[i <- which.min(sse)]
-  j1 <- (x <= split_at) & weights
-  j2 <- (x > split_at) & weights
-  b1 <- sigmoid.fit(X[j1,,drop=FALSE], y[j1])
-  b2 <- sigmoid.fit(X[j2,,drop=FALSE], y[j2])
-
-  if(plot) {
-    plot(y ~ x)
-    points(x[j1], y[j1], col = 4, pch = 16)
-    points(x[j2], y[j2], col = 2, pch = 16)
-    plot2d(fitted(b1) ~ x[j1], add = TRUE, col.lines = 4, lwd = 2)
-    plot2d(fitted(b2) ~ x[j2], add = TRUE, col.lines = 2, lwd = 2)
-  }
-
-  cb1 <- coef(b1)
-  cb2 <- coef(b2)
-  return(list("sse" = sse[i], "split" = split_at,
-    "coefficients" = list("L" = cb1, "R" = cb2),
-    "weights" = list("L" = j1, "R" = j2), "b1" = b1, "b2" = b2))
-}
-
-ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = FALSE, ...) {
+stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   if(is.null(dim(x))) {
     x <- matrix(x, ncol = 1)
     X <- cbind(1, x)
@@ -204,76 +176,48 @@ ntree <- function(x, y, k = 20, smax = 5, verbose = TRUE, plot = FALSE, ...) {
       X <- cbind(1, x)
     }
   }
-  y <- scale2(y, 0.01, 0.99)
-  if(plot)
-    plot(y, ylim = c(-1, 1), main = paste(0, "node"))
-  np <- ncol(X) + 2
-  splits <- list()
-  for(l in 1:ncol(x)) {
-    splits[[l]] <- split_fun(x[, l], y, X, smax = smax)
-  }
-  sse <- sapply(splits, function(x) { x$sse })
-  split_take <- splits[[which.min(sse)]]
-  fit <- rep(0, length(y))
-  y[split_take$weights$L] <- y[split_take$weights$L] - fitted(split_take$b1)
-  y[split_take$weights$R] <- y[split_take$weights$R] - fitted(split_take$b2)
-  fit[split_take$weights$L] <- fit[split_take$weights$L] + fitted(split_take$b1)
-  fit[split_take$weights$R] <- fit[split_take$weights$R] + fitted(split_take$b2)
-  i <- 1
-  if(plot)
-    plot(y, ylim = c(-1, 1), main = paste(1, "node"))
-  coef <- do.call("cbind", split_take$coefficients)
-  lw <- as.data.frame(do.call("cbind", split_take$weights))
-  while(i < k) {
-    if(verbose)
-      cat(".. node", i, "of", k, "\n")
-    splits <- list()
+  lw <- data.frame(rep(1, length(y)))
+  K <- 0
+  y0 <- y
+  fit <- 0
+  y <- y - fit
+  while(K < k) {
+    crit <- rep(NA, ncol(lw))
     for(j in 1:ncol(lw)) {
-      if(sum(lw[, j]) > np) {
-        splitsj <- list()
-        for(l in 1:ncol(x)) {
-          splitsj[[l]] <- split_fun(x[, l], y, X, weights = lw[, j], smax = smax)
-        }
-        l <- which.min(sapply(splitsj, function(x) { x$sse }))
-        splits[[j]] <- splitsj[[l]]
+      if(min < sum(lw[, j])) {
+        ws <- lw[, j]
+        sfit <- sigmoid.fit.w(X, y, weights = ws)
+        lw[, j] <- do.call("cbind", sfit$w) * ws
+        b <- lm.fit(as.matrix(lw), y)
+        crit[j] <- sum(residuals(b)^2)
+        lw[, j] <- ws
       }
     }
-    if(length(splits) > 0) {
-      ssej <- sapply(splits, function(x) { x$sse })
-      if(!all(!is.finite(ssej))) {
-        j <- which.min(ssej)
-        split_take <- splits[[j]]
-        lw[, j] <- do.call("cbind", split_take$weights)
-        lw <- as.data.frame(as.matrix(lw))
-        coef <- cbind(coef, do.call("cbind", split_take$coefficients))
-        y[split_take$weights$L] <- y[split_take$weights$L] - fitted(split_take$b1)
-        y[split_take$weights$R] <- y[split_take$weights$R] - fitted(split_take$b2)
-        fit[split_take$weights$L] <- fit[split_take$weights$L] + fitted(split_take$b1)
-        fit[split_take$weights$R] <- fit[split_take$weights$R] + fitted(split_take$b2)
-        if(plot)
-          plot(y, ylim = c(-1, 1), main = paste(i, "nodes"))
-        i <- ncol(coef)
-      } else {
-        i <- k
-      }
-    } else {
-      i <- k
+    if(all(is.na(crit))) {
+      warning("all Nas!")
+      break
     }
+    j <- which.min(crit)
+    sfit <- sigmoid.fit.w(X, y, weights = lw[, j])
+    lw[, j] <- do.call("cbind", sfit$w) * lw[, j]
+    b <- lm.fit(as.matrix(lw), y)
+    fit <- fit + fitted(b)
+    y <- y - fitted(b)
+    lw <- as.data.frame(as.matrix(lw))
+    K <- ncol(lw)
   }
-  i <- ncol(coef)
-  if(i < k) {
-    coef <- cbind(coef, build_net_w(X, y, k = k - i, ..., I = i, plot = plot))
-  }
-  i <- ncol(coef)
-  if(verbose)
-    cat(".. node", i, "of", k, "\n")
-  return(coef)
+  lw <- as.matrix(lw)
+  b <- lm.fit(lw, y0)
+  par(mfrow = c(3, 1))
+  plot(d$x, y)
+  plot(d$x, d$y)
+  plot2d(fitted(b) ~ d$x, add = TRUE, col.lines = 4, lwd = 2)
+  plot2d(lw ~ d$x, scheme = 1, col.lines = rainbow_hcl(ncol(lw)), lwd = 3)
+  b$weights <- lw
+  return(b)
 }
 
 build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.3, ...) {
-  I <- list(...)$I
-  if(is.null(I))
-    I <- 1
   ind <- 1:nrow(X)
   tX <- t(X)
   err0 <- 1e+20
@@ -291,24 +235,11 @@ build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.3, ...) {
     take <- order(cs)[1:n2]
     yn <- y[take]
     xn <- X[take, , drop = FALSE]
-    m <- sigmoid.fit(xn, yn)
-    err <- sum((y[take] - fitted(m))^2)
-    erry <- sum(y[take]^2)
-    epsr <- (err - erry) / erry
-    if(epsr < -1 * eps) {
-      y[take] <- y[take] - fitted(m)
-      if(plot)
-        plot(y, main = paste(I, "nodes"), ylim = c(-1, 1))
-      w <- cbind(w, coef(m))
-      i <- ncol(w)
-      I <- I + 1
-    }
-    eps <- eps * 0.99
-    iter <- iter + 1
-    if(iter > 100 * k) {
-      i <- k
-      stop("could not compute all weights, set argument eps!")
-    }
+    m <- lm.fit(xn, yn)
+    wm <- coef(m)[-1] * 4
+    wm <- c(-1 * sum(wm * tx[-1]), wm)
+    w <- cbind(w, wm)
+    i <- ncol(w)
   }
   return(w)
 }
