@@ -233,7 +233,9 @@ build_net_w <- function(X, y, k = 10, n = 10, ...) {
     yn <- y[take]
     xn <- X[take, , drop = FALSE]
     m <- lm.fit(xn, yn)
-    wm <- coef(m)[-1] * 4
+    cm <- coef(m)
+    cm[is.na(cm)] <- 0
+    wm <- cm[-1] * 4
     wm <- c(-1 * sum(wm * tx[-1]), wm)
     w[, i] <- wm
   }
