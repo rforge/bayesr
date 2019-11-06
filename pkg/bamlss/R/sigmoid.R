@@ -222,7 +222,7 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = TRUE, ...) {
   tX <- t(X)
   w <- NULL
 #plot(X[,2], y, ylim = c(0, 1))
-  i <- k - 1
+  i <- -1
   while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
@@ -252,7 +252,8 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = TRUE, ...) {
 #fit <- drop(1/(1 + exp(-c(X2 %*% wm))))
 #plot2d(fit ~ X2[, 2], add = TRUE, col.lines = 4)
 #points(xn[,2], yn, col = 2, pch = 16)
-    i <- ncol(w)
+    if(!is.null(w))
+      i <- ncol(w)
   }
   return(w)
 }
