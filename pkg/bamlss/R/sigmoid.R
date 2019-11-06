@@ -217,11 +217,13 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, linear = TRUE, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
-  w <- matrix(0, nrow = ncol(X), ncol = k)
-  for(i in 1:k) {
+  w <- NULL
+#plot(X[,2], y, ylim = c(0, 1))
+  i <- k - 1
+  while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
     cs <- colSums((tX - tx)^2)
@@ -232,12 +234,25 @@ build_net_w <- function(X, y, k = 10, n = 10, ...) {
     take <- order(cs)[1:n2]
     yn <- y[take]
     xn <- X[take, , drop = FALSE]
-    m <- lm.fit(xn, yn)
-    cm <- coef(m)
-    cm[is.na(cm)] <- 0
-    wm <- cm[-1] * 4
-    wm <- c(-1 * sum(wm * tx[-1]), wm)
-    w[, i] <- wm
+    if(linear) {
+      m <- lm.fit(xn, scale2(yn, 0.001, 0.999))
+      cm <- coef(m)
+      if(!any(is.na(cm))) {
+        wm <- cm[-1] * 4
+        wm <- c(-1 * sum(wm * tx[-1]), wm)
+        w <- cbind(w, wm)
+      }
+    } else {
+      m <- glm.fit(xn, scale2(yn, 0.01, 0.99), family = binomial())
+      wm <- coef(m)
+      if(!any(is.na(wm)))
+        w <- cbind(w, wm)
+    }
+#X2 <- cbind(1, seq(-3, 3, length = 500))
+#fit <- drop(1/(1 + exp(-c(X2 %*% wm))))
+#plot2d(fit ~ X2[, 2], add = TRUE, col.lines = 4)
+#points(xn[,2], yn, col = 2, pch = 16)
+    i <- ncol(w)
   }
   return(w)
 }
