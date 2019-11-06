@@ -5943,6 +5943,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               b0 <- b0[1:ncol(Xn)]
             }
 
+            eta_0 <- eta[[i]]
+            etas_0 <- eta[[i]]
+
             peta <- family$map2par(eta)
             petas <- family$map2par(etas)
 
@@ -6022,13 +6025,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               tau2s <- as.numeric(get.par(theta, "tau2"))
             }
             ll_contrib[[i]][[paste0("s.", j)]] <- NA
+            accept <- TRUE
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
               accept <- if(!slice) {
                 TRUE
               } else {
-                epsll < 0.5
+                epsll < 0.9
               }
               if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
@@ -6062,15 +6066,19 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               }
             }
 
-            if(!select) {
+            if(!select & accept) {
               if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
                 nid <- 1:x[[i]]$smooth.construct[[j]]$nodes
-                eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]][nid] )
+                eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]][nid])
                 etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]][nid])
               } else {
                 eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]])
                 etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]])
               }
+            }
+            if(!accept) {
+              eta[[i]] <- eta_0
+              etas[[i]] <- etas_0
             }
           }
         }
@@ -6131,7 +6139,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       iter <- iter + 1L
     }
 
-    cat("\n")
+    if(verbose)
+      cat("\n")
   }
 
   elapsed <- c(proc.time() - ptm)[3]
