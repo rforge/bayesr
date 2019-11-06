@@ -5702,20 +5702,20 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
         }
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-          if(noff) {
-            shuffle_id <- sample(1:N)
-          } else {
-            shuffle_id <- NULL
-            for(ii in bit::chunk(y)) {
-              ind <- ii[1]:ii[2]
-              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
-            }
-          }
-          if(!srandom) {
-            take <- batch[[1L]][1L]:batch[[1L]][2L]
-          } else {
-            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
-          }
+#          if(noff) {
+#            shuffle_id <- sample(1:N)
+#          } else {
+#            shuffle_id <- NULL
+#            for(ii in bit::chunk(y)) {
+#              ind <- ii[1]:ii[2]
+#              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+#            }
+#          }
+#          if(!srandom) {
+#            take <- batch[[1L]][1L]:batch[[1L]][2L]
+#          } else {
+#            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
+#          }
 #          Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
 #          XX <- crossprod(Xn)
 #          objfun <- function(tau2) {
