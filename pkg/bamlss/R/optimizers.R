@@ -5716,26 +5716,27 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           } else {
             take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
           }
-          Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
-          XX <- crossprod(Xn)
-          objfun <- function(tau2) {
-            S <- 0
-            for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
-              S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
-                x[[i]]$smooth.construct[[j]]$S[[l]](c("b" = rep(0, ncol(XX))))
-              } else {
-                x[[i]]$smooth.construct[[j]]$S[[l]]
-              }
-            }
-            edf <- sum_diag(XX %*% matrix_inv(XX + S))
-            return((min(c(20, ncX)) - edf)^2)
-          }
-          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
-          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
-            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
-          if(!inherits(opt, "try-error")) {
-            tau2[[i]][[j]] <- opt
-          }
+#          Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
+#          XX <- crossprod(Xn)
+#          objfun <- function(tau2) {
+#            S <- 0
+#            for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
+#              S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
+#                x[[i]]$smooth.construct[[j]]$S[[l]](c("b" = rep(0, ncol(XX))))
+#              } else {
+#                x[[i]]$smooth.construct[[j]]$S[[l]]
+#              }
+#            }
+#            edf <- sum_diag(XX %*% matrix_inv(XX + S))
+#            return((min(c(20, ncX * 0.3)) - edf)^2)
+#          }
+#          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+#          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
+#            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
+#          if(!inherits(opt, "try-error")) {
+#            tau2[[i]][[j]] <- opt
+#          }
+          tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         } else {
           tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         }
