@@ -217,14 +217,11 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.3, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
-  err0 <- 1e+20
-  w <- NULL
-  i <- 0
-  iter <- 1
-  while(i < k) {
+  w <- matrix(0, nrow = ncol(X), ncol = k)
+  for(i in 1:k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
     cs <- colSums((tX - tx)^2)
@@ -238,8 +235,7 @@ build_net_w <- function(X, y, k = 10, n = 10, plot = FALSE, eps = 0.3, ...) {
     m <- lm.fit(xn, yn)
     wm <- coef(m)[-1] * 4
     wm <- c(-1 * sum(wm * tx[-1]), wm)
-    w <- cbind(w, wm)
-    i <- ncol(w)
+    w[, i] <- wm
   }
   return(w)
 }
