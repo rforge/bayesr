@@ -5718,7 +5718,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
           XX <- crossprod(Xn)
-          objfun <- function(tau2) {
+          objfun <- function(tau2, retedf = FALSE) {
             S <- 0
             for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
               S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
@@ -5728,15 +5728,17 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               }
             }
             edf <- sum_diag(XX %*% matrix_inv(XX + S))
-            return((min(c(20, ncX * 0.3)) - edf)^2)
+            if(retedf)
+              return(edf)
+            else
+              return((min(c(100, ncX * 0.5)) - edf)^2)
           }
-          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
           opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
             add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
           if(!inherits(opt, "try-error")) {
             tau2[[i]][[j]] <- opt
           }
-          tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         } else {
           tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
         }
@@ -5945,7 +5947,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             eta_0 <- eta[[i]]
-            etas_0 <- eta[[i]]
+            etas_0 <- etas[[i]]
 
             peta <- family$map2par(eta)
             petas <- family$map2par(etas)
@@ -6012,7 +6014,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             if(!slice) {
-              tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]]), silent = TRUE)
+              tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 1000), silent = TRUE)
             } else {
               theta <- c(b0, "tau2" = tau2[[i]][[j]])
               ii <- grep("tau2", names(theta))
@@ -6068,9 +6070,17 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 nid <- 1:x[[i]]$smooth.construct[[j]]$nodes
                 eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]][nid])
                 etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]][nid])
+#fit <- Xn %*% beta[[i]][[paste0("s.", j)]][nid]
+#Z <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
+#plot(Z[, 2], e)
+#plot2d(fit ~ Z[,2], add = TRUE)
               } else {
                 eta[[i]] <- eta[[i]] + xcenter(Xn %*% beta[[i]][[paste0("s.", j)]])
                 etas[[i]] <- etas[[i]] + xcenter(Xt %*% beta[[i]][[paste0("s.", j)]])
+#fit <- Xn %*% beta[[i]][[paste0("s.", j)]]
+#Z <- d$x2[shuffle_id[take]]
+#plot(Z, e)
+#plot2d(fit ~ Z, add = TRUE)
               }
             }
             if(!accept) {
