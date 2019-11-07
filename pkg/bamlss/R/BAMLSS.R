@@ -8070,7 +8070,7 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
           edf <- mcmc(apply(samps[, i, drop = FALSE], 1, sum, na.rm = TRUE),
             start = start(object[[j]]$samples), end = end(object[[j]]$samples),
             thin = thin(object[[j]]$samples))
-          ll[[j]] <- mcmc(cbind("logLik" = ll[[j]], "edf" = edf),
+          ll[[j]] <- mcmc(cbind("logLik" = ll[[j]], "df" = edf),
             start = start(object[[j]]$samples), end = end(object[[j]]$samples),
             thin = thin(object[[j]]$samples))
         }
@@ -8109,7 +8109,15 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
           warning(paste("no logLik available for model ", mn[j], "!", sep = ""))
         }
         ll <- c(ll, ms$logLik)
-        edf <- c(edf, if(is.null(ms$edf)) NA else ms$edf)
+        if(!is.null(ms$edf)) {
+          edf <- c(edf, ms$edf)
+        } else {
+          if(!is.null(ms$pd)) {
+            edf <- c(edf, ms$pd)
+          } else {
+            edf <- c(edf, NA)
+          }
+        }
         nobs <- c(nobs, if(is.null(ms$nobs)) nrow(object[[j]]$y) else ms$nobs)
       }
     }
@@ -8126,16 +8134,21 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
       else
         rval <- ll[[1]]
     } else {
-      rval <- cbind("logLik" = ll, "edf" = edf, "nobs" = nobs)
+      rval <- cbind("logLik" = ll, "df" = edf, "nobs" = nobs)
       if(length(mn) == nrow(rval))
         row.names(rval) <- if(nrow(rval) > 1) mn[1:nrow(rval)] else ""
     }
   } else rval <- NULL
+  if(is.null(dim(rval))) {
+    rn <- names(rval)
+    rval <- matrix(rval, nrow = 1)
+    colnames(rval) <- rn
+  }
   if(nrow(rval) < 2) {
     ll <- rval[, "logLik"]
     for(j in colnames(rval)[-1]) {
-      j <- gsub("edf", "df", j)
-      attr(ll, j) <- rval[, j]
+      jn <- gsub("edf", "df", j)
+      attr(ll, jn) <- rval[, j]
     }
     rval <- ll
     class(rval) <- "logLik"
@@ -9932,75 +9945,6 @@ sum_diag2 <- function(x, y)
   if(dy[1] != dy[2])
     stop("y must be symmetric!")
   .Call("sum_diag2", x, y, PACKAGE = "bamlss")
-}
-
-AIC.bamlss <- function(..., k = 2, optimizer = FALSE, samples = FALSE, FUN = mean)
-{
-  val <- logLik.bamlss(..., optimizer = optimizer, samples = samples)
-  if(!is.list(val)) {
-    val <- list(val)
-  }
-  val <- lapply(val, function(x) {
-    if(!("edf" %in% colnames(x)))
-      stop("cannot compute AIC, edf are missing!")
-    x <- as.data.frame(cbind("AIC" = -2 * x[,"logLik"] + k * x[,"edf"], "edf" = x[,"edf"]))
-    x
-  })
-  if(samples) {
-    val <- lapply(val, function(x) {
-      xn <- colnames(x)
-      x <- apply(x, 2, FUN)
-      names(x) <- xn
-      x
-    })
-  }
-  Call <- match.call()
-  Call$k <- NULL
-  Call$optimizer <- NULL
-  Call$samples <- NULL
-  if(!samples) {
-    val <- val[[1]]
-    row.names(val) <- if(nrow(val) > 1) Call[-1L] else ""
-  } else {
-    names(val) <- rep(as.character(Call[-1L]), length.out = length(val))
-    val <- do.call("rbind", val)
-  }
-  val
-}
-
-BIC.bamlss <- function(..., k = 2, optimizer = FALSE, samples = FALSE, FUN = mean)
-{
-  nobs <- sapply(list(...), function(x) { if(is.null(nrow(x$y[[1]]))) nrow(model.frame(x)) else nrow(x$y[[1]]) })
-  val <- logLik.bamlss(..., optimizer = optimizer, samples = samples)
-  if(!is.list(val)) {
-    val <- list(val)
-  }
-  val <- lapply(1:length(val), function(i) {
-    if(!("edf" %in% colnames(val[[i]])))
-      stop("cannot compute BIC, edf are missing!")
-    x <- as.data.frame(cbind("BIC" = -2 * val[[i]][,"logLik"] + val[[i]][,"edf"] * log(nobs[i]), "edf" = val[[i]][,"edf"]))
-    x
-  })
-  if(samples) {
-    val <- lapply(val, function(x) {
-      xn <- colnames(x)
-      x <- apply(x, 2, FUN)
-      names(x) <- xn
-      x
-    })
-  }
-  Call <- match.call()
-  Call$k <- NULL
-  Call$optimizer <- NULL
-  Call$samples <- NULL
-  if(!samples) {
-    val <- val[[1]]
-    row.names(val) <- if(nrow(val) > 1) Call[-1L] else ""
-  } else {
-    names(val) <- rep(as.character(Call[-1L]), length.out = length(val))
-    val <- do.call("rbind", val)
-  }
-  val
 }
 
 #.First.lib <- function(lib, pkg)

@@ -1142,14 +1142,14 @@ a linear matrix vector product.
 \subsection{Family objects} \label{sec:families}
 
 Family objects are important building blocks in the design of BAMLSS models.
-They specify the distribution by collecting functions of the density,
-respective log-likelihood, first-order derivatives of the log-likelihood w.r.t.\
-predictors (the score function), and (optionally) second-order derivatives of
-the log-likelihood w.r.t.\ predictors or their expectation (the Hessian).
-
-The \pkg{bamlss} package can be easily extended by constructing families for specific
-tasks, i.e., problems for which a likelihood can be formulated.
-However, commonly used distributions are already implemented in \pkg{bamlss}; and the ones
+The implementation in \pkg{bamlss} follows the well-established structures for family objects
+that are supported, e.g., by the base \proglang{R} model fitting function \fct{glm}, or family
+objects of the \pkg{gamlss} and \pkg{VGAM} package. This means, that users can also easily write
+new family objects to be used with \pkg{bamlss}. Such family objects specify the distribution by
+collecting functions of the density, respective log-likelihood, first-order derivatives of the
+log-likelihood w.r.t.\ predictors (the score function), and (optionally) second-order derivatives of
+the log-likelihood w.r.t.\ predictors or their expectation (the Hessian). Commonly used
+distributions are already implemented in \pkg{bamlss}; and note that the ones
 from the \pkg{gamlss} package can also be accessed through the \pkg{bamlss} package.
 
 We illustrate how to build a \pkg{bamlss} family by hand along the Gaussian
