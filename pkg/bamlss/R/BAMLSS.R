@@ -5258,7 +5258,7 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
+t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, ...)
 {
   warn <- getOption("warn")
   options("warn" = -1)
@@ -5270,38 +5270,11 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, tree = FALSE)
       tree <- FALSE
   }
   nw <- ncol(x)
-  if(tree) {
-    x <- as.data.frame(x)
-    colnames(x) <- nx <- paste0("x", 1:ncol(x))
-    x$y <- y
-    f <- paste(nx, collapse = "+")
-    f <- as.formula(paste("y~", f ))
-    rownames(x) <- 1:nrow(x)
-    ind <- tree_index(f, data = x, k = k, minsize = 1)
-    w <- vector(mode = "list", length = k)
-    for(i in 1:k) {
-      xn <- x[ind[[i]], , drop = FALSE]
-      yn <- scale2(y[ind[[i]]], 0.01, 0.99)
-      xn$y <- yn
-      m <- coef(glm(f, data = xn, family = binomial))
-      if(any(is.na(m))) {
-        m <- lm(f, data = xn)
-        m <- coef(m)[-1]
-        m <- m * 4
-        m <- c(-sum(m * tx), m)
-      }
-      w[[i]] <- m
-      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-      if(any(j <- is.na(w[[i]])))
-        w[[i]][j] <- 0
-    }
-  } else {
-    w0 <- build_net_w(cbind(1, x), scale2(y, 0.01, 0.99), k = k, n = n, plot = FALSE)
-    w <- list()
-    for(i in 1:ncol(w0)) {
-      w[[i]] <- w0[, i]
-      names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
-    }
+  w0 <- build_net_w(cbind(1, x), scale2(y, 0.01, 0.99), k = k, n = n, plot = FALSE)
+  w <- list()
+  for(i in 1:ncol(w0)) {
+    w[[i]] <- w0[, i]
+    names(w[[i]]) <- paste0("bw", i, "_w", 0:nw)
   }
   return(w)
 }

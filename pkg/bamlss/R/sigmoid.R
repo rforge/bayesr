@@ -208,11 +208,11 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   }
   lw <- as.matrix(lw)
   b <- lm.fit(lw, y0)
-  par(mfrow = c(3, 1))
-  plot(d$x, y)
-  plot(d$x, d$y)
-  plot2d(fitted(b) ~ d$x, add = TRUE, col.lines = 4, lwd = 2)
-  plot2d(lw ~ d$x, scheme = 1, col.lines = rainbow_hcl(ncol(lw)), lwd = 3)
+#  par(mfrow = c(3, 1))
+#  plot(d$x, y)
+#  plot(d$x, d$y)
+#  plot2d(fitted(b) ~ d$x, add = TRUE, col.lines = 4, lwd = 2)
+#  plot2d(lw ~ d$x, scheme = 1, col.lines = rainbow_hcl(ncol(lw)), lwd = 3)
   b$weights <- lw
   return(b)
 }
