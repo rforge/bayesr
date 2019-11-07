@@ -217,7 +217,7 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, linear = TRUE, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
   w <- NULL
