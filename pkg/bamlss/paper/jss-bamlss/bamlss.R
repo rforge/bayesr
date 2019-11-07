@@ -2,14 +2,15 @@
 library("bamlss")
 library("ggplot2")
 library("sf")
-## from R-Forge
+## The development version of countreg can be installed from R-Forge:
+## install.packages("countreg", repos = "http://R-Forge.R-project.org")
 library("countreg")
 
 
 # ----Section 2.1: Basic Bayesian regression: Logit model-----------------
 data("SwissLabor", package = "AER")
 
-## Model formula
+## Model formula.
 f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
 
 ## Estimate model.

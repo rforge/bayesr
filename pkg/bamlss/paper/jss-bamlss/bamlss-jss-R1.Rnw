@@ -61,8 +61,8 @@
   distributional regression. However, its building blocks are designed as ``Lego bricks''
   encompassing various
   distributions (exponential family, Cox, joint models, \dots),
-  regression terms (linear, splines, random effects, tensor products, spatial fields, \dots), and
-  estimators (MCMC, backfitting, gradient boosting, lasso, \dots).
+  regression terms (e.g., linear, splines, random effects, tensor products, spatial fields), and
+  estimators (MCMC, backfitting, gradient boosting, lasso, and more).
   It is demonstrated how these can be easily recombined to make classical models more
   flexible or create new custom models for specific modeling challenges.
 }
@@ -149,7 +149,7 @@ as well as the dedicated \fct{bam} function for big data that is long and/or wid
 frequentist inference, it is also particularly attractive for hierarchical or multilevel
 models and for penalizing regression effects through suitable prior distributions. Also, fully
 Bayesian approaches using MCMC are appealing in flexible regression models
-for obtaining credible intervals from the posterior samples etc. The \pkg{brms} package
+for obtaining credible intervals from the posterior samples. The \pkg{brms} package
 \citep{bamlss:Buerkner:2017} is notable for providing a standard \proglang{R} workflow
 for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan}.
 Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAMs via its
@@ -203,7 +203,7 @@ changes in other aspects of the model specification (such as response distributi
 regression terms). By default \pkg{bamlss} is using IWLS-based backfitting for optimizing
 the model and IWLS-based MCMC for sampling from the posterior distribution. However,
 alternative optimizers and samplers are also implemented that support lasso
-or boosting etc. Moreover, the package builds on the well-established \pkg{mgcv} infrastructure
+or boosting, and more. Moreover, the package builds on the well-established \pkg{mgcv} infrastructure
 for smooth model terms, uses \proglang{R}'s formula syntax for model specification, and provides
 standard extractor methods like \fct{summary}, \fct{plot}, \fct{predict}, etc.
 
@@ -326,7 +326,7 @@ e.g., Gelman and Rubin's convergence diagnostic
 Heidelberger and Welch's convergence diagnostic
 \citep{bamlss:Heidelberger+Welch:1981, bamlss:Heidelberger+Welch:1983}.
 
-Model predictions on the probability scale can be obtained by the predict method, e.g.,
+Model predictions on the probability scale can be obtained by the \fct{predict} method, e.g.,
 to visualize the effect of covariate \code{age} on the probability we can create a new
 data frame for prediction
 <<>>=
@@ -339,7 +339,7 @@ nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
 nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 @
-The predict method is applied on all MCMC samples and argument \code{FUN} specifies a function
+The \fct{predict} method is applied on all MCMC samples and argument \code{FUN} specifies a function
 that can be applied on the predictor or distribution parameter samples. The default is the \fct{mean} function,
 however, in this case we additionally extract the empirical 2.5\% and 97.5\% quantiles
 using function \fct{c95} to obtain credible intervals (note, individual samples can be
@@ -573,7 +573,7 @@ again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} packa
 \citep{bamlss:Wood:2019}.
 Note that model formulae are provided as lists of formulae, i.e., each list entry
 represents one parameter of the response distribution. Moreover, note that all smooth
-terms, i.e., \fct{te}, \fct{ti}, etc., are supported by \pkg{bamlss}. This way, it is
+terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms. A full Bayesian semi-parametric 
 distributional regression model can be estimated with
 <<echo=FALSE, results=hide>>=
@@ -862,7 +862,7 @@ model terms of any type. The highlights of the package are:
   posterior mode estimates from the \fct{optimizer} as staring values. An additional step can be used
   for preparing the \fct{results}, e.g., for creating model term effect plots.
 \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
-  predictions, etc.
+  predictions, amongst others.
 \end{itemize}
 %
 \begin{figure}[p!]
