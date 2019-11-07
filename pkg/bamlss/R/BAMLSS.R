@@ -7881,7 +7881,21 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
     if(!is.null(x$model.matrix[[i]])) {
       cat("-\n")
       cat("Parametric coefficients:\n")
+      alpha <- NULL
+      if("alpha" %in% rownames(x$model.matrix[[i]])) {
+        j <- which(rownames(x$model.matrix[[i]]) == "alpha")
+        alpha <- x$model.matrix[[i]][j, , drop = FALSE]
+        x$model.matrix[[i]] <- x$model.matrix[[i]][-j, , drop = FALSE]
+        if("parameters" %in% colnames(alpha)) {
+          j <- which(colnames(alpha) == "parameters")
+          alpha <- alpha[, -j, drop = FALSE]
+        }
+      }
       printCoefmat(x$model.matrix[[i]], digits = digits)
+      if(!is.null(alpha)) {
+        cat("-\nAcceptance probabilty:\n")
+        printCoefmat(alpha, digits = digits)
+      }
     }
     if(!is.null(x$smooth.construct) & length(x$smooth.construct)) {
       if(!is.null(x$smooth.construct[[i]])) {
