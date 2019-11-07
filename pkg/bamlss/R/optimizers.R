@@ -5588,7 +5588,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   batch_select <- srandom <- samp_ids <- FALSE
   if(is.null(batch_ids)) {
     if(!random) {
-      batch <- floor(seq.int(1, N, length = nbatch + 1L)[-1])
+      batch <- floor(seq.int(1, N, length.out = nbatch + 1L)[-1])
       batch[length(batch)] <- N
       batch <- as.list(batch)
       start0 <- 1L

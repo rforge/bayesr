@@ -4,6 +4,7 @@ R/devtools.R
 R/STAN.R
 R/bamlss_shiny.R
 R/installPackages.R
+R/trees.R
 
 data/MunichBnd.rda
 data/rent99.rda
