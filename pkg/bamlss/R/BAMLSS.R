@@ -7310,8 +7310,21 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
 
     if(which == "effects") {
       if(is.null(x$results)) {
-        plot(results.bamlss.default(x), model = model, term = term, ask = ask, ...)
-      } else plot(x$results, model = model, term = term, spar = spar, ask = ask, ...)
+        xres <- results.bamlss.default(x)
+        any_s <- any(sapply(names(xres), function(i) { !is.null(xres[[i]]$s.effects) } ))
+        if(!any_s) {
+          plot.bamlss(x, which = c("hist-resid", "qq-resid"), ...)
+        } else {
+          plot(xres, model = model, term = term, ask = ask, ...)
+        }
+      } else {
+        any_s <- any(sapply(names(x$results), function(i) { !is.null(x$results[[i]]$s.effects) } ))
+        if(!any_s) {
+          plot.bamlss(x, which = c("hist-resid", "qq-resid"), ...)
+        } else {
+          plot(x$results, model = model, term = term, spar = spar, ask = ask, ...)
+        }
+      }
     }
 
     if(which == "boost_summary") {
@@ -9501,11 +9514,18 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
         warning(paste("no $p() function in family '", family$family,
           "', cannot compute quantile residuals, computing response resdiuals instead!", sep = ""))
       } else {
-        prob <- family$p(y, par)
-        res <- qnorm(prob)
-        if(any(isnf <- !is.finite(res))) {
-          warning("non finite quantiles from probabilities, set to NA!")
-          res[isnf] <- NA
+        if(family$family == "binomial") {
+	  a <- family$p(y - 1, par)
+	  b <- family$p(y, par)
+	  u <- runif(n = length(y), min = a, max = b)
+	  res <- qnorm(u)
+        } else {
+          prob <- family$p(y, par)
+          res <- qnorm(prob)
+          if(any(isnf <- !is.finite(res))) {
+            warning("non finite quantiles from probabilities, set to NA!")
+            res[isnf] <- NA
+          }
         }
         attr(res, "type") <- "Quantile"
       }
