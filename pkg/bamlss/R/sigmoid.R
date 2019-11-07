@@ -223,6 +223,7 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
   w <- NULL
 #plot(X[,2], y, ylim = c(0, 1))
   i <- -1
+  n[which.min(n)] <- max(c(min(n), ncol(X) * 4))
   while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
