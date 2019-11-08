@@ -5290,7 +5290,7 @@ gZ <- function(x, w) {
 
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
-  if(!is.null(y <- list(...)$y) & !is.null(x) & !is.null(...)$wm) {
+  if(!is.null(y <- list(...)$y) & !is.null(x) & !is.null(list(...)$wm)) {
     wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout)
     return(wts)
   }

@@ -251,6 +251,7 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
         w <- cbind(w, wm)
         rss <- rss1
         eps <- eps * 0.99
+print(eps)
       }
     }
     if(!is.null(w))
