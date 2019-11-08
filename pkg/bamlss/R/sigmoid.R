@@ -217,16 +217,17 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, weights = NULL, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, weights = NULL, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
   w <- NULL
 #plot(X[,2], y, ylim = c(0, 1))
   i <- -1
-  n[which.min(n)] <- max(c(min(n), ncol(X) * 4))
+  n[which.min(n)] <- min(c(max(c(min(n), ceiling(ncol(X) * 6))), length(y)))
   H <- NULL
   rss <- 1e+20
   eps <- 1
+  y2 <- scale2(y, 0.01, 0.99)
   while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
@@ -236,11 +237,12 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, weights = NULL, ..
     else
       n2 <- sample(n, size = 1)
     take <- order(cs)[1:n2]
-    yn <- y[take]
+    yn <- y2[take]
     xn <- X[take, , drop = FALSE]
-    m <- glm.fit(xn, scale2(yn, 0.01, 0.99), family = binomial())
+    m <- glm.fit(xn, yn, family = binomial())
     wm <- coef(m)
     if(!any(is.na(wm))) {
+      w <- cbind(w, wm)
       H2 <- H
       H2 <- cbind(H2, 1 / (1 + exp(-(X %*% wm))))
       b <- lm.wfit(H2, y, weights)
