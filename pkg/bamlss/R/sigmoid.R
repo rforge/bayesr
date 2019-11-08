@@ -217,7 +217,7 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
+build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, weights = NULL, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
   w <- NULL
@@ -243,7 +243,8 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
     if(!any(is.na(wm))) {
       H2 <- H
       H2 <- cbind(H2, 1 / (1 + exp(-(X %*% wm))))
-      b <- lm.fit(H2, y)
+      b <- lm.wfit(H2, y, weights)
+##hist(residuals(b), breaks = "Scott", xlim = c(-0.5, 0.5))
       rss1 <- sum(residuals(b)^2)
       eps1 <- (rss - rss1)/rss
       if(eps1 <= eps) {
@@ -251,7 +252,7 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
         w <- cbind(w, wm)
         rss <- rss1
         eps <- eps * 0.99
-print(eps)
+##print(eps)
       }
     }
     if(!is.null(w))

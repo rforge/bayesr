@@ -5258,13 +5258,13 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, ...)
+t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, weights = NULL, ...)
 {
   warn <- getOption("warn")
   options("warn" = -1)
   on.exit(options("warn" = warn))
   nw <- ncol(x)
-  w0 <- build_net_w(cbind(1, x), scale2(y, 0.01, 0.99), k = k, n = n, plot = FALSE)
+  w0 <- build_net_w(cbind(1, x), y, k = k, n = n, plot = FALSE, weights = weights)
   w <- list()
   for(i in 1:ncol(w0)) {
     w[[i]] <- w0[, i]
@@ -5291,7 +5291,7 @@ gZ <- function(x, w) {
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
   if(!is.null(y <- list(...)$y) & !is.null(x) & !is.null(list(...)$wm)) {
-    wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout)
+    wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout, weights = list(...)$weights)
     return(wts)
   }
   type <- match.arg(type)
@@ -5527,7 +5527,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
     if(is.null(object$xt[["nobs"]]))
       object$xt[["nobs"]] <- 10
-    object$sample_weights <- function(x = NULL, y = NULL) {
+    object$sample_weights <- function(x = NULL, y = NULL, weights = NULL) {
       if(!is.null(y)) {
         if(length(unique(y)) < 50)
           y <- NULL
@@ -5535,7 +5535,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
       n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
         sint = object$xt$sint[[1]], type = type[1],
         x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]],
-        wm = object$xt[["wm"]])
+        wm = object$xt[["wm"]], weights = weights)
     }
     object$n.weights <- object$sample_weights(object$xt[["tx"]])
   } else {
