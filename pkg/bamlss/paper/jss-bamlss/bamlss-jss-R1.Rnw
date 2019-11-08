@@ -97,6 +97,7 @@
 options(width = 70, prompt = "R> ", continue = "+  ",
   SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 1, 1))))
 library("bamlss")
+Sys.setenv("TZ" = "UTC")
 @
 
 \begin{document}
