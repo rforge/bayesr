@@ -18,11 +18,11 @@ vignette: >
 
 ```{r preliminaries, echo=FALSE, message=FALSE, results="hide"}
 library("bamlss")
-prefix <- "http://bayesr.r-forge.r-project.org/articles/" ## ""
+prefix <- "http://bayesr.r	-forge.r-project.org/articles/" ## ""
 prefix2 <- "http://bayesr.r-forge.r-project.org/articles/" ## ""
 ```
 
-## Overview
+## Overview 
 
 The R package _bamlss_ provides a modular computational framework for flexible Bayesian
 regression models (and beyond). The implementation follows the conceptional framework presented in
