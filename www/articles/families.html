@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
       </span>
     </div>
 
@@ -202,7 +202,7 @@ s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\parti
 </tr>
 </tbody>
 </table>
-<p>Merely all functions take as first argument the response <code>y</code> and as second argument a named list holding the evaluated parameters <code>par</code> of the distribution.</p>
+<p>Nearly all functions take as first argument the response <code>y</code> and as second argument a named list holding the evaluated parameters <code>par</code> of the distribution on the scale of the predictors <span class="math inline">\(\eta_{\star}\)</span>.</p>
 <p>The implementation looks like this:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mygauss &lt;-<span class="st"> </span>function(...) {
     f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(

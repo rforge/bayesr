@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
       </span>
     </div>
 
@@ -201,8 +201,7 @@ rentmodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/b
 ##  6.954535e+00</code></pre>
 <p>along the estimated degrees of freedom and the BIC. Similarly, the BIC of the second model can be extracted with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/AIC">BIC</a></span>(rentmodel_s)</code></pre></div>
-<pre><code>##       BIC      edf
-##  13102.81 13.87868</code></pre>
+<pre><code>## [1] 13102.81</code></pre>
 <p>which is slightly a bit smaller than the first model suggesting that the grid search method is most probably enough in this case.</p>
 <p>Using the <code><a href="../reference/lasso.html">lasso_stop()</a></code> function, we can also extract the corresponding predictions.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(rentmodel, <span class="dt">mstop =</span> <span class="kw"><a href="../reference/lasso.html">lasso_stop</a></span>(rentmodel))</code></pre></div>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Batch-Wise Backfitting — bbfit • bamlss</title>
+<title>Batchwise Backfitting — bbfit • bamlss</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Batch-Wise Backfitting — bbfit" />
+<meta property="og:title" content="Batchwise Backfitting — bbfit" />
 
-<meta property="og:description" content="Batch-wise backfitting estimation engine for GAMLSS using very large data sets." />
+<meta property="og:description" content="Batchwise backfitting estimation engine for GAMLSS using very large data sets." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
       </span>
     </div>
 
@@ -160,19 +160,23 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Batch-Wise Backfitting</h1>
+    <h1>Batchwise Backfitting</h1>
     
     <div class="hidden name"><code>bbfit.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Batch-wise backfitting estimation engine for GAMLSS using very large data sets.</p>
+    <p>Batchwise backfitting estimation engine for GAMLSS using very large data sets.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>bbfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>Inf</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='co'>## Batchwise backfitting engine.</span>
+<span class='fu'>bbfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
+
+<span class='co'>## Parallel version.</span>
+<span class='fu'>bbfitp</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -212,19 +216,20 @@
     </tr>
     <tr>
       <th>nbatch</th>
-      <td><p>Number of batches.</p></td>
-    </tr>
-    <tr>
-      <th>maxit</th>
-      <td><p>Maximum number of iterations of the inner loop.</p></td>
+      <td><p>Number of batches. Can also be a number between 0 and 1, i.e., determining
+    the fraction of observations that should be used for fitting.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
       <td><p>Print information during runtime of the algorithm.</p></td>
     </tr>
     <tr>
+      <th>mc.cores</th>
+      <td><p>On how many cores should estimation be started?</p></td>
+    </tr>
+    <tr>
       <th>&#8230;</th>
-      <td><p>Not used.</p></td>
+      <td><p>For <code>bbfitp()</code> all arguments to be passed to <code>bbfit()</code>.</p></td>
     </tr>
     </table>
     
