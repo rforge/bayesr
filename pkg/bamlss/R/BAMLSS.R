@@ -5296,7 +5296,7 @@ gZ <- function(x, w) {
 
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
-  if(!is.null(y <- list(...)$y) & !is.null(x)) {
+  if(!is.null(y <- list(...)$y) & !is.null(x) & FALSE) {
     wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout)
     return(wts)
   }
@@ -5515,9 +5515,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   }
 
   if(is.null(object$xt$rint))
-    object$xt$rint <- c(0.01, 0.2)
+    object$xt$rint <- 0.1
   if(is.null(object$xt$sint))
-    object$xt$sint <- c(1.01, 10)
+    object$xt$sint <- c(10, 100)
 
   if(!is.list(object$xt$rint)) {
     object$xt$rint <- rep(list(object$xt$rint), length.out = length(type))
