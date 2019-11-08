@@ -224,6 +224,50 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
 #plot(X[,2], y, ylim = c(0, 1))
   i <- -1
   n[which.min(n)] <- max(c(min(n), ncol(X) * 4))
+  H <- NULL
+  rss <- 1e+20
+  eps <- 1
+  while(i < k) {
+    j <- sample(ind, size = 1)
+    tx <- as.numeric(X[j, , drop = FALSE])
+    cs <- colSums((tX - tx)^2)
+    if(length(n) < 2)
+      n2 <- n
+    else
+      n2 <- sample(n, size = 1)
+    take <- order(cs)[1:n2]
+    yn <- y[take]
+    xn <- X[take, , drop = FALSE]
+    m <- glm.fit(xn, scale2(yn, 0.01, 0.99), family = binomial())
+    wm <- coef(m)
+    if(!any(is.na(wm))) {
+      H2 <- H
+      H2 <- cbind(H2, 1 / (1 + exp(-(X %*% wm))))
+      b <- lm.fit(H2, y)
+      rss1 <- sum(residuals(b)^2)
+      eps1 <- (rss - rss1)/rss
+      if(eps1 <= eps) {
+        H <- cbind(H, 1 / (1 + exp(-(X %*% wm))))
+        w <- cbind(w, wm)
+        rss <- rss1
+        eps <- eps * 0.99
+      }
+    }
+    if(!is.null(w))
+      i <- ncol(w)
+  }
+  return(w)
+}
+
+
+
+build_net_w0 <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
+  ind <- 1:nrow(X)
+  tX <- t(X)
+  w <- NULL
+#plot(X[,2], y, ylim = c(0, 1))
+  i <- -1
+  n[which.min(n)] <- max(c(min(n), ncol(X) * 4))
   while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
@@ -258,4 +302,3 @@ build_net_w <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
   }
   return(w)
 }
-

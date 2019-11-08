@@ -5263,12 +5263,6 @@ t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, ...)
   warn <- getOption("warn")
   options("warn" = -1)
   on.exit(options("warn" = warn))
-  if(missing(y) | is.null(y))
-    tree <- FALSE
-  if(tree) {
-    if(length(y) != nrow(x))
-      tree <- FALSE
-  }
   nw <- ncol(x)
   w0 <- build_net_w(cbind(1, x), scale2(y, 0.01, 0.99), k = k, n = n, plot = FALSE)
   w <- list()
@@ -5296,7 +5290,7 @@ gZ <- function(x, w) {
 
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
-  if(!is.null(y <- list(...)$y) & !is.null(x) & FALSE) {
+  if(!is.null(y <- list(...)$y) & !is.null(x) & !is.null(...)$wm) {
     wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout)
     return(wts)
   }
@@ -5540,7 +5534,8 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
       }
       n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
         sint = object$xt$sint[[1]], type = type[1],
-        x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]])
+        x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]],
+        wm = object$xt[["wm"]])
     }
     object$n.weights <- object$sample_weights(object$xt[["tx"]])
   } else {
