@@ -18,8 +18,8 @@ vignette: >
 
 ```{r preliminaries, echo=FALSE, message=FALSE, results="hide"}
 library("bamlss")
-prefix <- "http://www.bamlss.org/articles/" ## ""
-prefix2 <- "http://www.bamlss.org/articles/" ## ""
+prefix <- "http://bayesr.r-forge.r-project.org/articles/" ## ""
+prefix2 <- "http://bayesr.r-forge.r-project.org/articles/" ## ""
 ```
 
 ## Overview
