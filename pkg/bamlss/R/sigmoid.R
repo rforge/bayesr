@@ -227,7 +227,6 @@ build_net_w <- function(X, y, k = 10, n = 10, weights = NULL, ...) {
   H <- NULL
   rss <- 1e+20
   eps <- 1
-  y2 <- scale2(y, 0.01, 0.99)
   while(i < k) {
     j <- sample(ind, size = 1)
     tx <- as.numeric(X[j, , drop = FALSE])
@@ -237,7 +236,7 @@ build_net_w <- function(X, y, k = 10, n = 10, weights = NULL, ...) {
     else
       n2 <- sample(n, size = 1)
     take <- order(cs)[1:n2]
-    yn <- y2[take]
+    yn <- scale2(y[take], 0.01, 0.99)
     xn <- X[take, , drop = FALSE]
     m <- glm.fit(xn, yn, family = binomial())
     wm <- coef(m)
