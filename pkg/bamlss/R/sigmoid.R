@@ -218,6 +218,7 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
 }
 
 build_net_w <- function(X, y, k = 10, weights = NULL, wts = NULL, maxit = 100, ...) {
+  stopifnot(requireNamespace("nnet"))
   j <- grep("bw", names(wts))
   wts <- as.numeric(c(wts[j], runif(1, -0.5, 0.5), wts[-j]))
   m <- nnet::nnet(X[, -1, drop = FALSE], y, weights = weights,
