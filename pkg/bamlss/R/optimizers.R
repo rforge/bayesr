@@ -5973,7 +5973,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
               wts <- unlist(x[[i]]$smooth.construct[[j]]$sample_weights(
                 x = x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], -1, drop = FALSE],
-                y = e, weights = hess)
+                y = e, weights = hess, wts = beta[[i]][[paste0("s.", j)]])
               )
               Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], wts)
               Xt <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take2], , drop = FALSE], wts)

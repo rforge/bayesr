@@ -5258,13 +5258,13 @@ n <- function(..., k = 10, type = 2)
 }
 
 
-t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, weights = NULL, ...)
+t.weights <- function(x, y, n = 20, k = 100, dropout = NULL, weights = NULL, wts = NULL, maxit = 100, ...)
 {
   warn <- getOption("warn")
   options("warn" = -1)
   on.exit(options("warn" = warn))
   nw <- ncol(x)
-  w0 <- build_net_w(cbind(1, x), y, k = k, n = n, plot = FALSE, weights = weights)
+  w0 <- build_net_w(cbind(1, x), y, k = k, n = n, plot = FALSE, weights = weights, wts = wts, maxit = maxit)
   w <- list()
   for(i in 1:ncol(w0)) {
     w[[i]] <- w0[, i]
@@ -5291,7 +5291,8 @@ gZ <- function(x, w) {
 n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss", "softplus", "cos", "sin"), x = NULL, ...)
 {
   if(!is.null(y <- list(...)$y) & !is.null(x) & !is.null(list(...)$wm)) {
-    wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout, weights = list(...)$weights)
+    wts <- t.weights(x, y, k = nodes, n = list(...)$tntake, dropout = list(...)$dropout, weights = list(...)$weights,
+      wts = list(...)$wts, maxit = list(...)$maxit)
     return(wts)
   }
   type <- match.arg(type)
@@ -5527,7 +5528,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     object$xt[["tx"]] <- object$X[sample(1:nobs, size = nodes, replace = if(nodes >= nobs) TRUE else FALSE), -1, drop = FALSE]
     if(is.null(object$xt[["nobs"]]))
       object$xt[["nobs"]] <- 10
-    object$sample_weights <- function(x = NULL, y = NULL, weights = NULL) {
+    if(is.null(object$xt[["maxit"]]))
+      object$xt[["maxit"]] <- 100
+    object$sample_weights <- function(x = NULL, y = NULL, weights = NULL, wts = NULL) {
       if(!is.null(y)) {
         if(length(unique(y)) < 50)
           y <- NULL
@@ -5535,7 +5538,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
       n.weights(nodes, ncol(object$X) - 1L, rint = object$xt$rint[[1]],
         sint = object$xt$sint[[1]], type = type[1],
         x = x, dropout = object$xt[["dropout"]], y = y, tntake = object$xt[["nobs"]],
-        wm = object$xt[["wm"]], weights = weights)
+        wm = object$xt[["wm"]], weights = weights, wts = wts, maxit = object$xt[["maxit"]])
     }
     object$n.weights <- object$sample_weights(object$xt[["tx"]])
   } else {

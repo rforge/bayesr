@@ -217,7 +217,18 @@ stree <- function(x, y, k = 20, verbose = TRUE, plot = FALSE, min = 1, ...) {
   return(b)
 }
 
-build_net_w <- function(X, y, k = 10, n = 10, weights = NULL, ...) {
+build_net_w <- function(X, y, k = 10, weights = NULL, wts = NULL, maxit = 100, ...) {
+  j <- grep("bw", names(wts))
+  wts <- as.numeric(c(wts[j], runif(1, -0.5, 0.5), wts[-j]))
+  m <- nnet::nnet(X[, -1, drop = FALSE], y, weights = weights,
+    linout = TRUE, maxit = maxit, size = k, Wts = wts,
+    MaxNWts = 20000, trace = FALSE, decay = 0.0001)
+  w <- extract_nnet_weights(coef(m))
+  return(w)
+}
+
+
+build_net_w1 <- function(X, y, k = 10, n = 10, weights = NULL, ...) {
   ind <- 1:nrow(X)
   tX <- t(X)
   w <- NULL
@@ -305,3 +316,25 @@ build_net_w0 <- function(X, y, k = 10, n = 10, linear = FALSE, ...) {
   }
   return(w)
 }
+
+
+extract_nnet_weights <- function(x)
+{
+  if(inherits(x, "nnet"))
+    x <- coef(x)
+  nw <- nw0 <- names(x)
+  nw0 <- sapply(strsplit(nw0, "->", fixed = TRUE), function(x) { x[2] })
+  nw0 <- paste0("->", nw0)
+  nw <- grep("->h", nw, fixed = TRUE, value = TRUE)
+  nw <- sapply(strsplit(nw, "->", fixed = TRUE), function(x) { x[2] })
+  nw <- unique(nw)
+  wts <- NULL
+  for(j in nw) {
+    xtmp <- x[nw0 == paste0("->", j)]
+    wts <- cbind(wts, xtmp)
+  }
+  rownames(wts) <- NULL
+  colnames(wts) <- nw
+  return(wts)
+}
+
