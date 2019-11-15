@@ -734,16 +734,19 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   for(ic in bit::chunk(data)) {
     object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
   }
-  csum <- 0
-  for(ic in chunk_mat(object[["X"]])) {
-    csum <- csum + colSums(object[["X"]][ic, ])
-  }
-  QR <- qr(matrix(csum, ncol = 1L))
-  object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
-  object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
-  for(j in seq_along(object[["S"]])) {
-    if(!is.function(object[["S"]][[j]]))
-      object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
+  if(!inherits(object, "nnet0.smooth")) {
+    csum <- 0
+    for(ic in chunk_mat(object[["X"]])) {
+      csum <- csum + colSums(object[["X"]][ic, ])
+    }
+    QR <- qr(matrix(csum, ncol = 1L))
+    object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
+    object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
+    for(j in seq_along(object[["S"]])) {
+      if(!is.function(object[["S"]][[j]])) {
+        object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
+      }
+    }
   }
   object$orig.class <- class(object)
   class(object) <- "ff_smooth.smooth.spec"
@@ -753,8 +756,12 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
 Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 {
   class(object) <- object$orig.class
-  X <- Predict.matrix(object, data)
-  return(X %*% object[["Z"]])
+  if(is.null(object$PredictMat)) {
+    X <- Predict.matrix(object, data)
+    return(X %*% object[["Z"]])
+  } else {
+    return(object$PredictMat(object, data))
+  }
 }
 
 ## Copy from bootSVD.
