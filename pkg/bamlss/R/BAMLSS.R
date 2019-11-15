@@ -721,7 +721,11 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   object <- smooth.construct(object, nd, knots)
   object[["X"]] <- NULL
   sX <- function(x) {
-    X <- PredictMat(object, data = x)
+    if(is.null(object$PredictMat)) {
+      X <- PredictMat(object, data = x)
+    } else {
+      X <- object$PredictMat(object, data = x)
+    }
     cn <- colnames(X)
     X <- ff::ff(X, dim = dim(X), dimorder = c(2, 1))
     colnames(X) <- cn
