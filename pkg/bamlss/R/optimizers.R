@@ -5672,6 +5672,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     }
     if(!is.null(x[[i]]$smooth.construct)) {
       for(j in names(x[[i]]$smooth.construct)) {
+        if(!is.null(x[[i]]$smooth.construct[[j]]$orig.class))
+          class(x[[i]]$smooth.construct[[j]]) <- x[[i]]$smooth.construct[[j]]$orig.class
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
