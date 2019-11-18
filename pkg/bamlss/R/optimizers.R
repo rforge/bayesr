@@ -6025,11 +6025,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 -1 * objfun(get.par(g, "tau2"))
               }
               for(jj in ii) {
-                theta0 <- theta
-                theta <- try(uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
-                  NULL, i, jj, logPost = logP, lower = 0, ll = ll0), silent = TRUE)
-                if(inherits(theta, "try-error"))
-                  theta <- theta0
+                theta <- uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
+                  NULL, i, jj, logPost = logP, lower = 0, ll = ll0)
               }
               tau2s <- as.numeric(get.par(theta, "tau2"))
             }
