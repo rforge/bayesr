@@ -3948,6 +3948,12 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
     for(j in enames2[i]) {
       for(jj in grep3(j, names(x))) {
         sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
+        if(inherits(x[[jj]], "ff_smooth.smooth.spec")) {
+          if(!is.null(x[[jj]]$orig.class)) {
+            if("nnet0.smooth" %in% x[[jj]]$orig.class)
+              class(x[[jj]]) <- x[[jj]]$orig.class
+          }
+        }
         if(!inherits(x[[jj]], "no.mgcv") & !inherits(x[[jj]], "special")) {
           if(is.null(x[[jj]]$mono))
             x[[jj]]$mono <- 0
