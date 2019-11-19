@@ -5671,7 +5671,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  object$prior <- function(...) 1
+  object$prior <- function(...) { 1 }
 
   object$PredictMat <- Predict.matrix.nnet0.smooth
 
