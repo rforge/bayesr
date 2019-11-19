@@ -6248,7 +6248,7 @@ forward_reg2 <- function(x, y, n = 4, nu, maxit = 100, ...)
 
 
 Predict.matrix.nnet0.smooth <- function(object, data)
-{
+{ 
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
   X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
