@@ -758,10 +758,11 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
   class(object) <- object$orig.class
   if(is.null(object$PredictMat)) {
     X <- Predict.matrix(object, data)
-    return(X %*% object[["Z"]])
+    X <- X %*% object[["Z"]]
   } else {
-    return(object$PredictMat(object, data))
+    X <- object$PredictMat(object, data)
   }
+  return(X)
 }
 
 ## Copy from bootSVD.
