@@ -6206,14 +6206,21 @@ bbfitp <- function(x, y, family, mc.cores = 1, ...)
   }
   b <- parallel::mclapply(1:mc.cores, parallel_fun, mc.cores = mc.cores)
   rval <- list()
-  rval$samples <- as.mcmc.list(lapply(b, function(x) {
+  rval$samples <- lapply(b, function(x) {
     if(inherits(x, "try-error")) {
       writeLines(x)
-      return(NULL)
+      return(x)
     } else {
       return(as.mcmc(x$parpaths))
     }
-  }))
+  })
+  is_err <- sapply(rval$samples, is.character)
+  if(all(is_err))
+    stop("something went wrong in bbfitp()!")
+  if(any(is_err))
+    warning("one core reports an error.")
+  b <- b[!is_err]
+  rval$samples <- as.mcmc.list(rval$samples[!is_err])
   rval$parameters <- colMeans(do.call("rbind", lapply(b, function(x) x$parpaths)))
   rval$nbatch <- b[[1]]$nbatch
   rval$runtime <- mean(sapply(b, function(x) x$runtime))

@@ -288,8 +288,11 @@ design.construct <- function(formula, data = NULL, knots = NULL,
           colnames(X) <- cn
           return(X)
         }
-        for(cff in bit::chunk(data)) {
-          obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
+        mm_test <- model.matrix(mm_terms, data = data[1:10, , drop = FALSE])
+        if(ncol(mm_test) > 0) {
+          for(cff in bit::chunk(data)) {
+            obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
+          }
         }
       }
     }
@@ -3989,7 +3992,11 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           if(is.null(x[[jj]]$PredictMat)) {
             X <- PredictMat(x[[jj]], data)
           } else {
-            X <- x[[jj]]$PredictMat(x[[jj]], data)
+            if(inherits(x[[jj]], "nnet0.smooth")) {
+              X <- Predict.matrix.nnet0.smooth(x[[jj]], data)
+            } else {
+              X <- x[[jj]]$PredictMat(x[[jj]], data)
+            }
           }
           fit <- apply(samps[, sn, drop = FALSE], 1, function(b) {
             x[[jj]]$fit.fun(X, b)
@@ -9068,7 +9075,14 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   rval <- if(length(rval) < 2) {
     as.matrix(rval[[1]], ncol = 1)
   } else {
-    do.call("cbind", rval)
+    rd <- sapply(rval, ncol)
+    if(all(rd < 1)) {
+      NULL
+    } else {
+      if(any(rd < 1))
+        rval <- rval[!(rd < 1)]
+      do.call("cbind", rval)
+    }
   }
   if(!length(rval)) return(numeric(0))
   nx <- sapply(strsplit(rownames(rval), ".", fixed = TRUE), function(x) { x[1] })
