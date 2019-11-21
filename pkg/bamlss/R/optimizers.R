@@ -5610,6 +5610,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     if(is.factor(batch_ids)) {
       batch <- split(1:N, batch_ids)
       batch <- lapply(batch, range)
+    } else {
+      if(is.list(batch_ids)) {
+        batch <- batch_ids
+        rm(batch_ids)
+      }
     }
     if(!is.list(batch))
       stop("argument batch_ids specified wrong!")
