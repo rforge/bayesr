@@ -5658,7 +5658,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
           }
           if(!srandom) {
-            take <- batch[[1L]][1L]:batch[[1L]][2L]
+            take <- if(length(batch[[1L]]) > 2) batch[[1L]] else batch[[1L]][1L]:batch[[1L]][2L]
           } else {
             take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
           }
@@ -5817,11 +5817,20 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
     for(bid in bind) {
       if(!srandom) {
-        take <- batch[[bid]][1L]:batch[[bid]][2L]
-        take2 <- if(bid < 2) {
-          batch[[bid + 1L]][1L]:batch[[bid + 1L]][2L]
+        if(length(batch[[bid]]) > 2) {
+          take <- batch[[bid]]
+          take2 <- if(bid < 2) {
+            batch[[bid + 1L]]
+          } else {
+            batch[[bid - 1L]]
+          }
         } else {
-          batch[[bid - 1L]][1L]:batch[[bid - 1L]][2L]
+          take <- batch[[bid]][1L]:batch[[bid]][2L]
+          take2 <- if(bid < 2) {
+            batch[[bid + 1L]][1L]:batch[[bid + 1L]][2L]
+          } else {
+            batch[[bid - 1L]][1L]:batch[[bid - 1L]][2L]
+          }
         }
       } else {
         take <- sample(samp_ids, floor(batch[[bid]][1L] * N))
@@ -6147,7 +6156,15 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       if(verbose) {
         edf <- abs(edf)
-        btxt <- if(srandom) NA else batch[[bid]][2L]
+        btxt <- if(srandom) {
+          NA
+        } else {
+          if(length(batch[[bid]]) > 2) {
+            NA
+          } else {
+            batch[[bid]][2L]
+          }
+        }
         if(iter < 2) {
           cat(sprintf("   * iter %i, no. obs %i, edf %f\r", iter, btxt, round(edf, 4)))
         } else {
