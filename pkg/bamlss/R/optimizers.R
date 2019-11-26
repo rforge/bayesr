@@ -5552,8 +5552,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(is.null(K))
     K <- 2
 
-  batch_ids <- list(...)$batch_ids
-
   always <- list(...)$always
   if(is.null(always))
     always <- FALSE
@@ -5584,6 +5582,23 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
     stop("parameter names mismatch with family names!")
 
   N  <- nrow(y)
+
+  batch_ids <- list(...)$batch_ids
+
+  if(!is.null(batch_ids)) {
+    if(!is.list(batch_ids)) {
+      if(length(batch_ids) == 2L) {
+        yind <- 1:N
+        nb <- batch_ids[1]
+        ni <- batch_ids[2]
+        batch_ids <- vector(mode = "list", length = ni)
+        for(i in 1:ni)
+          batch_ids[[i]] <- sample(yind, size = nb, replace = FALSE)
+        rm(yind)
+      }
+    }
+  }
+
   random <- all(nbatch < 1) & all(nbatch > 0)
   batch_select <- srandom <- samp_ids <- FALSE
   if(is.null(batch_ids)) {
