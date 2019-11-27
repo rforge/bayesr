@@ -3208,6 +3208,8 @@ process.chains <- function(x, combine = TRUE, drop = FALSE, burnin = NULL, thin 
   if(!is.null(burnin) | !is.null(thin)) {
     for(i in seq_along(x)) {
       if(!is.null(burnin)) {
+        if(burnin >= nrow(x[[i]]))
+          stop("burnin >= nsamples!")
         x[[i]] <- as.mcmc(x[[i]][-c(1:burnin), , drop = FALSE])
       }
       if(!is.null(thin)) {
