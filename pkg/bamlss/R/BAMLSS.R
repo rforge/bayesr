@@ -717,7 +717,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
   for(j in object$term) {
-    if(!is.factor(data[[j]])) {
+    if(!is.factor(data[[j]][1:2])) {
       xr <- ffbase::range.ff(data[[j]], na.rm = TRUE)
       nd[[j]] <- sample(seq(xr[1], xr[2], length = 500))
     } else {
