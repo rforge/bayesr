@@ -3957,7 +3957,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   if(length(i <- grep("s.", ec))) {
     for(j in enames2[i]) {
       for(jj in grep3(j, names(x))) {
-        sn <- snames[grep2(paste(id, "s", jj, sep = "."), snames, fixed = TRUE)]
+        sn <- snames[grep2(paste0(paste(id, "s", jj, sep = "."), "."), snames, fixed = TRUE)]
         if(inherits(x[[jj]], "ff_smooth.smooth.spec")) {
           if(!is.null(x[[jj]]$orig.class)) {
             if("nnet0.smooth" %in% x[[jj]]$orig.class)
@@ -4032,8 +4032,10 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   }
   if(!is.null(x$smooth.construct)) {
     for(j in names(x$smooth.construct)) {
-      sn <- grep(paste(id, if(j != "model.matrix") "s" else "p", j, sep = "."), snames,
-        fixed = TRUE, value = TRUE)
+      ptxt <- paste(id, if(j != "model.matrix") "s" else "p", j, sep = ".")
+      if(j != "model.matrix")
+        ptxt <- paste0(ptxt, ".")
+      sn <- grep(ptxt, snames, fixed = TRUE, value = TRUE)
       if(!length(sn)) {
         if(j == "model.matrix")
           sn <- grep(paste(id, ".p.", sep = ""), snames, fixed = TRUE, value = TRUE)

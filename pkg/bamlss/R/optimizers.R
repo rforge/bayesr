@@ -3915,7 +3915,7 @@ set.starting.values <- function(x, start)
           if(inherits(x[[id]]$smooth.construct[[j]], "nnet.boost")) {
             take <- tl
           } else {
-            take <- grep(tl, nstart[tns %in% id], fixed = TRUE, value = TRUE)
+            take <- grep(paste0(tl, "."), nstart[tns %in% id], fixed = TRUE, value = TRUE)
           }
           if(is.null(x[[id]]$smooth.construct[[j]]$by))
             x[[id]]$smooth.construct[[j]]$by <- "NA"
