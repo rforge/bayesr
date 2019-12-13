@@ -6064,11 +6064,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
-              if(!slice) {
-                accept <- TRUE
-              } else {
-                epsll < 0.5
-              }
+#              if(!slice) {
+#                accept <- TRUE
+#              } else {
+#                epsll < 0.5
+#              }
+              accept <- epsll <= 0.5
               if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
@@ -6175,7 +6176,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           NA
         } else {
           if(length(batch[[bid]]) > 2) {
-            NA
+            length(batch[[bid]]) * iter
           } else {
             batch[[bid]][2L]
           }
