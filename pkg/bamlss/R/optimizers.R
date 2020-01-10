@@ -3739,7 +3739,7 @@ print.boost_summary <- function(x, summary = TRUE, plot = TRUE,
         xn <- sapply(strsplit(colnames(x$loglik), ".", fixed = TRUE), function(x) { x[length(x)] })
         cols <- rainbow_hcl(length(unique(xn)))
         matplot(x$loglik, type = "l", lty = 1,
-                xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)])
+                xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)], ...)
         abline(v = x$mstop, lwd = 3, col = "lightgray")
         axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
@@ -3857,7 +3857,6 @@ boost_plot <- function(x, which = c("loglik", "loglik.contrib", "parameters", "a
       at <- p[nrow(p), ]
       at <- at[labs != ""]
       labs <- labs[labs != ""]
-      
       matplot(p, type = "l", lty = 1, col = cols[as.factor(xn)], xlab = "Iteration", ...)
       abline(v = mstop, lwd = 3, col = "lightgray")
       axis(4, at = at, labels = labs, las = 1)
