@@ -5722,47 +5722,47 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           attr(x[[i]]$smooth.construct[[j]]$S[[lS + 1]], "npar") <- ncX
         }
-        if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
-#          if(noff) {
-#            shuffle_id <- sample(1:N)
-#          } else {
-#            shuffle_id <- NULL
-#            for(ii in bit::chunk(y)) {
-#              ind <- ii[1]:ii[2]
-#              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
-#            }
-#          }
-#          if(!srandom) {
-#            take <- batch[[1L]][1L]:batch[[1L]][2L]
-#          } else {
-#            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
-#          }
-#          Xn <- x[[i]]$smooth.construct[[j]]$getZ(x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE], unlist(x[[i]]$smooth.construct[[j]]$n.weights))
-#          XX <- crossprod(Xn)
-#          objfun <- function(tau2, retedf = FALSE) {
-#            S <- 0
-#            for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
-#              S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
-#                x[[i]]$smooth.construct[[j]]$S[[l]](c("b" = rep(0, ncol(XX))))
-#              } else {
-#                x[[i]]$smooth.construct[[j]]$S[[l]]
-#              }
-#            }
-#            edf <- sum_diag(XX %*% matrix_inv(XX + S))
-#            if(retedf)
-#              return(edf)
-#            else
-#              return((min(c(100, ncX * 0.5)) - edf)^2)
-#          }
-#          tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
-#          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
-#            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
-#          if(!inherits(opt, "try-error")) {
-#            tau2[[i]][[j]] <- opt
-#          }
-           tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+        if(!inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+          if(noff) {
+            shuffle_id <- sample(1:N)
+          } else {
+            shuffle_id <- NULL
+            for(ii in bit::chunk(y)) {
+              ind <- ii[1]:ii[2]
+              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+            }
+          }
+          if(!srandom) {
+            take <- batch[[1L]][1L]:batch[[1L]][2L]
+          } else {
+            take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
+          }
+          Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
+          XX <- crossprod(Xn)
+          objfun <- function(tau2, retedf = FALSE) {
+            S <- 0
+            for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
+              S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
+                x[[i]]$smooth.construct[[j]]$S[[l]](c("b" = rep(0, ncol(XX))))
+              } else {
+                x[[i]]$smooth.construct[[j]]$S[[l]]
+              }
+            }
+            edf <- sum_diag(XX %*% matrix_inv(XX + S))
+            if(retedf)
+              return(edf)
+            else
+              return((min(c(100, ncX * 0.5)) - edf)^2)
+          }
+          tau2[[i]][[j]] <- rep(1000, length(x[[i]]$smooth.construct[[j]]$S))
+          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
+            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
+          if(!inherits(opt, "try-error")) {
+            tau2[[i]][[j]] <- opt
+          }
+          ## tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
         } else {
-          tau2[[i]][[j]] <- rep(1/ncX, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
         }
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
@@ -6068,7 +6068,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 #              } else {
 #                epsll < 0.5
 #              }
-              accept <- epsll <= 0.5
+              if(!always) {
+                accept <- epsll <= 0.5
+              } else {
+                accept <- TRUE
+              }
               if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
