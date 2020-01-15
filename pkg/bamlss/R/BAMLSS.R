@@ -2533,7 +2533,6 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, 
       }
     }
     fn[fn %in% c("1", "-1")] <- NA
-
     nas <- which(is.na(fn))
     if(!is.null(family)) {
       if(length(nas))

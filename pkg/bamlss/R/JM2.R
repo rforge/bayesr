@@ -1,3 +1,31 @@
+jm2_bamlss <- function(k = 1)
+{
+  if(k > 0) {
+    mu <- paste("mu", 1:k, sep = "")
+    sigma <- paste("sigma", 1:k, sep = "")
+    alpha <- paste("alpha", 1:k, sep = "")
+    links <- c(rep("identity", k), rep("log", k), rep("identity", k), "identity")
+    names(links) <- c(mu, sigma, alpha, "psi")
+  }
+
+  links <- c(lambda = "log", gamma = "log", links)
+
+  rval <- list(
+    "family" = "jm",
+    "names" = names(links),
+    "links" = links,
+    "transform" = function(x, obstime = NULL, id = NULL, kpsi = 5, ...) {
+      jm2_transform(x = x$x, y = x$y, terms = x$terms, knots = x$knots,
+        formula = x$formula, family = x$family, data = x$model.frame,
+        obstime = obstime, id = id, kpsi = kpsi, ...)
+    }
+  )
+  
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 # Function to transform data set to FunData objects
 marker_to_irregFunData <- function (marker, data, t, id = "idpseud", 
                                     fundata = FALSE) {
@@ -58,8 +86,10 @@ smooth.construct.fri.smooth.spec <- function(object, data, knots, ...)
   if(object$bs.dim < 1)
     object$bs.dim <- ncol(object$fpca$phi)
   Z <- list()
-  for(j in 1:object$bs.dim) {
-    object$sfun[[j]] <- splinefun(object$fpca$workGrid, object$fpca$phi[, j])
+  object$neigen <- object$bs.dim
+  for(j in 1:object$neigen) {
+    object$sfun[[j]] <- splinefun(object$fpca$workGrid,
+      object$fpca$phi[, j] * sqrt(object$fpca$lambda[j]))
     Z[[j]] <- object$sfun[[j]](data[[object$term[2]]])
   }
   Z <- do.call("cbind", Z)
@@ -67,21 +97,39 @@ smooth.construct.fri.smooth.spec <- function(object, data, knots, ...)
   Re <- model.matrix(object$form, data)
   object$X <- tensor.prod.model.matrix(list(Re, Z))
   object$S <- list(diag(ncol(object$X)))
-  object$rank <- qr(object$S[[1]])$rank
-  object$null.space.dim <- ncol(object$S[[1]])
-  class(object) <- "fri.smooth"
+
+  Cr <- rbind(t(colSums(Re)), matrix(0, nrow = ncol(Re) - 1, ncol = ncol(Re)))
+
+  object$bs.dim <- ncol(object$X)
+  object$S <- list(diag(object$bs.dim))
+  object$rank <- object$bs.dim
+  object$null.space.dim <- 0
+  object$C <- matrix(0, 0, ncol(object$X))
+  object$Cr <- Cr
+  object$side.constrain <- FALSE
+  object$plot.me <- TRUE
+  object$te.ok <- 2
+
+  class(object) <- c("fri.smooth", "random.effect")
   return(object)
 }
 
 Predict.matrix.fri.smooth <- function(object, data)
 {
   Z <- list()
-  for(j in 1:object$bs.dim) {
+  for(j in 1:object$neigen) {
     Z[[j]] <- object$sfun[[j]](data[[object$term[2]]])
   }
   Z <- do.call("cbind", Z)
   Re <- model.matrix(object$form, data)
   X <- tensor.prod.model.matrix(list(Re, Z))
   return(X)
+}
+
+jm2_transform <- function(x, y, terms, knots,
+  formula, family, data, obstime, id, kpsi, ...)
+{
+print(head(data))
+  stop()
 }
 
