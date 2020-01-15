@@ -40,8 +40,19 @@ marker_to_irregFunData <- function (marker, data, t, id = "idpseud",
 smooth.construct.fri.smooth.spec <- function(object, data, knots, ...)
 {
   stopifnot(requireNamespace("fdapace"))
-  m <- marker_to_irregFunData(marker = object$term[3], data = data, t = object$term[2],
-    id = object$term[1])
+  if(is.null(object$xt$m))
+    stop("no markers specified!")
+  if(is.null(dim(object$xt$m)))
+    object$xt$m <- list("m1" = object$xt$m)
+  nm <- names(object$xt$m)
+  if(is.null(nm)) {
+    nm <- paste0("m", 1:length(object$xt$m))
+    names(object$xt$m) <- nm
+  }
+  for(j in nm)
+    data[[j]] <- object$xt$m[[j]]
+  m <- marker_to_irregFunData(marker = nm, data = data,
+    id = object$term[1], t = object$term[2])
   object$fpca <- fdapace::FPCA(m$X, m$argvals)
   object$sfun <- list()
   if(object$bs.dim < 1)
@@ -52,7 +63,7 @@ smooth.construct.fri.smooth.spec <- function(object, data, knots, ...)
     Z[[j]] <- object$sfun[[j]](data[[object$term[2]]])
   }
   Z <- do.call("cbind", Z)
-  object$form <- as.formula(paste("~", paste(object$term, collapse = ":"), "-1"))
+  object$form <- as.formula(paste("~", paste(object$term[1], collapse = ":"), "-1"))
   Re <- model.matrix(object$form, data)
   object$X <- tensor.prod.model.matrix(list(Re, Z))
   object$S <- list(diag(ncol(object$X)))
