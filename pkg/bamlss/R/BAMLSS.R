@@ -10716,3 +10716,35 @@ ecdf_transform <- function(data, trans = NULL, notrans = NULL) {
   return(data)
 }
 
+if(FALSE) {
+  n <- 2000
+  x <- sort(runif(n, -3, 3))
+  y <- 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
+
+  V <- smooth.construct(s(x,bs="ps",k=20), list(x=x), NULL)$X
+  X <- matrix(x, ncol = 1)
+
+  C <- t(qr.Q(qr(X),complete=TRUE))
+ # C <- X %*% solve(t(x) %*% X) %*% t(X)
+
+  Z2 <- (diag(ncol(C)) - C) %*% V
+
+  G <- cbind(1, X, Z2)
+
+  beta <- solve(t(G) %*% G + 0.000001 * diag(ncol(G))) %*% t(G) %*% y
+
+  fit <- G %*% beta
+
+  par(mfrow = c(1, 3))
+  plot(x, y)
+  lines(fit ~ x, col = 2, lwd = 2)
+
+  fitl <- G[, 1:2] %*% beta[1:2]
+  fits <- G[, -c(1:2)] %*% beta[-c(1:2)]
+
+  plot(x, fitl, type = "l", main = "linear")
+  lines(0.5*x ~ x, col = 2)
+  plot(x, fits, type = "l", main = "smooth")
+  lines(sin(x) ~ x, col = 2)
+}
+
