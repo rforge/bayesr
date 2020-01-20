@@ -4999,3 +4999,46 @@ gpareto2_bamlss <- function(...)
 #  rval
 #}
 
+
+## logNN model.
+logNN_bamlss <- function(...) {
+  rval <- list(
+    "family" = "logNormal-Normal Convolution",
+    "names" = c("mu", "sigma", "nu", "lambda"),
+    "links" = c("identity", "log", "identity", "log"),
+    "optimizer" = FALSE,
+    "propose" = list(
+      "mu" = logNN_propose_mu,
+      "sigma" = logNN_propose_sigma,
+      "nu" = logNN_propose_nu,
+      "lambda" = logNN_propose_lambda
+    ),
+    "d" = function(...) 1
+  )
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+logNN_propose_mu <- logNN_propose_sigma <- logNN_propose_nu <- logNN_propose_lambda <- function(...)
+{
+  stop("here!")
+}
+
+if(FALSE) {
+  n <- 1000
+  x <- runif(n, -3, 3)
+  mu <- 1 + sin(x)
+  zeta <- rnorm(n, mu, sd = 0.1)
+  Z <- exp(zeta)
+  y <- Z + rnorm(n, -2, 0.1)
+
+  f <- list(
+    y ~ s(x),
+    sigma ~ 1,
+    nu ~ 1,
+    lambda ~ 1
+  )
+
+  b <- bamlss(f, family = "logNN")
+}
+
