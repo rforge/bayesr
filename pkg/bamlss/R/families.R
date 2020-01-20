@@ -5006,14 +5006,30 @@ logNN_bamlss <- function(...) {
     "family" = "logNormal-Normal Convolution",
     "names" = c("mu", "sigma", "nu", "lambda"),
     "links" = c("identity", "log", "identity", "log"),
-    "optimizer" = FALSE,
-    "propose" = list(
-      "mu" = logNN_propose_mu,
-      "sigma" = logNN_propose_sigma,
-      "nu" = logNN_propose_nu,
-      "lambda" = logNN_propose_lambda
-    ),
-    "d" = function(...) 1
+    "sampler" = FALSE,
+#    "propose" = list(
+#      "mu" = logNN_propose_mu,
+#      "sigma" = logNN_propose_sigma,
+#      "nu" = logNN_propose_nu,
+#      "lambda" = logNN_propose_lambda
+#    ),
+    "d" = function(y, par, log = FALSE, ...) {
+      pst <- 1/(2 * pi * par$sigma * par$lambda)
+      foo <- function(x, y, mu, sigma, nu, lambda) {
+        exp(-1/(2*sigma^2) * (x - mu)^2 - 1/(2*lambda^2) * (y - exp(x) - nu)^2)
+      }
+      n <- length(y)
+      int <- rep(0, n)
+      for(i in 1:n) {
+        int[i] <- integrate(foo, -1000, 1000,
+          y = y[i], mu = par$mu[i], sigma = par$sigma[i], nu = par$nu[i], lambda = par$lambda[i],
+          subdivisions = 50, rel.tol = .Machine$double.eps^.75)$value
+      }
+      d <- pst * int
+      if(log)
+        d <- log(d)
+      return(d)
+    }
   )
   class(rval) <- "family.bamlss"
   rval
