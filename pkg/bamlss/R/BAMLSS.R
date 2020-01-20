@@ -10717,26 +10717,40 @@ ecdf_transform <- function(data, trans = NULL, notrans = NULL) {
 }
 
 if(FALSE) {
-  n <- 2000
-  x <- sort(runif(n, -3, 3))
-  y <- 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
+  library("bamlss")
+  library("MASS")
 
-  V <- smooth.construct(s(x,bs="ps",k=20), list(x=x), NULL)$X
+  nullc <- function(X, Y) {
+    Null(cbind(X, Null(Y)))
+  }
+
+  n <- 1000
+  x <- sort(runif(n, -3, 3))
+  y <- 2 + 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
+
+  ## P-spline design matrix.
+  Z <- smooth.construct(s(x,bs="ps",k=20), list(x=x), NULL)$X
+
+  ## Linear deisgn matrix including intercept.
   X <- matrix(x, ncol = 1)
 
-  C <- t(qr.Q(qr(X),complete=TRUE))
- # C <- X %*% solve(t(x) %*% X) %*% t(X)
+  ## Orthogonal complement of subspace.
+  C <- nullc(cbind(1, X), Z)
 
-  Z2 <- (diag(ncol(C)) - C) %*% V
+  ## Plot basis functions.
+  matplot(x, C, type = "l", lty = 1, col = 1)
 
-  G <- cbind(1, X, Z2)
+  ## Final big design matrix used for estimation.
+  G <- cbind(1, X, C)
 
-  beta <- solve(t(G) %*% G + 0.000001 * diag(ncol(G))) %*% t(G) %*% y
+  ## Estimate coefficients.
+  beta <- solve(t(G) %*% G) %*% t(G) %*% y
 
+  ## Draw fitted lines.
   fit <- G %*% beta
 
   par(mfrow = c(1, 3))
-  plot(x, y)
+  plot(x, y, main = "combined fit")
   lines(fit ~ x, col = 2, lwd = 2)
 
   fitl <- G[, 1:2] %*% beta[1:2]
@@ -10744,6 +10758,7 @@ if(FALSE) {
 
   plot(x, fitl, type = "l", main = "linear")
   lines(0.5*x ~ x, col = 2)
+
   plot(x, fits, type = "l", main = "smooth")
   lines(sin(x) ~ x, col = 2)
 }
