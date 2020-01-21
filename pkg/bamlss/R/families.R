@@ -5001,7 +5001,7 @@ gpareto2_bamlss <- function(...)
 
 
 ## logNN model.
-logNN_bamlss <- function(..., a = -15, b = 15, N = 1000)
+logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 {
   stopifnot(requireNamespace("statmod"))
 
@@ -5020,6 +5020,24 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 1000)
       if(log)
         d <- log(d)
       return(d)
+    },
+    "p" = function(y, par, lower.tail = TRUE, log.p = FALSE, ...) {
+      foo <- function(t, y, mu, sigma, lambda) {
+        dnorm(t, mean = mu, sd = sigma) * pnorm(y - exp(t), sd = lambda)
+      }
+      n <- length(y)
+      p <- rep(0, n)
+      for(i in 1:n) {
+        p[i] <- integrate(foo, -Inf, Inf,
+          y = y[i], mu = par$mu[i], sigma = par$sigma[i], lambda = par$lambda[i],
+          rel.tol = .Machine$double.eps^.75)$value
+      }
+      if(!lower.tail)
+        p <- 1 - p
+     if(log.p)
+       return(log(p))
+     else
+      return(p)
     }
   )
   class(rval) <- "family.bamlss"
@@ -5037,11 +5055,11 @@ if(FALSE) {
 
   f <- list(
     y ~ s(x),
-    sigma ~ s(x),
-    lambda ~ s(x)
+    sigma ~ 1,
+    lambda ~ 1
   )
 
-  b <- bamlss(f, family = "logNN", maxit = 50)
+  b <- bamlss(f, family = logNN_bamlss(N=100))
 
   mu <- as.matrix(predict(b, model = "mu", FUN = identity))
   sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
