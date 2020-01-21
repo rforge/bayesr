@@ -57,7 +57,7 @@ SEXP ztnbinom_score_theta(SEXP, SEXP, SEXP);
 
 SEXP xcenter(SEXP);
 
-SEXP logNN_dens(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)
+SEXP logNN_dens(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static R_CallMethodDef callMethods[] = {
   {"logNN_dens", (DL_FUNC) &logNN_dens, 7},
