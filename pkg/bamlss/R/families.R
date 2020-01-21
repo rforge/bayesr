@@ -5010,6 +5010,10 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
   ba2 <- (b - a) / 2
   nodes <- gq$nodes * ba2 + (a + b) / 2
 
+  A <- function(y, t, mu, sigma, lambda) {
+    exp(-(((t - mu) / sigma)^2 + ((y-exp(t))/lambda)^2 )/2 ) / (2*pi*sigma*lambda)
+  }
+
   rval <- list(
     "family" = "logNormal-Normal Convolution",
     "names" = c("mu", "sigma", "lambda"),
@@ -5038,7 +5042,21 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
        return(log(p))
      else
       return(p)
-    }
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        rval <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda)
+        return(rval)
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        rval <- .Call("logNN_hess_mu", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda)
+        return(rval)
+      }
+    )
   )
   class(rval) <- "family.bamlss"
   rval
