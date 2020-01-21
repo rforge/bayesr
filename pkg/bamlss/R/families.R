@@ -5002,11 +5002,19 @@ gpareto2_bamlss <- function(...)
 
 ## logNN model.
 logNN_bamlss <- function(...) {
+  requireNamespace("statmod")
+
+  gq <- statmod::gauss.quad(500)
+  
+  a <- -15
+  b <- 15
+  ba2 <- (b - a) / 2
+  nodes <- gq$nodes * ba2 + (a + b) / 2
+
   rval <- list(
     "family" = "logNormal-Normal Convolution",
     "names" = c("mu", "sigma", "nu", "lambda"),
     "links" = c("identity", "log", "identity", "log"),
-    "sampler" = FALSE,
 #    "propose" = list(
 #      "mu" = logNN_propose_mu,
 #      "sigma" = logNN_propose_sigma,
@@ -5021,9 +5029,16 @@ logNN_bamlss <- function(...) {
       n <- length(y)
       int <- rep(0, n)
       for(i in 1:n) {
-        int[i] <- integrate(foo, -1000, 1000,
-          y = y[i], mu = par$mu[i], sigma = par$sigma[i], nu = par$nu[i], lambda = par$lambda[i],
-          subdivisions = 50, rel.tol = .Machine$double.eps^.75)$value
+        fx <- foo(nodes, y = y[i], mu = par$mu[i], sigma = par$sigma[i],
+          nu = par$nu[i], lambda = par$lambda[i])
+        int[i] <- ba2 * sum(fx * gq$weights)
+#        int[i] <- integrate(foo, lower = -Inf, upper = Inf, y = y[i],
+#          mu = par$mu[i], sigma = par$sigma[i],
+#          nu = par$nu[i], lambda = par$lambda[i], subdivisions = 500L,
+#          rel.tol = .Machine$double.eps^0.75)$value
+#print(int[i])
+#print(int2)
+#cat("----\n")
       }
       d <- pst * int
       if(log)
@@ -5041,12 +5056,11 @@ logNN_propose_mu <- logNN_propose_sigma <- logNN_propose_nu <- logNN_propose_lam
 }
 
 if(FALSE) {
-  n <- 1000
+  n <- 300
   x <- runif(n, -3, 3)
-  mu <- 1 + sin(x)
-  zeta <- rnorm(n, mu, sd = 0.1)
-  Z <- exp(zeta)
-  y <- Z + rnorm(n, -2, 0.1)
+  mu <- 0.1 + sin(x)
+  Z <- rlnorm(n, mu, sd = 0.1)
+  y <- Z + rnorm(n, -0.5, 0.1)
 
   f <- list(
     y ~ s(x),
@@ -5055,6 +5069,10 @@ if(FALSE) {
     lambda ~ 1
   )
 
-  b <- bamlss(f, family = "logNN")
+  b <- bamlss(f, family = "logNN", sampler = FALSE)
+
+  fit <- exp(predict(b, model = "mu"))
+  plot(Z ~ x, ylim = range(c(fit, Z)))
+  plot2d(fit ~ x, add = TRUE, col.lines = 2)
 }
 
