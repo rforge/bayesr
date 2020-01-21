@@ -5069,7 +5069,7 @@ if(FALSE) {
     lambda ~ 1
   )
 
-  b <- bamlss(f, family = "logNN", sampler = FALSE)
+  b <- bamlss(f, family = "logNN", sampler = FALSE, maxit = 50)
 
   fit <- exp(predict(b, model = "mu"))
   plot(Z ~ x, ylim = range(c(fit, Z)))
