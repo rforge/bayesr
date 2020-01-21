@@ -5014,28 +5014,9 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 1000)
     "family" = "logNormal-Normal Convolution",
     "names" = c("mu", "sigma", "lambda"),
     "links" = c("identity", "log", "log"),
-#    "propose" = list(
-#      "mu" = logNN_propose_mu,
-#      "sigma" = logNN_propose_sigma,
-#      "nu" = logNN_propose_nu,
-#      "lambda" = logNN_propose_lambda
-#    ),
     "d" = function(y, par, log = FALSE, ...) {
-#      pst <- 1/(2 * pi * par$sigma * par$lambda)
-#      foo <- function(x, y, mu, sigma, lambda) {
-#        exp(-1/(2*sigma^2) * (x - mu)^2 - 1/(2*lambda^2) * (y - exp(x))^2)
-#      }
-#      n <- length(y)
-#      int <- rep(0, n)
-#      for(i in 1:n) {
-#        fx <- foo(nodes, y = y[i], mu = par$mu[i], sigma = par$sigma[i], lambda = par$lambda[i])
-#        int[i] <- ba2 * sum(fx * gq$weights)
-#      }
-#      d <- pst * int
-
       d <- .Call("logNN_dens", ba2, nodes, gq$weights, y, par$mu,
         par$sigma, par$lambda, package = "bamlss")
-
       if(log)
         d <- log(d)
       return(d)
@@ -5045,12 +5026,9 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 1000)
   rval
 }
 
-logNN_propose_mu <- logNN_propose_sigma <- logNN_propose_nu <- logNN_propose_lambda <- function(...)
-{
-  stop("here!")
-}
-
 if(FALSE) {
+  set.seed(123)
+
   n <- 300
   x <- runif(n, -3, 3)
   mu <- 0.1 + sin(x)
@@ -5059,20 +5037,23 @@ if(FALSE) {
 
   f <- list(
     y ~ s(x),
-    sigma ~ 1,
-    lambda ~ 1
+    sigma ~ s(x),
+    lambda ~ s(x)
   )
 
-  b <- bamlss(f, family = "logNN", sampler = FALSE, maxit = 50)
+  b <- bamlss(f, family = "logNN", maxit = 50)
 
-  mu <- predict(b, model = "mu")
-  sigma <- predict(b, model = "sigma", type = "parameter")
+  mu <- as.matrix(predict(b, model = "mu", FUN = identity))
+  sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
   fit <- exp(mu + sigma^2/2)
+  fit <- t(apply(fit, 1, c95))
 
   par(mfrow = c(1, 2))
   plot(y ~ x, ylim = range(c(fit, y)))
-  plot2d(fit ~ x, add = TRUE, col.lines = 2)
-  plot2d(I(0.1 + sin(x)) ~ x, col.lines = 2)
-  plot2d(mu ~ x, add = TRUE)
+  plot2d(fit ~ x, add = TRUE)
+  points(x, y)
+  fmu <- t(apply(mu, 1, c95))
+  plot2d(fmu ~ x)
+  plot2d(I(0.1 + sin(x)) ~ x, col.lines = 2, add = TRUE)
 }
 
