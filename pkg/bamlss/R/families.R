@@ -5001,8 +5001,9 @@ gpareto2_bamlss <- function(...)
 
 
 ## logNN model.
-logNN_bamlss <- function(..., a = -15, b = 15, N = 1000) {
-  requireNamespace("statmod")
+logNN_bamlss <- function(..., a = -15, b = 15, N = 1000)
+{
+  stopifnot(requireNamespace("statmod"))
 
   gq <- statmod::gauss.quad(N)
 
