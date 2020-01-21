@@ -4376,3 +4376,36 @@ SEXP ztnbinom_score_theta(SEXP y, SEXP mu, SEXP theta)
 /*  return(d);*/
 /*}*/
 
+// logNN density.
+SEXP logNN_dens(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+{
+  int i, j;
+  int n = length(Y);
+  int k = length(NODES);
+
+  double *NODESptr = REAL(NODES);
+  double *WEIGHTSptr = REAL(WEIGHTS);
+  double *Yptr = REAL(Y);
+  double *MUptr = REAL(MU);
+  double *SIGMAptr = REAL(SIGMA);
+  double *LAMBDAptr = REAL(LAMBDA);
+  double ba2 = REAL(BA2)[0];
+
+  SEXP d = PROTECT(allocVector(REALSXP, n));
+  double *dptr = REAL(d);
+
+  double sum = 0.0;
+
+  for(i = 0; i < n; i++) {
+    sum = 0.0;
+    for(j = 0; j < k; j++) {
+      sum += WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0));
+    }
+    dptr[i] = 1.0 / (6.28318530717959 * SIGMAptr[i] * LAMBDAptr[i]) * sum * ba2;
+  }
+
+  UNPROTECT(1);
+  return(d);
+}
+

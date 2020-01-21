@@ -5001,20 +5001,18 @@ gpareto2_bamlss <- function(...)
 
 
 ## logNN model.
-logNN_bamlss <- function(...) {
+logNN_bamlss <- function(..., a = -15, b = 15, N = 1000) {
   requireNamespace("statmod")
 
-  gq <- statmod::gauss.quad(500)
-  
-  a <- -15
-  b <- 15
+  gq <- statmod::gauss.quad(N)
+
   ba2 <- (b - a) / 2
   nodes <- gq$nodes * ba2 + (a + b) / 2
 
   rval <- list(
     "family" = "logNormal-Normal Convolution",
-    "names" = c("mu", "sigma", "nu", "lambda"),
-    "links" = c("identity", "log", "identity", "log"),
+    "names" = c("mu", "sigma", "lambda"),
+    "links" = c("identity", "log", "log"),
 #    "propose" = list(
 #      "mu" = logNN_propose_mu,
 #      "sigma" = logNN_propose_sigma,
@@ -5022,25 +5020,21 @@ logNN_bamlss <- function(...) {
 #      "lambda" = logNN_propose_lambda
 #    ),
     "d" = function(y, par, log = FALSE, ...) {
-      pst <- 1/(2 * pi * par$sigma * par$lambda)
-      foo <- function(x, y, mu, sigma, nu, lambda) {
-        exp(-1/(2*sigma^2) * (x - mu)^2 - 1/(2*lambda^2) * (y - exp(x) - nu)^2)
-      }
-      n <- length(y)
-      int <- rep(0, n)
-      for(i in 1:n) {
-        fx <- foo(nodes, y = y[i], mu = par$mu[i], sigma = par$sigma[i],
-          nu = par$nu[i], lambda = par$lambda[i])
-        int[i] <- ba2 * sum(fx * gq$weights)
-#        int[i] <- integrate(foo, lower = -Inf, upper = Inf, y = y[i],
-#          mu = par$mu[i], sigma = par$sigma[i],
-#          nu = par$nu[i], lambda = par$lambda[i], subdivisions = 500L,
-#          rel.tol = .Machine$double.eps^0.75)$value
-#print(int[i])
-#print(int2)
-#cat("----\n")
-      }
-      d <- pst * int
+#      pst <- 1/(2 * pi * par$sigma * par$lambda)
+#      foo <- function(x, y, mu, sigma, lambda) {
+#        exp(-1/(2*sigma^2) * (x - mu)^2 - 1/(2*lambda^2) * (y - exp(x))^2)
+#      }
+#      n <- length(y)
+#      int <- rep(0, n)
+#      for(i in 1:n) {
+#        fx <- foo(nodes, y = y[i], mu = par$mu[i], sigma = par$sigma[i], lambda = par$lambda[i])
+#        int[i] <- ba2 * sum(fx * gq$weights)
+#      }
+#      d <- pst * int
+
+      d <- .Call("logNN_dens", ba2, nodes, gq$weights, y, par$mu,
+        par$sigma, par$lambda, package = "bamlss")
+
       if(log)
         d <- log(d)
       return(d)
@@ -5059,20 +5053,25 @@ if(FALSE) {
   n <- 300
   x <- runif(n, -3, 3)
   mu <- 0.1 + sin(x)
-  Z <- rlnorm(n, mu, sd = 0.1)
-  y <- Z + rnorm(n, -0.5, 0.1)
+  Z <- rlnorm(n, mu, sd = 0.3)
+  y <- Z + rnorm(n, 0, 0.3)
 
   f <- list(
     y ~ s(x),
     sigma ~ 1,
-    nu ~ 1,
     lambda ~ 1
   )
 
   b <- bamlss(f, family = "logNN", sampler = FALSE, maxit = 50)
 
-  fit <- exp(predict(b, model = "mu"))
-  plot(Z ~ x, ylim = range(c(fit, Z)))
+  mu <- predict(b, model = "mu")
+  sigma <- predict(b, model = "sigma", type = "parameter")
+  fit <- exp(mu + sigma^2/2)
+
+  par(mfrow = c(1, 2))
+  plot(y ~ x, ylim = range(c(fit, y)))
   plot2d(fit ~ x, add = TRUE, col.lines = 2)
+  plot2d(I(0.1 + sin(x)) ~ x, col.lines = 2)
+  plot2d(mu ~ x, add = TRUE)
 }
 
