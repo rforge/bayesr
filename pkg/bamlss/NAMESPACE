@@ -93,6 +93,7 @@ export(
   "binomial_bamlss",
   "cnorm_bamlss",
   "cox_bamlss",
+  "dirichlet_bamlss",
   "dw_bamlss",
   "gaussian_bamlss",
   "gaussian2_bamlss",
