@@ -940,7 +940,6 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
             
             ## Score.
             score <- process.derivs(family$score[[nx[j]]](y, peta, id = nx[j]), is.weight = FALSE)
-
             if(length(score) != nobs) { 
               stop("something wrong in processing the family $score() function! More elements in return value of $score() than the response!")
             }

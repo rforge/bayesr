@@ -84,14 +84,14 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
           }
         }
       }
-      if(family$family == "dirichlet") {
-        names(formula) <- colnames(bf$y)
-        family$bayesx <- rep(list(c("dirichlet", "alpha")), length(formula))
-        family$names <- names(family$bayesx) <- names(formula)
-        family$links <- rep(family$links, length(formula))
-        names(family$links) <- family$names
-        attr(family$bayesx, "nrcat") <- length(formula)
-      }
+#      if(family$family == "dirichlet") {
+#        names(formula) <- colnames(bf$y)
+#        family$bayesx <- rep(list(c("dirichlet", "alpha")), length(formula))
+#        family$names <- names(family$bayesx) <- names(formula)
+#        family$links <- rep(family$links, length(formula))
+#        names(family$links) <- family$names
+#        attr(family$bayesx, "nrcat") <- length(formula)
+#      }
     }
   } else {
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)

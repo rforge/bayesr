@@ -3091,21 +3091,80 @@ mvt_bamlss <- function(...)
 }
 
 
-dirichlet_bamlss <- function(...)
+dirichlet_bamlss <- function(k, ...)
 {
-  link <- "logit"
-
   rval <- list(
     "family" = "dirichlet",
-    "names" = "alpha",
-    "links" = parse.links(link, c(alpha = "logit"), ...),
-    "bayesx" = list(
-      "alpha" = c("dirichlet", "alpha")
-    )
+    "names" = paste0("alpha", 1:k)
   )
+  rval$links <- rep("log", k)
+  names(rval$links) <- rval$names
+
+  rval$d <- function(y, par, log = FALSE, ...) {
+    par <- do.call("cbind", par)
+    s1 <- -1 * rowSums(lgamma(par))
+    s2 <- lgamma(rowSums(par))
+    s3 <- rowSums((par - 1) * log(y))
+    ll <- s1 + s2 + s3
+    if(!log)
+      ll <- exp(ll)
+    ll
+  }
+  score <- function(y, par, id, ...) {
+    rval <- -1 * par[[id]] * digamma(par[[id]]) +
+      par[[id]] * digamma(rowSums(do.call("cbind", par))) +
+      par[[id]] * log(y[, grep(id, names(par))])
+    rval
+  }
+  rval$score <- rep(list(score), k)
+  names(rval$score) <- rval$names
+  hess <- function(y, par, id, ...) {
+    rval <- par[[id]]^2 * (-1 * trigamma(rowSums(do.call("cbind", par))) +
+      trigamma(par[[id]]))
+    rval
+  }
+  rval$hess <- rep(list(hess), k)
+  names(rval$hess) <- rval$names
+
+  rval$initialize <- list()
+  for(j in 1:k) {
+    ft <- c(
+      "function(y, ...) {",
+         paste0("mj <- mean(y[, ", j, "]);"),
+         "return(rep(mj, nrow(y)))",
+      "}"
+    )
+    rval$initialize[[paste0("alpha", j)]] <- eval(parse(text = paste(ft, collapse = "")))
+  }
 
   class(rval) <- "family.bamlss"
   rval
+}
+
+if(FALSE) {
+  data("ArcticLake", package = "DirichletReg")
+
+  AL <- as.matrix(ArcticLake[, 1:3])
+
+  d <- data.frame("depth" = ArcticLake$depth)
+  d$y <- AL
+
+  f <- list(
+    y ~ s(depth),
+      ~ s(depth),
+      ~ s(depth)
+  )
+
+  b <- bamlss(f, data = d, family = dirichlet_bamlss(k = 3))
+
+  p <- predict(b, type = "parameter")
+  p <- as.data.frame(p)
+  p <- p / rowSums(p)
+  par(mfrow = c(1, 3))
+  for(j in 1:3) {
+    plot(d$y[, j] ~ d$depth, ylab = colnames(d$y)[j], xlab = "depth")
+    plot2d(p[, j] ~ d$depth, lwd = 2, add = TRUE)
+  }
 }
 
 
@@ -5049,12 +5108,28 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
           par$sigma, par$lambda)
         return(rval)
       }
+#      "sigma" = function(y, par, ...) {
+#        foo <- function(t, y, mu, sigma, lambda) {
+#          ((t-mu)^2 - sigma^2)*A(y, t, mu, sigma, lambda) * 1/sigma
+#        }
+#        n <- length(n)
+#        rval <- rep(0, n)
+#        for(i in 1:n) {
+##          fx <- foo(nodes, y = y[i], mu = par$mu[i],
+##            sigma = par$sigma[i], lambda = par$lambda[i])
+##          rval[i] <- sum(gq$weights * fx)
+#          rval[i] <- integrate(foo, -Inf, Inf, y = y[i], mu = par$mu[i],
+#            sigma = par$sigma[i], lambda = par$lambda[i])$value
+#        }
+#        rval <- rval + log(1/par$sigma^3)
+#        rval * par$sigma
+#      }
     ),
     "hess" = list(
       "mu" = function(y, par, ...) {
         rval <- .Call("logNN_hess_mu", ba2, nodes, gq$weights, y, par$mu,
           par$sigma, par$lambda)
-        return(rval)
+        return(-1 * rval)
       }
     )
   )
