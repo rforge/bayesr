@@ -5164,12 +5164,15 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 }
 
 if(FALSE) {
+  ## Simulate logNN data.
   set.seed(123)
 
-  n <- 300
-  x <- runif(n, -3, 3)
+  n <- 3000
+
+  ## Round observations for using the binning option.
+  x <- round(runif(n, -3, 3), 2)
   mu <- 0.1 + sin(x)
-  Z <- rlnorm(n, mu, sd = 0.3)
+  Z <- rlnorm(n, mu, sd = exp(-2 + cos(x)))
   y <- Z + rnorm(n, 0, 0.3)
 
   f <- list(
@@ -5178,19 +5181,21 @@ if(FALSE) {
     lambda ~ 1
   )
 
-  b <- bamlss(f, family = logNN_bamlss(N=500))
+  b <- bamlss(f, family = logNN_bamlss(N=500), sampler = MVNORM, binning = TRUE)
 
-  mu <- as.matrix(predict(b, model = "mu", FUN = identity))
-  sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
+  mu <- predict(b, model = "mu", FUN = identity)
+  sigma <- predict(b, model = "sigma", type = "parameter", FUN = identity)
   fit <- exp(mu + sigma^2/2)
-  fit <- t(apply(fit, 1, c95))
+  fsigma <- predict(b, model = "sigma")
 
-  par(mfrow = c(1, 2))
-  plot(y ~ x, ylim = range(c(fit, y)))
-  plot2d(fit ~ x, add = TRUE)
-  points(x, y)
+  par(mfrow = c(1, 3))
+  plot(y ~ x, ylim = range(c(fit, y)), col = rgb(0.1, 0.1, 0.1, alpha = 0.3),
+    main = "Data and fit")
+  plot2d(fit ~ x, add = TRUE, col.lines = 4, lwd = 3)
   fmu <- t(apply(mu, 1, c95))
-  plot2d(fmu ~ x)
+  plot2d(fmu ~ x, main = "True mu and fit")
   plot2d(I(0.1 + sin(x)) ~ x, col.lines = 2, add = TRUE)
+  plot2d(fsigma ~ x, main = "True log(sigma) and fit")
+  plot2d(I(-2 + cos(x)) ~ x, col.lines = 2, add = TRUE)
 }
 
