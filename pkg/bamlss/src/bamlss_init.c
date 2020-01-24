@@ -58,9 +58,15 @@ SEXP ztnbinom_score_theta(SEXP, SEXP, SEXP);
 SEXP xcenter(SEXP);
 
 SEXP logNN_dens(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP logNN_score_mu(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP logNN_score_sigma(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP logNN_score_lambda(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static R_CallMethodDef callMethods[] = {
   {"logNN_dens", (DL_FUNC) &logNN_dens, 7},
+  {"logNN_score_mu", (DL_FUNC) &logNN_score_mu, 7},
+  {"logNN_score_sigma", (DL_FUNC) &logNN_score_sigma, 7},
+  {"logNN_score_lambda", (DL_FUNC) &logNN_score_lambda, 7},
   {"xcenter", (DL_FUNC) &xcenter, 1},
   {"bamlss_glogis_score", (DL_FUNC) &bamlss_glogis_score, 5},
   {"bamlss_glogis_hesse", (DL_FUNC) &bamlss_glogis_hesse, 5},

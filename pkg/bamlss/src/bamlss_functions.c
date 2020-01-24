@@ -4429,7 +4429,6 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   double sum1 = 0.0;
   double sum2 = 0.0;
   double A = 0.0;
-  double d = 0.0;
 
   for(i = 0; i < n; i++) {
     sum1 = 0.0;
@@ -4447,7 +4446,7 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   return(rval);
 }
 
-SEXP logNN_hess_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+SEXP logNN_score_sigma(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
 {
   int i, j;
   int n = length(Y);
@@ -4464,38 +4463,57 @@ SEXP logNN_hess_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIG
   SEXP rval = PROTECT(allocVector(REALSXP, n));
   double *rvalptr = REAL(rval);
 
-  double d = 0.0;
-  double s = 0.0;
-  double sabs = 0.0;
   double sum1 = 0.0;
   double sum2 = 0.0;
   double A = 0.0;
-  double a = 0.0;
 
   for(i = 0; i < n; i++) {
     sum1 = 0.0;
     sum2 = 0.0;
     for(j = 0; j < k; j++) {
-      A = exp(-(pow((NODESptr[j] - MUptr[i]) / SIGMAptr[i], 2.0) +
-        pow((Yptr[i] - exp(NODESptr[j]))/LAMBDAptr[i], 2.0) )/2.0 ) / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
-      sum1 += WEIGHTSptr[j] * A * (NODESptr[j] - MUptr[i]);
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      sum1 += A;
+      sum2 += A * (pow(NODESptr[j] - MUptr[i], 2.0) - pow(SIGMAptr[i], 2.0));
+    }
+    rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(SIGMAptr[i], -2.0);
+  }
 
-      sum2 += WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
-        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0));
+  UNPROTECT(1);
+  return(rval);
+}
+
+SEXP logNN_score_lambda(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+{
+  int i, j;
+  int n = length(Y);
+  int k = length(NODES);
+
+  double *NODESptr = REAL(NODES);
+  double *WEIGHTSptr = REAL(WEIGHTS);
+  double *Yptr = REAL(Y);
+  double *MUptr = REAL(MU);
+  double *SIGMAptr = REAL(SIGMA);
+  double *LAMBDAptr = REAL(LAMBDA);
+  double ba2 = REAL(BA2)[0];
+
+  SEXP rval = PROTECT(allocVector(REALSXP, n));
+  double *rvalptr = REAL(rval);
+
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double A = 0.0;
+
+  for(i = 0; i < n; i++) {
+    sum1 = 0.0;
+    sum2 = 0.0;
+    for(j = 0; j < k; j++) {
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      sum1 += A;
+      sum2 += A * (pow(Yptr[i] - exp(NODESptr[j]), 2.0) - pow(LAMBDAptr[i], 2.0));
     }
-    s = sum1 * ba2 * 1.0/pow(SIGMAptr[i], 2.0);
-    d = 1.0 / (6.28318530717959 * SIGMAptr[i] * LAMBDAptr[i]) * sum2 * ba2;
-    if(s < 0) {
-      sabs = s * -1.0;
-    } else {
-      sabs = s;
-    }
-    a = exp(log(sabs) - log(d));
-    if(s > 0.0) {
-      rvalptr[i] = a;
-    } else {
-      rvalptr[i] = -1.0 * a;
-    }
+    rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(LAMBDAptr[i], -2.0);
   }
 
   UNPROTECT(1);

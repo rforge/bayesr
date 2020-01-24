@@ -99,6 +99,7 @@ export(
   "gaussian2_bamlss",
   "Gaussian_bamlss",
   "gamma_bamlss",
+  "logNN_bamlss",
   "multinomial_bamlss",
   "mvnorm_bamlss",
   "poisson_bamlss",
