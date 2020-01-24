@@ -5118,7 +5118,7 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #        }
 #        rval <- 1/d * rval/par$sigma^2
         rval <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+          par$sigma, par$lambda, package = "bamlss")
         return(rval)
       },
       "sigma" = function(y, par, ...) {
@@ -5136,7 +5136,7 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #        }
 #        rval <- 1/d * rval/par$sigma^2
         rval <- .Call("logNN_score_sigma", ba2, nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+          par$sigma, par$lambda, package = "bamlss")
         rval
       },
       "lambda" = function(y, par, ...) {
@@ -5154,7 +5154,7 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #        }
 #        rval <- 1/d * rval/par$lambda^2
         rval <- .Call("logNN_score_lambda", ba2, nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+          par$sigma, par$lambda, package = "bamlss")
         rval
       }
     )
@@ -5174,8 +5174,8 @@ if(FALSE) {
 
   f <- list(
     y ~ s(x),
-    sigma ~ 1,
-    lambda ~ 1
+    sigma ~ s(x),
+    lambda ~ s(x)
   )
 
   b <- bamlss(f, family = logNN_bamlss(N=100))
