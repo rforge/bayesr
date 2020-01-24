@@ -5117,8 +5117,9 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
           rval[i] <- sum(gq$weights * fx) * ba2
         }
         rval <- 1/d * rval/par$sigma^2
-#        rval <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
-#          par$sigma, par$lambda, package = "bamlss")
+        sm <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
+        print(head(cbind(sm, rval)))
         return(rval)
       },
       "sigma" = function(y, par, ...) {

@@ -4426,17 +4426,21 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   SEXP rval = PROTECT(allocVector(REALSXP, n));
   double *rvalptr = REAL(rval);
 
-  double sum = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
   double A = 0.0;
+  double d = 0.0;
 
   for(i = 0; i < n; i++) {
-    sum = 0.0;
+    sum1 = 0.0;
+    sum2 = 0.0;
     for(j = 0; j < k; j++) {
-      A = exp(-(pow((NODESptr[j] - MUptr[i]) / SIGMAptr[i], 2.0) +
-        pow((Yptr[i] - exp(NODESptr[j]))/LAMBDAptr[i], 2.0) )/2.0 ) / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
-      sum += WEIGHTSptr[j] * A * (NODESptr[j] - MUptr[i]);
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      sum1 += A;
+      sum2 += A * (NODESptr[j] - MUptr[i]);
     }
-    rvalptr[i] = sum * ba2 * 1.0/pow(SIGMAptr[i], 2.0);
+    rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(SIGMAptr[i], -2.0);
   }
 
   UNPROTECT(1);
