@@ -5183,10 +5183,10 @@ if(FALSE) {
 
   b <- bamlss(f, family = logNN_bamlss(N=500), sampler = MVNORM, binning = TRUE)
 
-  mu <- predict(b, model = "mu", FUN = identity)
-  sigma <- predict(b, model = "sigma", type = "parameter", FUN = identity)
-  fit <- exp(mu + sigma^2/2)
-  fsigma <- predict(b, model = "sigma")
+  mu <- as.matrix(predict(b, model = "mu", FUN = identity))
+  sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
+  fit <- t(apply(exp(mu + sigma^2/2), 1, FUN = c95))
+  fsigma <- predict(b, model = "sigma", FUN = c95)
 
   par(mfrow = c(1, 3))
   plot(y ~ x, ylim = range(c(fit, y)), col = rgb(0.1, 0.1, 0.1, alpha = 0.3),
