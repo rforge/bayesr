@@ -5175,10 +5175,10 @@ if(FALSE) {
   f <- list(
     y ~ s(x),
     sigma ~ s(x),
-    lambda ~ s(x)
+    lambda ~ 1
   )
 
-  b <- bamlss(f, family = logNN_bamlss(N=100))
+  b <- bamlss(f, family = logNN_bamlss(N=500))
 
   mu <- as.matrix(predict(b, model = "mu", FUN = identity))
   sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))

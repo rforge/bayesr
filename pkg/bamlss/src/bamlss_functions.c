@@ -4403,6 +4403,8 @@ SEXP logNN_dens(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA,
         1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0));
     }
     dptr[i] = 1.0 / (6.28318530717959 * SIGMAptr[i] * LAMBDAptr[i]) * sum * ba2;
+    if(dptr[i] <= 0.0)
+      dptr[i] = 1e-20;
   }
 
   UNPROTECT(1);
