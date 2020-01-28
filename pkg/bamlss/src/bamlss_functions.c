@@ -4376,8 +4376,9 @@ SEXP ztnbinom_score_theta(SEXP y, SEXP mu, SEXP theta)
 /*  return(d);*/
 /*}*/
 
+
 // logNN density.
-SEXP logNN_dens(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+SEXP logNN_dens(SEXP SCALE, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
 {
   int i, j;
   int n = length(Y);
@@ -4389,20 +4390,40 @@ SEXP logNN_dens(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA,
   double *MUptr = REAL(MU);
   double *SIGMAptr = REAL(SIGMA);
   double *LAMBDAptr = REAL(LAMBDA);
-  double ba2 = REAL(BA2)[0];
 
   SEXP d = PROTECT(allocVector(REALSXP, n));
   double *dptr = REAL(d);
 
+  double scale = REAL(SCALE)[0];
   double sum = 0.0;
+  double node = 0.0;
+  double a = 0.0;
+  double b = 0.0;
+  double logY = 0.0;
 
   for(i = 0; i < n; i++) {
+    if(Yptr[i] < 1e-10) {
+      a = -23.0 - scale * 23.0;
+      b = -23.0 + scale * 23.0;
+    } else {
+      logY = log(Yptr[i]);
+      if(logY <= 0.0) {
+        a = logY - scale * (-1.0 * logY);
+        b = logY + scale * (-1.0 * logY);
+      } else {
+        a = logY - scale * logY;
+        b = logY + scale * logY;
+      }
+    }
+a = -15.0;
+b = 15.0;
     sum = 0.0;
     for(j = 0; j < k; j++) {
-      sum += WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
-        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0));
+      node = NODESptr[j] * (b - a) * 0.5 + (a + b) * 0.5;
+      sum += WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(node - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(node),2.0));
     }
-    dptr[i] = 1.0 / (6.28318530717959 * SIGMAptr[i] * LAMBDAptr[i]) * sum * ba2;
+    dptr[i] = 1.0 / (6.28318530717959 * SIGMAptr[i] * LAMBDAptr[i]) * sum * (b - a) * 0.5;
     if(dptr[i] <= 0.0)
       dptr[i] = 1e-20;
   }
@@ -4411,7 +4432,7 @@ SEXP logNN_dens(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA,
   return(d);
 }
 
-SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+SEXP logNN_score_mu(SEXP SCALE, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
 {
   int i, j;
   int n = length(Y);
@@ -4423,7 +4444,6 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   double *MUptr = REAL(MU);
   double *SIGMAptr = REAL(SIGMA);
   double *LAMBDAptr = REAL(LAMBDA);
-  double ba2 = REAL(BA2)[0];
 
   SEXP rval = PROTECT(allocVector(REALSXP, n));
   double *rvalptr = REAL(rval);
@@ -4431,16 +4451,39 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   double sum1 = 0.0;
   double sum2 = 0.0;
   double A = 0.0;
+  double ba2 = 0.0;
+
+  double scale = REAL(SCALE)[0];
+  double sum = 0.0;
+  double node = 0.0;
+  double a = 0.0;
+  double b = 0.0;
+  double logY = 0.0;
 
   for(i = 0; i < n; i++) {
+    if(Yptr[i] < 1e-10) {
+      a = -23.0 - scale * 23.0;
+      b = -23.0 + scale * 23.0;
+    } else {
+      logY = log(Yptr[i]);
+      if(logY <= 0.0) {
+        a = logY - scale * (-1.0 * logY);
+        b = logY + scale * (-1.0 * logY);
+      } else {
+        a = logY - scale * logY;
+        b = logY + scale * logY;
+      }
+    }
     sum1 = 0.0;
     sum2 = 0.0;
     for(j = 0; j < k; j++) {
-      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
-        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      node = NODESptr[j] * (b - a) * 0.5 + (a + b) * 0.5;
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(node - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(node),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
       sum1 += A;
-      sum2 += A * (NODESptr[j] - MUptr[i]);
+      sum2 += A * (node - MUptr[i]);
     }
+    ba2 = (b - a) * 0.5;
     rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(SIGMAptr[i], -2.0);
   }
 
@@ -4448,7 +4491,7 @@ SEXP logNN_score_mu(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SI
   return(rval);
 }
 
-SEXP logNN_score_sigma(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+SEXP logNN_score_sigma(SEXP SCALE, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
 {
   int i, j;
   int n = length(Y);
@@ -4460,7 +4503,7 @@ SEXP logNN_score_sigma(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP
   double *MUptr = REAL(MU);
   double *SIGMAptr = REAL(SIGMA);
   double *LAMBDAptr = REAL(LAMBDA);
-  double ba2 = REAL(BA2)[0];
+  double ba2 = 0.0;
 
   SEXP rval = PROTECT(allocVector(REALSXP, n));
   double *rvalptr = REAL(rval);
@@ -4469,15 +4512,37 @@ SEXP logNN_score_sigma(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP
   double sum2 = 0.0;
   double A = 0.0;
 
+  double scale = REAL(SCALE)[0];
+  double sum = 0.0;
+  double node = 0.0;
+  double a = 0.0;
+  double b = 0.0;
+  double logY = 0.0;
+
   for(i = 0; i < n; i++) {
+    if(Yptr[i] < 1e-10) {
+      a = -23.0 - scale * 23.0;
+      b = -23.0 + scale * 23.0;
+    } else {
+      logY = log(Yptr[i]);
+      if(logY <= 0.0) {
+        a = logY - scale * (-1.0 * logY);
+        b = logY + scale * (-1.0 * logY);
+      } else {
+        a = logY - scale * logY;
+        b = logY + scale * logY;
+      }
+    }
     sum1 = 0.0;
     sum2 = 0.0;
     for(j = 0; j < k; j++) {
-      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
-        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      node = NODESptr[j] * (b - a) * 0.5 + (a + b) * 0.5;
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(node - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(node),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
       sum1 += A;
-      sum2 += A * (pow(NODESptr[j] - MUptr[i], 2.0) - pow(SIGMAptr[i], 2.0));
+      sum2 += A * (pow(node - MUptr[i], 2.0) - pow(SIGMAptr[i], 2.0));
     }
+    ba2 = (b - a) * 0.5;
     rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(SIGMAptr[i], -2.0);
   }
 
@@ -4485,7 +4550,7 @@ SEXP logNN_score_sigma(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP
   return(rval);
 }
 
-SEXP logNN_score_lambda(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
+SEXP logNN_score_lambda(SEXP SCALE, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEXP SIGMA, SEXP LAMBDA)
 {
   int i, j;
   int n = length(Y);
@@ -4497,7 +4562,7 @@ SEXP logNN_score_lambda(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEX
   double *MUptr = REAL(MU);
   double *SIGMAptr = REAL(SIGMA);
   double *LAMBDAptr = REAL(LAMBDA);
-  double ba2 = REAL(BA2)[0];
+  double ba2 = 0.0;
 
   SEXP rval = PROTECT(allocVector(REALSXP, n));
   double *rvalptr = REAL(rval);
@@ -4506,15 +4571,37 @@ SEXP logNN_score_lambda(SEXP BA2, SEXP NODES, SEXP WEIGHTS, SEXP Y, SEXP MU, SEX
   double sum2 = 0.0;
   double A = 0.0;
 
+  double scale = REAL(SCALE)[0];
+  double sum = 0.0;
+  double node = 0.0;
+  double a = 0.0;
+  double b = 0.0;
+  double logY = 0.0;
+
   for(i = 0; i < n; i++) {
+    if(Yptr[i] < 1e-10) {
+      a = -23.0 - scale * 23.0;
+      b = -23.0 + scale * 23.0;
+    } else {
+      logY = log(Yptr[i]);
+      if(logY <= 0.0) {
+        a = logY - scale * (-1.0 * logY);
+        b = logY + scale * (-1.0 * logY);
+      } else {
+        a = logY - scale * logY;
+        b = logY + scale * logY;
+      }
+    }
     sum1 = 0.0;
     sum2 = 0.0;
     for(j = 0; j < k; j++) {
-      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(NODESptr[j] - MUptr[i],2.0) -
-        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(NODESptr[j]),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
+      node = NODESptr[j] * (b - a) * 0.5 + (a + b) * 0.5;
+      A = WEIGHTSptr[j] * exp(-1.0/(2.0*pow(SIGMAptr[i],2.0)) * pow(node - MUptr[i],2.0) -
+        1.0/(2.0*pow(LAMBDAptr[i],2.0)) * pow(Yptr[i] - exp(node),2.0)) * 1 / (6.28318530717959*SIGMAptr[i]*LAMBDAptr[i]);
       sum1 += A;
-      sum2 += A * (pow(Yptr[i] - exp(NODESptr[j]), 2.0) - pow(LAMBDAptr[i], 2.0));
+      sum2 += A * (pow(Yptr[i] - exp(node), 2.0) - pow(LAMBDAptr[i], 2.0));
     }
+    ba2 = (b - a) * 0.5;
     rvalptr[i] = 1 / (sum1 * ba2) * sum2 * ba2 * pow(LAMBDAptr[i], -2.0);
   }
 
