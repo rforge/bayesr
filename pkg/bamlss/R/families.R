@@ -5060,7 +5060,7 @@ gpareto2_bamlss <- function(...)
 
 
 ## logNN model.
-logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
+logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 {
   stopifnot(requireNamespace("statmod"))
 
@@ -5070,7 +5070,7 @@ logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
   nodes <- gq$nodes * ba2 + (a + b) / 2
 
   A <- function(t, y, mu, sigma, lambda) {
-    exp(-(((t - mu) / sigma)^2 + ((y-exp(t))/lambda)^2 )/2 ) / (2*pi*sigma*lambda)
+    b <- exp(-(((t - mu) / sigma)^2 + ((y-exp(t))/lambda)^2 )/2 ) / (2*pi*sigma*lambda)
   }
 
   rval <- list(
@@ -5078,8 +5078,8 @@ logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
     "names" = c("mu", "sigma", "lambda"),
     "links" = c("identity", "log", "log"),
     "d" = function(y, par, log = FALSE, ...) {
-      d <- .Call("logNN_dens", scale, gq$nodes, gq$weights, y, par$mu,
-        par$sigma, par$lambda)
+      d <- .Call("logNN_dens", ba2, nodes, gq$weights, y, par$mu,
+        par$sigma, par$lambda, package = "bamlss")
       if(log)
         d <- log(d)
       return(d)
@@ -5117,8 +5117,8 @@ logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$sigma^2
-        rval <- .Call("logNN_score_mu", scale, gq$nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+        rval <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
         return(rval)
       },
       "sigma" = function(y, par, ...) {
@@ -5135,8 +5135,8 @@ logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$sigma^2
-        rval <- .Call("logNN_score_sigma", scale, gq$nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+        rval <- .Call("logNN_score_sigma", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
         rval
       },
       "lambda" = function(y, par, ...) {
@@ -5153,13 +5153,12 @@ logNN_bamlss <- function(..., scale = 0.5, a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$lambda^2
-        rval <- .Call("logNN_score_lambda", scale, gq$nodes, gq$weights, y, par$mu,
-          par$sigma, par$lambda)
+        rval <- .Call("logNN_score_lambda", ba2, nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
         rval
       }
     )
   )
-rval$score <- NULL
   class(rval) <- "family.bamlss"
   rval
 }
@@ -5182,7 +5181,7 @@ if(FALSE) {
     lambda ~ 1
   )
 
-  b <- bamlss(f, family = logNN_bamlss(N=100,scale=1.5))
+  b <- bamlss(f, family = logNN_bamlss(N=500), sampler = MVNORM, binning = TRUE)
 
   mu <- as.matrix(predict(b, model = "mu", FUN = identity))
   sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
