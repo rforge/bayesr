@@ -9082,7 +9082,13 @@ coef.bamlss <- function(object, model = NULL, term = NULL,
   rval <- if(length(rval) < 2) {
     as.matrix(rval[[1]], ncol = 1)
   } else {
-    rd <- sapply(rval, ncol)
+    foo <- function(x) {
+      if(is.null(dim(x)))
+        return(length(x))
+      else
+        return(ncol(x))
+    }
+    rd <- sapply(rval, foo)
     if(all(rd < 1)) {
       NULL
     } else {
