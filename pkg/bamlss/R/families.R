@@ -5060,17 +5060,23 @@ gpareto2_bamlss <- function(...)
 
 
 ## logNN model.
-logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
+logNN_bamlss <- function(...)
 {
   stopifnot(requireNamespace("statmod"))
 
-  gq <- statmod::gauss.quad(N)
+  N <- list(...)$N
+  if(is.null(N))
+    N <- 100
+  check <- list(...)$check
+  if(is.null(check))
+    check <- FALSE
 
-  ba2 <- (b - a) / 2
-  nodes <- gq$nodes * ba2 + (a + b) / 2
+  gq <- statmod::gauss.quad(N, kind = "hermite")
+
+  gq$weights <- gq$weights * exp(gq$nodes^2)
 
   A <- function(t, y, mu, sigma, lambda) {
-    b <- exp(-(((t - mu) / sigma)^2 + ((y-exp(t))/lambda)^2 )/2 ) / (2*pi*sigma*lambda)
+    exp(-(((t - mu) / sigma)^2 + ((y - exp(t))/lambda)^2 )/2 ) / (2*pi*sigma*lambda)
   }
 
   rval <- list(
@@ -5078,8 +5084,27 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
     "names" = c("mu", "sigma", "lambda"),
     "links" = c("identity", "log", "log"),
     "d" = function(y, par, log = FALSE, ...) {
-      d <- .Call("logNN_dens", ba2, nodes, gq$weights, y, par$mu,
-        par$sigma, par$lambda, package = "bamlss")
+      if(check) {
+        d <- .Call("logNN_dens", gq$nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
+        foo <- function(t, y, mu, sigma, lambda) {
+          A(t, y, mu, sigma, lambda)
+        }
+        n <- length(y)
+        di <- rep(0, n)
+        for(i in 1:n) {
+          di[i] <- integrate(foo, -Inf, Inf, y = y[i], mu = par$mu[i],
+            sigma = par$sigma[i], lambda = par$lambda[i],
+            rel.tol = .Machine$double.eps^.75, subdivisions = 500L)$value
+        }
+        plot(d, di,
+          main = paste("Mean absolute difference:", round(mean(abs(d - di)), 4)),
+          xlab = "Gauss quadrature", ylab = "integrate()", ...)
+        abline(0, 1)
+      } else {
+        d <- .Call("logNN_dens", gq$nodes, gq$weights, y, par$mu,
+          par$sigma, par$lambda, package = "bamlss")
+      }
       if(log)
         d <- log(d)
       return(d)
@@ -5117,7 +5142,7 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$sigma^2
-        rval <- .Call("logNN_score_mu", ba2, nodes, gq$weights, y, par$mu,
+        rval <- .Call("logNN_score_mu", gq$nodes, gq$weights, y, par$mu,
           par$sigma, par$lambda, package = "bamlss")
         return(rval)
       },
@@ -5135,7 +5160,7 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$sigma^2
-        rval <- .Call("logNN_score_sigma", ba2, nodes, gq$weights, y, par$mu,
+        rval <- .Call("logNN_score_sigma", gq$nodes, gq$weights, y, par$mu,
           par$sigma, par$lambda, package = "bamlss")
         rval
       },
@@ -5153,12 +5178,25 @@ logNN_bamlss <- function(..., a = -15, b = 15, N = 100)
 #          rval[i] <- sum(gq$weights * fx) * ba2
 #        }
 #        rval <- 1/d * rval/par$lambda^2
-        rval <- .Call("logNN_score_lambda", ba2, nodes, gq$weights, y, par$mu,
+        rval <- .Call("logNN_score_lambda", gq$nodes, gq$weights, y, par$mu,
           par$sigma, par$lambda, package = "bamlss")
         rval
       }
+    ),
+    "initialize" = list(
+      "mu"    = function(y, ...) {
+        rep(mean(log(y[y > 0])), length(y))
+      },
+      "sigma" = function(y, ...) {
+        rep(sd(log(y[y > 0])), length(y))
+      },
+      "lambda" = function(y, ...) {
+        e <- y - exp(mean(log(y[y > 0])))
+        rep(sd(e), length(y))
+      }
     )
   )
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -5167,7 +5205,7 @@ if(FALSE) {
   ## Simulate logNN data.
   set.seed(123)
 
-  n <- 1000
+  n <- 3000
 
   ## Round observations for using the binning option.
   x <- round(runif(n, -3, 3), 2)
@@ -5181,7 +5219,7 @@ if(FALSE) {
     lambda ~ 1
   )
 
-  b <- bamlss(f, family = logNN_bamlss(N=500), sampler = MVNORM, binning = TRUE)
+  b <- bamlss(f, family = logNN_bamlss(N=200,check=FALSE), binning = TRUE, eps = 0.01)
 
   mu <- as.matrix(predict(b, model = "mu", FUN = identity))
   sigma <- as.matrix(predict(b, model = "sigma", type = "parameter", FUN = identity))
