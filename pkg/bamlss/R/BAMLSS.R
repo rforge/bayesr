@@ -10730,18 +10730,26 @@ if(FALSE) {
     Null(cbind(X, Null(Y)))
   }
 
-  n <- 1000
-  x <- sort(runif(n, -3, 3))
+  n <- 500
+  x <- sort(runif(n, -pi, pi))
   y <- 2 + 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
 
   ## P-spline design matrix.
-  Z <- smooth.construct(s(x,bs="ps",k=20), list(x=x), NULL)$X
+  sm <- smooth.construct(s(x,k=20), list(x=x), NULL)
+  Z <- sm$X
+  S <- sm$S[[1]]
 
-  ## Linear deisgn matrix including intercept.
-  X <- matrix(x, ncol = 1)
+  ## Linear design matrix including intercept.
+  X <- matrix((x - mean(x)) / sd(x), ncol = 1)
 
   ## Orthogonal complement of subspace.
-  C <- nullc(cbind(1, X), Z)
+  R <- cbind(1, X)
+  A <- diag(n) - R %*% solve(t(R) %*% R) %*% t(R)
+  C <- A %*% Z
+
+  ## Centering.
+  QR <- qr.Q(qr(crossprod(C, rep(1, length = nrow(C)))), complete = TRUE)[, -1]
+  C <- C %*% QR
 
   ## Plot basis functions.
   matplot(x, C, type = "l", lty = 1, col = 1)
@@ -10750,7 +10758,8 @@ if(FALSE) {
   G <- cbind(1, X, C)
 
   ## Estimate coefficients.
-  beta <- solve(t(G) %*% G) %*% t(G) %*% y
+  K <- as.matrix(Matrix::bdiag(list(matrix(0, 2, 2), diag(0.0001, ncol(C)))))
+  beta <- solve(t(G) %*% G + 50 * K) %*% t(G) %*% y
 
   ## Draw fitted lines.
   fit <- G %*% beta
@@ -10762,10 +10771,10 @@ if(FALSE) {
   fitl <- G[, 1:2] %*% beta[1:2]
   fits <- G[, -c(1:2)] %*% beta[-c(1:2)]
 
-  plot(x, fitl, type = "l", main = "linear")
-  lines(0.5*x ~ x, col = 2)
+  plot(x, fitl, type = "l", main = "linear", ylim = range(c(0.5*x, fitl)))
+  lines(2 + 0.5*x ~ x, col = 2)
 
-  plot(x, fits, type = "l", main = "smooth")
+  plot(x, fits, type = "l", main = "smooth", ylim = range(c(sin(x), fits)))
   lines(sin(x) ~ x, col = 2)
 }
 
