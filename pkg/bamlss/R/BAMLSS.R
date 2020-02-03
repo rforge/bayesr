@@ -10726,16 +10726,12 @@ if(FALSE) {
   library("bamlss")
   library("MASS")
 
-  nullc <- function(X, Y) {
-    Null(cbind(X, Null(Y)))
-  }
-
-  n <- 500
+  n <- 1000
   x <- sort(runif(n, -pi, pi))
   y <- 2 + 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
 
   ## P-spline design matrix.
-  sm <- smooth.construct(s(x,k=20), list(x=x), NULL)
+  sm <- smooth.construct(s(x,k=40,bs="ps"), list(x=x), NULL)
   Z <- sm$X
   S <- sm$S[[1]]
 
@@ -10747,29 +10743,47 @@ if(FALSE) {
   A <- diag(n) - R %*% solve(t(R) %*% R) %*% t(R)
   C <- A %*% Z
 
+  i <- fixDependence(X, C)
+  C <- Z[, -i]
+  S <- S[-i, -i]
+
   ## Centering.
-  QR <- qr.Q(qr(crossprod(C, rep(1, length = nrow(C)))), complete = TRUE)[, -1]
-  C <- C %*% QR
+  Q <- qr.Q(qr(crossprod(C, rep(1, length = nrow(C)))), complete = TRUE)[, -1]
+  C <- C %*% Q
+  K <- crossprod(Q, S) %*% Q
 
   ## Plot basis functions.
+  par(mfrow = c(2, 2))
   matplot(x, C, type = "l", lty = 1, col = 1)
 
   ## Final big design matrix used for estimation.
   G <- cbind(1, X, C)
 
   ## Estimate coefficients.
-  K <- as.matrix(Matrix::bdiag(list(matrix(0, 2, 2), diag(0.0001, ncol(C)))))
-  beta <- solve(t(G) %*% G + 50 * K) %*% t(G) %*% y
+  K <- as.matrix(Matrix::bdiag(list(matrix(0, 2, 2), K)))
 
-  ## Draw fitted lines.
+  GG <- crossprod(G)
+  tG <- t(G)
+
+  gcv <- function(lambda) {
+    S <- G %*% solve(GG + lambda * K) %*% tG
+    yhat <- S %*% y
+    trS <- sum(diag(S))
+    rss <- sum((y - yhat)^2)
+    drop(rss * n / (n - trS)^2)
+  }
+
+  lambda <- optimize(gcv, lower = 1e-20, upper = 1e+10)$minimum
+
+  beta <- solve(t(G) %*% G + lambda * K) %*% t(G) %*% y
   fit <- G %*% beta
-
-  par(mfrow = c(1, 3))
-  plot(x, y, main = "combined fit")
-  lines(fit ~ x, col = 2, lwd = 2)
-
   fitl <- G[, 1:2] %*% beta[1:2]
   fits <- G[, -c(1:2)] %*% beta[-c(1:2)]
+
+  plot(x, y, main = "fit", ylim = range(c(y, fitl, fits)))
+  lines(fit ~ x, col = 2, lwd = 2)
+  lines(fitl ~ x, col = 4, lwd = 2)
+  lines(fits ~ x, col = 4, lwd = 2)
 
   plot(x, fitl, type = "l", main = "linear", ylim = range(c(0.5*x, fitl)))
   lines(2 + 0.5*x ~ x, col = 2)
