@@ -10731,7 +10731,7 @@ if(FALSE) {
   y <- 2 + 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
 
   ## P-spline design matrix.
-  sm <- smooth.construct(s(x,k=40,bs="ps"), list(x=x), NULL)
+  sm <- smooth.construct(n(~x,k=1000,rint=0.05,sint=100,nocenter=TRUE), list(x=x), NULL)
   Z <- sm$X
   S <- sm$S[[1]]
 
@@ -10739,18 +10739,22 @@ if(FALSE) {
   X <- matrix((x - mean(x)) / sd(x), ncol = 1)
 
   ## Orthogonal complement of subspace.
-  R <- cbind(1, X)
+  R <- cbind(X)
   A <- diag(n) - R %*% solve(t(R) %*% R) %*% t(R)
   C <- A %*% Z
 
-  i <- fixDependence(X, C)
-  C <- Z[, -i]
-  S <- S[-i, -i]
+  i <- fixDependence(R, C)
+  if(!is.null(i)) {
+    C <- Z[, -i]
+    S <- S[-i, -i]
+  }
 
   ## Centering.
-  Q <- qr.Q(qr(crossprod(C, rep(1, length = nrow(C)))), complete = TRUE)[, -1]
-  C <- C %*% Q
-  K <- crossprod(Q, S) %*% Q
+#  Q <- qr.Q(qr(crossprod(C, rep(1, length = nrow(C)))), complete = TRUE)[, -1]
+#  C <- C %*% Q
+#  K <- crossprod(Q, S) %*% Q
+  C <- scale(C)
+  K <- diag(1, ncol(C))
 
   ## Plot basis functions.
   par(mfrow = c(2, 2))
