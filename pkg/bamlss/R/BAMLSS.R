@@ -2375,11 +2375,12 @@ complete.bamlss.family <- function(family)
   if(is.null(family$map2par)) {
     family$map2par <- function(eta) {
       if(inherits(eta[[1L]], "ff")) {
-        for(j in family$names)
+        for(j in family$names) {
           eta[[j]] <- ff_eval(eta[[j]], FUN = function(x) { linkinv[[j]](x) },
             lower = c(-Inf, -10), upper = c(Inf, 10))
+        }
       } else {
-        for(j in family$names) {        
+        for(j in family$names) {
           eta[[j]] <- linkinv[[j]](eta[[j]])
           eta[[j]][is.na(eta[[j]])] <- 0
           if(any(jj <- eta[[j]] == Inf))

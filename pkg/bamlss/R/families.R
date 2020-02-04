@@ -3066,12 +3066,12 @@ bivlogit_bamlss <- function(...)
 mvt_bamlss <- function(...)
 {
   links <- c(mu1 = "identity", mu2 = "identity",
-    sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log")
+    sigma1 = "log", sigma2 = "log", rho = "rhogit", df = "log")
   rval <- list(
     "family" = "mvt",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho", "df"),
     "links" = parse.links(links, c(mu1 = "identity", mu2 = "identity",
-      sigma1 = "log", sigma2 = "log", rho = "fisherz", df = "log"), ...),
+      sigma1 = "log", sigma2 = "log", rho = "rhogit", df = "log"), ...),
     "bayesx" = list(
       "mu1" = c("bivt", "mu"),
       "mu2" = c("bivt", "mu"),
@@ -3084,7 +3084,35 @@ mvt_bamlss <- function(...)
     ),
     "mu" = function(par, ...) {
       c(par$mu1, par$mu2)
-    }
+    },
+    "d" = function(y, par, log = FALSE, ...) {
+      c1 <- 1 + 1/(par$df*(1 - par$rho)) * ( ((y[,1] - par$mu1)/par$sigma1)^2 -
+        2*par$rho*((y[,1] - par$mu1)/par$sigma1) * ((y[,2] - par$mu2)/par$sigma2) +
+        ((y[,2] - par$mu2)/par$sigma2)^2 )
+      d <- lgamma((par$df + 2)*0.5) - lgamma(par$df*0.5) - 1.1447298858494 - log(par$df) -
+        log(par$sigma1) - log(par$sigma2) - 0.5*log(1 - par$rho^2) -
+        (par$df + 2)*0.5 * log(c1)
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+   "hess" = list(
+      "mu1" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma1^2)
+      },
+      "mu2" = function(y, par, ...) {
+        1 / ((1 - par$rho^2) * par$sigma2^2)
+      },
+      "sigma1" = function(y, par, ...) {
+        1 + 1 / (1 - par$rho^2)
+      },
+      "sigma2" = function(y, par, ...) {
+        1 + 1 / (1 - par$rho^2)
+      },
+      "rho" = function(y, par, ...) {
+        1 - par$rho^4
+      }
+    )
   )
   class(rval) <- "family.bamlss"
   rval
