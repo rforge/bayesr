@@ -1,14 +1,18 @@
-jm2_bamlss <- function(k = 1)
+jm2_bamlss <- function(k = 1, ...)
 {
+  stopifnot(require("survival"))
+  stopifnot(requireNamespace("statmod"))
+
   if(k > 0) {
     mu <- paste("mu", 1:k, sep = "")
     sigma <- paste("sigma", 1:k, sep = "")
     alpha <- paste("alpha", 1:k, sep = "")
     links <- c(rep("identity", k), rep("log", k), rep("identity", k), "identity")
     names(links) <- c(mu, sigma, alpha, "psi")
+    links <- c(lambda = "log", gamma = "log", links)
+  } else {
+    links <- c(lambda = "log", gamma = "log", links)
   }
-
-  links <- c(lambda = "log", gamma = "log", links)
 
   rval <- list(
     "family" = "jm",
@@ -127,24 +131,112 @@ Predict.matrix.fri.smooth <- function(object, data)
 }
 
 jm2_transform <- function(x, y, terms, knots,
-  formula, family, data, obstime, id, kpsi, ...)
+  formula, family, data, obstime, id = NULL, kpsi, N = 25,
+  kind = c("legendre", "chebyshev1", "chebyshev2", "jacobi"), ...)
 {
   mu <- grep("mu", names(formula), value = TRUE)
-  ## if length(mu) == 1, use formula from mu, else use multivariate fpca.
-  if(length(mu)) {
+  alpha <- grep("alpha", names(formula), value = TRUE)
+  ## If length(mu) == 1, use formula from mu, else use multivariate fpca.
+  ## If length(mu) == 0, use simple Cox model.
+
+  ## Plain Cox model?
+  cox <- length(mu)
+  if(cox) {
+    id <- as.factor(1:nrow(data))
+  }
+
+  ## Set up nodes and weights for Gaussian quadrature.
+  kind <- match.arg(kind)
+  gq <- statmod::gauss.quad(N, kind = kind)
+
+  ## Extract survival times and compute
+  ## timegrid from nodes for Gaussian quadrature.
+  stime <- data[, grep("Surv", names(data))][, "time"]
+  if(!cox) {
+    id <- data[[id]]
+    take <- !duplicated(id, fromLast = TRUE)
+    stime <- stime[take]
+  } else {
+    take <- rep(TRUE, nrow(data))
+  }
+  timegrid <- do.call("rbind", lapply(stime, function(x) {
+    return(gq$nodes * x / 2 + x / 2)
+  }))
+  stime2 <- stime / 2
+
+  ## Extract survival time variable name.
+  timevar <- all.names(x$lambda$formula[2])[2]
+  if(!cox) {
+    timevar_mu <- obstime
+    if(is.null(data[[timevar_mu]]))
+      stop("the longitudinal time variable is not available!")
+  }
+
+  ## If joint model, restructure design matrices for lambda, gamma, alpha(s).
+  if(!cox) {
+    for(j in c("lambda", "gamma", alpha)) {
+      x[[j]] <- design.construct(terms, data = data[take, , drop = FALSE], knots = knots,
+        model.matrix = TRUE, smooth.construct = TRUE, model = j,
+        scale.x = FALSE)[[j]]
+    }
+  }
+
+  ## The basic setup.
+  if(is.null(attr(x, "bamlss.engine.setup")))
+    x <- bamlss.engine.setup(x, ...)
+
+  ## Remove intercept from lambda.
+  if(!is.null(x$lambda$smooth.construct$model.matrix)) {
+    attr(terms$lambda, "intercept") <- 0
+    cn <- colnames(x$lambda$smooth.construct$model.matrix$X)
+    if("(Intercept)" %in% cn)
+      x$lambda$smooth.construct$model.matrix$X <- x$lambda$smooth.construct$model.matrix$X[, cn != "(Intercept)", drop = FALSE]
+      if(ncol(x$lambda$smooth.construct$model.matrix$X) < 1) {
+        x$lambda$smooth.construct$model.matrix <- NULL
+        x$lambda$terms <- drop.terms.bamlss(x$lambda$terms, pterms = FALSE, keep.intercept = FALSE)
+    }
+  }
+
+  ## Assign time grid predict functions.
+  ntd <- if(cox) {
+    c("lambda", "gamma")
+  } else {
+    c("lambda", "gamma", mu, alpha)
+  }
+  for(i in seq_along(ntd)) {
+    if(has_pterms(x[[ntd[i]]]$terms)) {
+      x[[ntd[i]]]$smooth.construct$model.matrix <- param_time_transform(x[[ntd[i]]]$smooth.construct$model.matrix,
+        drop.terms.bamlss(x[[ntd[i]]]$terms, sterms = FALSE, keep.response = FALSE), data, grid, yname, 
+        if(ntd[i] != "mu") timevar else timevar_mu, take, derivMat = FALSE)
+    }
+    if(length(x[[ntd[i]]]$smooth.construct)) {
+      for(j in names(x[[ntd[i]]]$smooth.construct)) {
+        if(j != "model.matrix") {
+          xterm <- x[[ntd[i]]]$smooth.construct[[j]]$term
+          by <- if(x[[ntd[i]]]$smooth.construct[[j]]$by != "NA") x[[ntd[i]]]$smooth.construct[[j]]$by else NULL
+          x[[ntd[i]]]$smooth.construct[[j]] <- sm_time_transform2(x[[ntd[i]]]$smooth.construct[[j]],
+            data[, unique(c(xterm, yname, by, timevar, timevar_mu, idvar)), drop = FALSE], grid, yname,
+            if(ntd[i] != "mu") timevar else timevar_mu, take, derivMat = FALSE)
+        }
+      }
+    }
+  }
+
+cat("juhuu!\n")
+stop()
+  
+ 
+  if(!cox) {
     ynames <- NULL
     for(j in mu) {
       ynames <- c(ynames, response.name(formula[[j]]$formula))
       b <- gam(formula[[j]]$formula, data = d)
-plot(b)
     }
-print(ynames)
     Y <- data[, ynames, drop = FALSE]
     vtime <- data[[obstime]]
     vid <- data[[id]]
-print(head(Y))
-print(str(formula))
   }
+
   stop()
 }
 
@@ -254,7 +346,7 @@ marker_to_irregFunData <- function (marker, data, t, id = "idpseud",
 # Working with the data
 ################################################################################
 
-load(file = "../Data/vall.Rdata")
+load(file = "vall.Rdata")
 
 # Prepare the data
 vall$idpseud <- as.factor(vall$idpseud)
@@ -289,7 +381,6 @@ f <- list(
   psi ~ otime + id
 )
 
-b <- bamlss(f, data = d, family = jm2_bamlss(k = 2), sampler = FALSE,
-  obstime = "otime", id = "id")
+b <- bamlss(f, data = d, family = jm2_bamlss(k = 2), sampler = FALSE, obstime = "otime", id = "id")
 
 }
