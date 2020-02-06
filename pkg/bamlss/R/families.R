@@ -3193,6 +3193,23 @@ if(FALSE) {
     plot(d$y[, j] ~ d$depth, ylab = colnames(d$y)[j], xlab = "depth")
     plot2d(p[, j] ~ d$depth, lwd = 2, add = TRUE)
   }
+
+  ###
+  p <- predict(b, type = "parameter", FUN = function(x) x)
+  p <- lapply(p, as.matrix)
+  alpha_0 <- purrr::reduce(p, `+`)
+  props <- lapply(p, function(x) x / alpha_0)
+  props_95 <- lapply(props, function(x) t(apply(x, 1L, c95)))
+
+  cols <- hcl.colors(3, "Dark 2")
+  for(j in 1:3) {
+    plot2d(props_95[[j]] ~ d$depth, lwd = 2,
+	   ylab = colnames(d$y)[j], xlab = "depth")
+    points(d$y[, j] ~ d$depth, pch = 19, col = cols[j])
+    points(d$y[, j] ~ d$depth)
+  }
+
+  
 }
 
 
