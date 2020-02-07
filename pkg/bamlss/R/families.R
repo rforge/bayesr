@@ -2541,6 +2541,15 @@ bivnorm_bamlss <- function(...)
     "family" = "mvnorm",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = c("identity", "identity", "log", "log", "rhogit"),
+		"bayesx" = list(
+      "mu1" = c("bivnormal", "mu"),
+      "mu2" = c("bivnormal", "mu"),
+      "sigma1" = c("bivnormal", "sigma"),
+      "sigma2" = c("bivnormal", "sigma"),
+      "rho" = c("bivnormal", "rho"),
+      "order" = 5:1,
+      "rm.number" = TRUE
+    ),
     "d" = function(y, par, log = FALSE) {
       d <- .Call("bivnorm_loglik", as.numeric(y[, 1]), as.numeric(y[, 2]),
         as.numeric(par$mu1), as.numeric(par$mu2), as.numeric(par$sigma1),

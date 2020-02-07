@@ -1418,7 +1418,7 @@ boostm_fit <- function(x, grad, hess, z, nu, stop.criterion, family, y, eta, edf
   return(state)
 }
 
-
+#x smooth construct selbst x$X design matrix x$S als Funktion
 bfit_lm <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
@@ -1648,7 +1648,7 @@ bfit_iwls <- function(x, family, y, eta, id, weights, criterion, ...)
       x$state$log.prior <- x$prior(x$state$parameters)
   }
   
-  return(x$state)
+  return(x$state)# returing!
 }
 
 
