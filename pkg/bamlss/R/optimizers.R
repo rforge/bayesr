@@ -6020,7 +6020,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 }
               }
               P <- matrix_inv(XWX + S)
-              b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+              b <- drop(P %*% crossprod(Xn * hess, e)) ##* nu + b0 * (1-nu)
               etas[[i]] <- etas[[i]] + xcenter(Xt %*% b)
               if(retLL) {
                 return(family$loglik(yt, family$map2par(etas)))
