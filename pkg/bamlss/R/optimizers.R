@@ -5921,7 +5921,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           objfun <- function(tau2, retLL = FALSE) {
             P <- matrix_inv(XWX + 1/tau2 * I)
-            b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
+            b <- drop(P %*% crossprod(Xn * hess, e)) ##* nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
             if(retLL) {
               return(family$loglik(yt, family$map2par(etas)))
