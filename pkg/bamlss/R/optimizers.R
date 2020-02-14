@@ -5642,16 +5642,18 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- list()
+  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- LLC <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
     medf[[i]] <- list()
     parm[[i]] <- list()
+    LLC[[i]] <- list()
     ll_contrib[[i]] <- list()
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
       ll_contrib[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
+      LLC[[i]][["p"]] <- 0
       parm[[i]][["p"]] <- matrix(nrow = 0, ncol = ncol(x[[i]]$model.matrix))
       colnames(parm[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
       if(!is.null(start)) {
@@ -5693,6 +5695,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         if(!is.null(x[[i]]$smooth.construct[[j]]$orig.class))
           class(x[[i]]$smooth.construct[[j]]) <- x[[i]]$smooth.construct[[j]]$orig.class
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
+        LLC[[i]][[paste0("s.", j)]] <- 0
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
           tpar <- x[[i]]$smooth.construct[[j]]$state$parameters
@@ -6133,6 +6136,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       if(select) {
         llc <- unlist(ll_contrib)
         if(!all(is.na(llc))) {
+          llval <- max(llc, na.rm = TRUE)
           llc <- names(llc)[which.max(llc)]
           llc <- strsplit(llc, ".", fixed = TRUE)[[1]]
           llc <- c(llc[1], paste0(llc[-1], collapse = "."))
@@ -6145,6 +6149,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             Xn <- x[[llc[1]]]$model.matrix[shuffle_id[take], , drop = FALSE]
             Xt <- x[[llc[1]]]$model.matrix[shuffle_id[take2], , drop = FALSE]
           }
+          ll_iter <- attr(LLC[[llc[1]]][[llc[2]]], "iteration")
+          ll_iter <- c(ll_iter, iter)
+          LLC[[llc[1]]][[llc[2]]] <- c(LLC[[llc[1]]][[llc[2]]], llval)
+          attr(LLC[[llc[1]]][[llc[2]]], "iteration") <- ll_iter
           eta[[llc[1]]] <- eta[[llc[1]]] + xcenter(Xn %*% beta[[llc[1]]][[llc[2]]])
           etas[[llc[1]]] <- etas[[llc[1]]] + xcenter(Xt %*% beta[[llc[1]]][[llc[2]]])
         }
@@ -6232,8 +6240,46 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   rval$nbatch <- nbatch
   rval$parpaths <- parm
   rval$epochs <- epochs
+  rval$n.iter <- iter
+  if(select) {
+    rval$llcontrib <- LLC
+  }
 
   rval
+}
+
+contribplot <- function(x, ...) {
+  if(is.null(ll <- x$model.stats$optimizer$llcontrib))
+    stop("nothing to plot")
+  iter <- x$model.stats$optimizer$n.iter - 1L
+  sf <- list()
+  for(i in names(ll)) {
+    sf[[i]] <- list()
+    for(j in names(ll[[i]])) {
+      if(!is.null(ll[[i]][[j]])) {
+        ii <- attr(ll[[i]][[j]], "iteration")
+        sf[[i]][[j]] <- length(ii) / iter
+        llv <- rep(0, iter)
+        llv[ii] <- ll[[i]][[j]][-1]
+        llv <- cumsum(llv)
+        ll[[i]][[j]] <- llv
+      } else {
+        ll[[i]][[j]] <- rep(0, iter)
+        sf[[i]][[j]] <- 0
+      }
+    }
+    sf[[i]] <- do.call("rbind", sf[[i]])
+    colnames(sf[[i]]) <- "Sel. freq."
+    cat(i, "\n", sep = "")
+    printCoefmat(sf[[i]])
+    cat("\n")
+    ll[[i]] <- do.call("cbind", ll[[i]])
+    colnames(ll[[i]]) <- paste0(i, ".", colnames(ll[[i]]))
+  }
+  ll <- do.call("cbind", ll)
+  print.boost_summary(list("loglik" = ll, "mstop" = iter),
+    summary = FALSE, plot = TRUE, which = "loglik.contrib", ...)
+  invisible(list("loglik" = ll, "selfreqs" = sf))
 }
 
 
