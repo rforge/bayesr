@@ -5741,7 +5741,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           Xn <- x[[i]]$smooth.construct[[j]]$X[shuffle_id[take], , drop = FALSE]
           XX <- crossprod(Xn)
-          objfun <- function(tau2, retedf = FALSE) {
+          objfun1 <- function(tau2, retedf = FALSE) {
             S <- 0
             for(l in seq_along(x[[i]]$smooth.construct[[j]]$S)) {
               S <- S + 1 / tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
@@ -5757,7 +5757,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               return((min(c(100, ncX * 0.5)) - edf)^2)
           }
           tau2[[i]][[j]] <- rep(1000, length(x[[i]]$smooth.construct[[j]]$S))
-          opt <- tau2.optim(objfun, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
+          opt <- tau2.optim(objfun1, start = tau2[[i]][[j]], maxit = 1000, scale = 100,
             add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
           if(!inherits(opt, "try-error")) {
             tau2[[i]][[j]] <- opt
@@ -5922,7 +5922,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           etas[[i]] <- etas[[i]] - drop(Xt %*% b0)
 
-          objfun <- function(tau2, retLL = FALSE) {
+          objfun2 <- function(tau2, retLL = FALSE) {
             P <- matrix_inv(XWX + 1/tau2 * I)
             b <- drop(P %*% crossprod(Xn * hess, e)) ##* nu + b0 * (1-nu)
             etas[[i]] <- etas[[i]] + drop(Xt %*% b)
@@ -5940,10 +5940,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
             return(ll)
           }
-          tau2fe <- try(tau2.optim(objfun, tau2f), silent = TRUE)
+          tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
           ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
-            ll1 <- objfun(tau2fe, retLL = TRUE)
+            ll1 <- objfun2(tau2fe, retLL = TRUE)
             epsll <- abs((ll1 - ll0)/ll0)
             if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
               tau2f <- tau2fe
@@ -6013,7 +6013,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
             XWX <- crossprod(Xn * hess, Xn)
 
-            objfun <- function(tau2, retLL = FALSE) {
+            objfun3 <- function(tau2, retLL = FALSE) {
               S <- 0
               for(l in 1:length(tau2)) {
                 S <- S + 1/tau2[l] * if(is.function(x[[i]]$smooth.construct[[j]]$S[[l]])) {
@@ -6047,12 +6047,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
 
             if(!slice) {
-              tau2s <- try(tau2.optim(objfun, tau2[[i]][[j]], maxit = 10), silent = TRUE)
+              tau2s <- try(tau2.optim(objfun3, tau2[[i]][[j]], maxit = 10), silent = TRUE)
             } else {
               theta <- c(b0, "tau2" = tau2[[i]][[j]])
               ii <- grep("tau2", names(theta))
               logP <- function(g, x, ll, ...) {
-                -1 * objfun(get.par(g, "tau2"))
+                -1 * objfun3(get.par(g, "tau2"))
               }
               for(jj in ii) {
                 theta <- uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
@@ -6063,7 +6063,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             ll_contrib[[i]][[paste0("s.", j)]] <- NA
             accept <- TRUE
             if(!inherits(tau2s, "try-error")) {
-              ll1 <- objfun(tau2s, retLL = TRUE)
+              ll1 <- objfun3(tau2s, retLL = TRUE)
               epsll <- abs((ll1 - ll0)/ll0)
 #              if(!slice) {
 #                accept <- TRUE

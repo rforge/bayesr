@@ -5,6 +5,7 @@ R/STAN.R
 R/bamlss_shiny.R
 R/installPackages.R
 R/trees.R
+R/JM2.R
 
 data/MunichBnd.rda
 data/rent99.rda

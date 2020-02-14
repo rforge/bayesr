@@ -3128,8 +3128,11 @@ mvt_bamlss <- function(...)
 }
 
 
-dirichlet_bamlss <- function(k, ...)
+dirichlet_bamlss <- function(...)
 {
+  k <- list(...)$k
+  if(is.null(k))
+    stop("argument k is missing, number of parameters need to be specified!")
   rval <- list(
     "family" = "dirichlet",
     "names" = paste0("alpha", 1:k)
@@ -3178,48 +3181,48 @@ dirichlet_bamlss <- function(k, ...)
   rval
 }
 
-if(FALSE) {
-  data("ArcticLake", package = "DirichletReg")
+#if(FALSE) {
+#  data("ArcticLake", package = "DirichletReg")
 
-  AL <- as.matrix(ArcticLake[, 1:3])
+#  AL <- as.matrix(ArcticLake[, 1:3])
 
-  d <- data.frame("depth" = ArcticLake$depth)
-  d$y <- AL
+#  d <- data.frame("depth" = ArcticLake$depth)
+#  d$y <- AL
 
-  f <- list(
-    y ~ s(depth),
-      ~ s(depth),
-      ~ s(depth)
-  )
+#  f <- list(
+#    y ~ s(depth),
+#      ~ s(depth),
+#      ~ s(depth)
+#  )
 
-  b <- bamlss(f, data = d, family = dirichlet_bamlss(k = 3))
+#  b <- bamlss(f, data = d, family = dirichlet_bamlss(k = 3))
 
-  p <- predict(b, type = "parameter")
-  p <- as.data.frame(p)
-  p <- p / rowSums(p)
-  par(mfrow = c(1, 3))
-  for(j in 1:3) {
-    plot(d$y[, j] ~ d$depth, ylab = colnames(d$y)[j], xlab = "depth")
-    plot2d(p[, j] ~ d$depth, lwd = 2, add = TRUE)
-  }
+#  p <- predict(b, type = "parameter")
+#  p <- as.data.frame(p)
+#  p <- p / rowSums(p)
+#  par(mfrow = c(1, 3))
+#  for(j in 1:3) {
+#    plot(d$y[, j] ~ d$depth, ylab = colnames(d$y)[j], xlab = "depth")
+#    plot2d(p[, j] ~ d$depth, lwd = 2, add = TRUE)
+#  }
 
-  ###
-  p <- predict(b, type = "parameter", FUN = function(x) x)
-  p <- lapply(p, as.matrix)
-  alpha_0 <- purrr::reduce(p, `+`)
-  props <- lapply(p, function(x) x / alpha_0)
-  props_95 <- lapply(props, function(x) t(apply(x, 1L, c95)))
+#  ###
+#  p <- predict(b, type = "parameter", FUN = function(x) x)
+#  p <- lapply(p, as.matrix)
+#  alpha_0 <- purrr::reduce(p, `+`)
+#  props <- lapply(p, function(x) x / alpha_0)
+#  props_95 <- lapply(props, function(x) t(apply(x, 1L, c95)))
 
-  cols <- hcl.colors(3, "Dark 2")
-  for(j in 1:3) {
-    plot2d(props_95[[j]] ~ d$depth, lwd = 2,
-	   ylab = colnames(d$y)[j], xlab = "depth")
-    points(d$y[, j] ~ d$depth, pch = 19, col = cols[j])
-    points(d$y[, j] ~ d$depth)
-  }
+#  cols <- hcl.colors(3, "Dark 2")
+#  for(j in 1:3) {
+#    plot2d(props_95[[j]] ~ d$depth, lwd = 2,
+#	   ylab = colnames(d$y)[j], xlab = "depth")
+#    points(d$y[, j] ~ d$depth, pch = 19, col = cols[j])
+#    points(d$y[, j] ~ d$depth)
+#  }
 
-  
-}
+#  
+#}
 
 
 multinomial_bamlss <- multinom_bamlss <- function(...)
