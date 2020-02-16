@@ -6269,6 +6269,7 @@ contribplot <- function(x, ...) {
       }
     }
     sf[[i]] <- do.call("rbind", sf[[i]])
+    sf[[i]] <- sf[[i]][order(sf[[i]][, 1], decreasing = TRUE), , drop = FALSE]
     colnames(sf[[i]]) <- "Sel. freq."
     cat(i, "\n", sep = "")
     printCoefmat(sf[[i]])
