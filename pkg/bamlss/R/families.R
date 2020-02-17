@@ -3196,24 +3196,24 @@ dirichlet_bamlss <- function(...)
 }
 
 #if(FALSE) {
- data("ArcticLake", package = "DirichletReg")
-
- AL <- as.matrix(ArcticLake[, 1:3])
-
- d <- data.frame("depth" = ArcticLake$depth)
- d$y <- AL
-
- f <- list(
-   y ~ s(depth),
-     ~ s(depth),
-     ~ s(depth)
- )
-
- b <- bamlss(f, data = d, family = dirichlet_bamlss(k = 3))
-
- p <- predict(b, type = "parameter")
- p <- as.data.frame(p)
- p <- p / rowSums(p)
+#  data("ArcticLake", package = "DirichletReg")
+# 
+#  AL <- as.matrix(ArcticLake[, 1:3])
+# 
+#  d <- data.frame("depth" = ArcticLake$depth)
+#  d$y <- AL
+# 
+#  f <- list(
+#    y ~ s(depth),
+#      ~ s(depth),
+#      ~ s(depth)
+#  )
+# 
+#  b <- bamlss(f, data = d, family = dirichlet_bamlss(k = 3))
+# 
+#  p <- predict(b, type = "parameter")
+#  p <- as.data.frame(p)
+#  p <- p / rowSums(p)
 #  par(mfrow = c(1, 3))
 #  for(j in 1:3) {
 #    plot(d$y[, j] ~ d$depth, ylab = colnames(d$y)[j], xlab = "depth")
