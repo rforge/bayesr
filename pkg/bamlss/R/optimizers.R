@@ -5642,17 +5642,18 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- LLC <- list()
+  beta <- eta <- etas <- tau2 <- ll_contrib <- ll_contrib2 <- medf <- parm <- LLC <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
     medf[[i]] <- list()
     parm[[i]] <- list()
     LLC[[i]] <- list()
-    ll_contrib[[i]] <- list()
+    ll_contrib[[i]] <- ll_contrib2[[i]] <- list()
     eta[[i]] <- etas[[i]] <- 0
     if(!is.null(x[[i]]$model.matrix)) {
       ll_contrib[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
+      ll_contrib2[[i]][["p"]] <- medf[[i]][["p.edf"]] <- NA
       LLC[[i]][["p"]] <- 0
       parm[[i]][["p"]] <- matrix(nrow = 0, ncol = ncol(x[[i]]$model.matrix))
       colnames(parm[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
@@ -5695,6 +5696,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         if(!is.null(x[[i]]$smooth.construct[[j]]$orig.class))
           class(x[[i]]$smooth.construct[[j]]) <- x[[i]]$smooth.construct[[j]]$orig.class
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
+        ll_contrib2[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
         LLC[[i]][[paste0("s.", j)]] <- 0
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
@@ -5942,6 +5944,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
           ll_contrib[[i]][["p"]] <- NA
+          ll_contrib2[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE)
             epsll <- abs((ll1 - ll0)/ll0)
@@ -5953,9 +5956,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               } else {
                 beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1-nu)
               }
-              ll_contrib[[i]][["p"]] <- ll1 - ll0
               tedf <- sum_diag(XWX %*% P)
               edf <- edf + tedf
+              ll_contrib[[i]][["p"]] <- if(aic) {
+                -2 * ll1 + K * ncol(Xt)
+              } else {
+                ll1 - ll0
+              }
+              ll_contrib2[[i]][["p"]] <- ll1 - ll0
               medf[[i]][["p.edf"]] <- c(medf[[i]][["p.edf"]], tedf)
             }
           }
@@ -6061,6 +6069,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               tau2s <- as.numeric(get.par(theta, "tau2"))
             }
             ll_contrib[[i]][[paste0("s.", j)]] <- NA
+            ll_contrib2[[i]][[paste0("s.", j)]] <- NA
             accept <- TRUE
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun3(tau2s, retLL = TRUE)
@@ -6102,7 +6111,12 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 }
                 tedf <- sum_diag(XWX %*% P)
                 edf <- edf + tedf
-                ll_contrib[[i]][[paste0("s.", j)]] <- ll1 - ll0
+                ll_contrib[[i]][[paste0("s.", j)]] <- if(aic) {
+                  -2 * family$loglik(yt, family$map2par(etas)) + K * tedf
+                } else {
+                  ll1 - ll0
+                }
+                ll_contrib2[[i]][[paste0("s.", j)]] <- ll1 - ll0
                 medf[[i]][[paste0("s.", j, ".edf")]] <- c(medf[[i]][[paste0("s.", j, ".edf")]], tedf)
               }
             }
@@ -6135,9 +6149,17 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
       if(select) {
         llc <- unlist(ll_contrib)
+        llc2 <- unlist(ll_contrib2)
         if(!all(is.na(llc))) {
-          llval <- max(llc, na.rm = TRUE)
-          llc <- names(llc)[which.max(llc)]
+          if(aic) {
+            llval <- min(llc, na.rm = TRUE)
+            llval2 <- llc2[which.min(llc)]
+            llc <- names(llc)[which.min(llc)]
+          } else {
+            llval <- max(llc, na.rm = TRUE)
+            llval2 <- llc2[which.max(llc)]
+            llc <- names(llc)[which.max(llc)]
+          }
           llc <- strsplit(llc, ".", fixed = TRUE)[[1]]
           llc <- c(llc[1], paste0(llc[-1], collapse = "."))
           beta[[llc[1]]][[llc[2]]] <- tbeta[[llc[1]]][[llc[2]]]
@@ -6151,7 +6173,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           }
           ll_iter <- attr(LLC[[llc[1]]][[llc[2]]], "iteration")
           ll_iter <- c(ll_iter, iter)
-          LLC[[llc[1]]][[llc[2]]] <- c(LLC[[llc[1]]][[llc[2]]], llval)
+          LLC[[llc[1]]][[llc[2]]] <- c(LLC[[llc[1]]][[llc[2]]], llval2)
           attr(LLC[[llc[1]]][[llc[2]]], "iteration") <- ll_iter
           eta[[llc[1]]] <- eta[[llc[1]]] + xcenter(Xn %*% beta[[llc[1]]][[llc[2]]])
           etas[[llc[1]]] <- etas[[llc[1]]] + xcenter(Xt %*% beta[[llc[1]]][[llc[2]]])
