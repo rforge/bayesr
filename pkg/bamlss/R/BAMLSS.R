@@ -718,8 +718,8 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   cat("  .. ff processing term", object$label, "\n")
   for(j in object$term) {
     if(!is.factor(data[[j]][1:2])) {
-      xr <- ffbase::range.ff(data[[j]], na.rm = TRUE)
-      nd[[j]] <- sample(seq(xr[1], xr[2], length = 500))
+      xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = 100), na.rm = TRUE)
+      nd[[j]] <- sample(xq)
     } else {
       nd[[j]] <- sample(unique(data[[j]]), size = 500, replace = TRUE)
     }
