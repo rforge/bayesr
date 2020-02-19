@@ -5665,12 +5665,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
         if(!is.null(family$initialize) & is.null(offset)) {
           if(noff) {
-            shuffle_id <- sample(1:N)
+            shuffle_id <- sample(seq_len(N))
           } else {
             shuffle_id <- NULL
             for(ii in bamlss_chunk(y)) {
-              ind <- ii[1]:ii[2]
-              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ii) else ii)
             }
           }
           if(!srandom) {
@@ -5732,8 +5731,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           } else {
             shuffle_id <- NULL
             for(ii in bamlss_chunk(y)) {
-              ind <- ii[1]:ii[2]
-              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+              shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ii) else ii)
             }
           }
           if(!srandom) {
@@ -5819,8 +5817,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       } else {
         shuffle_id <- NULL
         for(ii in bamlss_chunk(y)) {
-          ind <- ii[1]:ii[2]
-          shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
+          shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ii) else ii)
         }
       }
     } else {

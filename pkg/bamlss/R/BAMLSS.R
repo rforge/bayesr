@@ -202,7 +202,7 @@ bamlss_chunk <- function(x) {
     xc <- cut(seq_len(N), breaks = floor(N/n), include.lowest = TRUE)
     chunks <- split(seq_len(N), xc)
   } else {
-    chunks <- list(1:N)
+    chunks <- list(seq_len(N))
   }
   chunks
 }
