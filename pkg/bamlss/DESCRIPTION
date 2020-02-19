@@ -18,7 +18,7 @@ Description: Infrastructure for estimating probabilistic distributional regressi
   <doi:10.1080/10618600.2017.1407325> and the R package in Umlauf, Klein, Simon, Zeileis (2019)
   <arXiv:1909.11784>.
 Depends: R (>= 3.5.0), coda, colorspace, mgcv
-Imports: Formula, MBA, mvtnorm, sp, Matrix, survival, methods, parallel
+Imports: Formula, MBA, mvtnorm, sp, Matrix, survival, methods, parallel, raster
 Suggests: akima, ff, ffbase, fields, gamlss, geoR, rjags, BayesX, BayesXsrc, R2BayesX, mapdata, maps, maptools,
   nnet, spatstat, spdep, zoo, keras, splines2, sdPrior, statmod, glogis, glmnet, scoringRules, knitr, MASS
 License: GPL-2 | GPL-3
