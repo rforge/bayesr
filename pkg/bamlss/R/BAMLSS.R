@@ -242,7 +242,6 @@ design.construct <- function(formula, data = NULL, knots = NULL,
   if(!no_ff) {
     stopifnot(requireNamespace("ff"))
     stopifnot(requireNamespace("ffbase"))
-    stopifnot(requireNamespace("bit"))
   }
 
   if(!is.character(data) & no_ff) {
@@ -702,7 +701,6 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
 {
   stopifnot(requireNamespace("ff"))
   stopifnot(requireNamespace("ffbase"))
-  stopifnot(requireNamespace("bit"))
 
   w <- getOption("warn")
   options("warn" = -1)
@@ -793,9 +791,8 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
 ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.big.error=FALSE,...) {	
 	{i1<-NULL; i2<- NULL} #To avoid errors in R CMD check
 
-        stopifnot(requireNamespace("ff"))
-        stopifnot(requireNamespace("ffbase"))
-        stopifnot(requireNamespace("bit"))
+  stopifnot(requireNamespace("ff"))
+  stopifnot(requireNamespace("ffbase"))
 
 	dimx<-dim(x)
 	if(!is.null(y)) dimy<-dim(y)
