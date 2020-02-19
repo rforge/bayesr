@@ -548,7 +548,7 @@ get.eta <- function(x, expand = TRUE)
 ffdf_eval <- function(x, FUN)
 {
   #  res <- NULL
-  #  for(i in bit::chunk(x)) {
+  #  for(i in bamlss_chunk(x)) {
   #    res <- ffappend(res, FUN(x[i, ]))
   #  }
   #  res
@@ -559,7 +559,7 @@ ffdf_eval <- function(x, FUN)
 ffdf_eval_sh <- function(y, par, FUN)
 {
   #  res <- NULL
-  #  for(i in bit::chunk(y)) {
+  #  for(i in bamlss_chunk(y)) {
   #    tpar <- list()
   #    for(j in names(par))
   #      tpar[[j]] <- par[[j]][i]
@@ -573,7 +573,7 @@ ffdf_eval_sh <- function(y, par, FUN)
 ff_eval <- function(x, FUN, lower = NULL, upper = NULL)
 {
   #  res <- NULL
-  #  for(i in bit::chunk(x)) {
+  #  for(i in bamlss_chunk(x)) {
   #    tres <- FUN(x[i])
   #    if(!is.null(lower)) {
   #      if(any(jj <- tres == lower[1]))
@@ -5374,7 +5374,7 @@ sgd_grep_X <- function(x) {
 
 #  ## Shuffle observations.
 #  shuffle_id <- NULL
-#  for(i in bit::chunk(y)) {
+#  for(i in bamlss_chunk(y)) {
 #    ind <- i[1]:i[2]
 #    shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
 #  }
@@ -5668,7 +5668,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             shuffle_id <- sample(1:N)
           } else {
             shuffle_id <- NULL
-            for(ii in bit::chunk(y)) {
+            for(ii in bamlss_chunk(y)) {
               ind <- ii[1]:ii[2]
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
@@ -5731,7 +5731,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             shuffle_id <- sample(1:N)
           } else {
             shuffle_id <- NULL
-            for(ii in bit::chunk(y)) {
+            for(ii in bamlss_chunk(y)) {
               ind <- ii[1]:ii[2]
               shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
             }
@@ -5818,7 +5818,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
         shuffle_id <- sample(1:N)
       } else {
         shuffle_id <- NULL
-        for(ii in bit::chunk(y)) {
+        for(ii in bamlss_chunk(y)) {
           ind <- ii[1]:ii[2]
           shuffle_id <- ffbase::ffappend(shuffle_id, if(shuffle) sample(ind) else ind)
         }

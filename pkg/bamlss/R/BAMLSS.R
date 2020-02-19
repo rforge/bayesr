@@ -191,6 +191,23 @@ match.index.ff <- function(x)
 }
 
 
+bamlss_chunk <- function(x) {
+  N <- if(is.null(dim(x))) {
+    length(x)
+  } else {
+    nrow(x)
+  }
+  if(N > 100000L) {
+    n <- 0.05 * N
+    xc <- cut(seq_len(N), breaks = floor(N/n), include.lowest = TRUE)
+    chunks <- split(seq_len(N), xc)
+  } else {
+    chunks <- list(1:N)
+  }
+  chunks
+}
+
+
 ## Compute the 'bamlss.frame' 'x' master object.
 design.construct <- function(formula, data = NULL, knots = NULL,
   model.matrix = TRUE, smooth.construct = TRUE, binning = FALSE,
@@ -290,7 +307,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         }
         mm_test <- model.matrix(mm_terms, data = data[1:10, , drop = FALSE])
         if(ncol(mm_test) > 0) {
-          for(cff in bit::chunk(data)) {
+          for(cff in bamlss_chunk(data)) {
             obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
           }
         }
@@ -738,12 +755,12 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     colnames(X) <- cn
     return(X)
   }
-  for(ic in bit::chunk(data)) {
+  for(ic in bamlss_chunk(data)) {
     object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
   }
   if(!inherits(object, "nnet0.smooth")) {
     csum <- 0
-    for(ic in chunk_mat(object[["X"]])) {
+    for(ic in bamlss_chunk(object[["X"]])) {
       csum <- csum + colSums(object[["X"]][ic, ])
     }
     QR <- qr(matrix(csum, ncol = 1L))
@@ -842,32 +859,32 @@ ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.b
 	return(out)
 }
 
-chunk_mat <- function (x, RECORDBYTES = sum(ff::.rambytes[ff::vmode(x)]),
-  BATCHBYTES = getOption("ffbatchbytes"), ...) 
-{
-    n <- nrow(x)
-    if (n) {
-        l <- list(...)
-        if (is.null(l$from)) 
-            l$from <- 1L
-        if (is.null(l$to)) 
-            l$to <- n
-        if (is.null(l$by) && is.null(l$len)) {
-            b <- BATCHBYTES%/%RECORDBYTES
-            if (b == 0L) {
-                b <- 1L
-                warning("single record does not fit into BATCHBYTES")
-            }
-            l$by <- b
-        }
-        l$maxindex <- n
-        ret <- do.call(bit::chunk.default, l)
-    }
-    else {
-        ret <- list()
-    }
-    ret
-}
+#chunk_mat <- function (x, RECORDBYTES = sum(ff::.rambytes[ff::vmode(x)]),
+#  BATCHBYTES = getOption("ffbatchbytes"), ...) 
+#{
+#    n <- nrow(x)
+#    if (n) {
+#        l <- list(...)
+#        if (is.null(l$from)) 
+#            l$from <- 1L
+#        if (is.null(l$to)) 
+#            l$to <- n
+#        if (is.null(l$by) && is.null(l$len)) {
+#            b <- BATCHBYTES%/%RECORDBYTES
+#            if (b == 0L) {
+#                b <- 1L
+#                warning("single record does not fit into BATCHBYTES")
+#            }
+#            l$by <- b
+#        }
+#        l$maxindex <- n
+#        ret <- do.call(bit::chunk.default, l)
+#    }
+#    else {
+#        ret <- list()
+#    }
+#    ret
+#}
 
 #smooth.construct_ff.ps.smooth.spec <- function(object, data, knots, ...)
 #{
