@@ -121,7 +121,7 @@ package _bamlss_ as presented in the article.
 
 The example code for the bivariate Gaussian models introduced in
 @bamlss:Lang+Mayr+Stauffer+Zeileis:2019 is illustrated based on the freely
-available EPS reforecasts of the NOAA’s second-generation global ensemble
+available EPS reforecasts of the NOAA's second-generation global ensemble
 reforecast dataset [@bamlss:hamill+etal:2013] for the 12 hour forecast step
 bilinearly interpolated to the site of interest. As observational data wind
 measurement at the [Department of Atmospheric and Cryospheric
