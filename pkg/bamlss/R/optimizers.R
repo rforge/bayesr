@@ -3736,11 +3736,21 @@ print.boost_summary <- function(x, summary = TRUE, plot = TRUE,
           x$loglik <- x$loglik[, grep2(args$name, colnames(x$loglik), fixed = TRUE), drop = FALSE]
         }
         xn <- sapply(strsplit(colnames(x$loglik), ".", fixed = TRUE), function(x) { x[length(x)] })
-        cols <- rainbow_hcl(length(unique(xn)))
+        if(is.null(cols <- args$mcol)) {
+          cols <- rainbow_hcl(length(unique(xn)))
+        } else {
+          cols <- rep(cols, length.out = length(unique(xn)))
+        }
         matplot(x$loglik, type = "l", lty = 1,
-                xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)], ...)
+          xlab = "Iteration", ylab = "LogLik contribution", col = cols[as.factor(xn)],
+          lwd = args$lwd)
         abline(v = x$mstop, lwd = 3, col = "lightgray")
-        axis(4, at = x$loglik[nrow(x$loglik), ], labels = colnames(x$loglik), las = 1)
+        cn <- colnames(x$loglik)
+        if(!is.null(args$drop)) {
+          for(dn in args$drop)
+            cn <- gsub(dn, "", cn, fixed = TRUE)
+        }
+        axis(4, at = x$loglik[nrow(x$loglik), ], labels = cn, las = 1)
         axis(3, at = x$mstop, labels = paste("mstop =", x$mstop))
       }
       if(w %in% c("aic", "bic", "user")) {
@@ -6298,7 +6308,7 @@ contribplot <- function(x, ...) {
   }
   ll <- do.call("cbind", ll)
   print.boost_summary(list("loglik" = ll, "mstop" = iter),
-    summary = FALSE, plot = TRUE, which = "loglik.contrib", ...)
+    summary = FALSE, which = "loglik.contrib", ...)
   invisible(list("loglik" = ll, "selfreqs" = sf))
 }
 
