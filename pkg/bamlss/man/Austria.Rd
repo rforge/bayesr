@@ -21,5 +21,12 @@
     \url{https://www.ngdc.noaa.gov/mgg/global/global.html}
 }
 
+\examples{
+require("raster")
+data("Austria")
+plot(AustriaTopo, col = terrain.colors(10))
+plot(Austria, add = TRUE)
+}
+
 \keyword{datasets}
 
