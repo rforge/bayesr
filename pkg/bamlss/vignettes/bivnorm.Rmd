@@ -20,7 +20,7 @@ vignette: >
 library("zoo") 
 library("bamlss")
 
-if (! dir.exists("figures")) dir.create("figures")
+if (!dir.exists("figures")) dir.create("figures")
 
 if(!file.exists("figures/bivnorm_models.rda")) {
 

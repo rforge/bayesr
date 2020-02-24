@@ -5920,6 +5920,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
           b0 <- beta[[i]][["p"]]
 
+          eta_0 <- eta[[i]]
+          etas_0 <- etas[[i]]
+
           z <- eta[[i]] + 1/hess * score
           zs <- etas[[i]] + 1/hesss * scores
 
@@ -5977,6 +5980,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           if(!select) {
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
             etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
+          } else {
+            eta[[i]] <- eta_0
+            etas[[i]] <- etas_0
           }
         }
 
@@ -6146,7 +6152,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 #plot2d(fit ~ Z, add = TRUE)
               }
             }
-            if(!accept) {
+            if(!accept | select) {
               eta[[i]] <- eta_0
               etas[[i]] <- etas_0
             }
