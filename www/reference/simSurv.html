@@ -8,11 +8,13 @@
 
 <title>Simulate Survival Times — simSurv • bamlss</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -30,13 +32,14 @@
 
 
 
-<meta property="og:title" content="Simulate Survival Times — simSurv" />
 
+<meta property="og:title" content="Simulate Survival Times — simSurv" />
 <meta property="og:description" content="Function simSurv() and rSurvtime2() simulate arbitrary (Cox-type) survival times
   using the inversion method. Function simSurv() is a simple wrapper that calls
   rSurvtime2(). The functions are based on the R package CoxFlexBoost implementation
   rSurvtime() and only slightly modify the code." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -66,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -148,7 +151,6 @@
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -169,12 +171,10 @@
     </div>
 
     <div class="ref-description">
-    
     <p>Function <code>simSurv()</code> and <code>rSurvtime2()</code> simulate arbitrary (Cox-type) survival times
   using the inversion method. Function <code>simSurv()</code> is a simple wrapper that calls
   <code>rSurvtime2()</code>. The functions are based on the <span style="R">R</span> package <span class="pkg">CoxFlexBoost</span> implementation
   <code>rSurvtime()</code> and only slightly modify the code.</p>
-    
     </div>
 
     <pre class="usage"><span class='co'>## Simulate a pre-specified survival times data set.</span>
@@ -183,7 +183,7 @@
 <span class='co'>## Simulate arbitrary survival times.</span>
 <span class='fu'>rSurvTime2</span>(<span class='no'>lambda</span>, <span class='no'>x</span>, <span class='no'>cens_fct</span>, <span class='kw'>upper</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='no'>...</span>,
   <span class='kw'>file</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>subdivisions</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -222,20 +222,18 @@
       <td><p>The maximum number of subintervals for the integration.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>This is basically a slight modification according the computation of the integral,
   see the manual page of function <code>rSurvtime()</code> of package <code>CoxFlexBoost</code> for
   details.</p>
-    
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A <code>data.frame</code> consisting of the observed survival time
   (<code>time</code>), the non-censoring indicator (<code>event</code>) and further
   covariates <code>x</code> is returned. If <code>file</code> is specified, the
   data.frame is additionally stored on the disc.</p>
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Benjamin Hofner (2016). <span class="pkg">CoxFlexBoost</span>: Boosting Flexible Cox Models
@@ -243,11 +241,9 @@
 <p>Ralph Bender and Thomas Augustin and Maria Blettner (2005),
     Generating Survival Times to Simulate Cox Proportional Hazards Models.
     <em>Statistics in Medicine</em>, <b>24</b>, 1713-1723.</p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='cox.mode.html'>cox_mode</a></code>, <code><a href='cox.mcmc.html'>cox_mcmc</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>## The following shows the code of the</span>
@@ -281,15 +277,10 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-
       <li><a href="#value">Value</a></li>
-
       <li><a href="#references">References</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 

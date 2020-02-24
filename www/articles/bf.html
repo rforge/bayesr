@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -139,9 +139,9 @@
 <a href="#understanding-the-bamlss-model-frame" class="anchor"></a>Understanding the BAMLSS model frame</h2>
 <p>Similar to the well-known <code><a href="https://www.rdocumentation.org/packages/stats/topics/model.frame">model.frame()</a></code> function that is used, e.g., by the linear model fitting function <code><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm()</a></code>, or for generalized linear models <code><a href="https://www.rdocumentation.org/packages/stats/topics/glm">glm()</a></code>, the <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code> function extracts a “model frame” for fitting distributional regression models. Internally, the function parses model formulae, one for each parameter of the distribution, using the <em>Formula</em> package infrastructures <span class="citation">(Zeileis and Croissant 2010)</span> in combination with <code><a href="https://www.rdocumentation.org/packages/stats/topics/model.matrix">model.matrix()</a></code> processing for linear effects and <code><a href="../reference/smooth.construct.html">smooth.construct()</a></code> processing of the <em>mgcv</em> package to setup design and penalty matrices for unspecified smooth function estimation <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Wood:2019"><strong>???</strong></span>)</span>, see also, e.g., the documentation of function <code>s()</code> and <code>te()</code>.</p>
 <p>The most important arguments are</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(formula, <span class="dt">data =</span> <span class="ot">NULL</span>, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
-  <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">subset =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,
-  <span class="dt">na.action =</span> na.omit, <span class="dt">contrasts =</span> <span class="ot">NULL</span>, ...)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(formula, <span class="dt">data =</span> <span class="ot">NULL</span>, <span class="dt">family =</span> <span class="st">"gaussian"</span>,</a>
+<a class="sourceLine" id="cb1-2" title="2">  <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">subset =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="dt">na.action =</span> na.omit, <span class="dt">contrasts =</span> <span class="ot">NULL</span>, ...)</a></code></pre></div>
 <p>The argument <code>formula</code> can be a classical model formulae, e.g., as used by the <code><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm()</a></code> function, or an extended <em>bamlss</em> formula including smooth term specifications like <code>s()</code> or <code>te()</code>, that is internally parsed by function <code><a href="../reference/bamlss.formula.html">bamlss.formula()</a></code>. Note that the <em>bamlss</em> package uses special <code>family</code> objects, that can be passed either as a character without the <code>"_bamlss"</code> extension of the <em>bamlss</em> family name (see the manual <code><a href="../reference/family.bamlss.html">?bamlss.family</a></code> for a list of available families and the corresponding vignette <a href="http://bayesr.R-Forge.R-project.org/articles/families.html">BAMLSS Families</a>), or the family function itself. In addition, all families of the <em>gamlss</em> <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Stasinopoulos+Rigby:2019"><strong>???</strong></span>)</span> and <em>gamlss.dist</em> <span class="citation">(Stasinopoulos and Rigby 2019)</span> package are supported.</p>
 <p>The returned object, a named list of class <code>"bamlss.frame"</code>, can be employed with all model fitting engines. The most important elements used for estimation are:</p>
 <ul>
@@ -153,17 +153,17 @@
 <code>family</code>: The processed  .</li>
 </ul>
 <p>To better understand the structure of the <code>"bamlss.frame"</code> object a print method is provided. For illustration, we simulate data</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">111</span>)
-d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">111</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2">d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()</a></code></pre></div>
 <p>and set up a <code>"bamlss.frame"</code> object for a Gaussian distributional regression model including smooth terms. First, a model formula is needed</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-  num ~<span class="st"> </span>x1 +<span class="st"> </span><span class="kw">s</span>(x2) +<span class="st"> </span><span class="kw">s</span>(x3) +<span class="st"> </span><span class="kw">te</span>(lon,lat),
-  sigma ~<span class="st"> </span>x1 +<span class="st"> </span><span class="kw">s</span>(x2) +<span class="st"> </span><span class="kw">s</span>(x3) +<span class="st"> </span><span class="kw">te</span>(lon,lat)
-)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb3-2" title="2">  num <span class="op">~</span><span class="st"> </span>x1 <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x2) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x3) <span class="op">+</span><span class="st"> </span><span class="kw">te</span>(lon,lat),</a>
+<a class="sourceLine" id="cb3-3" title="3">  sigma <span class="op">~</span><span class="st"> </span>x1 <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x2) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x3) <span class="op">+</span><span class="st"> </span><span class="kw">te</span>(lon,lat)</a>
+<a class="sourceLine" id="cb3-4" title="4">)</a></code></pre></div>
 <p>Afterwards the model frame can be computed with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</a></code></pre></div>
 <p>To keep the overview, there is also an implemented print method for <code>"bamlss.frame"</code> objects.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(bf)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(bf)</a></code></pre></div>
 <pre><code>## 'bamlss.frame' structure: 
 ##   ..$ call 
 ##   ..$ model.frame 
@@ -186,7 +186,7 @@ d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.ht
 ##   ..$ y 
 ##   .. ..$ num</code></pre>
 <p>For writing a new estimation engine, the user can directly work with the <code>model.matrix</code> elements, for linear effects, and the <code>smooth.construct</code> list, for smooth effects respectively. The <code>smooth.construct</code> is a named list which is compiled using the <code>smoothCon()</code> function of the <em>mgcv</em> package using the generic <code><a href="../reference/smooth.construct.html">smooth.construct()</a></code> method for setting up smooth terms.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(bf$x$mu$smooth.construct))</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(bf<span class="op">$</span>x<span class="op">$</span>mu<span class="op">$</span>smooth.construct))</a></code></pre></div>
 <pre><code>## [1] "s(x2)"       "s(x3)"       "te(lon,lat)"</code></pre>
 <p>In this example, the list contains three smooth term objects for parameter <code>mu</code> and <code>sigma</code>.</p>
 <p>See also the vignette <a href="http://bayesr.R-Forge.R-project.org/articles/engines.html">Estimation Engines</a> presenting more details on how to work with the <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code>.</p>
@@ -202,13 +202,14 @@ d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.ht
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
 </div>
 <div id="ref-bamlss:Zeileis+Croissant:2010">
-<p>Zeileis, Achim, and Yves Croissant. 2010. “Extended Model Formulas in R: Multiple Parts and Multiple Responses.” <em>Journal of Statistical Software</em> 34 (1): 1–13. doi:<a href="https://doi.org/10.18637/jss.v034.i01">10.18637/jss.v034.i01</a>.</p>
+<p>Zeileis, Achim, and Yves Croissant. 2010. “Extended Model Formulas in R: Multiple Parts and Multiple Responses.” <em>Journal of Statistical Software</em> 34 (1): 1–13. <a href="https://doi.org/10.18637/jss.v034.i01" class="uri">https://doi.org/10.18637/jss.v034.i01</a>.</p>
 </div>
 </div>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

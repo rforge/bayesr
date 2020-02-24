@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -135,20 +135,20 @@
     
     
 <p>In this example we analyze rent index data from Munich, Germany. The data is provided in the supplemental materials of the Regression book <span class="citation">(Fahrmeir et al. 2013)</span> and can be loaded into R with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">file_url &lt;-<span class="st"> "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"</span>
-rent99 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/read.table">read.table</a></span>(file_url, <span class="dt">header =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">file_url &lt;-<span class="st"> "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"</span></a>
+<a class="sourceLine" id="cb1-2" title="2">rent99 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/read.table">read.table</a></span>(file_url, <span class="dt">header =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <p>The aim of this analysis is to find a model explaining the rent or rent per square meter of an apartment. We first assume a linear relationship with homoscedastic Gaussian errors:</p>
 <p><span class="math display">\[
 \texttt{rent} = \mu = \beta_0 + \beta_1 \cdot \texttt{area} + \beta_2 \cdot \texttt{yearc},
 \]</span> i.e., <span class="math inline">\(\texttt{rent} \sim N(\mu, \sigma^2)\)</span>. The model can be estimated with:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Model formula.
-f1 &lt;-<span class="st"> </span>rent ~<span class="st"> </span>area +<span class="st"> </span>yearc
-
-## Estimate model.
-b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f1, <span class="dt">data =</span> rent99, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
-  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="co">## Model formula.</span></a>
+<a class="sourceLine" id="cb2-2" title="2">f1 &lt;-<span class="st"> </span>rent <span class="op">~</span><span class="st"> </span>area <span class="op">+</span><span class="st"> </span>yearc</a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">## Estimate model.</span></a>
+<a class="sourceLine" id="cb2-5" title="5">b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f1, <span class="dt">data =</span> rent99, <span class="dt">family =</span> <span class="st">"gaussian"</span>,</a>
+<a class="sourceLine" id="cb2-6" title="6">  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a></code></pre></div>
 <p>This first starts a backfitting algorithm to find posterior mode estimates and afterwards the MCMC simulation is started using the parameters from the backfitting step as starting values. Note that we use 12000 iterations with a burnin of 2000 and only keep every 10th sample of the MCMC simulation. The model summary gives</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b1)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b1)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = rent ~ area + yearc, family = "gaussian", data = rent99, 
@@ -195,9 +195,9 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## runtime = 0.016
 ## ---</code></pre>
 <p>However, the assumption of homoscedastic errors is not appropriate in this case.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(rent ~<span class="st"> </span>area, <span class="dt">data =</span> rent99, <span class="dt">pch =</span> <span class="dv">16</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>))</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(rent <span class="op">~</span><span class="st"> </span>area, <span class="dt">data =</span> rent99, <span class="dt">pch =</span> <span class="dv">16</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>))</a></code></pre></div>
 <p><img src="rent_files/figure-html/unnamed-chunk-5-1.png" width="50%" style="display: block; margin: auto;"> As can be seen in this scatter plot, the data is heteroscedastic and the exact model might not even be linear. This is also indicated in the quantile residual plots.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
 <p><img src="rent_files/figure-html/unnamed-chunk-7-1.png" width="80%" style="display: block; margin: auto;"> The residuals seem to be a bit skew and for the lower and higher values of <code>rent</code>, the model fit is not satisfactorily according the Q-Q plot.</p>
 <p>A non-parametric model can be useful here. Therefore, we estimate a more flexible model with <span class="math display">\[
 \mu = \beta_0 + f_1(\texttt{area}) + f_2(\texttt{yearc})
@@ -205,16 +205,16 @@ b1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 \sigma = \exp\{\alpha_0 + g_1(\texttt{area}) + g_2(\texttt{yearc})\}
 \]</span> where functions <span class="math inline">\(f_1( \cdot ), f_2( \cdot ), g_1( \cdot ), g_2( \cdot )\)</span> are modeled using regression splines. The exponential function assures that the we estimate a positive standard deviation. This way, we allow for covariates and loose the hard assumptions of a constant standard deviation.</p>
 <p>The model is estimated with:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## List of formulae to estimate
-## heteroskedastic Gaussian model.
-f2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-  rent ~<span class="st"> </span><span class="kw">s</span>(area,<span class="dt">k=</span><span class="dv">20</span>) +<span class="st"> </span><span class="kw">s</span>(yearc,<span class="dt">k=</span><span class="dv">20</span>),
-  sigma ~<span class="st"> </span><span class="kw">s</span>(area,<span class="dt">k=</span><span class="dv">20</span>) +<span class="st"> </span><span class="kw">s</span>(yearc,<span class="dt">k=</span><span class="dv">20</span>)
-)
-
-b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f2, <span class="dt">data =</span> rent99, <span class="dt">family =</span> <span class="st">"gaussian"</span>,
-  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b2)</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co">## List of formulae to estimate</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="co">## heteroskedastic Gaussian model.</span></a>
+<a class="sourceLine" id="cb7-3" title="3">f2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb7-4" title="4">  rent <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(area,<span class="dt">k=</span><span class="dv">20</span>) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(yearc,<span class="dt">k=</span><span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb7-5" title="5">  sigma <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(area,<span class="dt">k=</span><span class="dv">20</span>) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(yearc,<span class="dt">k=</span><span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb7-6" title="6">)</a>
+<a class="sourceLine" id="cb7-7" title="7"></a>
+<a class="sourceLine" id="cb7-8" title="8">b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f2, <span class="dt">data =</span> rent99, <span class="dt">family =</span> <span class="st">"gaussian"</span>,</a>
+<a class="sourceLine" id="cb7-9" title="9">  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b2)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f2, family = "gaussian", data = rent99, n.iter = 12000, 
@@ -278,9 +278,9 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
 ## ---</code></pre>
 <p>The summary statistics indicate that the more flexible model is more appropriate since the DIC of model <code>b2</code> is much lower than the DIC of model <code>b1</code>.</p>
 <p>The estimated effects are visualized with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">ask =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <p><img src="rent_files/figure-html/unnamed-chunk-11-1.png" width="80%" style="display: block; margin: auto;"> By looking at the effect plots, we can conclude that in the case of the variable <code>area</code> an assumption of linear dependency might be justified, where in the case of <code>yearc</code> this is not so clear. Moreover, our estimated <code>sigma</code> is for neither of the variables constant.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
 <p><img src="rent_files/figure-html/unnamed-chunk-13-1.png" width="80%" style="display: block; margin: auto;"> The quantile residual plots indicate a quite good model fit already, however, the assumption of Gaussian errors could be refined as rents can only be positive. Hence, distributions accounting for this fact should be exploited further, e.g., the Gamma distribution.</p>
 <div id="refs" class="references">
 <div id="ref-bamlss:Fahrmeir+Kneib+Lang+Marx:2013">
@@ -293,6 +293,7 @@ b2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.h
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
       </div>
 
 </div>

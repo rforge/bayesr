@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -144,15 +144,15 @@
 <a href="#the-basic-setup" class="anchor"></a>The basic setup</h2>
 <p>Estimation engines in <em>bamlss</em> are usually based on the model frame setup function <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code>, i.e., the functions all have a <code>x</code> argument, which contains all the necessary model and penalty matrices, and a <code>y</code> argument, which is the response (univariate or multivariate). In addition, an estimation engine usually has a <code>family</code> argument, which specifies the model to be estimated. However, this is not a mandatory argument, i.e., one could write an estimation function that is designed for one specific problem, only.</p>
 <p>The modeling setup is best explained by looking at the main estimation engines provided by <em>bamlss</em>. The default optimizer using the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper function is <code><a href="../reference/bfit.html">bfit()</a></code>, which is a backfitting routine. The most important arguments are</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/bfit.html">bfit</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="../reference/bfit.html">bfit</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</a></code></pre></div>
 <p>The default sampling engine in <em>bamlss</em> is <code><a href="../reference/GMCMC.html">GMCMC()</a></code>, again the most important arguments are</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/GMCMC.html">GMCMC</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw"><a href="../reference/GMCMC.html">GMCMC</a></span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>, ...)</a></code></pre></div>
 <p>So basically, the arguments of the optimizer and the sampling function are the same, the main difference is the return value. In <em>bamlss</em> optimizer functions usually return a vector of estimated regression coefficients (parameters), while sampling functions return a matrix of parameter samples of class <code>"mcmc"</code> or <code>"mcmc.list"</code> (for details see the documentation of the <em>coda</em> package).</p>
 <p>Internally, what the optimizer or sampling function is actually processing is not important for the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper function as long as a vector or matrix of parameters is returned. For optimizer functions the return value needs to be named list with an element <code>"parameters"</code>, the vector (also a matrix, e.g., for <code><a href="../reference/lasso.html">lasso()</a></code> and <code><a href="../reference/boost.html">boost()</a></code> optimizers) of estimated parameters. The most important requirement to make use of all extractor functions like <code><a href="../reference/summary.bamlss.html">summary.bamlss()</a></code>, <code><a href="../reference/predict.bamlss.html">predict.bamlss()</a></code>, <code><a href="../reference/plot.bamlss.html">plot.bamlss()</a></code>, <code><a href="../reference/residuals.bamlss.html">residuals.bamlss()</a></code>, etc., is to follow the naming convention of the returned estimates. The parameter names are based on the names of the distribution parameters as specified in the family object. For example, the family object <code><a href="../reference/family.bamlss.html">gaussian_bamlss()</a></code> has parameter names <code>"mu"</code> and <code>"sigma"</code></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/family.bamlss.html">gaussian_bamlss</a></span>()$names</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="../reference/family.bamlss.html">gaussian_bamlss</a></span>()<span class="op">$</span>names</a></code></pre></div>
 <pre><code>## [1] "mu"    "sigma"</code></pre>
 <p>Then, each distributional parameter can be modeled by parametric (linear) and nonlinear smooth effect terms. The parametric part is indicated with <code>"p"</code> and the smooth part with <code>"s"</code>. The names of the parametric coefficients are the names of the corresponding model matrices as returned from <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code>. E.g., if two linear effects, “<code>x1</code>” and <code>"x2"</code>, enter the model for distributional parameter <code>"mu"</code>, then the final names are <code>"mu.p.x1"</code> and <code>"mu.p.x2"</code>. Similarly for the smooth parts, if we model a variable <code>"x3"</code> using a regression spline as provided by the <code>s()</code> function of the <em>mgcv</em> package, the name is based on the names that are used by <code><a href="../reference/bamlss.frame.html">bamlss.frame()</a></code> for the <code><a href="../reference/smooth.construct.html">smooth.construct()</a></code> object. In this case the parameter names start with <code>"mu.s.s(x3)"</code>. If this smooth term has 10 regression coefficients, then the final name must be</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.s.s(x3)"</span>, <span class="st">".b"</span>, <span class="dv">1</span>:<span class="dv">10</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.s.s(x3)"</span>, <span class="st">".b"</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>)</a></code></pre></div>
 <pre><code>##  [1] "mu.s.s(x3).b1"  "mu.s.s(x3).b2"  "mu.s.s(x3).b3"  "mu.s.s(x3).b4" 
 ##  [5] "mu.s.s(x3).b5"  "mu.s.s(x3).b6"  "mu.s.s(x3).b7"  "mu.s.s(x3).b8" 
 ##  [9] "mu.s.s(x3).b9"  "mu.s.s(x3).b10"</code></pre>
@@ -168,33 +168,33 @@
 <li>and additionally a MCMC sampling function.</li>
 </ul>
 <p>For illustration, the family object is kept very simple, we only model the mean function in terms of covariates.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_bamlss &lt;-<span class="st"> </span>function(...) {
-  f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-    <span class="st">"family"</span> =<span class="st"> "LM"</span>,
-    <span class="st">"names"</span> =<span class="st"> "mu"</span>,
-    <span class="st">"links"</span> =<span class="st"> "identity"</span>,
-    <span class="st">"d"</span> =<span class="st"> </span>function(y, par, <span class="dt">log =</span> <span class="ot">FALSE</span>) {
-      sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>((y -<span class="st"> </span>par$mu)^<span class="dv">2</span>) /<span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) -<span class="st"> </span>.lm_bamlss.p))
-      <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">dnorm</a></span>(y, <span class="dt">mean =</span> par$mu, <span class="dt">sd =</span> sigma, <span class="dt">log =</span> log)
-    },
-    <span class="st">"p"</span> =<span class="st"> </span>function(y, par, ...) {
-      sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>((y -<span class="st"> </span>par$mu)^<span class="dv">2</span>) /<span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) -<span class="st"> </span>.lm_bamlss.p))
-      <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">pnorm</a></span>(y, <span class="dt">mean =</span> par$mu, <span class="dt">sd =</span> sigma, ...)
-    }
-  )
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">class</a></span>(f) &lt;-<span class="st"> "family.bamlss"</span>
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(f)
-}</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">lm_bamlss &lt;-<span class="st"> </span><span class="cf">function</span>(...) {</a>
+<a class="sourceLine" id="cb7-2" title="2">  f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb7-3" title="3">    <span class="st">"family"</span> =<span class="st"> "LM"</span>,</a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="st">"names"</span> =<span class="st"> "mu"</span>,</a>
+<a class="sourceLine" id="cb7-5" title="5">    <span class="st">"links"</span> =<span class="st"> "identity"</span>,</a>
+<a class="sourceLine" id="cb7-6" title="6">    <span class="st">"d"</span> =<span class="st"> </span><span class="cf">function</span>(y, par, <span class="dt">log =</span> <span class="ot">FALSE</span>) {</a>
+<a class="sourceLine" id="cb7-7" title="7">      sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>((y <span class="op">-</span><span class="st"> </span>par<span class="op">$</span>mu)<span class="op">^</span><span class="dv">2</span>) <span class="op">/</span><span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) <span class="op">-</span><span class="st"> </span>.lm_bamlss.p))</a>
+<a class="sourceLine" id="cb7-8" title="8">      <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">dnorm</a></span>(y, <span class="dt">mean =</span> par<span class="op">$</span>mu, <span class="dt">sd =</span> sigma, <span class="dt">log =</span> log)</a>
+<a class="sourceLine" id="cb7-9" title="9">    },</a>
+<a class="sourceLine" id="cb7-10" title="10">    <span class="st">"p"</span> =<span class="st"> </span><span class="cf">function</span>(y, par, ...) {</a>
+<a class="sourceLine" id="cb7-11" title="11">      sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>((y <span class="op">-</span><span class="st"> </span>par<span class="op">$</span>mu)<span class="op">^</span><span class="dv">2</span>) <span class="op">/</span><span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) <span class="op">-</span><span class="st"> </span>.lm_bamlss.p))</a>
+<a class="sourceLine" id="cb7-12" title="12">      <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">pnorm</a></span>(y, <span class="dt">mean =</span> par<span class="op">$</span>mu, <span class="dt">sd =</span> sigma, ...)</a>
+<a class="sourceLine" id="cb7-13" title="13">    }</a>
+<a class="sourceLine" id="cb7-14" title="14">  )</a>
+<a class="sourceLine" id="cb7-15" title="15">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">class</a></span>(f) &lt;-<span class="st"> "family.bamlss"</span></a>
+<a class="sourceLine" id="cb7-16" title="16">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(f)</a>
+<a class="sourceLine" id="cb7-17" title="17">}</a></code></pre></div>
 <p>Now, for setting up the estimation functions we first simulate some data using the <code><a href="../reference/GAMart.html">GAMart()</a></code> function, afterwards the necessary <code>"bamlss.frame"</code> can be created with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Simulate some data.
-d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()
-
-## Setup a "bamlss.frame" object, that is used for
-## developing the estimation functions for the linear model.
-bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(num ~<span class="st"> </span>x1 +<span class="st"> </span>x2, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>)
-
-## Print the structure of the "bamlss.frame".
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(bf)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="co">## Simulate some data.</span></a>
+<a class="sourceLine" id="cb8-2" title="2">d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()</a>
+<a class="sourceLine" id="cb8-3" title="3"></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="co">## Setup a "bamlss.frame" object, that is used for</span></a>
+<a class="sourceLine" id="cb8-5" title="5"><span class="co">## developing the estimation functions for the linear model.</span></a>
+<a class="sourceLine" id="cb8-6" title="6">bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.frame.html">bamlss.frame</a></span>(num <span class="op">~</span><span class="st"> </span>x1 <span class="op">+</span><span class="st"> </span>x2, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>)</a>
+<a class="sourceLine" id="cb8-7" title="7"></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="co">## Print the structure of the "bamlss.frame".</span></a>
+<a class="sourceLine" id="cb8-9" title="9"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(bf)</a></code></pre></div>
 <pre><code>## 'bamlss.frame' structure: 
 ##   ..$ call 
 ##   ..$ model.frame 
@@ -210,7 +210,7 @@ bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.f
 ##   ..$ y 
 ##   .. ..$ num</code></pre>
 <p>As noted above, the object is a named list with elements <code>"x"</code> and <code>"y"</code>, which will be passed to the estimation functions. For the moment, since we only implement a linear model, we need to work with the linear model matrix that is part of the <code>bf</code> object.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$x$mu$model.matrix)</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf<span class="op">$</span>x<span class="op">$</span>mu<span class="op">$</span>model.matrix)</a></code></pre></div>
 <pre><code>##   (Intercept)        x1         x2
 ## 1           1 0.2875775 0.35360608
 ## 2           1 0.7883051 0.36644144
@@ -219,7 +219,7 @@ bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.f
 ## 5           1 0.9404673 0.36545427
 ## 6           1 0.0455565 0.17801381</code></pre>
 <p>and the response <code>"y"</code></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf$y)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(bf<span class="op">$</span>y)</a></code></pre></div>
 <pre><code>##            num
 ## 1  0.341704542
 ## 2 -0.373302161
@@ -228,44 +228,44 @@ bf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.f
 ## 5 -0.096522673
 ## 6  0.505487688</code></pre>
 <p>to setup the optimizer function with:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Linear model optimizer function.
-lm.opt &lt;-<span class="st"> </span>function(x, y, ...)
-{
-  ## Only univariate response.
-  y &lt;-<span class="st"> </span>y[[1L]]
-
-  ## For illustration this is easier to read.
-  X &lt;-<span class="st"> </span>x$mu$model.matrix
-
-  ## Estimate model parameters.
-  par &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol2inv">chol2inv</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol">chol</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X))) %*%<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X, y))
-
-  ## Set parameter names.
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(par) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.p."</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(X))
-
-  ## Return estimated parameters and fitted values.
-  rval &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-    <span class="st">"parameters"</span> =<span class="st"> </span>par,
-    <span class="st">"fitted.values"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(X %*%<span class="st"> </span>par),
-    <span class="st">"edf"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(par),
-    <span class="st">"sigma"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(y -<span class="st"> </span>X %*%<span class="st"> </span>par) /<span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) -<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X))))
-  )
-
-  ## Set edf within .GlobalEnv for the
-  ## loglik() function in the lm_bamlss() family.
-  .lm_bamlss.p &lt;&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(par)
-
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(rval)
-}</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1"><span class="co">## Linear model optimizer function.</span></a>
+<a class="sourceLine" id="cb14-2" title="2">lm.opt &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, ...)</a>
+<a class="sourceLine" id="cb14-3" title="3">{</a>
+<a class="sourceLine" id="cb14-4" title="4">  <span class="co">## Only univariate response.</span></a>
+<a class="sourceLine" id="cb14-5" title="5">  y &lt;-<span class="st"> </span>y[[1L]]</a>
+<a class="sourceLine" id="cb14-6" title="6"></a>
+<a class="sourceLine" id="cb14-7" title="7">  <span class="co">## For illustration this is easier to read.</span></a>
+<a class="sourceLine" id="cb14-8" title="8">  X &lt;-<span class="st"> </span>x<span class="op">$</span>mu<span class="op">$</span>model.matrix</a>
+<a class="sourceLine" id="cb14-9" title="9"></a>
+<a class="sourceLine" id="cb14-10" title="10">  <span class="co">## Estimate model parameters.</span></a>
+<a class="sourceLine" id="cb14-11" title="11">  par &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol2inv">chol2inv</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol">chol</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X))) <span class="op">%*%</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X, y))</a>
+<a class="sourceLine" id="cb14-12" title="12"></a>
+<a class="sourceLine" id="cb14-13" title="13">  <span class="co">## Set parameter names.</span></a>
+<a class="sourceLine" id="cb14-14" title="14">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(par) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.p."</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(X))</a>
+<a class="sourceLine" id="cb14-15" title="15"></a>
+<a class="sourceLine" id="cb14-16" title="16">  <span class="co">## Return estimated parameters and fitted values.</span></a>
+<a class="sourceLine" id="cb14-17" title="17">  rval &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb14-18" title="18">    <span class="st">"parameters"</span> =<span class="st"> </span>par,</a>
+<a class="sourceLine" id="cb14-19" title="19">    <span class="st">"fitted.values"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(X <span class="op">%*%</span><span class="st"> </span>par),</a>
+<a class="sourceLine" id="cb14-20" title="20">    <span class="st">"edf"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(par),</a>
+<a class="sourceLine" id="cb14-21" title="21">    <span class="st">"sigma"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(y <span class="op">-</span><span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>par) <span class="op">/</span><span class="st"> </span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y) <span class="op">-</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X))))</a>
+<a class="sourceLine" id="cb14-22" title="22">  )</a>
+<a class="sourceLine" id="cb14-23" title="23"></a>
+<a class="sourceLine" id="cb14-24" title="24">  <span class="co">## Set edf within .GlobalEnv for the</span></a>
+<a class="sourceLine" id="cb14-25" title="25">  <span class="co">## loglik() function in the lm_bamlss() family.</span></a>
+<a class="sourceLine" id="cb14-26" title="26">  .lm_bamlss.p &lt;&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(par)</a>
+<a class="sourceLine" id="cb14-27" title="27"></a>
+<a class="sourceLine" id="cb14-28" title="28">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(rval)</a>
+<a class="sourceLine" id="cb14-29" title="29">}</a></code></pre></div>
 <p>This optimizer function can already be used with the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper function and all extractor functions are readily available.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Model formula with polynomial model terms.
-f &lt;-<span class="st"> </span>num ~<span class="st"> </span>x1 +<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(x2, <span class="dv">5</span>) +<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(x3, <span class="dv">5</span>)
-
-## Estimate model with new optimizer function.
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>, <span class="dt">optimizer =</span> lm.opt, <span class="dt">sampler =</span> <span class="ot">FALSE</span>)
-
-## Summary output.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1"><span class="co">## Model formula with polynomial model terms.</span></a>
+<a class="sourceLine" id="cb15-2" title="2">f &lt;-<span class="st"> </span>num <span class="op">~</span><span class="st"> </span>x1 <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(x2, <span class="dv">5</span>) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/poly">poly</a></span>(x3, <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb15-3" title="3"></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="co">## Estimate model with new optimizer function.</span></a>
+<a class="sourceLine" id="cb15-5" title="5">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>, <span class="dt">optimizer =</span> lm.opt, <span class="dt">sampler =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb15-6" title="6"></a>
+<a class="sourceLine" id="cb15-7" title="7"><span class="co">## Summary output.</span></a>
+<a class="sourceLine" id="cb15-8" title="8"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f, family = "lm", data = d, optimizer = lm.opt, 
@@ -297,11 +297,11 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## edf = 12 sigma = 0.2469
 ## ---</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Predict for term x2.
-nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"x2"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">length =</span> <span class="dv">100</span>))
-nd$p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"x2"</span>)</code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="co">## Predict for term x2.</span></a>
+<a class="sourceLine" id="cb17-2" title="2">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"x2"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">length =</span> <span class="dv">100</span>))</a>
+<a class="sourceLine" id="cb17-3" title="3">nd<span class="op">$</span>p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> <span class="st">"x2"</span>)</a></code></pre></div>
 <p>Plot the estimated effect of <code>x2</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>x2, <span class="dt">data =</span> nd)</code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p <span class="op">~</span><span class="st"> </span>x2, <span class="dt">data =</span> nd)</a></code></pre></div>
 <p><img src="engines_files/figure-html/unnamed-chunk-12-1.png" width="50%" style="display: block; margin: auto;"></p>
 <p>The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we assume multivariate normal priors for the regression coefficients and an inverse Gamma prior for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals can be created. The MCMC algorithm consecutively samples for <span class="math inline">\(t = 1, \ldots, T\)</span> from the full conditionals <span class="math display">\[
 \boldsymbol{\beta}^{(t)} | \cdot \sim N\left(\boldsymbol{\mu}_{\boldsymbol{\beta}}^{(t - 1)}, 
@@ -324,103 +324,103 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
   - \mathbf{m}),
 \]</span> where <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> are usually set small, e.g., with <span class="math inline">\(a = 1\)</span> and <span class="math inline">\(b = 0.0001\)</span>, such that the prior is flat and uninformative.</p>
 <p>We can implement the MCMC algorithm in the following sampling function</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm.mcmc &lt;-<span class="st"> </span>function(x, y, <span class="dt">start =</span> <span class="ot">NULL</span>,
-  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>,
-  <span class="dt">m =</span> <span class="dv">0</span>, <span class="dt">M =</span> <span class="fl">1e+05</span>,
-  <span class="dt">a =</span> <span class="dv">1</span>, <span class="dt">b =</span> <span class="fl">1e-05</span>,
-  <span class="dt">verbose =</span> <span class="ot">TRUE</span>, ...)
-{
-  ## How many samples are saved?
-  itrthin &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq.int</a></span>(burnin, n.iter, <span class="dt">by =</span> thin)
-  nsaves &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(itrthin)
-
-  ## Only univariate response.
-  y &lt;-<span class="st"> </span>y[[1L]]
-
-  ## For illustration this is easier to read.
-  X &lt;-<span class="st"> </span>x$mu$model.matrix
-
-  ## Again, set edf within .GlobalEnv for the
-  ## loglik() function in the lm_bamlss() family.
-  .lm_bamlss.p &lt;&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X)
-
-  ## Number of observations and parameters.
-  n &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y)
-  p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X)
-
-  ## Matrix saving the samples.
-  samples &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">matrix</a></span>(<span class="dv">0</span>, nsaves, p +<span class="st"> </span>1L)
-
-  ## Stick to the naming convention.
-  pn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.p."</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(X))
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(samples) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(
-    pn,      ## Regression coefficients and
-    <span class="st">"sigma"</span>  ## variance samples.
-  )
-
-  ## Setup coefficient vector,
-  ## again, use correct names.
-  beta &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">0</span>, p)
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(beta) &lt;-<span class="st"> </span>pn
-  sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/sd">sd</a></span>(y)
-
-  ## Check for starting values obtained,
-  ## e.g., from lm.opt() from above.
-  if(!<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/NULL">is.null</a></span>(start)) {
-    sn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(start)
-    for(j in <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(beta)) {
-      if(j %in%<span class="st"> </span>sn)
-        beta[j] &lt;-<span class="st"> </span>start[j]
-    }
-  }
-
-  ## Process prior information.
-  m &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(m, <span class="dt">length.out =</span> p)
-  if(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(M) &lt;<span class="st"> </span><span class="dv">2</span>)
-    M &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(M, <span class="dt">length.out =</span> p)
-  if(!<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">is.matrix</a></span>(M))
-    M &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/diag">diag</a></span>(M)
-  Mi &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/solve">solve</a></span>(M)
-
-  ## Precompute cross products.
-  XX &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X)
-  Xy &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X, y)
-
-  ## Inverse gamma parameter.
-  a &lt;-<span class="st"> </span>a +<span class="st"> </span>n /<span class="st"> </span><span class="dv">2</span> +<span class="st"> </span>p /<span class="st"> </span><span class="dv">2</span>
-
-  ## Start sampling.
-  ii &lt;-<span class="st"> </span><span class="dv">1</span>
-  for(i in <span class="dv">1</span>:n.iter) {
-    ## Sampling sigma
-    b2 &lt;-<span class="st"> </span>b +<span class="st"> </span><span class="dv">1</span> /<span class="st"> </span><span class="dv">2</span> *<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(y -<span class="st"> </span>X %*%<span class="st"> </span>beta) %*%<span class="st"> </span>(y -<span class="st"> </span>X %*%<span class="st"> </span>beta) +
-<span class="st">      </span><span class="dv">1</span> /<span class="st"> </span><span class="dv">2</span> *<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(beta -<span class="st"> </span>m) %*%<span class="st"> </span>Mi %*%<span class="st"> </span>(beta -<span class="st"> </span>m)
-    sigma2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="dv">1</span> /<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/GammaDist">rgamma</a></span>(<span class="dv">1</span>, a, b2))
-
-    ## Sampling beta.
-    sigma2i &lt;-<span class="st"> </span><span class="dv">1</span> /<span class="st"> </span>sigma2
-    Sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol2inv">chol2inv</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol">chol</a></span>(sigma2i *<span class="st"> </span>XX +<span class="st"> </span>sigma2i *<span class="st"> </span>Mi))
-    mu &lt;-<span class="st"> </span>Sigma %*%<span class="st"> </span>(sigma2i *<span class="st"> </span>Xy +<span class="st"> </span>sigma2i *<span class="st"> </span>Mi %*%<span class="st"> </span>m)
-    beta &lt;-<span class="st"> </span>MASS::<span class="kw">mvrnorm</span>(<span class="dv">1</span>, mu, Sigma)
-      
-    if(i %in%<span class="st"> </span>itrthin) {
-      samples[ii, pn] &lt;-<span class="st"> </span>beta
-      samples[ii, <span class="st">"sigma"</span>] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(sigma2)
-      ii &lt;-<span class="st"> </span>ii +<span class="st"> </span><span class="dv">1</span>
-    }
-    if(verbose) {
-      if(i %%<span class="st"> </span><span class="dv">1000</span> ==<span class="st"> </span><span class="dv">0</span>)
-        <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cat">cat</a></span>(<span class="st">"iteration:"</span>, i, <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)
-    }
-  }
-
-  ## Convert to "mcmc" object.
-  samples &lt;-<span class="st"> </span><span class="kw">as.mcmc</span>(samples)
-
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(samples)
-}</code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1">lm.mcmc &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, <span class="dt">start =</span> <span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb19-2" title="2">  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>,</a>
+<a class="sourceLine" id="cb19-3" title="3">  <span class="dt">m =</span> <span class="dv">0</span>, <span class="dt">M =</span> <span class="fl">1e+05</span>,</a>
+<a class="sourceLine" id="cb19-4" title="4">  <span class="dt">a =</span> <span class="dv">1</span>, <span class="dt">b =</span> <span class="fl">1e-05</span>,</a>
+<a class="sourceLine" id="cb19-5" title="5">  <span class="dt">verbose =</span> <span class="ot">TRUE</span>, ...)</a>
+<a class="sourceLine" id="cb19-6" title="6">{</a>
+<a class="sourceLine" id="cb19-7" title="7">  <span class="co">## How many samples are saved?</span></a>
+<a class="sourceLine" id="cb19-8" title="8">  itrthin &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq.int</a></span>(burnin, n.iter, <span class="dt">by =</span> thin)</a>
+<a class="sourceLine" id="cb19-9" title="9">  nsaves &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(itrthin)</a>
+<a class="sourceLine" id="cb19-10" title="10"></a>
+<a class="sourceLine" id="cb19-11" title="11">  <span class="co">## Only univariate response.</span></a>
+<a class="sourceLine" id="cb19-12" title="12">  y &lt;-<span class="st"> </span>y[[1L]]</a>
+<a class="sourceLine" id="cb19-13" title="13"></a>
+<a class="sourceLine" id="cb19-14" title="14">  <span class="co">## For illustration this is easier to read.</span></a>
+<a class="sourceLine" id="cb19-15" title="15">  X &lt;-<span class="st"> </span>x<span class="op">$</span>mu<span class="op">$</span>model.matrix</a>
+<a class="sourceLine" id="cb19-16" title="16"></a>
+<a class="sourceLine" id="cb19-17" title="17">  <span class="co">## Again, set edf within .GlobalEnv for the</span></a>
+<a class="sourceLine" id="cb19-18" title="18">  <span class="co">## loglik() function in the lm_bamlss() family.</span></a>
+<a class="sourceLine" id="cb19-19" title="19">  .lm_bamlss.p &lt;&lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X)</a>
+<a class="sourceLine" id="cb19-20" title="20"></a>
+<a class="sourceLine" id="cb19-21" title="21">  <span class="co">## Number of observations and parameters.</span></a>
+<a class="sourceLine" id="cb19-22" title="22">  n &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y)</a>
+<a class="sourceLine" id="cb19-23" title="23">  p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(X)</a>
+<a class="sourceLine" id="cb19-24" title="24"></a>
+<a class="sourceLine" id="cb19-25" title="25">  <span class="co">## Matrix saving the samples.</span></a>
+<a class="sourceLine" id="cb19-26" title="26">  samples &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">matrix</a></span>(<span class="dv">0</span>, nsaves, p <span class="op">+</span><span class="st"> </span>1L)</a>
+<a class="sourceLine" id="cb19-27" title="27"></a>
+<a class="sourceLine" id="cb19-28" title="28">  <span class="co">## Stick to the naming convention.</span></a>
+<a class="sourceLine" id="cb19-29" title="29">  pn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"mu.p."</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(X))</a>
+<a class="sourceLine" id="cb19-30" title="30">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">colnames</a></span>(samples) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(</a>
+<a class="sourceLine" id="cb19-31" title="31">    pn,      <span class="co">## Regression coefficients and</span></a>
+<a class="sourceLine" id="cb19-32" title="32">    <span class="st">"sigma"</span>  <span class="co">## variance samples.</span></a>
+<a class="sourceLine" id="cb19-33" title="33">  )</a>
+<a class="sourceLine" id="cb19-34" title="34"></a>
+<a class="sourceLine" id="cb19-35" title="35">  <span class="co">## Setup coefficient vector,</span></a>
+<a class="sourceLine" id="cb19-36" title="36">  <span class="co">## again, use correct names.</span></a>
+<a class="sourceLine" id="cb19-37" title="37">  beta &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">0</span>, p)</a>
+<a class="sourceLine" id="cb19-38" title="38">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(beta) &lt;-<span class="st"> </span>pn</a>
+<a class="sourceLine" id="cb19-39" title="39">  sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/sd">sd</a></span>(y)</a>
+<a class="sourceLine" id="cb19-40" title="40"></a>
+<a class="sourceLine" id="cb19-41" title="41">  <span class="co">## Check for starting values obtained,</span></a>
+<a class="sourceLine" id="cb19-42" title="42">  <span class="co">## e.g., from lm.opt() from above.</span></a>
+<a class="sourceLine" id="cb19-43" title="43">  <span class="cf">if</span>(<span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/NULL">is.null</a></span>(start)) {</a>
+<a class="sourceLine" id="cb19-44" title="44">    sn &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(start)</a>
+<a class="sourceLine" id="cb19-45" title="45">    <span class="cf">for</span>(j <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(beta)) {</a>
+<a class="sourceLine" id="cb19-46" title="46">      <span class="cf">if</span>(j <span class="op">%in%</span><span class="st"> </span>sn)</a>
+<a class="sourceLine" id="cb19-47" title="47">        beta[j] &lt;-<span class="st"> </span>start[j]</a>
+<a class="sourceLine" id="cb19-48" title="48">    }</a>
+<a class="sourceLine" id="cb19-49" title="49">  }</a>
+<a class="sourceLine" id="cb19-50" title="50"></a>
+<a class="sourceLine" id="cb19-51" title="51">  <span class="co">## Process prior information.</span></a>
+<a class="sourceLine" id="cb19-52" title="52">  m &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(m, <span class="dt">length.out =</span> p)</a>
+<a class="sourceLine" id="cb19-53" title="53">  <span class="cf">if</span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(M) <span class="op">&lt;</span><span class="st"> </span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb19-54" title="54">    M &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(M, <span class="dt">length.out =</span> p)</a>
+<a class="sourceLine" id="cb19-55" title="55">  <span class="cf">if</span>(<span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">is.matrix</a></span>(M))</a>
+<a class="sourceLine" id="cb19-56" title="56">    M &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/diag">diag</a></span>(M)</a>
+<a class="sourceLine" id="cb19-57" title="57">  Mi &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/solve">solve</a></span>(M)</a>
+<a class="sourceLine" id="cb19-58" title="58"></a>
+<a class="sourceLine" id="cb19-59" title="59">  <span class="co">## Precompute cross products.</span></a>
+<a class="sourceLine" id="cb19-60" title="60">  XX &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X)</a>
+<a class="sourceLine" id="cb19-61" title="61">  Xy &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/crossprod">crossprod</a></span>(X, y)</a>
+<a class="sourceLine" id="cb19-62" title="62"></a>
+<a class="sourceLine" id="cb19-63" title="63">  <span class="co">## Inverse gamma parameter.</span></a>
+<a class="sourceLine" id="cb19-64" title="64">  a &lt;-<span class="st"> </span>a <span class="op">+</span><span class="st"> </span>n <span class="op">/</span><span class="st"> </span><span class="dv">2</span> <span class="op">+</span><span class="st"> </span>p <span class="op">/</span><span class="st"> </span><span class="dv">2</span></a>
+<a class="sourceLine" id="cb19-65" title="65"></a>
+<a class="sourceLine" id="cb19-66" title="66">  <span class="co">## Start sampling.</span></a>
+<a class="sourceLine" id="cb19-67" title="67">  ii &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb19-68" title="68">  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span>n.iter) {</a>
+<a class="sourceLine" id="cb19-69" title="69">    <span class="co">## Sampling sigma</span></a>
+<a class="sourceLine" id="cb19-70" title="70">    b2 &lt;-<span class="st"> </span>b <span class="op">+</span><span class="st"> </span><span class="dv">1</span> <span class="op">/</span><span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(y <span class="op">-</span><span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>beta) <span class="op">%*%</span><span class="st"> </span>(y <span class="op">-</span><span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>beta) <span class="op">+</span></a>
+<a class="sourceLine" id="cb19-71" title="71"><span class="st">      </span><span class="dv">1</span> <span class="op">/</span><span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(beta <span class="op">-</span><span class="st"> </span>m) <span class="op">%*%</span><span class="st"> </span>Mi <span class="op">%*%</span><span class="st"> </span>(beta <span class="op">-</span><span class="st"> </span>m)</a>
+<a class="sourceLine" id="cb19-72" title="72">    sigma2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/GammaDist">rgamma</a></span>(<span class="dv">1</span>, a, b2))</a>
+<a class="sourceLine" id="cb19-73" title="73"></a>
+<a class="sourceLine" id="cb19-74" title="74">    <span class="co">## Sampling beta.</span></a>
+<a class="sourceLine" id="cb19-75" title="75">    sigma2i &lt;-<span class="st"> </span><span class="dv">1</span> <span class="op">/</span><span class="st"> </span>sigma2</a>
+<a class="sourceLine" id="cb19-76" title="76">    Sigma &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol2inv">chol2inv</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/chol">chol</a></span>(sigma2i <span class="op">*</span><span class="st"> </span>XX <span class="op">+</span><span class="st"> </span>sigma2i <span class="op">*</span><span class="st"> </span>Mi))</a>
+<a class="sourceLine" id="cb19-77" title="77">    mu &lt;-<span class="st"> </span>Sigma <span class="op">%*%</span><span class="st"> </span>(sigma2i <span class="op">*</span><span class="st"> </span>Xy <span class="op">+</span><span class="st"> </span>sigma2i <span class="op">*</span><span class="st"> </span>Mi <span class="op">%*%</span><span class="st"> </span>m)</a>
+<a class="sourceLine" id="cb19-78" title="78">    beta &lt;-<span class="st"> </span>MASS<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/MASS/topics/mvrnorm">mvrnorm</a></span>(<span class="dv">1</span>, mu, Sigma)</a>
+<a class="sourceLine" id="cb19-79" title="79">      </a>
+<a class="sourceLine" id="cb19-80" title="80">    <span class="cf">if</span>(i <span class="op">%in%</span><span class="st"> </span>itrthin) {</a>
+<a class="sourceLine" id="cb19-81" title="81">      samples[ii, pn] &lt;-<span class="st"> </span>beta</a>
+<a class="sourceLine" id="cb19-82" title="82">      samples[ii, <span class="st">"sigma"</span>] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/MathFun">sqrt</a></span>(sigma2)</a>
+<a class="sourceLine" id="cb19-83" title="83">      ii &lt;-<span class="st"> </span>ii <span class="op">+</span><span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb19-84" title="84">    }</a>
+<a class="sourceLine" id="cb19-85" title="85">    <span class="cf">if</span>(verbose) {</a>
+<a class="sourceLine" id="cb19-86" title="86">      <span class="cf">if</span>(i <span class="op">%%</span><span class="st"> </span><span class="dv">1000</span> <span class="op">==</span><span class="st"> </span><span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb19-87" title="87">        <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cat">cat</a></span>(<span class="st">"iteration:"</span>, i, <span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</a>
+<a class="sourceLine" id="cb19-88" title="88">    }</a>
+<a class="sourceLine" id="cb19-89" title="89">  }</a>
+<a class="sourceLine" id="cb19-90" title="90"></a>
+<a class="sourceLine" id="cb19-91" title="91">  <span class="co">## Convert to "mcmc" object.</span></a>
+<a class="sourceLine" id="cb19-92" title="92">  samples &lt;-<span class="st"> </span><span class="kw">as.mcmc</span>(samples)</a>
+<a class="sourceLine" id="cb19-93" title="93"></a>
+<a class="sourceLine" id="cb19-94" title="94">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(samples)</a>
+<a class="sourceLine" id="cb19-95" title="95">}</a></code></pre></div>
 <p>The new estimation function can be directly used with the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>, <span class="dt">optimizer =</span> lm.opt, <span class="dt">sampler =</span> lm.mcmc)</code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" title="1">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> <span class="st">"lm"</span>, <span class="dt">optimizer =</span> lm.opt, <span class="dt">sampler =</span> lm.mcmc)</a></code></pre></div>
 <pre><code>## iteration: 1000 
 ## iteration: 2000 
 ## iteration: 3000 
@@ -433,7 +433,7 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## iteration: 10000 
 ## iteration: 11000 
 ## iteration: 12000</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f, family = "lm", data = d, optimizer = lm.opt, 
@@ -463,21 +463,21 @@ b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
 ## ---
 ## Sampler summary:
 ## -
-## DIC = 105.551 pd = 48.6437 runtime = 1.914
+## DIC = 105.551 pd = 48.6437 runtime = 2.735
 ## ---
 ## Optimizer summary:
 ## -
 ## edf = 12 sigma = 0.2469
 ## ---</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Predict for all terms including 95% credible intervals
-nd$x1 &lt;-<span class="st"> </span>nd$x3 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">length =</span> <span class="dv">100</span>)
-for(j in <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span>))
-  nd[[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"p"</span>, j)]] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> j, <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" title="1"><span class="co">## Predict for all terms including 95% credible intervals</span></a>
+<a class="sourceLine" id="cb24-2" title="2">nd<span class="op">$</span>x1 &lt;-<span class="st"> </span>nd<span class="op">$</span>x3 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dt">length =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb24-3" title="3"><span class="cf">for</span>(j <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span>))</a>
+<a class="sourceLine" id="cb24-4" title="4">  nd[[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"p"</span>, j)]] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">term =</span> j, <span class="dt">FUN =</span> c95, <span class="dt">intercept =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <p>The estimated effects can be plotted with.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>, <span class="dv">3</span>))
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px1 ~<span class="st"> </span>x1, <span class="dt">data =</span> nd)
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px2 ~<span class="st"> </span>x2, <span class="dt">data =</span> nd)
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px3 ~<span class="st"> </span>x3, <span class="dt">data =</span> nd)</code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>, <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb25-2" title="2"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px1 <span class="op">~</span><span class="st"> </span>x1, <span class="dt">data =</span> nd)</a>
+<a class="sourceLine" id="cb25-3" title="3"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px2 <span class="op">~</span><span class="st"> </span>x2, <span class="dt">data =</span> nd)</a>
+<a class="sourceLine" id="cb25-4" title="4"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(px3 <span class="op">~</span><span class="st"> </span>x3, <span class="dt">data =</span> nd)</a></code></pre></div>
 <p><img src="engines_files/figure-html/unnamed-chunk-16-1.png" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div id="references" class="section level2 unnumbered">
@@ -492,6 +492,7 @@ for(j in <span class="kw"><a href="https://www.rdocumentation.org/packages/base/
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

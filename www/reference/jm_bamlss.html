@@ -8,11 +8,13 @@
 
 <title>Fit Flexible Additive Joint Models — jm_bamlss • bamlss</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -30,13 +32,14 @@
 
 
 
-<meta property="og:title" content="Fit Flexible Additive Joint Models — jm_bamlss" />
 
+<meta property="og:title" content="Fit Flexible Additive Joint Models — jm_bamlss" />
 <meta property="og:description" content="Family object to fit a flexible additive joint model for longitudinal and survival
   data under a Bayesian approach as presented in Koehler et al. (2017a, b). 
   All parts of the joint model can be specified as structured additive predictors. 
   See the details and examples." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -66,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -148,7 +151,6 @@
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -169,12 +171,10 @@
     </div>
 
     <div class="ref-description">
-    
     <p>Family object to fit a flexible additive joint model for longitudinal and survival
   data under a Bayesian approach as presented in Koehler et al. (2017a, b). 
   All parts of the joint model can be specified as structured additive predictors. 
   See the details and examples.</p>
-    
     </div>
 
     <pre class="usage"><span class='co'>## JM family object.</span>
@@ -211,7 +211,7 @@
 <span class='co'>## Survival plot.</span>
 <span class='fu'>jm_survplot</span>(<span class='no'>object</span>, <span class='kw'>id</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>dt</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>steps</span> <span class='kw'>=</span> <span class='fl'>10</span>,
   <span class='kw'>points</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>rug</span> <span class='kw'>=</span> !<span class='no'>points</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -448,7 +448,7 @@
       <td><p>Currently not used.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>We refer to the papers of Koehler et al. (2017a, b) for details on the flexible
@@ -480,11 +480,9 @@ We approximate integration in the survival part of the likelihood using trapezoi
 posterior mode estimation.</p>
 <p>A variety specifications of the association \(\eta_{\alpha i}(\eta_{\mu i}(t), t)\) are possible with an 
 important distinction between associations which are nonlinear in \(\eta_{\mu}\)  for <code>nonlinear = TRUE</code> (Koehler et al. 2017b) or linear where \(\eta_{\alpha i}(\eta_{\mu i}(t), t) = \eta_{\alpha i}(t)\eta_{\mu i}(t)\) for <code>nonlinear = FALSE</code> (Koehler et al. 2017a).</p>
-    
     <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
 
     <p>The indicator <code>nonlinear</code> for associations with are linear or nonlinear in \(\eta_{\mu}\) was named <code>interaction]</code> in earlier versions stages of the development.</p>
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017). Flexible
@@ -493,11 +491,9 @@ important distinction between associations which are nonlinear in \(\eta_{\mu}\)
 <p>Meike Koehler, Nikolaus Umlauf, and Sonja Greven (2018). Nonlinear association structures in
   flexible Bayesian additive joint models. <em>Statistics in Medicine</em>,
   <a href='http://dx.doi.org/10.1002/sim.7967'>http://dx.doi.org/10.1002/sim.7967</a>.</p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='bamlss.html'>bamlss</a></code>, <code><a href='bamlss.frame.html'>bamlss.frame</a></code>.</p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
@@ -619,15 +615,10 @@ important distinction between associations which are nonlinear in \(\eta_{\mu}\)
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-
       <li><a href="#note">Note</a></li>
-
       <li><a href="#references">References</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 

@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -143,7 +143,7 @@
 <h2 class="hasAnchor">
 <a href="#example-islrwage-dataset" class="anchor"></a>Example: ISLR::Wage dataset</h2>
 <p>As a short introduction to distributional regression, we are going to take a look at a dataset on the wage of 3000 male workers in the Mid-Atlantic Region of the US. The dataset is contained in the <a href="https://cran.r-project.org/package=ISLR"><em>ISLR</em></a> <span class="citation">(James et al. 2017)</span> package for R. We may output the first 6 rows of the dataset with the following R command:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ISLR::Wage)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(ISLR<span class="op">::</span>Wage)</a></code></pre></div>
 <pre><code>##        year age           maritl     race       education             region
 ## 231655 2006  18 1. Never Married 1. White    1. &lt; HS Grad 2. Middle Atlantic
 ## 86582  2004  24 1. Never Married 1. White 4. College Grad 2. Middle Atlantic
@@ -159,12 +159,12 @@
 ## 11443  2. Information      1. &lt;=Good     1. Yes 4.318063  75.04315
 ## 376662 2. Information 2. &gt;=Very Good     1. Yes 4.845098 127.11574</code></pre>
 <p>The variable names and factor labels are mostly self-explanatory, but we can look up the details by running <code><a href="https://www.rdocumentation.org/packages/ISLR/topics/Wage">?ISLR::Wage</a></code>. Our goal is to link wage to a number of relevant explanatory variables. One main driver of wage should be education, so let us start by descriptively investigating the relationship between these two variables. This R code plots the distribution of wage across the different education levels:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"ggplot2"</span>)
-
-<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span>(ISLR::Wage, <span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x =</span> wage, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> education)) +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html">geom_density</a></span>(<span class="dt">alpha =</span> <span class="fl">0.8</span>) +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_classic</a></span>() +
-<span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ggtitle</a></span>(<span class="st">"Wages by education level"</span>)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"ggplot2"</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span>(ISLR<span class="op">::</span>Wage, <span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x =</span> wage, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> education)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html">geom_density</a></span>(<span class="dt">alpha =</span> <span class="fl">0.8</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_classic</a></span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ggtitle</a></span>(<span class="st">"Wages by education level"</span>)</a></code></pre></div>
 <p><img src="distregvis_files/figure-html/unnamed-chunk-2-1.png" width="816" style="display: block; margin: auto;"></p>
 <p>The graph shows that education does have a big influence on wage. A higher education level shifts the wage distribution to the right, but it also increases the variance and changes the shape of the distribution. One striking feature of the empirical wage distribution is its bump between 250 and 300. There is no explanation for this bump in the dataset or its help page, so we have to assume it is a anomaly of the sample.</p>
 </div>
@@ -174,21 +174,21 @@
 <p>When modeling wage, we need to take into account its special characteristics as a random variable: It is positive (or non-negative, but our dataset does not contain any zeros) and its distribution is right-skewed. These characteristics make distributional regression an appropriate tool for the task at hand.</p>
 <p>Based on the characteristics of wage, we choose the <a href="https://en.wikipedia.org/wiki/Log-normal_distribution">log-normal distribution</a> for our model. The log-normal distribution has positive support, it is right-skewed, and it has a location parameter <span class="math inline">\(\mu\)</span> and a scale parameter <span class="math inline">\(\sigma\)</span>. The idea of distributional regression is to link all parameters of the response distribution to explanatory variables. In our case, these will be education, age, race, and year.</p>
 <p>The following R code specifies and estimates our model using the <code>LOGNO</code> family of the <em>gamlss</em> package <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Stasinopoulos+Rigby:2018"><strong>???</strong></span>)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
-
-## Get the gamlss families.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)
-
-## Model formula.
-f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-  wage ~<span class="st"> </span><span class="kw">s</span>(age) +<span class="st"> </span>race +<span class="st"> </span>year +<span class="st"> </span>education,
-  sigma ~<span class="st"> </span><span class="kw">s</span>(age) +<span class="st"> </span>race +<span class="st"> </span>year +<span class="st"> </span>education
-)
-
-## Estimates model using full MCMC.
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ISLR::Wage, <span class="dt">family =</span> LOGNO)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2"></a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="co">## Get the gamlss families.</span></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss"</span>)</a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="co">## Model formula.</span></a>
+<a class="sourceLine" id="cb4-7" title="7">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb4-8" title="8">  wage <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(age) <span class="op">+</span><span class="st"> </span>race <span class="op">+</span><span class="st"> </span>year <span class="op">+</span><span class="st"> </span>education,</a>
+<a class="sourceLine" id="cb4-9" title="9">  sigma <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(age) <span class="op">+</span><span class="st"> </span>race <span class="op">+</span><span class="st"> </span>year <span class="op">+</span><span class="st"> </span>education</a>
+<a class="sourceLine" id="cb4-10" title="10">)</a>
+<a class="sourceLine" id="cb4-11" title="11"></a>
+<a class="sourceLine" id="cb4-12" title="12"><span class="co">## Estimates model using full MCMC.</span></a>
+<a class="sourceLine" id="cb4-13" title="13">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> ISLR<span class="op">::</span>Wage, <span class="dt">family =</span> LOGNO)</a></code></pre></div>
 <p>We may take a look at the estimation results with this R command:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f, family = LOGNO, data = ISLR::Wage)
@@ -268,7 +268,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 <p>One way to understand the meaning of the coefficients is to define different “covariate scenarios” and take a look at the corresponding predicted response distributions. The <a href="https://github.com/Stan125/distreg.vis"><em>distreg.vis</em></a> <span class="citation">(Stadlmann 2019)</span> package for R allows us to do so interactively:</p>
 <p><a target="_blank" class="btn btn-primary" href="http://141.5.104.49:3838/distreg_app/" role="button">Explore the model with distreg.vis</a></p>
 <p>The corresponding R code that starts the app locally is:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">distreg.vis::<span class="kw">vis</span>()</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">distreg.vis<span class="op">::</span><span class="kw">vis</span>()</a></code></pre></div>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
@@ -288,6 +288,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

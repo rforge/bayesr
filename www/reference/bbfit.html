@@ -8,11 +8,13 @@
 
 <title>Batchwise Backfitting — bbfit • bamlss</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -30,10 +32,11 @@
 
 
 
-<meta property="og:title" content="Batchwise Backfitting — bbfit" />
 
+<meta property="og:title" content="Batchwise Backfitting — bbfit" />
 <meta property="og:description" content="Batchwise backfitting estimation engine for GAMLSS using very large data sets." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -63,7 +66,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -145,7 +148,6 @@
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -166,9 +168,7 @@
     </div>
 
     <div class="ref-description">
-    
     <p>Batchwise backfitting estimation engine for GAMLSS using very large data sets.</p>
-    
     </div>
 
     <pre class="usage"><span class='co'>## Batchwise backfitting engine.</span>
@@ -176,8 +176,11 @@
   <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
 
 <span class='co'>## Parallel version.</span>
-<span class='fu'>bbfitp</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
-    
+<span class='fu'>bbfitp</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)
+
+<span class='co'>## Loglik contribution plot.</span>
+<span class='fu'>contribplot</span>(<span class='no'>x</span>, <span class='no'>...</span>)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -186,7 +189,9 @@
       <td><p>For function <code><a href='bfit.html'>bfit()</a></code> the <code>x</code> list, as returned from function
     <code><a href='bamlss.frame.html'>bamlss.frame</a></code>, holding all model matrices and other information that is used for
     fitting the model. For the updating functions an object as returned from function
-    <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smooth.construct'>smooth.construct</a></code> or <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smoothCon'>smoothCon</a></code>.</p></td>
+    <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smooth.construct'>smooth.construct</a></code> or <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smoothCon'>smoothCon</a></code>. For function
+    <code>contribplot()</code>, a <code>"bamlss"</code> object using <code>bbfit()</code> with argument
+    <code>select = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>y</th>
@@ -232,14 +237,13 @@
       <td><p>For <code>bbfitp()</code> all arguments to be passed to <code>bbfit()</code>.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The algorithm uses batch-wise estimation of smoothing variances, which are estimated on an
   hold-out batch. This way, models for very large data sets can be estimated. Note, the algorithm
   only works in combination withe the <span class="pkg">ff</span> and <span class="pkg">ffbase</span> package. The data needs to be stored
   as comma separated file on disc, see the example.</p>
-    
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>For function <code>bbfit()</code> a list containing the following objects:</p>
@@ -249,11 +253,9 @@
   <dt>shuffle</dt><dd><p>Logical</p></dd>
   <dt>runtime</dt><dd><p>The runtime of the algorithm.</p></dd>
 
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='bamlss.html'>bamlss</a></code>, <code><a href='bfit.html'>bfit</a></code></p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
@@ -282,13 +284,9 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-
       <li><a href="#value">Value</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 

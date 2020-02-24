@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -168,8 +168,8 @@ s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\parti
 <p>Now we have to write a function that returns a <code>family.bamlss</code> object (S3) which encapsulates functions for density, score and Hessian, and the names of the family, parameter and link functions:</p>
 <table class="table">
 <colgroup>
-<col width="22%">
-<col width="77%">
+<col width="21%">
+<col width="78%">
 </colgroup>
 <thead><tr class="header">
 <th>Name of element</th>
@@ -204,45 +204,45 @@ s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\parti
 </table>
 <p>Nearly all functions take as first argument the response <code>y</code> and as second argument a named list holding the evaluated parameters <code>par</code> of the distribution on the scale of the predictors <span class="math inline">\(\eta_{\star}\)</span>.</p>
 <p>The implementation looks like this:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mygauss &lt;-<span class="st"> </span>function(...) {
-    f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-        <span class="st">"family"</span> =<span class="st"> "mygauss"</span>,
-        <span class="st">"names"</span>  =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>),
-        <span class="st">"links"</span>  =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dt">mu =</span> <span class="st">"identity"</span>, <span class="dt">sigma =</span> <span class="st">"log"</span>),
-        <span class="st">"d"</span> =<span class="st"> </span>function(y, par, <span class="dt">log =</span> <span class="ot">FALSE</span>) {
-            <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">dnorm</a></span>(y, <span class="dt">mean =</span> par$mu, <span class="dt">sd =</span> par$sigma, <span class="dt">log =</span> log)
-        },
-        <span class="st">"score"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-            <span class="dt">mu =</span> function(y, par, ...) {
-                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>((y -<span class="st"> </span>par$mu) /<span class="st"> </span>(par$sigma^<span class="dv">2</span>))
-            },
-            <span class="dt">sigma =</span> function(y, par, ...) {
-                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(-<span class="dv">1</span> +<span class="st"> </span>(y -<span class="st"> </span>par$mu)^<span class="dv">2</span> /<span class="st"> </span>(par$sigma^<span class="dv">2</span>))
-            }
-        ),
-        <span class="st">"hess"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-            <span class="dt">mu =</span> function(y, par, ...) {
-                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="dv">1</span> /<span class="st"> </span>(par$sigma^<span class="dv">2</span>))
-            },
-            <span class="dt">sigma =</span> function(y, par, ...) { 
-                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">2</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y))
-            }
-        )
-    )
-    <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">class</a></span>(f) &lt;-<span class="st"> "family.bamlss"</span>
-    <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(f)
-}</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)
-
-## Simulate some data.
-d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()
-
-## Specify formula.
-f &lt;-<span class="st"> </span><span class="er">~</span><span class="st"> </span><span class="kw">s</span>(x1) +<span class="st"> </span><span class="kw">s</span>(x2) +<span class="st"> </span><span class="kw">s</span>(x3) +<span class="st"> </span><span class="kw">s</span>(lon, lat)
-f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">mu =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/update">update</a></span>(f, num ~<span class="st"> </span>.), <span class="dt">sigma =</span> f)
-
-## Model.
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> mygauss)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">mygauss &lt;-<span class="st"> </span><span class="cf">function</span>(...) {</a>
+<a class="sourceLine" id="cb1-2" title="2">    f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb1-3" title="3">        <span class="st">"family"</span> =<span class="st"> "mygauss"</span>,</a>
+<a class="sourceLine" id="cb1-4" title="4">        <span class="st">"names"</span>  =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>),</a>
+<a class="sourceLine" id="cb1-5" title="5">        <span class="st">"links"</span>  =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dt">mu =</span> <span class="st">"identity"</span>, <span class="dt">sigma =</span> <span class="st">"log"</span>),</a>
+<a class="sourceLine" id="cb1-6" title="6">        <span class="st">"d"</span> =<span class="st"> </span><span class="cf">function</span>(y, par, <span class="dt">log =</span> <span class="ot">FALSE</span>) {</a>
+<a class="sourceLine" id="cb1-7" title="7">            <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">dnorm</a></span>(y, <span class="dt">mean =</span> par<span class="op">$</span>mu, <span class="dt">sd =</span> par<span class="op">$</span>sigma, <span class="dt">log =</span> log)</a>
+<a class="sourceLine" id="cb1-8" title="8">        },</a>
+<a class="sourceLine" id="cb1-9" title="9">        <span class="st">"score"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb1-10" title="10">            <span class="dt">mu =</span> <span class="cf">function</span>(y, par, ...) {</a>
+<a class="sourceLine" id="cb1-11" title="11">                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>((y <span class="op">-</span><span class="st"> </span>par<span class="op">$</span>mu) <span class="op">/</span><span class="st"> </span>(par<span class="op">$</span>sigma<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb1-12" title="12">            },</a>
+<a class="sourceLine" id="cb1-13" title="13">            <span class="dt">sigma =</span> <span class="cf">function</span>(y, par, ...) {</a>
+<a class="sourceLine" id="cb1-14" title="14">                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="op">-</span><span class="dv">1</span> <span class="op">+</span><span class="st"> </span>(y <span class="op">-</span><span class="st"> </span>par<span class="op">$</span>mu)<span class="op">^</span><span class="dv">2</span> <span class="op">/</span><span class="st"> </span>(par<span class="op">$</span>sigma<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb1-15" title="15">            }</a>
+<a class="sourceLine" id="cb1-16" title="16">        ),</a>
+<a class="sourceLine" id="cb1-17" title="17">        <span class="st">"hess"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb1-18" title="18">            <span class="dt">mu =</span> <span class="cf">function</span>(y, par, ...) {</a>
+<a class="sourceLine" id="cb1-19" title="19">                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/drop">drop</a></span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span>(par<span class="op">$</span>sigma<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb1-20" title="20">            },</a>
+<a class="sourceLine" id="cb1-21" title="21">            <span class="dt">sigma =</span> <span class="cf">function</span>(y, par, ...) { </a>
+<a class="sourceLine" id="cb1-22" title="22">                <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">2</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(y))</a>
+<a class="sourceLine" id="cb1-23" title="23">            }</a>
+<a class="sourceLine" id="cb1-24" title="24">        )</a>
+<a class="sourceLine" id="cb1-25" title="25">    )</a>
+<a class="sourceLine" id="cb1-26" title="26">    <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">class</a></span>(f) &lt;-<span class="st"> "family.bamlss"</span></a>
+<a class="sourceLine" id="cb1-27" title="27">    <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/function">return</a></span>(f)</a>
+<a class="sourceLine" id="cb1-28" title="28">}</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"bamlss"</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"><span class="co">## Simulate some data.</span></a>
+<a class="sourceLine" id="cb2-4" title="4">d &lt;-<span class="st"> </span><span class="kw"><a href="../reference/GAMart.html">GAMart</a></span>()</a>
+<a class="sourceLine" id="cb2-5" title="5"></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="co">## Specify formula.</span></a>
+<a class="sourceLine" id="cb2-7" title="7">f &lt;-<span class="st"> </span><span class="er">~</span><span class="st"> </span><span class="kw">s</span>(x1) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x2) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x3) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(lon, lat)</a>
+<a class="sourceLine" id="cb2-8" title="8">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">mu =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/update">update</a></span>(f, num <span class="op">~</span><span class="st"> </span>.), <span class="dt">sigma =</span> f)</a>
+<a class="sourceLine" id="cb2-9" title="9"></a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="co">## Model.</span></a>
+<a class="sourceLine" id="cb2-11" title="11">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> mygauss)</a></code></pre></div>
 <p>Optionally, the <code>family.bamlss</code> object can be extended by functions for</p>
 <ul>
 <li>the cumulative distribution function <code>p(y, par, ...)</code>,</li>
@@ -521,11 +521,11 @@ D=
 <code><a href="../reference/family.bamlss.html">mvnormAR1_bamlss(k = 2, ...)</a></code> with <span class="math display">\[
 \Omega=
  \begin{pmatrix}
-  1 &amp; \rho &amp; \rho^2 &amp; \cdots &amp; \rho^{k-1} \\
-  \rho &amp; 1 &amp; \rho &amp; \cdots &amp; \rho^{k-2} \\
-  \rho^2 &amp; \rho &amp; 1 &amp; \cdots &amp; \rho^{k-3} \\
-  \vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
-  \rho^{k-1} &amp; \rho^{k-2} &amp; \rho^{k-3} &amp; \cdots &amp; 1
+1 &amp; \rho &amp; \rho^2 &amp; \cdots &amp; \rho^{k-1} \\
+\rho &amp; 1 &amp; \rho &amp; \cdots &amp; \rho^{k-2} \\
+\rho^2 &amp; \rho &amp; 1 &amp; \cdots &amp; \rho^{k-3} \\
+\vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+\rho^{k-1} &amp; \rho^{k-2} &amp; \rho^{k-3} &amp; \cdots &amp; 1
  \end{pmatrix},
 \]</span> and <span class="math inline">\(\mathrm{rhogit}(\rho) = \eta_{\rho}\)</span>.</li>
 </ul>
@@ -551,21 +551,21 @@ D=
 <h2 class="hasAnchor">
 <a href="#gamlss" class="anchor"></a>R package <em>gamlss</em> support</h2>
 <p>The <em>bamlss</em> package supports <a href="https://cran.r-project.org/package=gamlss.dist" title="CRAN gamlss.dist"><em>gamlss</em> families</a> via a transfer function that builds the <code>bamlss.family</code> object from a GAMLSS distribution funciton <span class="citation">(Stasinopoulos and Rigby 2007)</span>, e.g. <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/NO">NO()</a></code>, internally:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Load the gamlss families.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss.dist"</span>)
-
-## Estimate model.
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> NO)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="co">## Load the gamlss families.</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss.dist"</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">## Estimate model.</span></a>
+<a class="sourceLine" id="cb3-5" title="5">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d, <span class="dt">family =</span> NO)</a></code></pre></div>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
 <div id="ref-bamlss:Balding+Nichols:1995">
-<p>Balding, David J., and Richard A. Nichols. 1995. “A Method for Quantifying Differentiation Between Populations at Multi-Allelic Loci and Its Implications for Investigating Identity and Paternity.” <em>Genetica</em> 96 (1): 3–12. doi:<a href="https://doi.org/10.1007/BF01441146">10.1007/BF01441146</a>.</p>
+<p>Balding, David J., and Richard A. Nichols. 1995. “A Method for Quantifying Differentiation Between Populations at Multi-Allelic Loci and Its Implications for Investigating Identity and Paternity.” <em>Genetica</em> 96 (1): 3–12. <a href="https://doi.org/10.1007/BF01441146" class="uri">https://doi.org/10.1007/BF01441146</a>.</p>
 </div>
 <div id="ref-bamlss:Stasinopoulos:Rigby:2007">
-<p>Stasinopoulos, D. Mikis, and Robert A. Rigby. 2007. “Generalized Additive Models for Location Scale and Shape (Gamlss) in R.” <em>Journal of Statistical Software</em> 23 (7): 1–46. doi:<a href="https://doi.org/10.18637/jss.v023.i07">10.18637/jss.v023.i07</a>.</p>
+<p>Stasinopoulos, D. Mikis, and Robert A. Rigby. 2007. “Generalized Additive Models for Location Scale and Shape (Gamlss) in R.” <em>Journal of Statistical Software</em> 23 (7): 1–46. <a href="https://doi.org/10.18637/jss.v023.i07" class="uri">https://doi.org/10.18637/jss.v023.i07</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
@@ -575,6 +575,7 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

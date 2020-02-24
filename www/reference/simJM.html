@@ -8,11 +8,13 @@
 
 <title>Simulate longitudinal and survival data for joint models — simJM • bamlss</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -30,14 +32,15 @@
 
 
 
-<meta property="og:title" content="Simulate longitudinal and survival data for joint models — simJM" />
 
+<meta property="og:title" content="Simulate longitudinal and survival data for joint models — simJM" />
 <meta property="og:description" content="Simulates longitudinal data with normal error and (Cox-type) survival times
   using the inversion method. The function simJM() is a wrapper specifying
   all predictors and the resulting data sets. The wrapper calls rJM() to sample
   the survival times, a modified version of rSurvtime() from the R package
   CoxFlexBoost." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -67,7 +70,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -149,7 +152,6 @@
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -170,13 +172,11 @@
     </div>
 
     <div class="ref-description">
-    
     <p>Simulates longitudinal data with normal error and (Cox-type) survival times
   using the inversion method. The function <code>simJM()</code> is a wrapper specifying
   all predictors and the resulting data sets. The wrapper calls <code>rJM()</code> to sample
   the survival times, a modified version of <code>rSurvtime()</code> from the <span style="R">R</span> package
   <span class="pkg">CoxFlexBoost</span>.</p>
-    
     </div>
 
     <pre class="usage"><span class='fu'>simJM</span>(<span class='kw'>nsub</span> <span class='kw'>=</span> <span class='fl'>300</span>, <span class='kw'>times</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/seq'>seq</a></span>(<span class='fl'>0</span>, <span class='fl'>120</span>, <span class='fl'>1</span>), <span class='kw'>probmiss</span> <span class='kw'>=</span> <span class='fl'>0.75</span>,
@@ -189,7 +189,7 @@
 <span class='fu'>rJM</span>(<span class='no'>hazard</span>, <span class='no'>censoring</span>, <span class='no'>x</span>, <span class='no'>r</span>,
   <span class='kw'>subdivisions</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>tmin</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='no'>tmax</span>,
   <span class='kw'>file</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -291,7 +291,7 @@
       <td><p>further arguments to be passed to <code>hazard</code> or <code>censoring</code>.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The function simulates longitudinal data basing on the given specification at given <code>times</code>.
@@ -315,7 +315,6 @@
   $$\eta_{\alpha}(t) = \cos((time-33)/33)$$.</p>
 <p>Additionally the fixed functions for \(\eta_{\lambda} = 0.1(t+2)\exp(-0.075t)\) and
   \(\eta_{\lambda} = 0.1(t+2)\exp(-0.075t)\) are employed.</p>
-    
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>For <code>full = TRUE</code> a list of the three <code>data.frame</code>s is returned:</p>
@@ -332,7 +331,6 @@
   hazard at the survival time cumhaz, as well as covariates  x1, x2, random effects
   r1, r2, b1, ...,  and the true predictors alpha, lambda, gamma, mu, sigma. 
 
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Hofner, B (2016). <span class="pkg">CoxFlexBoost</span>: Boosting Flexible Cox Models
@@ -342,11 +340,9 @@
   <em>Statistics in Medicine</em>, <b>24</b>, 1713-1723.</p>  
 <p>Koehler N, Umlauf N, Beyerlein, A., Winkler, C., Ziegler, A., and Greven S (2016). Flexible Bayesian Additive Joint Models with an
     Application to Type 1 Diabetes Research. <em>(submitted)</em></p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='jm_bamlss.html'>jm_bamlss</a></code>, <code><a href='jm_bamlss.html'>jm_mode</a></code>, <code><a href='jm_bamlss.html'>jm_mcmc</a></code>, <code><a href='bamlss.html'>bamlss</a></code>.</p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
@@ -368,15 +364,10 @@
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-
       <li><a href="#value">Value</a></li>
-
       <li><a href="#references">References</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 

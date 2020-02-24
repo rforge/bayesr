@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -153,18 +153,16 @@
 <p>The time-varying additive predictor has the following form <span class="math display">\[
 \eta_{\lambda}(\texttt{arrivaltime}) = f_0(\texttt{arrivaltime}) + f_1(\texttt{arrivaltime}, \texttt{lon}, \texttt{lat}),
 \]</span> where <span class="math inline">\(f_0( \cdot )\)</span> is the baseline hazard for variable <code>arrivaltime</code>, the waiting time until the first fire engine arrives after the received emergency call.</p>
-The probability that the engine will arrive on the scene after time <span class="math inline">\(t\)</span> is described by the survival function
-<span class="math display">\[\begin{equation} \label{eqn:surv}
+<p>The probability that the engine will arrive on the scene after time <span class="math inline">\(t\)</span> is described by the survival function <span class="math display">\[\begin{equation} \label{eqn:surv}
 S(t) = \mathrm{Prob}(T &gt; t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
-\end{equation}\]</span>
-<p>which is of prime interest in this analysis.</p>
+\end{equation}\]</span> which is of prime interest in this analysis.</p>
 </div>
 <div id="data" class="section level2">
 <h2 class="hasAnchor">
 <a href="#data" class="anchor"></a>Data</h2>
 <p>The data is freely available from the London DataStore (<a href="http://data.london.gov.uk/" class="uri">http://data.london.gov.uk/</a>) under the UK Open Government Licence (OGL v2). It can be downloaded from <a href="http://data.london.gov.uk/dataset/london-fire-brigade-incident-records" class="uri">http://data.london.gov.uk/dataset/london-fire-brigade-incident-records</a> which also contains previous years. The preprocessed data is part of the <em>bamlss</em> package and can be loaded with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(LondonFire, <span class="dt">package =</span> <span class="st">"bamlss"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(LondonFire)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(LondonFire, <span class="dt">package =</span> <span class="st">"bamlss"</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(LondonFire)</a></code></pre></div>
 <pre><code>##                   coordinates arrivaltime   daytime  fsintens
 ## 12279 (-0.09832153, 51.65413)    6.033333 0.1263889  248.6067
 ## 12280 (-0.04467665, 51.48959)    3.400000 0.3266667 1646.1975
@@ -173,42 +171,42 @@ S(t) = \mathrm{Prob}(T &gt; t) = \exp \, \left( -\int_0^t \lambda(u)du \right),
 ## 12283  (-0.1874054, 51.48648)    5.133333 1.9308333 1195.7156
 ## 12284  (-0.2893525, 51.61031)    4.966667 3.5480556  319.6787</code></pre>
 <p>and is stored as a <code>"SpatialPointsDataFrame"</code>. Therefore, the spatial distribution of fires in London along with boundary polygons and station locations can be plotted instantly with:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"sp"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">0</span>, <span class="dv">4</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonBoundaries)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonFire, <span class="dt">col =</span> <span class="st">"red"</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonBoroughs, <span class="dt">add =</span> <span class="ot">TRUE</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonFStations, <span class="dt">col =</span> <span class="st">"blue"</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>, <span class="dt">pch =</span> <span class="dv">16</span>)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"sp"</span>)</a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">0</span>, <span class="dv">4</span>))</a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonBoundaries)</a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonFire, <span class="dt">col =</span> <span class="st">"red"</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonBoroughs, <span class="dt">add =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb3-6" title="6"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(LondonFStations, <span class="dt">col =</span> <span class="st">"blue"</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>, <span class="dt">pch =</span> <span class="dv">16</span>)</a></code></pre></div>
 <p><img src="cox_files/figure-html/unnamed-chunk-2-1.png" width="60%" style="display: block; margin: auto;"></p>
 </div>
 <div id="estimation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#estimation" class="anchor"></a>Estimation</h2>
 <p>The Cox model is implemented in the <code><a href="../reference/family.bamlss.html">cox_bamlss()</a></code> family and uses a special optimizer function <code><a href="../reference/cox.mode.html">cox_mode()</a></code> and sampling engine <code><a href="../reference/cox.mcmc.html">cox_mcmc()</a></code>. Note that the optimizer and sampler function do not need to be called explicitly within the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper call, because the <code><a href="../reference/family.bamlss.html">cox_bamlss()</a></code> family specifies this already in its return value, such that internally function <code><a href="../reference/bamlss.html">bamlss()</a></code> nows to only use the estimation engines that are supplied by the family.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fam &lt;-<span class="st"> </span><span class="kw"><a href="../reference/family.bamlss.html">cox_bamlss</a></span>()
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(fam)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">fam &lt;-<span class="st"> </span><span class="kw"><a href="../reference/family.bamlss.html">cox_bamlss</a></span>()</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(fam)</a></code></pre></div>
 <pre><code>## [1] "family"    "names"     "links"     "transform" "optimizer" "sampler"  
 ## [7] "predict"</code></pre>
 <p>There is also an additional transformer function, which is needed for computing the (numerical) integrals that are part of the log-likelihood. Predictions are also based on integrals, therefore the <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code> function is also part of this family object and will be used by <code><a href="../reference/predict.bamlss.html">predict.bamlss()</a></code> instead of the default methods.</p>
 <p>The model formula has two parts, the time-dependent for <span class="math inline">\(\eta_{\lambda}\)</span> and the time-constant part for <span class="math inline">\(\eta_{\gamma}\)</span> and can be set up with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-  <span class="kw">Surv</span>(arrivaltime) ~<span class="st"> </span><span class="kw">ti</span>(arrivaltime,<span class="dt">k=</span><span class="dv">20</span>) +<span class="st"> </span><span class="kw">ti</span>(arrivaltime,lon,lat,<span class="dt">d=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">5</span>,<span class="dv">30</span>)),
-  gamma ~<span class="st"> </span><span class="kw">s</span>(fsintens) +<span class="st"> </span><span class="kw">ti</span>(daytime,<span class="dt">bs=</span><span class="st">"cc"</span>,<span class="dt">k=</span><span class="dv">30</span>) +<span class="st"> </span><span class="kw">ti</span>(lon,lat,<span class="dt">k=</span><span class="dv">80</span>,<span class="dt">d=</span><span class="dv">2</span>) +
-<span class="st">    </span><span class="kw">ti</span>(daytime,lon,lat,<span class="dt">bs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"cc"</span>,<span class="st">"cr"</span>),<span class="dt">d=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">10</span>,<span class="dv">30</span>))
-)</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="kw">Surv</span>(arrivaltime) <span class="op">~</span><span class="st"> </span><span class="kw">ti</span>(arrivaltime,<span class="dt">k=</span><span class="dv">20</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ti</span>(arrivaltime,lon,lat,<span class="dt">d=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">5</span>,<span class="dv">30</span>)),</a>
+<a class="sourceLine" id="cb6-3" title="3">  gamma <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(fsintens) <span class="op">+</span><span class="st"> </span><span class="kw">ti</span>(daytime,<span class="dt">bs=</span><span class="st">"cc"</span>,<span class="dt">k=</span><span class="dv">30</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ti</span>(lon,lat,<span class="dt">k=</span><span class="dv">80</span>,<span class="dt">d=</span><span class="dv">2</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="st">    </span><span class="kw">ti</span>(daytime,lon,lat,<span class="dt">bs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"cc"</span>,<span class="st">"cr"</span>),<span class="dt">d=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1</span>,<span class="dv">2</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">10</span>,<span class="dv">30</span>))</a>
+<a class="sourceLine" id="cb6-5" title="5">)</a></code></pre></div>
 <p>Note that the <code>Surv()</code> function from the <em>survival</em> package <span class="citation">(Therneau 2019)</span> is used to set up the formula for <span class="math inline">\(\eta_{\lambda}\)</span>. Also note that the arrival times are not censored in this application. The model is estimated with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibility.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">222</span>)
-
-## Start estimation
-firemodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> LondonFire, <span class="dt">family =</span> <span class="st">"cox"</span>,
-  <span class="dt">subdivisions =</span> <span class="dv">25</span>, <span class="dt">maxit =</span> <span class="dv">1000</span>,
-  <span class="dt">n.iter =</span> <span class="dv">6000</span>, <span class="dt">burnin =</span> <span class="dv">3000</span>, <span class="dt">thin =</span> <span class="dv">20</span>, <span class="dt">cores =</span> <span class="dv">8</span>)</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co">## Set the seed for reproducibility.</span></a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">222</span>)</a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="co">## Start estimation</span></a>
+<a class="sourceLine" id="cb7-5" title="5">firemodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> LondonFire, <span class="dt">family =</span> <span class="st">"cox"</span>,</a>
+<a class="sourceLine" id="cb7-6" title="6">  <span class="dt">subdivisions =</span> <span class="dv">25</span>, <span class="dt">maxit =</span> <span class="dv">1000</span>,</a>
+<a class="sourceLine" id="cb7-7" title="7">  <span class="dt">n.iter =</span> <span class="dv">6000</span>, <span class="dt">burnin =</span> <span class="dv">3000</span>, <span class="dt">thin =</span> <span class="dv">20</span>, <span class="dt">cores =</span> <span class="dv">8</span>)</a></code></pre></div>
 <p>Note, due to the complexity of the model and model terms estimation takes quite long. On a Linux system with 8 Intel i7-2600 3.40GHz processors estimation takes approximately 1.2 days.</p>
 <p>Good practice after fitting the model is to do some convergence checks of the MCMC chains, e.g., by looking at traceplots</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(firemodel, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(firemodel, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="cox_files/figure-html/unnamed-chunk-7-1.png" width="80%" style="display: block; margin: auto;"> Note, for convenience we only show the traceplot of the intercept term of predictor <span class="math inline">\(\eta_{\gamma}\)</span>. The traceplot indicates convergence of the MCMC chains and have close to i.i.d. behavior. The model summary gives</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(firemodel)</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(firemodel)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f, family = "cox", data = LondonFire, cores = 8, 
@@ -256,34 +254,20 @@ firemodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/b
 ## alpha 0.9932 0.9398 0.9999     1
 ## -
 ## Smooth terms:
-##                                Mean      2.5%       50%     97.5%
-## s(fsintens).tau21         9.083e+00 1.746e+00 6.596e+00 2.919e+01
-## s(fsintens).edf           7.381e+00 5.954e+00 7.439e+00 8.504e+00
-## s(fsintens).alpha         9.048e-01 4.122e-01 9.785e-01 1.000e+00
-## ti(daytime).tau21         3.385e-02 1.703e-04 8.700e-04 4.559e-02
-## ti(daytime).edf           1.094e+01 6.215e+00 9.916e+00 2.201e+01
-## ti(daytime).alpha         9.176e-01 5.090e-01 9.856e-01 1.000e+00
-## ti(lon,lat).tau21         4.313e+00 2.161e+00 4.049e+00 7.642e+00
-## ti(lon,lat).edf           5.794e+01 4.940e+01 5.806e+01 6.489e+01
-## ti(lon,lat).alpha         4.695e-01 1.428e-03 3.702e-01 1.000e+00
-## ti(daytime,lon,lat).tau21 3.245e+00 2.595e-01 1.928e+00 1.464e+01
-## ti(daytime,lon,lat).tau22 5.289e+00 8.305e-01 3.856e+00 1.770e+01
-## ti(daytime,lon,lat).edf   3.846e+01 2.034e+01 3.763e+01 6.181e+01
-## ti(daytime,lon,lat).alpha 7.939e-01 1.493e-01 9.154e-01 1.000e+00
-##                           parameters
-## s(fsintens).tau21              8.171
-## s(fsintens).edf                7.638
-## s(fsintens).alpha                 NA
-## ti(daytime).tau21              0.000
-## ti(daytime).edf                6.461
-## ti(daytime).alpha                 NA
-## ti(lon,lat).tau21              7.714
-## ti(lon,lat).edf               65.221
-## ti(lon,lat).alpha                 NA
-## ti(daytime,lon,lat).tau21      0.000
-## ti(daytime,lon,lat).tau22      0.000
-## ti(daytime,lon,lat).edf        0.013
-## ti(daytime,lon,lat).alpha         NA
+##                                Mean      2.5%       50%     97.5% parameters
+## s(fsintens).tau21         9.083e+00 1.746e+00 6.596e+00 2.919e+01      8.171
+## s(fsintens).edf           7.381e+00 5.954e+00 7.439e+00 8.504e+00      7.638
+## s(fsintens).alpha         9.048e-01 4.122e-01 9.785e-01 1.000e+00         NA
+## ti(daytime).tau21         3.385e-02 1.703e-04 8.700e-04 4.559e-02      0.000
+## ti(daytime).edf           1.094e+01 6.215e+00 9.916e+00 2.201e+01      6.461
+## ti(daytime).alpha         9.176e-01 5.090e-01 9.856e-01 1.000e+00         NA
+## ti(lon,lat).tau21         4.313e+00 2.161e+00 4.049e+00 7.642e+00      7.714
+## ti(lon,lat).edf           5.794e+01 4.940e+01 5.806e+01 6.489e+01     65.221
+## ti(lon,lat).alpha         4.695e-01 1.428e-03 3.702e-01 1.000e+00         NA
+## ti(daytime,lon,lat).tau21 3.245e+00 2.595e-01 1.928e+00 1.464e+01      0.000
+## ti(daytime,lon,lat).tau22 5.289e+00 8.305e-01 3.856e+00 1.770e+01      0.000
+## ti(daytime,lon,lat).edf   3.846e+01 2.034e+01 3.763e+01 6.181e+01      0.013
+## ti(daytime,lon,lat).alpha 7.939e-01 1.493e-01 9.154e-01 1.000e+00         NA
 ## ---
 ## Sampler summary:
 ## -
@@ -295,32 +279,32 @@ firemodel &lt;-<span class="st"> </span><span class="kw"><a href="../reference/b
 ## AICc = 22607.29 converged = 1 edf = 122.0436
 ## logLik = -11178.97 logPost = -8898.27 time = 14443.76</code></pre>
 <p>and indicates that the three-dimensional effects in <code>lambda</code> and <code>gamma</code> have an effect on the response times. The estimated effects can be plotted with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.5</span>, <span class="dv">4</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>), <span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">2</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(firemodel, <span class="dt">scale =</span> <span class="dv">0</span>)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.5</span>, <span class="dv">4</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>), <span class="dt">mfrow =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(firemodel, <span class="dt">scale =</span> <span class="dv">0</span>)</a></code></pre></div>
 <p><img src="cox_files/figure-html/unnamed-chunk-10-1.png" width="80%" style="display: block; margin: auto;"> The upper left plot shows the estimated baseline hazard effect. The upper right plot the time-constant effect of fire station intensity. The lower left plot the estimated effect of the time of the day and the lower right plot the estimated time-constant spatial effect.</p>
 </div>
 <div id="prediction" class="section level2">
 <h2 class="hasAnchor">
 <a href="#prediction" class="anchor"></a>Prediction</h2>
 <p>Predictions in for an estimated Cox model are based on the custom predict function <code><a href="../reference/cox.predict.html">cox_predict()</a></code>. Here, predicted probabilities are based on numerical integration, therefore, the user can specify the subdivisions that are used in the integration routine. For example, let’s pick a sample location within the boundaries of London and predict the corresponding probability that the fire engine arrives at 15pm within 0 to 20 minutes.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Extract the 150th sample.
-i &lt;-<span class="st"> </span><span class="dv">150</span>
-
-## Create a new data frame for prediction.
-nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(
-  <span class="st">"arrivaltime"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">20</span>, <span class="dt">length =</span> <span class="dv">100</span>),
-  <span class="st">"daytime"</span> =<span class="st"> </span><span class="dv">15</span>
-)
-nd$fsintens &lt;-<span class="st"> </span>LondonFire$fsintens[i]
-nd$lon &lt;-<span class="st"> </span>LondonFire$lon[i]
-nd$lat &lt;-<span class="st"> </span>LondonFire$lat[i]
-
-## Predict probabilities.
-nd$p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(firemodel, <span class="dt">newdata =</span> nd,
-  <span class="dt">type =</span> <span class="st">"probabilities"</span>, <span class="dt">subdivisions =</span> <span class="dv">100</span>, <span class="dt">FUN =</span> c95))</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="co">## Extract the 150th sample.</span></a>
+<a class="sourceLine" id="cb12-2" title="2">i &lt;-<span class="st"> </span><span class="dv">150</span></a>
+<a class="sourceLine" id="cb12-3" title="3"></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="co">## Create a new data frame for prediction.</span></a>
+<a class="sourceLine" id="cb12-5" title="5">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(</a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="st">"arrivaltime"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="dv">0</span>, <span class="dv">20</span>, <span class="dt">length =</span> <span class="dv">100</span>),</a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="st">"daytime"</span> =<span class="st"> </span><span class="dv">15</span></a>
+<a class="sourceLine" id="cb12-8" title="8">)</a>
+<a class="sourceLine" id="cb12-9" title="9">nd<span class="op">$</span>fsintens &lt;-<span class="st"> </span>LondonFire<span class="op">$</span>fsintens[i]</a>
+<a class="sourceLine" id="cb12-10" title="10">nd<span class="op">$</span>lon &lt;-<span class="st"> </span>LondonFire<span class="op">$</span>lon[i]</a>
+<a class="sourceLine" id="cb12-11" title="11">nd<span class="op">$</span>lat &lt;-<span class="st"> </span>LondonFire<span class="op">$</span>lat[i]</a>
+<a class="sourceLine" id="cb12-12" title="12"></a>
+<a class="sourceLine" id="cb12-13" title="13"><span class="co">## Predict probabilities.</span></a>
+<a class="sourceLine" id="cb12-14" title="14">nd<span class="op">$</span>p &lt;-<span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/t">t</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(firemodel, <span class="dt">newdata =</span> nd,</a>
+<a class="sourceLine" id="cb12-15" title="15">  <span class="dt">type =</span> <span class="st">"probabilities"</span>, <span class="dt">subdivisions =</span> <span class="dv">100</span>, <span class="dt">FUN =</span> c95))</a></code></pre></div>
 <p>The estimated probabilities that the fire engine arrives in <span class="math inline">\(t\)</span> minutes can then be plotted with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.1</span>, <span class="fl">4.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>))
-<span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p ~<span class="st"> </span>arrivaltime, <span class="dt">data =</span> nd, <span class="dt">ylab =</span> <span class="st">"1 - Prob(T &gt; t)"</span>)</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/par">par</a></span>(<span class="dt">mar =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">4.1</span>, <span class="fl">4.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>))</a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw"><a href="../reference/plot2d.html">plot2d</a></span>(p <span class="op">~</span><span class="st"> </span>arrivaltime, <span class="dt">data =</span> nd, <span class="dt">ylab =</span> <span class="st">"1 - Prob(T &gt; t)"</span>)</a></code></pre></div>
 <p><img src="cox_files/figure-html/unnamed-chunk-12-1.png" width="50%" style="display: block; margin: auto;"></p>
 </div>
 <div id="references" class="section level2 unnumbered">
@@ -328,13 +312,13 @@ nd$p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> 
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
 <div id="ref-bamlss:Taylor:2015">
-<p>Taylor, Benjamin M. 2017. “Spatial Modelling of Emergency Service Response Times.” <em>Journal of the Royal Statistical Society A</em>. doi:<a href="https://doi.org/10.1111/rssa.12192">10.1111/rssa.12192</a>.</p>
+<p>Taylor, Benjamin M. 2017. “Spatial Modelling of Emergency Service Response Times.” <em>Journal of the Royal Statistical Society A</em>. <a href="https://doi.org/10.1111/rssa.12192" class="uri">https://doi.org/10.1111/rssa.12192</a>.</p>
 </div>
 <div id="ref-bamlss:Therneau:2016">
 <p>Therneau, T. M. 2019. <em>survival: A Package for Survival Analysis in S</em>. <a href="https://CRAN.R-project.org/package=survival" class="uri">https://CRAN.R-project.org/package=survival</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+Klein+Zeileis:2017">
-<p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2018. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em> 27 (3): 612–27. doi:<a href="https://doi.org/10.1080/10618600.2017.1407325">10.1080/10618600.2017.1407325</a>.</p>
+<p>Umlauf, Nikolaus, Nadja Klein, and Achim Zeileis. 2018. “BAMLSS: Bayesian Additive Models for Location, Scale and Shape (and Beyond).” <em>Journal of Computational and Graphical Statistics</em> 27 (3): 612–27. <a href="https://doi.org/10.1080/10618600.2017.1407325" class="uri">https://doi.org/10.1080/10618600.2017.1407325</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
@@ -344,6 +328,7 @@ nd$p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> 
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

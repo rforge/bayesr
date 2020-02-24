@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -156,51 +156,51 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 <a href="#mayo-clinic-primary-biliary-cirrhosis-data" class="anchor"></a>Mayo Clinic Primary Biliary Cirrhosis Data</h2>
 <p>This example is taken from the <em>JMbayes</em> package <span class="citation">(Rizopoulos 2016)</span>. The serum bilirubin level is one of the most important body markers associated with the PBC liver disease. Here, we try to investigate how the mean bilirubin level influences survival. Therefore, we decompose the time-varying effect in parameter <span class="math inline">\(\mu\)</span> into a main effect and a functional random intercept, to account for individual deviations.</p>
 <p>The data can be loaded with</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"pbc2"</span>, <span class="dt">package =</span> <span class="st">"JMbayes"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pbc2)</code></pre></div>
-<pre><code>##   id    years status      drug      age    sex      year ascites
-## 1  1  1.09517   dead D-penicil 58.76684 female 0.0000000     Yes
-## 2  1  1.09517   dead D-penicil 58.76684 female 0.5256817     Yes
-## 3  2 14.15234  alive D-penicil 56.44782 female 0.0000000      No
-## 4  2 14.15234  alive D-penicil 56.44782 female 0.4983025      No
-## 5  2 14.15234  alive D-penicil 56.44782 female 0.9993429      No
-## 6  2 14.15234  alive D-penicil 56.44782 female 2.1027270      No
-##   hepatomegaly spiders                   edema serBilir serChol albumin
-## 1          Yes     Yes edema despite diuretics     14.5     261    2.60
-## 2          Yes     Yes edema despite diuretics     21.3      NA    2.94
-## 3          Yes     Yes                No edema      1.1     302    4.14
-## 4          Yes     Yes                No edema      0.8      NA    3.60
-## 5          Yes     Yes                No edema      1.0      NA    3.55
-## 6          Yes     Yes                No edema      1.9      NA    3.92
-##   alkaline  SGOT platelets prothrombin histologic status2
-## 1     1718 138.0       190        12.2          4       1
-## 2     1612   6.2       183        11.2          4       1
-## 3     7395 113.5       221        10.6          3       0
-## 4     2107 139.5       188        11.0          3       0
-## 5     1711 144.2       161        11.6          3       0
-## 6     1365 144.2       122        10.6          3       0</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"pbc2"</span>, <span class="dt">package =</span> <span class="st">"JMbayes"</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(pbc2)</a></code></pre></div>
+<pre><code>##   id    years status      drug      age    sex      year ascites hepatomegaly
+## 1  1  1.09517   dead D-penicil 58.76684 female 0.0000000     Yes          Yes
+## 2  1  1.09517   dead D-penicil 58.76684 female 0.5256817     Yes          Yes
+## 3  2 14.15234  alive D-penicil 56.44782 female 0.0000000      No          Yes
+## 4  2 14.15234  alive D-penicil 56.44782 female 0.4983025      No          Yes
+## 5  2 14.15234  alive D-penicil 56.44782 female 0.9993429      No          Yes
+## 6  2 14.15234  alive D-penicil 56.44782 female 2.1027270      No          Yes
+##   spiders                   edema serBilir serChol albumin alkaline  SGOT
+## 1     Yes edema despite diuretics     14.5     261    2.60     1718 138.0
+## 2     Yes edema despite diuretics     21.3      NA    2.94     1612   6.2
+## 3     Yes                No edema      1.1     302    4.14     7395 113.5
+## 4     Yes                No edema      0.8      NA    3.60     2107 139.5
+## 5     Yes                No edema      1.0      NA    3.55     1711 144.2
+## 6     Yes                No edema      1.9      NA    3.92     1365 144.2
+##   platelets prothrombin histologic status2
+## 1       190        12.2          4       1
+## 2       183        11.2          4       1
+## 3       221        10.6          3       0
+## 4       188        11.0          3       0
+## 5       161        11.6          3       0
+## 6       122        10.6          3       0</code></pre>
 <p>and contains several potentially relevant covariates explaining the disease. Note that for the survival part, the time variable is <code>years</code> and for the longitudinal part <code>year</code> in this data set. To set up the joint model we need to specify formulas for each parameter (<span class="math inline">\(\lambda\)</span>, <span class="math inline">\(\gamma\)</span>, <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\alpha\)</span>) of the model.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set up the model formula including
-## functional random intercepts using ti().
-f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(
-  <span class="kw"><a href="../reference/Surv2.html">Surv2</a></span>(years, status2, <span class="dt">obs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(serBilir)) ~<span class="st"> </span><span class="kw">s</span>(years,<span class="dt">k=</span><span class="dv">20</span>),
-  gamma ~<span class="st"> </span><span class="kw">s</span>(age,<span class="dt">k=</span><span class="dv">20</span>) +<span class="st"> </span>drug +<span class="st"> </span>sex,
-  mu ~<span class="st"> </span><span class="kw">ti</span>(id,<span class="dt">bs=</span><span class="st">"re"</span>) +<span class="st"> </span>
-<span class="st">       </span><span class="kw">ti</span>(year,<span class="dt">k=</span><span class="dv">20</span>) +<span class="st"> </span>
-<span class="st">       </span><span class="kw">ti</span>(id,year,<span class="dt">bs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"re"</span>,<span class="st">"cr"</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nlevels">nlevels</a></span>(pbc2$id),<span class="dv">8</span>)),
-  sigma ~<span class="st"> </span><span class="dv">1</span>,
-  alpha ~<span class="st"> </span><span class="kw">s</span>(years,<span class="dt">k=</span><span class="dv">20</span>),
-  dalpha ~<span class="st"> </span>-<span class="dv">1</span>
-)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="co">## Set up the model formula including</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">## functional random intercepts using ti().</span></a>
+<a class="sourceLine" id="cb3-3" title="3">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="kw"><a href="../reference/Surv2.html">Surv2</a></span>(years, status2, <span class="dt">obs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">log</a></span>(serBilir)) <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(years,<span class="dt">k=</span><span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb3-5" title="5">  gamma <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(age,<span class="dt">k=</span><span class="dv">20</span>) <span class="op">+</span><span class="st"> </span>drug <span class="op">+</span><span class="st"> </span>sex,</a>
+<a class="sourceLine" id="cb3-6" title="6">  mu <span class="op">~</span><span class="st"> </span><span class="kw">ti</span>(id,<span class="dt">bs=</span><span class="st">"re"</span>) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="st">       </span><span class="kw">ti</span>(year,<span class="dt">k=</span><span class="dv">20</span>) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="st">       </span><span class="kw">ti</span>(id,year,<span class="dt">bs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"re"</span>,<span class="st">"cr"</span>),<span class="dt">k=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nlevels">nlevels</a></span>(pbc2<span class="op">$</span>id),<span class="dv">8</span>)),</a>
+<a class="sourceLine" id="cb3-9" title="9">  sigma <span class="op">~</span><span class="st"> </span><span class="dv">1</span>,</a>
+<a class="sourceLine" id="cb3-10" title="10">  alpha <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(years,<span class="dt">k=</span><span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb3-11" title="11">  dalpha <span class="op">~</span><span class="st"> </span><span class="dv">-1</span></a>
+<a class="sourceLine" id="cb3-12" title="12">)</a></code></pre></div>
 <p>The model is estimated by first running a backfitting algorithm, to find appropriate starting values, afterwards the MCMC sampler is started.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Set the seed for reproducibility.
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)
-
-## Estimate model.
-b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> pbc2, <span class="dt">family =</span> <span class="st">"jm"</span>,
-  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">idvar =</span> <span class="st">"id"</span>)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="co">## Set the seed for reproducibility.</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)</a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4"><span class="co">## Estimate model.</span></a>
+<a class="sourceLine" id="cb4-5" title="5">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> pbc2, <span class="dt">family =</span> <span class="st">"jm"</span>,</a>
+<a class="sourceLine" id="cb4-6" title="6">  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">idvar =</span> <span class="st">"id"</span>)</a></code></pre></div>
 <p>The model summary gives</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## bamlss(formula = f, family = "jm", data = pbc2, timevar = "year", 
@@ -308,44 +308,44 @@ b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
 ## -
 ## converged = 0 logPost = -33648.29 time = 174.306</code></pre>
 <p>Here, the estimated parameters from the backfitting step are quite different from the posterior mean calculated from the MCMC samples. This might indicate that the default number of iterations, <code>n.iter = 1200</code>, is not enough to obtain convergence of the MCMC chains. To check this issue we look at some traceplots.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-7-1.png" width="864" style="display: block; margin: auto;"> For convenience, we only show the traceplots of the intercept for parameter <span class="math inline">\(\gamma\)</span> and <span class="math inline">\(\mu\)</span>. The traceplot for parameter <span class="math inline">\(\mu\)</span> clearly shows an upwards trend of the MCMC chain. To overcome this issue, we estimate the model again and increase the burnin-in phase and the thinning parameter.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">321</span>)
-
-## Run model
-m &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> pbc2, <span class="dt">family =</span> <span class="st">"jm"</span>,
-  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">idvar =</span> <span class="st">"id"</span>, <span class="dt">optimizer =</span> <span class="ot">FALSE</span>,
-  <span class="dt">jm.start =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef</a></span>(b), <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">321</span>)</a>
+<a class="sourceLine" id="cb8-2" title="2"></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">## Run model</span></a>
+<a class="sourceLine" id="cb8-4" title="4">m &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> pbc2, <span class="dt">family =</span> <span class="st">"jm"</span>,</a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">idvar =</span> <span class="st">"id"</span>, <span class="dt">optimizer =</span> <span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb8-6" title="6">  <span class="dt">jm.start =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef</a></span>(b), <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a></code></pre></div>
 <p>Note, executing the code will take some time because of the large number of parameters for the functional random intercept terms (<span class="math inline">\(&gt; 2500\)</span>). Another solution to speed up estimation is to use multiple cores for sampling. This can be done using the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper by setting, e.g., <code>cores = 4</code>. Then, internally the <code>mclapply()</code> function of the <em>parallel</em> <span class="citation">(R Core Team 2019)</span> package is called. Now, the samples from model <code>m</code> look much better.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">which =</span> <span class="st">"samples"</span>, <span class="dt">lag =</span> <span class="dv">100</span>)</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">which =</span> <span class="st">"samples"</span>, <span class="dt">lag =</span> <span class="dv">100</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-11-1.png" width="864" style="display: block; margin: auto;"> However, there is still some autocorrelation for parameter <span class="math inline">\(\mu\)</span>, which could be further reduced by, e.g., increasing the thinning parameter.</p>
 <p>The estimated effects can be plotted instantly, e.g., for the time-varying parameters <span class="math inline">\(\lambda\)</span> and <span class="math inline">\(\alpha\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-13-1.png" width="80%" style="display: block; margin: auto;"> The left plot is the estimated baseline hazard effect, the right plot the estimated association parameter. Both effects seem to be quite linear, however, according the 95% credible intervals the effect for parameter <code>alpha</code> is not significant.</p>
 <p>The <code>age</code> effect for the time-constant parameter <span class="math inline">\(\gamma\)</span> of the risk model is plotted with:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"gamma"</span>)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"gamma"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-15-1.png" width="50%" style="display: block; margin: auto;"> Again, the effect of age on the logarithmic risk scale is basically linear and increasing. The estimated effects for the bodymarker model in the <span class="math inline">\(\mu\)</span> parameter are plotted in similar fashion:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"mu"</span>)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"mu"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-17-1.png" width="100%" style="display: block; margin: auto;"> The left plot shows the estimated random effect for each individual, the middle plot the estimated functional random intercepts and the right plot the corresponding main effect of <code>year</code>, which is linearly increasing.</p>
 <p>Another feature that is implemented is the plot of estimated survival probabilities for single individuals.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/jm_bamlss.html">jm_survplot</a></span>(m, <span class="dt">id =</span> <span class="dv">21</span>)</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="kw"><a href="../reference/jm_bamlss.html">jm_survplot</a></span>(m, <span class="dt">id =</span> <span class="dv">21</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-19-1.png" width="50%" style="display: block; margin: auto;"> The upper plot shows the predicted survival probability up to 14 years of individual 21. The lower plot is the predicted effect of time in the longitudinal model <span class="math inline">\(\mu\)</span>. Here, the dots represent the observed bilirubin level of this individual.</p>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h2>
 <div id="refs" class="references">
-<div id="ref-bamlss:Koehler+Umlauf+Greven:2018">
-<p>Köhler, Meike, Nikolaus Umlauf, and Sonja Greven. 2018. “Nonlinear Association Structures in Flexible Bayesian Additive Joint Models.” <em>Statistics in Medicine</em> 37 (30): 4771–88. doi:<a href="https://doi.org/10.1002/sim.7967">10.1002/sim.7967</a>.</p>
-</div>
 <div id="ref-bamlss:Koehler+Umlauf+Greven:2016">
-<p>Köhler, Meike, Nikolaus Umlauf, Andreas Beyerlein, Christiane Winkler, Anette-Gabriele Ziegler, and Sonja Greven. 2017. “Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research.” <em>Biometrical Journal</em> 59 (6): 1144–65. doi:<a href="https://doi.org/10.1002/bimj.201600224">10.1002/bimj.201600224</a>.</p>
+<p>Köhler, Meike, Nikolaus Umlauf, Andreas Beyerlein, Christiane Winkler, Anette-Gabriele Ziegler, and Sonja Greven. 2017. “Flexible Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research.” <em>Biometrical Journal</em> 59 (6): 1144–65. <a href="https://doi.org/10.1002/bimj.201600224" class="uri">https://doi.org/10.1002/bimj.201600224</a>.</p>
+</div>
+<div id="ref-bamlss:Koehler+Umlauf+Greven:2018">
+<p>Köhler, Meike, Nikolaus Umlauf, and Sonja Greven. 2018. “Nonlinear Association Structures in Flexible Bayesian Additive Joint Models.” <em>Statistics in Medicine</em> 37 (30): 4771–88. <a href="https://doi.org/10.1002/sim.7967" class="uri">https://doi.org/10.1002/sim.7967</a>.</p>
 </div>
 <div id="ref-bamlss:R">
 <p>R Core Team. 2019. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/" class="uri">https://www.R-project.org/</a>.</p>
 </div>
 <div id="ref-bamlss:JMbayes:2016">
-<p>Rizopoulos, Dimitris. 2016. “The R Package JMbayes for Fitting Joint Models for Longitudinal and Time-to-Event Data Using Mcmc.” <em>Journal of Statistical Software</em> 72 (7): 1–45. doi:<a href="https://doi.org/10.18637/jss.v072.i07">10.18637/jss.v072.i07</a>.</p>
+<p>Rizopoulos, Dimitris. 2016. “The R Package JMbayes for Fitting Joint Models for Longitudinal and Time-to-Event Data Using Mcmc.” <em>Journal of Statistical Software</em> 72 (7): 1–45. <a href="https://doi.org/10.18637/jss.v072.i07" class="uri">https://doi.org/10.18637/jss.v072.i07</a>.</p>
 </div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2019. <em>bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
@@ -355,6 +355,7 @@ m &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.ht
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>

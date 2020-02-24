@@ -8,11 +8,13 @@
 
 <title>Fit Bayesian Additive Models for Location Scale and Shape (and Beyond) — bamlss • bamlss</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -30,8 +32,8 @@
 
 
 
-<meta property="og:title" content="Fit Bayesian Additive Models for Location Scale and Shape (and Beyond) — bamlss" />
 
+<meta property="og:title" content="Fit Bayesian Additive Models for Location Scale and Shape (and Beyond) — bamlss" />
 <meta property="og:description" content="This is the main model fitting function of the package. Function bamlss()
   is a wrapper function that parses the data and the model formula, or
   extended bamlss.formula, as well as the bamlss.family
@@ -48,6 +50,7 @@ After the bamlss.frame is set up function bamlss() applies optimizer
 Finally, the estimated parameters and/or samples are used to create model output results like
   summary statistics or effect plots. The computation of results may also be controlled by the user." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -77,7 +80,7 @@ Finally, the estimated parameters and/or samples are used to create model output
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -159,7 +162,6 @@ Finally, the estimated parameters and/or samples are used to create model output
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -180,7 +182,6 @@ Finally, the estimated parameters and/or samples are used to create model output
     </div>
 
     <div class="ref-description">
-    
     <p>This is the main model fitting function of the package. Function <code>bamlss()</code>
   is a wrapper function that parses the <code>data</code> and the model <code>formula</code>, or
   extended <code><a href='bamlss.formula.html'>bamlss.formula</a></code>, as well as the <code><a href='family.bamlss.html'>bamlss.family</a></code>
@@ -196,7 +197,6 @@ Finally, the estimated parameters and/or samples are used to create model output
   below on how to create new engines to be used with function <code>bamlss()</code>.</p>
 <p>Finally, the estimated parameters and/or samples are used to create model output results like
   summary statistics or effect plots. The computation of results may also be controlled by the user.</p>
-    
     </div>
 
     <pre class="usage"><span class='fu'>bamlss</span>(<span class='no'>formula</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -207,7 +207,7 @@ Finally, the estimated parameters and/or samples are used to create model output
   <span class='kw'>results</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>sleep</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>combine</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>light</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -339,7 +339,7 @@ Finally, the estimated parameters and/or samples are used to create model output
     <code>results</code> and <code>samplestats</code> function.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The main idea of this function is to provide infrastructures that make it relatively easy
@@ -410,7 +410,6 @@ Finally, the estimated parameters and/or samples are used to create model output
   if a <code><a href='family.bamlss.html'>bamlss.family</a></code> object has an element named <code>"optimizer"</code>, which
   represents a valid optimizer function such as <code><a href='bfit.html'>bfit</a></code>, exactly this optimizer
   function will be used as a default when using the family.</p>
-    
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>An object of class <code>"bamlss"</code>. The object is in principle only a slight extension
@@ -423,7 +422,6 @@ Finally, the estimated parameters and/or samples are used to create model output
   the output will also be saved in the <code>"model.stats"</code> element.</p>
 <p>Additionally, all functions that are called are saved as attribute <code>"functions"</code> in the
   returned object.</p>
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Umlauf N, Klein N, Zeileis A (2019). BAMLSS: Bayesian Additive Models for Location,
@@ -432,7 +430,6 @@ Finally, the estimated parameters and/or samples are used to create model output
 <p>Umlauf N, Klein N, Simon T, Zeileis A (2019).
   &#8220;bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond).&#8221;
   arXiv:1909.11784, arXiv.org E-Print Archive. <a href='https://arxiv.org/abs/1909.11784'>https://arxiv.org/abs/1909.11784</a></p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='bamlss.frame.html'>bamlss.frame</a></code>, <code><a href='family.bamlss.html'>family.bamlss</a></code>, <code><a href='bamlss.formula.html'>bamlss.formula</a></code>,
@@ -440,7 +437,6 @@ Finally, the estimated parameters and/or samples are used to create model output
   <code><a href='bfit.html'>bfit</a></code>, <code><a href='GMCMC.html'>GMCMC</a></code>, <code><a href='continue.html'>continue</a></code>,
   <code><a href='coef.bamlss.html'>coef.bamlss</a></code>, <code><a href='parameters.html'>parameters</a></code>, <code><a href='predict.bamlss.html'>predict.bamlss</a></code>,
   <code><a href='plot.bamlss.html'>plot.bamlss</a></code></p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
@@ -475,15 +471,10 @@ Finally, the estimated parameters and/or samples are used to create model output
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-
       <li><a href="#value">Value</a></li>
-
       <li><a href="#references">References</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 
