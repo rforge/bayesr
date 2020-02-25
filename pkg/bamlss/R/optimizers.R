@@ -5957,7 +5957,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           ll_contrib2[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE)
-            epsll <- abs((ll1 - ll0)/ll0)
+            epsll <- (ll1 - ll0)/abs(ll0)
             if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
               tau2f <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f * I)
@@ -6086,14 +6086,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             accept <- TRUE
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun3(tau2s, retLL = TRUE)
-              epsll <- abs((ll1 - ll0)/ll0)
+              epsll <- (ll1 - ll0)/abs(ll0)
 #              if(!slice) {
 #                accept <- TRUE
 #              } else {
 #                epsll < 0.5
 #              }
               if(!always) {
-                accept <- epsll <= 0.5
+                accept <- epsll >= -0.5
               } else {
                 accept <- TRUE
               }
@@ -6287,13 +6287,15 @@ contribplot <- function(x, ...) {
   if(is.null(ll <- x$model.stats$optimizer$llcontrib))
     stop("nothing to plot")
   iter <- x$model.stats$optimizer$n.iter - 1L
+  iter2 <- NULL
   sf <- list()
   for(i in names(ll)) {
     sf[[i]] <- list()
     for(j in names(ll[[i]])) {
       if(!is.null(ll[[i]][[j]])) {
         ii <- attr(ll[[i]][[j]], "iteration")
-        sf[[i]][[j]] <- length(ii) / iter
+        sf[[i]][[j]] <- length(ii)
+        iter2 <- c(iter2, length(ii))
         llv <- rep(0, iter)
         llv[ii] <- ll[[i]][[j]][-1]
         llv <- cumsum(llv)
@@ -6306,11 +6308,15 @@ contribplot <- function(x, ...) {
     sf[[i]] <- do.call("rbind", sf[[i]])
     sf[[i]] <- sf[[i]][order(sf[[i]][, 1], decreasing = TRUE), , drop = FALSE]
     colnames(sf[[i]]) <- "Sel. freq."
+    ll[[i]] <- do.call("cbind", ll[[i]])
+    colnames(ll[[i]]) <- paste0(i, ".", colnames(ll[[i]]))
+  }
+  iter2 <- sum(iter2)
+  for(i in names(ll)) {
+    sf[[i]] <- sf[[i]]/iter2
     cat(i, "\n", sep = "")
     printCoefmat(sf[[i]])
     cat("\n")
-    ll[[i]] <- do.call("cbind", ll[[i]])
-    colnames(ll[[i]]) <- paste0(i, ".", colnames(ll[[i]]))
   }
   ll <- do.call("cbind", ll)
   print.boost_summary(list("loglik" = ll, "mstop" = iter),
