@@ -2087,7 +2087,8 @@ xbin.fun <- function(ind, weights, e, xweights, xrres, oind, uind = NULL)
 
 xcenter <- function(x)
 {
-  .Call("xcenter", as.numeric(x), PACKAGE = "bamlss")
+  ##.Call("xcenter", as.numeric(x), PACKAGE = "bamlss")
+  return(x)
 }
 
 
@@ -5652,7 +5653,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   if(!is.null(start))
     start <- unlist(start)
 
-  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- LLC <- list()
+  beta <- eta <- etas <- tau2 <- ll_contrib <- medf <- parm <- LLC <- ionly <- list()
   for(i in nx) {
     beta[[i]] <- list()
     tau2[[i]] <- list()
@@ -5666,6 +5667,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       LLC[[i]][["p"]] <- 0
       parm[[i]][["p"]] <- matrix(nrow = 0, ncol = ncol(x[[i]]$model.matrix))
       colnames(parm[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
+      if(ncol(x[[i]]$model.matrix) < 2) {
+        if(colnames(x[[i]]$model.matrix) == "(Intercept)")
+          ionly[[i]] <- TRUE
+      }
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
         beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
@@ -5928,6 +5933,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           XWX <- crossprod(Xn * hess, Xn)
           I <- diag(1, ncol(XWX))
 
+          if(!ionly[[i]]) {
+            if(ncol(I) > 1)
+              I[1, 1] <- 0
+          }
+
           etas[[i]] <- etas[[i]] - drop(Xt %*% b0)
 
           objfun2 <- function(tau2, retLL = FALSE, step = FALSE) {
@@ -5952,7 +5962,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
             return(ll)
           }
-          tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
+          if(ionly[[i]]) {
+            tau2fe <- 1e+350
+          } else {
+            tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
+          }
           ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE, step = TRUE)
