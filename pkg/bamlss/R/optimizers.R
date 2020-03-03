@@ -5943,7 +5943,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           objfun2 <- function(tau2, retLL = FALSE, step = FALSE) {
             P <- matrix_inv(XWX + 1/tau2 * I)
             if(step) {
-              b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+              b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
             } else {
               b <- drop(P %*% crossprod(Xn * hess, e))
             }
@@ -5975,9 +5975,9 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               tau2f <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f * I)
               if(select) {
-                tbeta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+                tbeta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
               } else {
-                beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+                beta[[i]][["p"]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
               }
               tedf <- sum_diag(XWX %*% P)
               edf <- edf + tedf
@@ -6053,7 +6053,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               }
               P <- matrix_inv(XWX + S)
               if(step) {
-                b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+                b <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
               } else {
                 b <- drop(P %*% crossprod(Xn * hess, e))
               }
@@ -6121,13 +6121,13 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
                 P <- matrix_inv(XWX + S)
                 if(select) {
-                  tbeta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+                  tbeta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
                   if(!is.null(wts)) {
                     names(tbeta[[i]][[paste0("s.", j)]]) <- paste0("bb", 1:length(tbeta[[i]][[paste0("s.", j)]]))
                     tbeta[[i]][[paste0("s.", j)]] <- c(tbeta[[i]][[paste0("s.", j)]], wts)
                   }
                 } else {
-                  beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 #* (1-nu)
+                  beta[[i]][[paste0("s.", j)]] <- drop(P %*% crossprod(Xn * hess, e)) * nu + b0 * (1 - nu)
                   if(!is.null(wts)) {
                     names(beta[[i]][[paste0("s.", j)]]) <- paste0("bb", 1:length(beta[[i]][[paste0("s.", j)]]))
                     beta[[i]][[paste0("s.", j)]] <- c(beta[[i]][[paste0("s.", j)]], wts)
