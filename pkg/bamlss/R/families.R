@@ -2541,7 +2541,7 @@ bivnorm_bamlss <- function(...)
     "family" = "mvnorm",
     "names" = c("mu1", "mu2", "sigma1", "sigma2", "rho"),
     "links" = c("identity", "identity", "log", "log", "rhogit"),
-		"bayesx" = list(
+    "bayesx" = list(
       "mu1" = c("bivnormal", "mu"),
       "mu2" = c("bivnormal", "mu"),
       "sigma1" = c("bivnormal", "sigma"),

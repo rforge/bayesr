@@ -222,7 +222,7 @@ jm2_transform <- function(x, y, terms, knots,
     }
   }
 
-cat("juhuu!\n")
+cat("ok!\n")
 stop()
   
  
