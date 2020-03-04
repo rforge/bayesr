@@ -6296,7 +6296,7 @@ contribplot <- function(x, ...) {
         llv <- rep(0, iter)
         llv[ii] <- ll[[i]][[j]][-1]
         llv <- cumsum(llv)
-        ll[[i]][[j]] <- llv
+        ll[[i]][[j]] <- c(0, llv)
       } else {
         ll[[i]][[j]] <- rep(0, iter)
         sf[[i]][[j]] <- 0
