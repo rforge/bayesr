@@ -7984,7 +7984,7 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
               }
             }
           } else {
-            if(!is.list(x$model.stats$optimizer[[j]])) {
+            if(!is.list(x$model.stats$optimizer[[j]]) & (j != "parpaths")) {
               print(x$model.stats$optimizer[[j]], ...)
               ok <- FALSE
             }
