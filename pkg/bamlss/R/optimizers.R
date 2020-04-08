@@ -6102,11 +6102,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 #              } else {
 #                epsll < 0.5
 #              }
-              if(!always) {
+#              if(!always) {
                 accept <- epsll >= -0.5
-              } else {
-                accept <- TRUE
-              }
+#              } else {
+#                accept <- TRUE
+#              }
               if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
