@@ -4859,8 +4859,8 @@ ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
       r <- y - par$mu
       i <- r > 0
       d <- rep(0, length(r))
-      d[i] <- tau * abs(r[i]) / par$sigma[i]^2
-      d[!i] <- (1 - tau) * abs(r[!i]) / par$sigma[!i]^2
+      d[i] <- tau * absx(r[i]) / par$sigma[i]^2
+      d[!i] <- (1 - tau) * absx(r[!i]) / par$sigma[!i]^2
       d <- log(tau * (1 - tau)) - 2 * log(par$sigma) - d
       if(!log)
         d <- exp(d)
@@ -4870,7 +4870,7 @@ ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
       "mu" = function(y, par, ...) {
         r <- (y - par$mu)
         i <- r > 0
-        score <- r/(par$sigma^2 * abs(r))
+        score <- r/(par$sigma^2 * absx(r))
         score[i] <- tau * score[i]
         score[!i] <- (1 - tau) * score[!i]
         return(score)
@@ -4879,8 +4879,8 @@ ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
         r <- (y - par$mu)
         i <- r > 0
         score <- rep(0, length(r))
-        score[i] <- (2 * (tau * abs(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]
-        score[!i] <- (2 * ((1 - tau) * abs(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]
+        score[i] <- (2 * (tau * absx(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]
+        score[!i] <- (2 * ((1 - tau) * absx(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]
         return(score)
       }
     ),
@@ -4889,18 +4889,18 @@ ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)
         r <- (y - par$mu)
         i <- r > 0
         hess <- rep(0, length(r))
-        hess[i] <- tau * (par$sigma[i]^2 * sign(r[i]) * r[i]/(par$sigma[i]^2 * abs(r[i]))^2 -
-          1/(par$sigma[i]^2 * abs(r[i])))
-        hess[!i] <- (1 - tau) * (par$sigma[!i]^2 * sign(r[!i]) * (r[!i])/(par$sigma[!i]^2 * abs(r[!i]))^2 -
-          1/(par$sigma[!i]^2 * abs(r[!i])))
+        hess[i] <- tau * (par$sigma[i]^2 * sign(r[i]) * r[i]/(par$sigma[i]^2 * absx(r[i]))^2 -
+          1/(par$sigma[i]^2 * absx(r[i])))
+        hess[!i] <- (1 - tau) * (par$sigma[!i]^2 * sign(r[!i]) * (r[!i])/(par$sigma[!i]^2 * absx(r[!i]))^2 -
+          1/(par$sigma[!i]^2 * absx(r[!i])))
         return(-hess)
       },
       "sigma" = function(y, par, ...) {
         r <- (y - par$mu)
         i <- r > 0
         hess <- rep(0, length(r))
-        hess[i] <- -((6 * (tau * abs(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]^2)
-        hess[!i] <- -((6 * ((1 - tau) * abs(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]^2)
+        hess[i] <- -((6 * (tau * absx(r[i])/par$sigma[i]^2) - 2)/par$sigma[i]^2)
+        hess[!i] <- -((6 * ((1 - tau) * absx(r[!i])/par$sigma[!i]^2) - 2)/par$sigma[!i]^2)
         return(-hess)
       }
     ),
