@@ -5669,6 +5669,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       if(ncol(x[[i]]$model.matrix) < 2) {
         if(colnames(x[[i]]$model.matrix) == "(Intercept)")
           ionly[[i]] <- TRUE
+      } else {
+        ionly[[i]] <- FALSE
       }
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]

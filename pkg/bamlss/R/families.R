@@ -3833,6 +3833,16 @@ tF <- function(x, ...)
   args <- list(...)
   bd <- if(is.null(args$bd)) 1 else args$bd
   args$bd <- NULL
+  pr <- args$range
+  check_range <- function(par) {
+    for(j in names(par)) {
+      if(!is.null(pr[[j]])) {
+        par[[j]][par[[j]] < min(pr[[j]])] <- min(pr[[j]])
+        par[[j]][par[[j]] > max(pr[[j]])] <- max(pr[[j]])
+      }
+    }
+    par
+  }
   nx <- names(x$parameters)
   score <- hess <- initialize <- list()
 
@@ -3858,12 +3868,14 @@ tF <- function(x, ...)
     mu.cs <- make_call(x$dldm)
     mu.hs <- make_call(x$d2ldm2)
     score$mu  <- function(y, par, ...) {
+      par <- check_range(par)
       res <- eval(mu.cs) * mu.link$mu.eta(mu.link$linkfun(par$mu))
       if(!is.null(dim(res)))
         res <- res[, 1]
       res
     }
     hess$mu <- function(y, par, ...) {
+      par <- check_range(par)
       score <- eval(mu.cs)
       hess <- -1 * eval(mu.hs)
       eta <- mu.link$linkfun(par$mu)
@@ -3893,12 +3905,14 @@ tF <- function(x, ...)
     sigma.cs <- make_call(x$dldd)
     sigma.hs <- make_call(x$d2ldd2)
     score$sigma  <- function(y, par, ...) {
+      par <- check_range(par)
       res <- eval(sigma.cs) * sigma.link$mu.eta(sigma.link$linkfun(par$sigma))
       if(!is.null(dim(res)))
         res <- res[, 1]
       res
     }
     hess$sigma <- function(y, par, ...) {
+      par <- check_range(par)
       score <- eval(sigma.cs)
       hess <- -1 * eval(sigma.hs)
       eta <- sigma.link$linkfun(par$sigma)
@@ -3924,12 +3938,14 @@ tF <- function(x, ...)
     nu.cs <- make_call(x$dldv)
     nu.hs <- make_call(x$d2ldv2)
     score$nu  <- function(y, par, ...) {
+      par <- check_range(par)
       res <- eval(nu.cs) * nu.link$mu.eta(nu.link$linkfun(par$nu))
       if(!is.null(dim(res)))
         res <- res[, 1]
       res
     }
     hess$nu <- function(y, par, ...) {
+      par <- check_range(par)
       score <- eval(nu.cs)
       hess <- -1 * eval(nu.hs)
       eta <- nu.link$linkfun(par$nu)
@@ -3955,12 +3971,14 @@ tF <- function(x, ...)
     tau.cs <- make_call(x$dldt)
     tau.hs <- make_call(x$d2ldt2)
     score$tau  <- function(y, par, ...) {
+      par <- check_range(par)
       res <- eval(tau.cs) * tau.link$mu.eta(tau.link$linkfun(par$tau))
       if(!is.null(dim(res)))
         res <- res[, 1]
       res
     }
     hess$tau <- function(y, par, ...) {
+      par <- check_range(par)
       score <- eval(tau.cs)
       hess <- -1 * eval(tau.hs)
       eta <- tau.link$linkfun(par$tau)
@@ -4001,10 +4019,22 @@ tF <- function(x, ...)
     "links" = unlist(x[paste(nx, "link", sep = ".")]),
     "score" = score,
     "hess" = hess,
-    "d" = function(y, par, log = FALSE, ...) { eval(dc) },
-    "p" = if(!inherits(pfun, "try-error")) function(q, par, log = FALSE, ...) { eval(pc) } else NULL,
-    "q" = if(!inherits(qfun, "try-error")) function(p, par, log = FALSE, ...) { eval(qc) } else NULL,
-    "r" = if(!inherits(rfun, "try-error")) function(n, par, ...) { eval(rc) } else NULL
+    "d" = function(y, par, log = FALSE, ...) {
+       par <- check_range(par)
+       eval(dc)
+    },
+    "p" = if(!inherits(pfun, "try-error")) function(q, par, log = FALSE, ...) {
+      par <- check_range(par)
+      eval(pc)
+    } else NULL,
+    "q" = if(!inherits(qfun, "try-error")) function(p, par, log = FALSE, ...) {
+      par <- check_range(par)
+      eval(qc)
+    } else NULL,
+    "r" = if(!inherits(rfun, "try-error")) function(n, par, ...) {
+      par <- check_range(par)
+      eval(rc)
+    } else NULL
   )
   names(rval$links) <- nx
   rval$valid.response <- x$y.valid
