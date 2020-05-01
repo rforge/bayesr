@@ -5338,3 +5338,54 @@ if(FALSE) {
   plot2d(I(-2 + cos(x)) ~ x, col.lines = 2, add = TRUE)
 }
 
+pgev <- function(q, loc = 0, scale = 1, shape = 0, log = FALSE) 
+{
+  q <- (q - loc)/scale
+  rval <- rep(0, length(q))
+  i <- shape == 0
+  if(log) {
+    rval[i] <- -exp(-q[i])
+    rval[!i] <- -pmax(1 + shape[!i] * q[!i], 0)^(-1/shape[!i])
+  } else {
+    rval[i] <- exp(-exp(-q[i]))
+    rval[!i] <- exp(-pmax(1 + shape[!i] * q[!i], 0)^(-1/shape[!i]))
+  }
+  return(rval)
+}
+
+
+pgev_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "pgev",
+    "names" = c("mu", "lambda"),
+    "links" = c(mu = "identity", lambda = "identity"),
+    "valid.response" = function(x) {
+      if(length(unique(x)) > 2)
+        stop("only binary responses!") 
+    },
+    "d" = function(y, par, log = FALSE) {
+      p <- pgev(par$mu, loc = 0, scale = 1, shape = par$lambda)
+      d <- y * log(p) + (1 - y) * log(1 - p)
+      if(!log)
+        d <- exp(d)
+      d
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) {
+        y <- process_factor_response(y)
+        rep(log(-log(mean(y))), length = length(y))
+      },
+      "sigma" = function(y) { rep(1, length(y)) },
+      "lambda" = function(y) { rep(0, length(y)) }
+    )
+  )
+
+  rval$probabilities <- function(par, ...) {
+    pgev(par$mu, loc = 0, scale = 1, shape = par$lambda)
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
