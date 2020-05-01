@@ -5376,7 +5376,6 @@ pgev_bamlss <- function(...)
         y <- process_factor_response(y)
         rep(log(-log(mean(y))), length = length(y))
       },
-      "sigma" = function(y) { rep(1, length(y)) },
       "lambda" = function(y) { rep(0, length(y)) }
     )
   )
