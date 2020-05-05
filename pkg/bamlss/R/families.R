@@ -5353,7 +5353,6 @@ pgev <- function(q, loc = 0, scale = 1, shape = 0, log = FALSE)
   return(rval)
 }
 
-
 pgev_bamlss <- function(...)
 {
   rval <- list(
@@ -5388,3 +5387,84 @@ pgev_bamlss <- function(...)
   rval
 }
 
+eel <- function(x, mu = 0, sigma = 1, lambda = 0.5, alpha = 0.5) {
+  (1 - (1 + exp((x - mu)/sigma))^(-lambda))^alpha
+}
+
+eel_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "eel",
+    "names" = c("mu", "lambda", "alpha"),
+    "links" = c(mu = "identity", lambda = "identity", alpha = "identity"),
+    "valid.response" = function(x) {
+      if(length(unique(x)) > 2)
+        stop("only binary responses!") 
+    },
+    "d" = function(y, par, log = FALSE) {
+      p <- eel(par$mu, mu = 0, sigma = 1, lambda = par$lambda, alpha = par$alpha)
+      p[p < 1e-10] <- 1e-10
+      p[p > 0.9999999] <- 0.9999999
+      d <- y * log(p) + (1 - y) * log(1 - p)
+      if(!log)
+        d <- exp(d)
+      d
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) {
+        y <- process_factor_response(y)
+        rep(mean(y), length = length(y))
+      },
+      "lambda" = function(y) { rep(1, length(y)) },
+      "alpha" = function(y) { rep(1, length(y)) }
+    )
+  )
+
+  rval$probabilities <- function(par, ...) {
+    eel(par$mu, mu = 0, sigma = 1, lambda = par$lambda, alpha = par$alpha)
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+Sbqr <- function(u, tau = 0.5, alpha = 0.05) {
+  tau * u + alpha * log(1 + exp(-u / alpha))
+}
+
+bqr_bamlss <- function(...)
+{
+  tau <- list(...)$tau
+  if(is.null(tau))
+    tau <- 0.5
+
+  rval <- list(
+    "family" = "bqr",
+    "names" = "mu",
+    "links" = c(mu = "identity"),
+    "valid.response" = function(x) {
+      if(length(unique(x)) > 2)
+        stop("only binary responses!") 
+    },
+    "d" = function(y, par, ...) {
+      -1 * Sbqr(y - pnorm(par$mu), tau = tau)^2
+    },
+    "loglik" = function(y, par, ...) {
+      -1 * sum(Sbqr(y - pnorm(par$mu), tau = tau)^2, na.rm = TRUE)
+    },
+    "initialize" = list(
+      "mu" = function(y, ...) {
+        y <- process_factor_response(y)
+        rep(qnorm(tau), length = length(y))
+      }
+    )
+  )
+
+  rval$probabilities <- function(par, ...) {
+    pnorm(par$mu)
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}

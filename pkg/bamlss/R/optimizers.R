@@ -6088,11 +6088,21 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
               logP <- function(g, x, ll, ...) {
                 -1 * objfun3(get.par(g, "tau2"))
               }
+              sok <- TRUE
               for(jj in ii) {
-                theta <- uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
-                  NULL, i, jj, logPost = logP, lower = 0, ll = ll0)
+                theta <- try(uni.slice(theta, x[[i]]$smooth.construct[[j]], family, NULL,
+                  NULL, i, jj, logPost = logP, lower = 0, ll = ll0), silent = TRUE)
+                if(inherits(theta, "try-error")) {
+                  sok <- FALSE
+                  break
+                }
               }
-              tau2s <- as.numeric(get.par(theta, "tau2"))
+              if(sok) {
+                tau2s <- as.numeric(get.par(theta, "tau2"))
+              } else {
+                tau2s <- NA
+                class(tau2s) <- "try-error"
+              }
             }
             ll_contrib[[i]][[paste0("s.", j)]] <- NA
             accept <- TRUE
