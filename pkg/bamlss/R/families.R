@@ -5468,3 +5468,40 @@ bqr_bamlss <- function(...)
   class(rval) <- "family.bamlss"
   rval
 }
+
+
+dgp_bamlss <- function(...)
+{
+  fam <- gpareto_bamlss()
+
+  rval <- list(
+    "family" = "discrete generalized pareto",
+    "names" = c("xi", "sigma"),
+    "links" = c(xi = "log", sigma = "log"),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE, ...) {
+      d <- fam$p(y + 1, par) - fam$p(y, par)
+      if(log)
+        d <- log(d)
+      return(d)
+    },
+    "p" = function(y, par, log = FALSE, ...) {
+      par <- as.data.frame(par)
+      n <- length(y)
+      p <- rep(0, n)
+      for(i in 1:n) {
+        dy <- fam$p((y[i] + 1):1, par[i, ]) - fam$p((y[i]):0, par[i, ])
+        p[i] <- sum(dy)
+      }
+      return(p)
+    }
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
