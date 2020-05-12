@@ -3565,7 +3565,16 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   trans = NULL, what = c("samples", "parameters"), nsamps = NULL, verbose = FALSE, drop = TRUE,
   cores = NULL, chunks = 1, ...)
 {
+  family <- object$family
+
   object$formula <- as.formula(object$formula)
+  if(any(i <- is.na(names(object$formula)))) {
+    rn <- attr(object$formula, "response.name")
+    object$formula <- object$formula[!i]
+    class(object$formula) <- c("bamlss.formula", "list")
+    if(!is.null(rn))
+      attr(object$formula, "response.name") <- rn
+  }
 
   ## If data have been scaled (scale.d=TRUE)
   if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
@@ -3577,7 +3586,6 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   FUN2 <- function(x, ...) FUN(x)
   if(missing(newdata))
     newdata <- NULL
-  family <- object$family
   if(!is.null(family$predict)) {
     if(is.function(family$predict)) {
       return(family$predict(object = object, newdata = newdata, model = model, term = term,
@@ -3588,6 +3596,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   if(is.null(object$x)) {
     object$x <- smooth.construct(object)
   }
+  if(any(i <- is.na(names(object$x))))
+    object$x <- object$x[!i]
   if(is.null(newdata)) {
     newdata <- model.frame(object)
   } else {
@@ -9268,7 +9278,6 @@ term.labels2 <- function(x, model = NULL, pterms = TRUE, sterms = TRUE,
       }
     }
   }
-
   x <- x[model]
   if(!is.null(stl))
     stl <- stl[model]
