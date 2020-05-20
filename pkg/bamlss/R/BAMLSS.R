@@ -6782,6 +6782,7 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
   pt <- tolower(pt)
   if("ridge" %in% pt) {
     object$S[[1]] <- diag(ncol(object$X))
+    attr(object$S[[1]], "npar") <- ncol(object$X)
   }
   if("lasso" %in% pt) {
     np <- length(object$S) + 1L
@@ -6793,6 +6794,8 @@ smooth.construct.randombits.smooth.spec <- function(object, data, knots, ...)
     }
     attr(object$S[[np]], "npar") <- ncol(object$X)
   }
+
+  object$rank <- ncol(object$X)
 
   object$xt$prior <- "ig"
   object$fx <- object$xt$fx <- FALSE
@@ -8683,7 +8686,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
           psamples <- as.matrix(samps[, snames[grep2(sn, snames, fixed = TRUE)], drop = FALSE])
           nas <- apply(psamples, 1, function(x) { any(is.na(x)) } )
           psamples <- psamples[!nas, , drop = FALSE]
-       
+
           ## FIXME: retransform!
           if(!is.null(obj$smooth.construct[[j]]$Xf) & FALSE) {
             stop("no randomized terms supported yet!")
@@ -8743,7 +8746,13 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
           }
 
           if(is.null(obj$smooth.construct[[j]][["X"]])) {
+            if(!is.null(obj$smooth.construct[[j]][["X.dim"]])) {
             b <- paste(id, "s", j, paste("b", 1:obj$smooth.construct[[j]][["X.dim"]], sep = ""), sep = ".")
+            } else {
+              state <- obj$smooth.construct[[j]][["state"]]
+              b <- names(state$parameters)
+              b <- b[!grepl("tau2", b)]
+            }
           } else {
             b <- paste(id, "s", j,
               if(is.null(colnames(obj$smooth.construct[[j]]$X))) {

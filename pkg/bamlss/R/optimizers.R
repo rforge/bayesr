@@ -5672,12 +5672,14 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
       } else {
         ionly[[i]] <- FALSE
       }
+      beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
+      names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
       if(!is.null(start)) {
         start2 <- start[paste0(i, ".p.", colnames(x[[i]]$model.matrix))]
-        beta[[i]][["p"]] <- if(all(is.na(start2))) rep(0, ncol(x[[i]]$model.matrix)) else start2
+        start2 <- start2[!is.na(start2)]
+        names(start2) <- gsub(paste0(i, ".p."), "", names(start2))
+        beta[[i]][["p"]][names(start2)] <- start2
       } else {
-        beta[[i]][["p"]] <- rep(0, ncol(x[[i]]$model.matrix))
-        names(beta[[i]][["p"]]) <- colnames(x[[i]]$model.matrix)
         if(!is.null(family$initialize) & is.null(offset)) {
           if(noff) {
             shuffle_id <- sample(seq_len(N))
@@ -5795,6 +5797,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             start2 <- start[paste0(i, ".s.", j, ".b", 1:ncX)]
           }
           beta[[i]][[paste0("s.", j)]] <- if(all(is.na(start2))) rep(0, ncX) else start2
+          if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
+            npar <- x[[i]]$smooth.construct[[j]]$state$parameters
+            npar <- npar[!grepl("tau2", names(npar))]
+            names(beta[[i]][[paste0("s.", j)]]) <- names(npar)
+          }
         }
 
         if(!inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
@@ -6119,6 +6126,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 #              } else {
 #                accept <- TRUE
 #              }
+
               if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
                 tau2[[i]][[j]] <- tau2s
                 S <- 0
@@ -6150,7 +6158,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
                 medf[[i]][[paste0("s.", j, ".edf")]] <- c(medf[[i]][[paste0("s.", j, ".edf")]], tedf)
               }
             }
-
             if(!select & accept) {
               if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
                 nid <- 1:x[[i]]$smooth.construct[[j]]$nodes
@@ -6184,11 +6191,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           llc <- names(llc)[which.max(llc)]
           llc <- strsplit(llc, ".", fixed = TRUE)[[1]]
           llc <- c(llc[1], paste0(llc[-1], collapse = "."))
-          beta[[llc[1]]][[llc[2]]] <- tbeta[[llc[1]]][[llc[2]]]
+          beta[[llc[1]]][[llc[2]]] <- b0 <- tbeta[[llc[1]]][[llc[2]]]
           if(llc[2] != "p") {
             llc2 <- gsub("s.", "", llc[2], fixed = TRUE)
             Xn <- x[[llc[1]]]$smooth.construct[[llc2]]$X[shuffle_id[take], , drop = FALSE]
             Xt <- x[[llc[1]]]$smooth.construct[[llc2]]$X[shuffle_id[take2], , drop = FALSE]
+            if(inherits(x[[llc[1]]]$smooth.construct[[llc2]], "nnet0.smooth")) {
+              Xn <- x[[llc[1]]]$smooth.construct[[llc2]]$getZ(Xn, b0)
+              Xt <- x[[llc[1]]]$smooth.construct[[llc2]]$getZ(Xt, b0)
+              b0 <- b0[1:ncol(Xn)]
+            }
           } else {
             Xn <- x[[llc[1]]]$model.matrix[shuffle_id[take], , drop = FALSE]
             Xt <- x[[llc[1]]]$model.matrix[shuffle_id[take2], , drop = FALSE]
@@ -6197,8 +6209,8 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           ll_iter <- c(ll_iter, iter)
           LLC[[llc[1]]][[llc[2]]] <- c(LLC[[llc[1]]][[llc[2]]], llval)
           attr(LLC[[llc[1]]][[llc[2]]], "iteration") <- ll_iter
-          eta[[llc[1]]] <- eta[[llc[1]]] + xcenter(Xn %*% beta[[llc[1]]][[llc[2]]])
-          etas[[llc[1]]] <- etas[[llc[1]]] + xcenter(Xt %*% beta[[llc[1]]][[llc[2]]])
+          eta[[llc[1]]] <- eta[[llc[1]]] + xcenter(Xn %*% b0)
+          etas[[llc[1]]] <- etas[[llc[1]]] + xcenter(Xt %*% b0)
         }
       }
 
