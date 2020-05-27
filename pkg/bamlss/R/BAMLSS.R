@@ -763,11 +763,16 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     }
     QR <- qr(matrix(csum, ncol = 1L))
     object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
-    object[["X"]] <- ffmatrixmult(object[["X"]], object[["Z"]])
-    for(j in seq_along(object[["S"]])) {
-      if(!is.function(object[["S"]][[j]])) {
-        object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
+    tX <- try(ffmatrixmult(object[["X"]], object[["Z"]]), silent = TRUE)
+    if(!inherits(tX, "try-error")) {
+      object[["X"]] <- tX
+      for(j in seq_along(object[["S"]])) {
+        if(!is.function(object[["S"]][[j]])) {
+          object[["S"]][[j]] <- crossprod(object[["Z"]], object[["S"]][[j]]) %*% object[["Z"]]
+        }
       }
+    } else {
+      stop(paste("could not process term", object$label))
     }
   }
   object$orig.class <- class(object)
