@@ -763,6 +763,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     }
     QR <- qr(matrix(csum, ncol = 1L))
     object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
+writeLines(object$label, "~/tmp/label.txt")
     tX <- try(ffmatrixmult(object[["X"]], object[["Z"]]), silent = TRUE)
     if(!inherits(tX, "try-error")) {
       object[["X"]] <- tX
