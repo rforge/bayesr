@@ -389,7 +389,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               if(!inherits(data, "ffdf")) {
                 if(!doCmat) {
                   smt <- smoothCon(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data,
-                    knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons)
+                    knots, absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons, sparse.cons = sparse.cons, scale.penalty=FALSE)
                 } else {
                   smt <- smooth.construct(tsm, if(before) data[tsm$binning$nodups, term.names, drop = FALSE] else data, knots)
                   smt$C <- Cmat(smt)
@@ -410,7 +410,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
               } else {
                 smt <- smoothCon(tsm, data, knots,
                   absorb.cons = if(is.null(absorb.cons)) acons else absorb.cons,
-                  sparse.cons = sparse.cons)
+                  sparse.cons = sparse.cons, scale.penalty=FALSE)
               }
               smooth <- c(smooth, smt)
             }
@@ -487,7 +487,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             rm(nenv)
             tfme <- eval(tfm$call, envir = tfm$data)
             smt <- smoothCon(tfme, data = tfm$data, n = nrow(tfm$data[[1L]]),
-              knots = knots, absorb.cons = TRUE)
+              knots = knots, absorb.cons = TRUE,scale.penalty=FALSE)
             lab <- all.labels.formula(as.formula(paste("~", fterms[j])))
             for(jj in seq_along(smt)) {
               smt[[jj]]$model.frame <- tfm$data
@@ -4009,7 +4009,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
             tfm <- eval(parse(text = rfcall), envir = data)
             tfme <- eval(tfm$call, envir = tfm$data)
             X <- smoothCon(tfme, data = tfm$data, n = nrow(tfm$data[[1L]]),
-              knots = NULL, absorb.cons = TRUE)[[1]]$X
+              knots = NULL, absorb.cons = TRUE,scale.penalty=FALSE)[[1]]$X
             rm(tfm)
             rm(tfme)
           } else {
@@ -4132,7 +4132,7 @@ smooth.construct.rsc.smooth.spec <- function(object, data, knots) {
   acons <- TRUE
   if(!is.null(object$xt$center))
     acons <- object$xt$center
-  rval <- smoothCon(object, data, knots, absorb.cons = acons)
+  rval <- smoothCon(object, data, knots, absorb.cons = acons,scale.penalty=FALSE)
   rval <- rval[[1]]
   rval$class <- class(rval)
   if(!is.null(object$by.formula)) {
@@ -10128,7 +10128,7 @@ smooth.construct.mlt.smooth.spec <- function(object, data, knots, ...)
   object$margin[[1]] <- smooth.construct(object$margin[[1]], data, knots)
   if(length(object$margin) > 1) {
     for(j in 2:length(object$margin))
-      object$margin[[j]] <- smoothCon(object$margin[[j]], data, knots, absorb.cons = TRUE)[[1]]
+      object$margin[[j]] <- smoothCon(object$margin[[j]], data, knots, absorb.cons = TRUE,scale.penalty=FALSE)[[1]]
   }
   object$X <- tensor.prod.model.matrix(lapply(object$margin, function(x) { x$X } ))
   dX <- list(object$margin[[1]]$derivMat)
@@ -10241,7 +10241,7 @@ smooth.construct.sr.smooth.spec <- function(object, data, knots, ...)
 
   class(object) <- "ps.smooth.spec"
 
-  object <- smoothCon(object, as.data.frame(data), knots, absorb.cons = TRUE)[[1]]
+  object <- smoothCon(object, as.data.frame(data), knots, absorb.cons = TRUE,scale.penalty=FALSE)[[1]]
 
   ev <- eigen(object$S[[1]], symmetric = TRUE)
   null.rank <- object$df - object$rank
