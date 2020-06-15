@@ -6140,12 +6140,6 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 
                 P <- matrix_inv(XWX + S)
 
-A <- drop(P %*% crossprod(Xn * hess, e))
-B <- (drop(P %*% crossprod(Xn * hess, e)) -  b0)
-
-plot(A, B)
-abline(0, 1)
-
                 if(select) {
                   tbeta[[i]][[paste0("s.", j)]] <- b0 + nu * (drop(P %*% crossprod(Xn * hess, e)) -  b0)
                   if(!is.null(wts)) {
