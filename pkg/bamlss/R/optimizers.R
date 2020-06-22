@@ -5780,7 +5780,7 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
 #          }
           ## tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
         } else {
-          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(100, length(x[[i]]$smooth.construct[[j]]$S))
         }
         if(is.null(start)) {
           beta[[i]][[paste0("s.", j)]] <- rep(0, ncX)
@@ -5941,10 +5941,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           XWX <- crossprod(Xn * hess, Xn)
           I <- diag(1, ncol(XWX))
 
-          if(!ionly[[i]]) {
-            if(ncol(I) > 1)
-              I[1, 1] <- 0
-          }
+          ## if(!ionly[[i]]) {
+          ##  if(ncol(I) > 1)
+          ##    I[1, 1] <- 0
+          ## }
 
           etas[[i]] <- etas[[i]] - drop(Xt %*% b0)
 
@@ -5970,11 +5970,11 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             }
             return(ll)
           }
-          if(ionly[[i]]) {
-            tau2fe <- 1e+350
-          } else {
+          ## if(ionly[[i]]) {
+          ##   tau2fe <- 1e+350
+          ## } else {
             tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
-          }
+          ## }
           ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE, step = TRUE)
@@ -6116,6 +6116,10 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
             if(!inherits(tau2s, "try-error")) {
               ll1 <- objfun3(tau2s, retLL = TRUE, step = TRUE)
               epsll <- (ll1 - ll0)/abs(ll0)
+              if(is.na(epsll)) {
+                ll1 <- ll0 <- 1
+                epsll <- -1
+              }
 #              if(!slice) {
 #                accept <- TRUE
 #              } else {
