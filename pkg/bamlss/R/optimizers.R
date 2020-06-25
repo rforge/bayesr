@@ -5983,7 +5983,16 @@ bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE, step = TRUE)
             epsll <- (ll1 - ll0)/abs(ll0)
-            if(((ll1 > ll0) & (epsll > eps_loglik)) | always) {
+
+
+            epsll <- (ll1 - ll0)/abs(ll0)
+            if(is.na(epsll)) {
+              ll1 <- ll0 <- 1
+              epsll <- -1
+            }
+            accept <- epsll >= -0.5
+
+            if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
               tau2f <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f * I)
               if(select) {
