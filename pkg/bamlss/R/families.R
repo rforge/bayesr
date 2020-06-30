@@ -3793,10 +3793,16 @@ kde_bamlss <- function(..., err)
 
 ## General bamlss family creator.
 gF <- function(x, ...) {
+  if(is.function(x)) {
+    if(inherits(x(), "gamlss.family"))
+      return(tF(x, ...))
+  }
+
   if(!is.character(x))
     x <- deparse(substitute(x), backtick = TRUE, width.cutoff = 500)
-  F <- get(paste(x, "bamlss", sep = "_"), mode = "function")
-  F(...)
+  fam <- get(paste(x, "bamlss", sep = "_"), mode = "function")
+
+  return(fam(...))
 }
 
 gF2 <- function(x, ...) {
@@ -4004,14 +4010,21 @@ tF <- function(x, ...)
   qfun <- try(get(paste("q", x$family[1], sep = "")), silent = TRUE)
   rfun <- try(get(paste("r", x$family[1], sep = "")), silent = TRUE)
 
+  nf <- names(formals(dfun))
+  bdc <- "bd" %in% nf
+
   dc <- parse(text = paste('dfun(y,', paste(paste(nx, 'par$', sep = "="),
-    nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
+    nx, sep = '', collapse = ','), ',log=log,...',
+    if(bdc) paste0(",bd=", bd) else NULL, ")", sep = ""))
   pc <- parse(text = paste('pfun(q,', paste(paste(nx, 'par$', sep = "="),
-    nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
+    nx, sep = '', collapse = ','), ',log=log,...',
+    if(bdc) paste0(",bd=", bd) else NULL, ")", sep = ""))
   qc <- parse(text = paste('qfun(p,', paste(paste(nx, 'par$', sep = "="),
-    nx, sep = '', collapse = ','), ',log=log,...)', sep = ""))
+    nx, sep = '', collapse = ','), ',log=log,...',
+    if(bdc) paste0(",bd=", bd) else NULL, ")", sep = ""))
   rc <- parse(text = paste('rfun(n,', paste(paste(nx, 'par$', sep = "="),
-    nx, sep = '', collapse = ','), ',...)', sep = ""))
+    nx, sep = '', collapse = ','), ',...',
+    if(bdc) paste0(",bd=", bd) else NULL, ")", sep = ""))
 
   rval <- list(
     "family" = x$family[1],
