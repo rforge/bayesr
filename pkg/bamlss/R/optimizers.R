@@ -603,8 +603,7 @@ init.eta <- function(eta, y, family, nobs)
         eta[[j]] <- ffdf_eval(y, function(x) { linkfun(family$initialize[[j]](x)) })
       } else {
         eta[[j]] <- linkfun(family$initialize[[j]](y))
-        if(length(eta[[j]]) < 2)
-          eta[[j]] <- rep(eta[[j]], nobs)
+        eta[[j]] <- rep(eta[[j]], length.out = nobs)
       }
     }
   }
@@ -767,7 +766,7 @@ bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   if(!is.null(start))
     x <- set.starting.values(x, start)
   eta <- get.eta(x)
-  
+
   if(!is.null(weights))
     weights <- as.data.frame(weights)
   if(!is.null(offset)) {
