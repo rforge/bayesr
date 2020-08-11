@@ -9573,11 +9573,28 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
         warning(paste("no $p() function in family '", family$family,
           "', cannot compute quantile residuals, computing response resdiuals instead!", sep = ""))
       } else {
-        if(family$family == "binomial") {
-	  a <- family$p(y - 1, par)
-	  b <- family$p(y, par)
-	  u <- runif(n = length(y), min = a, max = b)
-	  res <- qnorm(u)
+        discrete <- FALSE
+        if(!is.null(family$type)) {
+          if(tolower(family$type) == "discrete")
+            discrete <- TRUE
+        }
+        if(family$family == "binomial")
+          discrete <- TRUE
+        if(discrete) {
+          ymin <- min(y, na.rm = TRUE)
+
+          a <- family$p(ifelse(y == ymin, y, y - 1), par)
+          a <- ifelse(y == ymin, 0, a)
+          b <- family$p(y, par)
+          u <- runif(length(y), a, b)
+          u <- ifelse(u > 0.999999, u - 1e-16, u)
+          u <- ifelse(u < 1e-06, u + 1e-16, u)
+          res <- qnorm(u)
+
+#	  a <- family$p(y - 1, par)
+#	  b <- family$p(y, par)
+#	  u <- runif(n = length(y), min = a, max = b)
+#	  res <- qnorm(u)
         } else {
           prob <- family$p(y, par)
           res <- qnorm(prob)

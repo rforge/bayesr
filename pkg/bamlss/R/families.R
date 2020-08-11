@@ -4052,6 +4052,7 @@ tF <- function(x, ...)
   names(rval$links) <- nx
   rval$valid.response <- x$y.valid
   rval$initialize <- initialize
+  rval$type <- tolower(x$type)
 
   class(rval) <- "family.bamlss"
   rval
