@@ -142,8 +142,8 @@ StabStep <- function(formula, data, family = "gaussian", q, maxit, seed = NULL,
     }
 
     rval <- list("sel"     = rval,
-                 "family"  = family(b),
-                 "formula" = formula(b))
+                 "family"  = b$family,
+                 "formula" = b$formula)
     return(rval)
 }
 
