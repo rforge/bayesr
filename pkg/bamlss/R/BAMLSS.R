@@ -5203,8 +5203,12 @@ smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
   object$scale <- list("center" = center, "scale" = scale)
 
   ridge <- if(is.null(object$xt$ridge)) FALSE else object$xt$ridge
-  if(ridge) {
-    object$S <- list(diag(ncol(object$X)))
+  neigh <- if(is.null(object$xt$neigh)) FALSE else object$xt$neigh
+  if(ridge | neigh) {
+    if(ridge)
+      object$S <- list(diag(ncol(object$X)))
+    else
+      object$S <- list(crossprod(diff(diag(ncol(object$X)))))
     object$xt$df <- if(is.null(object$xt$df)) min(c(floor(length(object$scale$center) / 2), 2)) else object$xt$df
   } else {
     object$fixed <- TRUE
