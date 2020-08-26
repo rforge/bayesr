@@ -5836,7 +5836,7 @@ w0 <- par0[i]
 
   opt <- optim(par0[i], fn = objfun0, gr = gradfun0,
     method = "L-BFGS-B", tau2 = tau2,
-    control = list(fnscale = -1, maxit = 10))
+    control = list(fnscale = -1, maxit = 1000))
 
   if(opt$convergence <= 1)
     par0[i] <- opt$par

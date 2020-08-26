@@ -3604,6 +3604,7 @@ ztnbinom_bamlss <- function(...) {
     }
     return(rps)
   }
+  rval$type <- "discrete"
 
   class(rval) <- "family.bamlss"
   rval
