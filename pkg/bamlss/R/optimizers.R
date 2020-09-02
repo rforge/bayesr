@@ -3255,7 +3255,7 @@ boost_transform <- function(x, y, df = NULL, family,
       grad <- par
       for(j in nx) {
         score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
-        grad[i] <- mean(score)
+        grad[i] <- sum(score)
       }
       return(grad)
     }
