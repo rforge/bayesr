@@ -36,8 +36,10 @@ function(prg = NULL, verbose = TRUE, ...)
           " > ", dir, "/bayesx.log", sep = ""), intern = FALSE, ...))
       }
     } else log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), intern = FALSE, ...))
-	  if(log != 0 && !os.win)
-      warning("problem processing BayesX!")
+	  if(!os.win) {
+      if(log != 0}
+        warning("problem processing BayesX!")
+    }
     if(!verbose && .Platform$OS.type == "unix")	
       log <- readLines(paste(dir, "/bayesx.log", sep = ""))
     now <- proc.time()

@@ -16,7 +16,7 @@ citEntry(entry = "Article",
   volume       = "63",
   number       = "21",
   pages        = "1--46",
-  url          = "http://www.jstatsoft.org/v63/i21/",
+  url          = "https://www.jstatsoft.org/v63/i21/",
 
   textVersion  =
   paste("Nikolaus Umlauf, Daniel Adler, Thomas Kneib, Stefan Lang, Achim Zeileis (2015).",
