@@ -16,4 +16,4 @@ Depends: R (>= 2.8.0)
 Suggests: R2BayesX
 SystemRequirements: GNU make
 License: GPL-2 | GPL-3
-URL: http://www.BayesX.org/
+URL: https://www.uni-goettingen.de/de/bayesx/550513.html
