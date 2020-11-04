@@ -37,7 +37,7 @@ function(prg = NULL, verbose = TRUE, ...)
       }
     } else log <- try(system(paste(bin, " ", dir, "/", prg.name, sep = ""), intern = FALSE, ...))
 	  if(!os.win) {
-      if(log != 0}
+      if(log != 0)
         warning("problem processing BayesX!")
     }
     if(!verbose && .Platform$OS.type == "unix")	
