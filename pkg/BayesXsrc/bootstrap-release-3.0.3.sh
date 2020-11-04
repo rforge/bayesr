@@ -11,6 +11,7 @@ done
 for i in $FILES ; do
   svn export --username "${USER}" --password "${PASSWD}" $REPOS/$i $i
 done
+svn update --revision 1725 --username "${USER}" --password "${PASSWD}" psplines\fullcond_pspline_stepwise.cpp
 cd ..
 cp dev-Makefile Makefile
 cp dev-Makefile.win Makefile.win
