@@ -34,12 +34,12 @@ citEntry(entry = "Manual",
 			     as.person("Nikolaus Umlauf")),
          year = year,
          note = note2,
-         url = "http://www.BayesX.org/",
+         url = "https://www.uni-goettingen.de/de/bayesx/550513.html",
 
          textVersion =
          paste("Christiane Belitz, Andreas Brezger, Thomas Kneib, Stefan Lang, Nikolaus Umlauf",
    	       sprintf("(%s).", year),	 
                "BayesX: Software for Bayesian Inference in Structured Additive Regression Models.",
 	       paste(note2, ".", sep = ""),
-               "URL http://www.BayesX.org/")
+               "https://www.uni-goettingen.de/de/bayesx/550513.html")
 )
