@@ -140,3 +140,22 @@ fix_site <- function(publications = "bivnorm") {
   writeLines(index, "index.html")
 }
 
+## https://www.jstor.org/stable/2288808?seq=1#metadata_info_tab_contents
+dSichel <- function(x, alpha = 1, zeta = 1, gamma = 1, log = FALSE, ...)
+{
+  w <- sqrt(zeta^2 + alpha^2) - zeta
+
+  d <- gamma * log(w) - gamma * log(alpha) - log(besselK(w, gamma)) + x * log(zeta * w) - x * log(alpha) -
+    log(factorial(x)) + log(besselK(alpha, x + gamma))
+
+  if(!log)
+    d <- exp(d)
+
+  return(d)
+}
+
+x <- 0:100
+d <- dSichel(x)
+plot(d ~ x, type = "h")
+print(sum(d))
+

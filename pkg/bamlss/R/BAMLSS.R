@@ -3960,7 +3960,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
         }
         if(ncol(X) > length(sn)) {
           sn2 <- gsub(paste(id, "p.", sep = "."), "", sn, fixed = TRUE)
-          if(grepl("model.matrix.", sn2)) sn2 <- gsub("model.matrix.", "", sn2, fixed = TRUE)
+          if(any(grepl("model.matrix.", sn2))) sn2 <- gsub("model.matrix.", "", sn2, fixed = TRUE)
           X <- X[, sn2, drop = FALSE]
         }
         eta <- eta + fitted_matrix(X, samps[, sn, drop = FALSE])
