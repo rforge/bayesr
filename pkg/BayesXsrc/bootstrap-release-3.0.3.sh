@@ -13,7 +13,6 @@ for i in $FILES ; do
 done
 svn update --revision 1246 --username "${USER}" --password "${PASSWD}" psplines/fullcond_pspline_surf_stepwise.cpp
 svn update --revision 1246 --username "${USER}" --password "${PASSWD}" bib/stepwisereg.cpp
-svn update --revision 1249 --username "${USER}" --password "${PASSWD}" bib/clstring.h
 cd ..
 cp dev-Makefile Makefile
 cp dev-Makefile.win Makefile.win
