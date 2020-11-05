@@ -112,7 +112,7 @@ export(
   "lognormal_bamlss",
   "weibull_bamlss",
   "gF",
-  "Sichel",
+  "Sichel_bamlss",
 
   ## extractor functions
   "DIC",

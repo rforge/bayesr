@@ -5526,9 +5526,9 @@ dSichel <- function(x, alpha = 1, zeta = 1, gamma = 1, log = FALSE, ...)
 {
   w <- sqrt(zeta^2 + alpha^2) - zeta
 
-  d <- gamma * log(w) - gamma * log(alpha) - log(besselK(w, gamma)) +
+  d <- gamma * log(w) - gamma * log(alpha) - log(besselK(w, gamma, expon.scaled = TRUE)) +
     x * log(zeta * w) - x * log(alpha) -
-    log(factorial(x)) + log(besselK(alpha, x + gamma))
+    lfactorial(x) + log(besselK(alpha, x + gamma, expon.scaled = TRUE))
 
   if(!log)
     d <- exp(d)
@@ -5548,7 +5548,7 @@ Sichel_bamlss <- function(...)
   rval <- list(
     "family" = "Sichel",
     "names" = c("alpha", "zeta", "gamma"),
-    "links" = c(alpha = "log", zeta = "log", gamma = "identity"),
+    "links" = c(alpha = "log", zeta = "log", gamma = "log"),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
       if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
@@ -5559,7 +5559,7 @@ Sichel_bamlss <- function(...)
     },
     "mu" = function(par, ...) {
       w <- sqrt(par$zeta^2 + par$alpha^2) - par$zeta
-      R <- besselK(w, npar$gamma + 1) / besselK(w, par$gamma)
+      R <- besselK(w, npar$gamma + 1, expon.scaled = TRUE) / besselK(w, par$gamma, expon.scaled = TRUE)
       par$zeta * R
     }
   )
@@ -5569,7 +5569,7 @@ Sichel_bamlss <- function(...)
     n <- length(y)
     p <- rep(0, n)
     for(i in 1:n) {
-      dy <- dSichel(0:y[i], alpha = par$alpha, zeta = par$zeta, gamma = par$gamma)
+      dy <- dSichel(0:y[i], alpha = par$alpha[i], zeta = par$zeta[i], gamma = par$gamma[i])
       p[i] <- sum(dy)
     }
     return(p)
