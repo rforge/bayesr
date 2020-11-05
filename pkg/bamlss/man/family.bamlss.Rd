@@ -26,6 +26,7 @@
 \alias{weibull_bamlss}
 \alias{dirichlet_bamlss}
 \alias{logNN_bamlss}
+\alias{Sichel_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}

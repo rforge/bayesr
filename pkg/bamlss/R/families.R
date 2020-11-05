@@ -5520,3 +5520,62 @@ dgp_bamlss <- function(...)
   rval
 }
 
+
+## https://www.jstor.org/stable/2288808?seq=1#metadata_info_tab_contents
+dSichel <- function(x, alpha = 1, zeta = 1, gamma = 1, log = FALSE, ...)
+{
+  w <- sqrt(zeta^2 + alpha^2) - zeta
+
+  d <- gamma * log(w) - gamma * log(alpha) - log(besselK(w, gamma)) +
+    x * log(zeta * w) - x * log(alpha) -
+    log(factorial(x)) + log(besselK(alpha, x + gamma))
+
+  if(!log)
+    d <- exp(d)
+
+  return(d)
+}
+
+if(FALSE) {
+  x <- 0:100
+  d <- dSichel(x)
+  plot(d ~ x, type = "h")
+  print(sum(d))
+}
+
+Sichel_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "Sichel",
+    "names" = c("alpha", "zeta", "gamma"),
+    "links" = c(alpha = "log", zeta = "log", gamma = "identity"),
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = function(y, par, log = FALSE) {
+      dSichel(y, alpha = par$alpha, zeta = par$zeta, gamma = par$gamma, log = log)
+    },
+    "mu" = function(par, ...) {
+      w <- sqrt(par$zeta^2 + par$alpha^2) - par$zeta
+      R <- besselK(w, npar$gamma + 1) / besselK(w, par$gamma)
+      par$zeta * R
+    }
+  )
+
+  rval$p <- function(y, par, log = FALSE, ...) {
+    par <- as.data.frame(par)
+    n <- length(y)
+    p <- rep(0, n)
+    for(i in 1:n) {
+      dy <- dSichel(0:y[i], alpha = par$alpha, zeta = par$zeta, gamma = par$gamma)
+      p[i] <- sum(dy)
+    }
+    return(p)
+  }
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
