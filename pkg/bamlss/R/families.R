@@ -5579,3 +5579,182 @@ Sichel_bamlss <- function(...)
   rval
 }
 
+
+GEV_bamlss <- function(...)
+{
+   ## log(1/s) - (1+xi*((y-m)/s))^(-1/xi) - (1/xi+1) * log(1 + xi*((y-m)/s))
+   ## log(1/exp(s)) - (1+xi*((y-m)/exp(s)))^(-1/xi) - (1/xi+1) * log(1 + xi*((y-m)/exp(s)))
+
+   eps <- 1e-07
+
+   rval <- list(
+    "family" = "GEV",
+    "names" = c("mu", "sigma", "xi"),
+    "links" = c(mu = "identity", sigma = "log", xi = "identity"),
+    "d" = function(y, par, log = FALSE, ...) {
+      par$xi[par$xi >= 0 & par$xi < eps] <- eps
+      par$xi[par$xi < 0 & par$xi > -eps] <- -eps
+      d <- rep(0, length(y))
+      x <- (y - par$mu) / par$sigma
+      xx <- 1 + par$xi * x
+      xx[xx <= 0] <- eps
+      d <- log(1 / par$sigma) - xx^(-1/par$xi) - (1 / par$xi + 1) * log(xx)
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      par$xi[par$xi >= 0 & par$xi < eps] <- eps
+      par$xi[par$xi < 0 & par$xi > -eps] <- -eps
+      p <- rep(0, length(y))
+      x <- (y - par$mu) / par$sigma
+      xx <- 1 + par$xi * x
+      xx[xx <= 0] <- eps
+      p <- exp(-xx^(-1/par$xi))
+      return(p)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        yms <- (y - m)/s
+        xi1 <- 1/xi
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        s1 <- 1/s
+        smu <- xiyms^(-xi1 - 1) * -xi1 * xi * s1 + (xi1 + 1) * xi * s1/xiyms
+
+        return(smu)
+      },
+      "sigma" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        yms <- (y - m)/s
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        xi1 <- 1/xi
+
+        ssigma <- -(s/s^2/(1/s) - xiyms^(-xi1 - 1) * -xi1 * xi * (y - m) * s/s^2 -
+          (xi1 + 1) * (xi * ((y - m) * s/s^2)/xiyms))
+
+        return(ssigma)
+      },
+      "xi" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        xi1 <- 1/xi
+        yms <- (y - m)/s
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        lxiyms <- log(xiyms)
+
+        sxi <- -(xiyms^((-xi1) - 1) * ((-xi1) * yms) +
+          xiyms^(-xi1) * (lxiyms *  (xi1^2)) +
+          ((xi1 + 1) * (yms/xiyms) -
+          xi1^2 * lxiyms))
+
+        return(sxi)
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        yms <- (y - m)/s
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        xi1 <- 1/xi
+        s1 <- 1/s
+        xis1 <- xi * s1
+
+        hmu <- (xi1 + 1) * xis1^2/xiyms^2 - xiyms^(-xi1 - 1 - 1) * ((-xi1 - 1) * xis1) * -xi1 * xis1
+
+        return(-hmu)
+      },
+      "sigma" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        ym <- y - m
+        yms <- ym/s
+        s2 <- s^2
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        xi1 <- 1/xi
+        yms2 <- ym * s
+        yms2s2 <- yms2/s2
+
+        hsigma <- -((s/s2 - s * (2 * s2)/s2^2)/(1/s) + 
+          s/s2 * (s/s2)/(1/s)^2 - (xiyms^(-xi1 - 1) *
+          (-xi1 * (xi * (yms2s2 - yms2 * (2 * (s2))/s2^2))) -
+          xiyms^(-xi1 - 1 - 1) * ((-xi1 - 1) *
+          (xi * yms2s2)) * (-xi1 * xi * yms2s2)) -
+          (xi1 + 1) * (xi * (yms2s2 - yms2 * 
+          (2 * s2)/s2^2)/xiyms + 
+          xi * yms2s2 * (xi * yms2s2)/xiyms^2))
+
+        return(-hsigma)
+      },
+      "xi" = function(y, par, ...) {
+        m <- par$mu
+        s <- par$sigma
+        xi <- par$xi
+
+        xi[xi >= 0 & xi < eps] <- eps
+        xi[xi < 0 & xi > -eps] <- -eps
+
+        yms <- (y - m)/s
+        xiyms <- 1 + xi * yms
+        xiyms[xiyms <= 0] <- eps
+        xi1 <- 1 / xi
+        a <- -xi1 - 1
+        lxiyms <- log(xiyms)
+
+        hxi <- -((xiyms^(a - 1) * (a * yms) +
+          xiyms^a * (lxiyms * xi1^2)) * (-xi1 * yms) + 
+          xiyms^a * (xi1^2 * yms) + 
+          ((xiyms^a * (-xi1 * yms) +
+          xiyms^(-xi1) * (lxiyms * xi1^2)) * (lxiyms * (xi1^2)) +
+          xiyms^(-xi1) * (yms/xiyms * xi1^2 - lxiyms * (2 * xi/(xi^2)^2))) -
+          ((xi1 + 1) * yms^2/xiyms^2 + xi1^2 * yms/xiyms +
+          (xi1^2 * (yms/xiyms) - 2 * xi/(xi^2)^2 * lxiyms)))
+
+        return(-hxi)
+      }
+    )
+  )
+
+  rval$initialize <- list(
+    "mu" = function(y, ...) { (y + mean(y)) / 2 },
+    "sigma" = function(y, ...) { rep(sd(y), length(y)) },
+    "xi" = function(y, ...) { rep(1e-02, length(y)) }
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+

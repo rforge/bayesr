@@ -27,6 +27,7 @@
 \alias{dirichlet_bamlss}
 \alias{logNN_bamlss}
 \alias{Sichel_bamlss}
+\alias{GEV_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -68,6 +69,8 @@ nbinom_bamlss(...)
 ztnbinom_bamlss(...)
 lognormal_bamlss(...)
 weibull_bamlss(...)
+Sichel_bamlss(...)
+GEV_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
