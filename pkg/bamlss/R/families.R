@@ -5585,7 +5585,7 @@ GEV_bamlss <- function(...)
    ## log(1/s) - (1+xi*((y-m)/s))^(-1/xi) - (1/xi+1) * log(1 + xi*((y-m)/s))
    ## log(1/exp(s)) - (1+xi*((y-m)/exp(s)))^(-1/xi) - (1/xi+1) * log(1 + xi*((y-m)/exp(s)))
 
-   eps <- 1e-07
+   eps <- 1e-05
 
    rval <- list(
     "family" = "GEV",
@@ -5594,11 +5594,11 @@ GEV_bamlss <- function(...)
     "d" = function(y, par, log = FALSE, ...) {
       par$xi[par$xi >= 0 & par$xi < eps] <- eps
       par$xi[par$xi < 0 & par$xi > -eps] <- -eps
-      d <- rep(0, length(y))
+      par$sigma[par$sigma < 0.001] <- 0.001
       x <- (y - par$mu) / par$sigma
       xx <- 1 + par$xi * x
-      xx[xx <= 0] <- eps
-      d <- log(1 / par$sigma) - xx^(-1/par$xi) - (1 / par$xi + 1) * log(xx)
+      xx[xx < eps] <- eps
+      d <- -log(par$sigma) - xx^(-1/par$xi) - (1 / par$xi + 1) * log(xx)
       if(!log)
         d <- exp(d)
       return(d)
@@ -5606,10 +5606,10 @@ GEV_bamlss <- function(...)
     "p" = function(y, par, ...) {
       par$xi[par$xi >= 0 & par$xi < eps] <- eps
       par$xi[par$xi < 0 & par$xi > -eps] <- -eps
-      p <- rep(0, length(y))
+      par$sigma[par$sigma < 0.001] <- 0.001
       x <- (y - par$mu) / par$sigma
       xx <- 1 + par$xi * x
-      xx[xx <= 0] <- eps
+      xx[xx < eps] <- eps
       p <- exp(-xx^(-1/par$xi))
       return(p)
     },
@@ -5621,11 +5621,12 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         yms <- (y - m)/s
         xi1 <- 1/xi
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         s1 <- 1/s
         smu <- xiyms^(-xi1 - 1) * -xi1 * xi * s1 + (xi1 + 1) * xi * s1/xiyms
 
@@ -5638,10 +5639,11 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         yms <- (y - m)/s
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         xi1 <- 1/xi
 
         ssigma <- -(s/s^2/(1/s) - xiyms^(-xi1 - 1) * -xi1 * xi * (y - m) * s/s^2 -
@@ -5656,11 +5658,12 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         xi1 <- 1/xi
         yms <- (y - m)/s
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         lxiyms <- log(xiyms)
 
         sxi <- -(xiyms^((-xi1) - 1) * ((-xi1) * yms) +
@@ -5679,10 +5682,11 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         yms <- (y - m)/s
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         xi1 <- 1/xi
         s1 <- 1/s
         xis1 <- xi * s1
@@ -5698,12 +5702,13 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         ym <- y - m
         yms <- ym/s
         s2 <- s^2
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         xi1 <- 1/xi
         yms2 <- ym * s
         yms2s2 <- yms2/s2
@@ -5726,10 +5731,11 @@ GEV_bamlss <- function(...)
 
         xi[xi >= 0 & xi < eps] <- eps
         xi[xi < 0 & xi > -eps] <- -eps
+        s[s < 0.001] <- 0.001
 
         yms <- (y - m)/s
         xiyms <- 1 + xi * yms
-        xiyms[xiyms <= 0] <- eps
+        xiyms[xiyms < eps] <- eps
         xi1 <- 1 / xi
         a <- -xi1 - 1
         lxiyms <- log(xiyms)
