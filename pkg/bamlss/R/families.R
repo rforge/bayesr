@@ -4055,6 +4055,28 @@ tF <- function(x, ...)
   rval$initialize <- initialize
   rval$type <- tolower(x$type)
 
+  if(!is.null(x$mean)) {
+    meanc <- make_call(x$mean)
+    rval$mean  <- function(par, ...) {
+      par <- check_range(par)
+      res <- eval(meanc)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
+    }
+  }
+
+  if(!is.null(x$variance)) {
+    varc <- make_call(x$variance)
+    rval$variance  <- function(par, ...) {
+      par <- check_range(par)
+      res <- eval(varc)
+      if(!is.null(dim(res)))
+        res <- res[, 1]
+      res
+    }
+  }
+
   class(rval) <- "family.bamlss"
   rval
 }
