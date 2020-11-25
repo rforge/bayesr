@@ -3230,42 +3230,58 @@ boost_transform <- function(x, y, df = NULL, family,
     nobs <- length(eta[[1]])
     start <- unlist(lapply(eta, mean, na.rm = TRUE))
 
-    W <- NULL
-    if(!is.null(weights)) {
-      if(attr(weights, "identical"))
-        W <- as.numeric(weights[, 1])
-    }
+    par <- rep(0, length(nx))
+    names(par) <- nx
 
-    objfun <- function(par) {
-      eta <- list()
-      for(i in seq_along(nx))
-        eta[[nx[i]]] <- rep(par[i], length = nobs)
-      if(!is.null(W))
-        ll <- sum(family$d(y, family$map2par(eta), log = TRUE) * W, na.rm = TRUE)
-      else
-        ll <- family$loglik(y, family$map2par(eta))
-      return(ll)
-    }
-    
-    gradfun <- function(par) {
-      eta <- list()
-      for(i in seq_along(nx))
-        eta[[nx[i]]] <- rep(par[i], length = nobs)
-      peta <- family$map2par(eta)
-      grad <- par
-      for(j in nx) {
-        score <- process.derivs(family$score[[j]](y, peta, id = j), is.weight = FALSE)
-        grad[i] <- sum(score)
+    eps0 <- eps + 1L
+    k2 <- 0
+    while((eps < eps0) & (k2 < 100)) {
+      eta0 <- eta
+      for(i in nx) {
+        ll0 <- family$loglik(y, family$map2par(eta))
+
+        peta <- family$map2par(eta)
+        hess <- process.derivs(family$hess[[i]](y, peta, id = i), is.weight = TRUE)
+        score <- process.derivs(family$score[[i]](y, peta, id = i), is.weight = FALSE)
+        z <- eta[[i]] + 1 / hess * score
+
+        b0 <- par[i]
+
+        if(!is.null(weights)) {
+          if(attr(weights, "identical"))
+            hess <- hess * as.numeric(weights[, 1])
+        }
+
+        par[i] <- 1 / (sum(hess) + 1e-20) * sum(hess * z, na.rm = TRUE)
+
+        eta[[i]] <- rep(par[i], nobs)
+
+        ll1 <- family$loglik(y, family$map2par(eta))
+
+        if(ll1 < ll0) {
+          fnu <- function(nu2) {
+            b <- nu2 * par[i] + (1 - nu2) * b0
+            eta[[i]] <- rep(b, nobs)
+            return(family$loglik(y, family$map2par(eta)))
+          }
+          nu2 <- 1
+          while((fnu(nu2) < ll0) & (.Machine$double.eps < nu2)) {
+            nu2 <- nu2 / 2
+          }
+          par[i] <- nu2 * par[i] + (1 - nu2) * b0
+          eta[[i]] <- rep(par[i], nobs)
+        }
       }
-      return(grad)
+      eps0 <- do.call("cbind", eta)
+      eps0 <- mean(abs((eps0 - do.call("cbind", eta0)) / eps0), na.rm = TRUE)
+
+      k2 <- k2 + 1
     }
-    
-    opt <- optim(start, fn = objfun, gr = gradfun, method = "BFGS", control = list(fnscale = -1))
     
     for(i in nx) {
       if(!is.null(x[[i]]$smooth.construct[["(Intercept)"]])) {
-        x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- opt$par[i]
-        x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(opt$par[i], length = nobs)
+        x[[i]]$smooth.construct[["(Intercept)"]]$state$parameters[1] <- par[i]
+        x[[i]]$smooth.construct[["(Intercept)"]]$state$fitted.values <- rep(par[i], length = nobs)
         x[[i]]$smooth.construct[["(Intercept)"]]$state$edf <- 1
         x[[i]]$smooth.construct[["(Intercept)"]]$state$init.edf <- 1
       }
