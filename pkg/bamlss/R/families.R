@@ -5639,6 +5639,12 @@ GEV_bamlss <- function(...)
       p <- exp(-xx^(-1/par$xi))
       return(p)
     },
+    "q" = function(p, par, ...) {
+      par$xi[par$xi >= 0 & par$xi < eps] <- eps
+      par$xi[par$xi < 0 & par$xi > -eps] <- -eps
+      par$sigma[par$sigma < 0.001] <- 0.001
+      par$mu + par$sigma / par$xi * ((-log(p))^(-par$xi) - 1)
+    },
     "score" = list(
       "mu" = function(y, par, ...) {
         m <- par$mu
