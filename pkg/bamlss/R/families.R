@@ -4064,6 +4064,8 @@ tF <- function(x, ...)
         res <- res[, 1]
       res
     }
+  } else {
+    rval$mean <- function(par, ...) { par[[1L]] }
   }
 
   if(!is.null(x$variance)) {
@@ -4075,6 +4077,8 @@ tF <- function(x, ...)
         res <- res[, 1]
       res
     }
+  } else {
+    rval$variance <- function(par, ...) { par[[2L]] }
   }
 
   class(rval) <- "family.bamlss"
