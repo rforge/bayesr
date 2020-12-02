@@ -5792,6 +5792,10 @@ GEV_bamlss <- function(...)
     "xi" = function(y, ...) { rep(1e-02, length(y)) }
   )
 
+  rval$mean <- function(par, ...) {
+    par$mu + par$sigma * (gamma(1 - par$xi) - 1) / par$xi
+  }
+
   class(rval) <- "family.bamlss"
   rval
 }
