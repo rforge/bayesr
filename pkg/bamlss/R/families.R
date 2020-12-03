@@ -5606,6 +5606,13 @@ Sichel_bamlss <- function(...)
 }
 
 
+exp2 <- function(x) {
+  x[x > 20] <- 20
+  x <- exp(x)
+  x
+}
+
+
 GEV_bamlss <- function(...)
 {
    ## log(1/s) - (1+xi*((y-m)/s))^(-1/xi) - (1/xi+1) * log(1 + xi*((y-m)/s))
@@ -5626,7 +5633,7 @@ GEV_bamlss <- function(...)
       xx[xx < eps] <- eps
       d <- -log(par$sigma) - xx^(-1/par$xi) - (1 / par$xi + 1) * log(xx)
       if(!log)
-        d <- exp(d)
+        d <- exp2(d)
       return(d)
     },
     "p" = function(y, par, ...) {
@@ -5636,7 +5643,7 @@ GEV_bamlss <- function(...)
       x <- (y - par$mu) / par$sigma
       xx <- 1 + par$xi * x
       xx[xx < eps] <- eps
-      p <- exp(-xx^(-1/par$xi))
+      p <- exp2(-xx^(-1/par$xi))
       return(p)
     },
     "q" = function(p, par, ...) {
