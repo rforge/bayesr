@@ -9567,6 +9567,15 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
       object$y
     }
 
+    if(!is.null(nd <- list(...)$newdata)) {
+      rn <- response_name(object)
+      y <- nd[[rn]]
+      if(is.null(y))
+        stop(paste("the response", rn , "is not available in newdata!"))
+      rm(nd)
+      n <- if(is.null(dim(y))) length(y) else nrow(y)
+    }
+
     par <- predict(object, nsamps = nsamps, drop = FALSE, ...)
     for(j in family$names)
       par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
@@ -9630,13 +9639,13 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
 
 
 ## Residuals plotting functions.
-plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar = TRUE, ...)
+plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), spar = TRUE, ...)
 {
   ## What should be plotted?
-  which.match <- c("hist-resid", "qq-resid")
+  which.match <- c("hist-resid", "qq-resid", "wp")
   if(!is.character(which)) {
-    if(any(which > 2L))
-      which <- which[which <= 2L]
+    if(any(which > 3L))
+      which <- which[which <= 3L]
     which <- which.match[which]
   } else which <- which.match[pmatch(tolower(which), which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
@@ -9651,6 +9660,13 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
     nc <- 1
     cn <- NULL
   }
+
+  add <- list(...)$add
+  if(is.null(add))
+    add <- FALSE
+
+  if(add)
+    spar <- FALSE
 
   if(spar) {
     op <- par(no.readonly = TRUE)
@@ -9732,14 +9748,90 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid"), spar =
           args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "xlim", "ylim"))
           if(is.null(args$main))
             args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+          args$plot.it <- !add
           ok <- try(do.call(qqnorm, args))
-          if(!inherits(ok, "try-error"))
-            qqline(args$y) ## abline(0,1)
+          if(add) {
+            args <- delete.args("points.default", list(...), package = "graphics",
+               not = c("col", "pch", "cex"))
+            points(ok$x, ok$y, pch = args$pch, col = args$col, cex = args$cex)
+          } else {
+            if(!inherits(ok, "try-error"))
+              qqline(args$y) ## abline(0,1)
+          }
+        }
+      }
+      if(w == "wp") {
+        d <- qqnorm(x, plot = FALSE)
+        d$y <- d$y - d$x
+        level <- 0.95
+        xlim <- max(abs(d$x))
+        xlim <- c(-xlim, xlim)
+        ylim <- max(abs(d$y))
+        ylim <- c(-ylim, ylim)
+        z <- seq(xlim[1], xlim[2], 0.25)
+        p <- pnorm(z)
+        se <- (1/dnorm(z)) * (sqrt(p * (1 - p)/length(d$y)))
+        low <- qnorm((1 - level)/2) * se
+        high <- -low
+        args <- list(...)
+        if(is.null(args$col))
+          args$col <- 1
+        if(is.null(args$pch))
+          args$pch <- 1
+        if(is.null(args$cex))
+          args$cex <- 1
+        if(is.null(args$ylab))
+          args$ylab <- "Deviation"
+        if(is.null(args$xlab))
+          args$xlab <- "Unit normal quantile"
+        if(add) {
+          points(d$x, d$y, col = args$col, pch = args$pch, cex = args$cex)
+        } else {
+          plot(d$x, d$y, ylab = args$ylab, xlab = args$xlab, 
+            xlim = xlim, ylim = ylim, col = args$col, pch = args$pch, cex = args$cex)
+          grid(lty = "solid")
+          abline(0, 0, lty = 2, col = "lightgray")
+          abline(0, 1e+05, lty = 2, col = "lightgray")
+          lines(z, low, lty = 2)
+          lines(z, high, lty = 2)
         }
       }
     }
   }
 
+  return(invisible(NULL))
+}
+
+
+c.bamlss.residuals <- function(...) {
+  res <- list(...)
+  Call <- match.call()
+  mn <- as.character(Call)[-1L]
+  names(res) <- mn
+  class(res) <- "bamlss.residuals.list"
+  return(res)
+}
+
+plot.bamlss.residuals.list <- function(x, ...) {
+  class(x) <- "list"
+  x <- as.data.frame(x)
+  args <- list(...)
+  ylim <- args$ylim
+  if(is.null(ylim))
+    ylim <- range(x, na.rm = TRUE)
+  col <- args$col
+  if(is.null(col))
+    col <- 1:ncol(x)
+  col <- rep(col, length.out = ncol(x))
+  for(j in 1:ncol(x)) {
+    plot(x[[j]], ylim = ylim, spar = FALSE, add = j > 1, col = col[j], ...)
+  }
+  legend <- args$legend
+  if(is.null(legend))
+    legend <- TRUE
+  if(legend) {
+    legend("topleft", names(x), pch = 1, bty = "n", col = col)
+  }
   return(invisible(NULL))
 }
 

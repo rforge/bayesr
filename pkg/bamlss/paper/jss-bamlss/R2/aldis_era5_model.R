@@ -90,17 +90,8 @@ fit2 <- predict(b2, newdata = d_eval, type = "parameter")
 family(b1)$loglik(d_eval$counts, fit1)
 family(b2)$loglik(d_eval$counts, fit2)
 
-prob1 <- family(b1)$p(d_eval$counts, fit1)
-prob2 <- family(b2)$p(d_eval$counts, fit2)
+e1 <- residuals(b1, newdata = d_eval)
+e2 <- residuals(b2, newdata = d_eval)
 
-e1 <- qnorm(prob1)
-e2 <- qnorm(prob2)
-
-ylim <- xlim <- range(c(e1, e2))
-xlim <- xlim + c(-3, 3)
-
-qqnorm(e1, col = 4, ylim = ylim, xlim = xlim)
-par(new = TRUE)
-qqnorm(e2, col = 2, ylim = ylim, xlim = xlim, axes = FALSE, xlab = "", ylab = "", main = "")
-abline(0, 1)
+plot(c(e1, e2), which = "wp")
 
