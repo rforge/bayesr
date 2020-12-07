@@ -5583,9 +5583,9 @@ Sichel_bamlss <- function(...)
     "d" = function(y, par, log = FALSE) {
       dSichel(y, alpha = par$alpha, zeta = par$zeta, gamma = par$gamma, log = log)
     },
-    "mu" = function(par, ...) {
+    "mean" = function(par, ...) {
       w <- sqrt(par$zeta^2 + par$alpha^2) - par$zeta
-      R <- besselK(w, npar$gamma + 1, expon.scaled = TRUE) / besselK(w, par$gamma, expon.scaled = TRUE)
+      R <- besselK(w, par$gamma + 1, expon.scaled = TRUE) / besselK(w, par$gamma, expon.scaled = TRUE)
       par$zeta * R
     }
   )

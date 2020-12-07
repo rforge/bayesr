@@ -22,11 +22,11 @@
 }
 
 \examples{
-require("raster")
-data("Austria")
-plot(AustriaTopo, col = terrain.colors(10))
-plot(Austria, add = TRUE)
-}
+if(require("raster")) {
+  data("Austria")
+  plot(AustriaTopo, col = terrain.colors(10))
+  plot(Austria, add = TRUE)
+}}
 
 \keyword{datasets}
 
