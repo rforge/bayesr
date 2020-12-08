@@ -31,7 +31,7 @@ if(!file.exists("figures/lasso.rda")) {
     rentsqm ~ la(area,fuse=2) + la(yearc,fuse=2) + la(location,fuse=1),
     sigma ~ la(area,fuse=2) + la(yearc,fuse=2) + la(location,fuse=1)
   )
-  rentmodel <- bamlss(f, data = rent99, optimizer = lasso, sampler = FALSE,
+  rentmodel <- bamlss(f, data = rent99, optimizer = opt_lasso, sampler = FALSE,
     criterion = "BIC", nlambda = 100, multiple = TRUE, upper = exp(6), lower = exp(0))
 
   rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
@@ -93,8 +93,8 @@ f <- list(
 )
 
 ## LASSO model based on lambda grid,
-## use special lasso() estimation engine.
-rentmodel <- bamlss(f, data = rent99, optimizer = lasso, sampler = FALSE,
+## use special opt_lasso() estimation engine.
+rentmodel <- bamlss(f, data = rent99, optimizer = opt_lasso, sampler = FALSE,
   criterion = "BIC", nlambda = 100, multiple = TRUE, upper = exp(6), lower = exp(0))
 ```
 where arguments `upper` and `lower` define the limits of the LASSO tuning parameters. Estimation
@@ -155,9 +155,9 @@ rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
   criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
 ```
 using the estimated parameters of the first model as starting values (`mstop` is the optimum
-stopping iteration of the `lasso()` optimizer). Note that we also optimize the step length of
+stopping iteration of the `opt_lasso()` optimizer). Note that we also optimize the step length of
 the backfitting algorithm by setting `nu = 1`. To compare both models by BIC, the `lasso_stop()`
-functions returns the optimum iteration of the `lasso()` optimizer
+functions returns the optimum iteration of the `opt_lasso()` optimizer
 ```{r}
 lasso_stop(rentmodel)
 ```

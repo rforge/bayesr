@@ -30,7 +30,7 @@ allow to create new family objects, only, and can be too restrictive for a coupl
 Within the unified modeling approach in _bamlss_ it is relatively
 straightforward to develop new estimation functions (algorithms), e.g., for implementing
 new models or for efficiency reasons. Such estimation functions could also interface to
-other software (see, e.g., the `JAGS()` sampling function). In the following,
+other software (see, e.g., the `sam_JAGS()` sampling function). In the following,
 the basic requirements for optimizer and sampling functions are described in detail.
 
 ## The basic setup
@@ -47,12 +47,12 @@ The modeling setup is best explained by looking at the main estimation engines p
 The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is a
 backfitting routine. The most important arguments are
 ```{r, eval=FALSE}
-bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 ```
 The default sampling engine in _bamlss_ is `GMCMC()`, again the most important
 arguments are
 ```{r, eval=FALSE}
-GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 ```
 So basically, the arguments of the optimizer and the sampling function are the same, the
 main difference is the return value. In _bamlss_ optimizer functions usually return
@@ -145,7 +145,7 @@ head(bf$y)
 to setup the optimizer function with:
 ```{r}
 ## Linear model optimizer function.
-lm.opt <- function(x, y, ...)
+opt_LM <- function(x, y, ...)
 {
   ## Only univariate response.
   y <- y[[1L]]
@@ -181,7 +181,7 @@ all extractor functions are readily available.
 f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
 
 ## Estimate model with new optimizer function.
-b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = FALSE)
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = FALSE)
 
 ## Summary output.
 summary(b)
@@ -241,7 +241,7 @@ flat and uninformative.
 
 We can implement the MCMC algorithm in the following sampling function
 ```{r}
-lm.mcmc <- function(x, y, start = NULL,
+sam_LM <- function(x, y, start = NULL,
   n.iter = 12000, burnin = 2000, thin = 10,
   m = 0, M = 1e+05,
   a = 1, b = 1e-05,
@@ -339,7 +339,7 @@ lm.mcmc <- function(x, y, start = NULL,
 ```
 The new estimation function can be directly used with the `bamlss()` wrapper.
 ```{r}
-b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = lm.mcmc)
+b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = sam_LM)
 
 summary(b)
 
