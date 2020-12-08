@@ -728,7 +728,7 @@ fmt <- Vectorize(function(x, width = 8, digits = 2) {
   txt
 })
 
-bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = NULL, inner = FALSE, mgcv = FALSE,
@@ -1995,7 +1995,7 @@ grad_posterior <- function(par, x, y, family, ...)
 
 
 ## Optimizer based on optim().
-opt <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
+opt_optim <- function(x, y, family, start = NULL, verbose = TRUE, digits = 3,
                 gradient = TRUE, hessian = FALSE, eps = .Machine$double.eps^0.5, maxit = 100, ...)
 {
   nx <- family$names
@@ -2091,7 +2091,7 @@ xcenter <- function(x)
 
 
 ## Modified likelihood based boosting.
-boostm <- function(x, y, family, offset = NULL,
+opt_boostm <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
@@ -2374,7 +2374,7 @@ boostm <- function(x, y, family, offset = NULL,
 
 
 ## Gradient boosting.
-boost <- function(x, y, family, weights = NULL, offset = NULL,
+opt_boost <- function(x, y, family, weights = NULL, offset = NULL,
   nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400, mstop = NULL,
   maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
@@ -3075,7 +3075,7 @@ boost_frame <- function(formula, train, test, family = "gaussian", ...)
   yname <- names(bf$y)
   family <- bf$family
 
-  bf <- boost(x = bf$x, y = bf$y, family = bf$family,
+  bf <- opt_boost(x = bf$x, y = bf$y, family = bf$family,
     weights = model.weights(bf$model.frame),
     offset = model.offset(bf$model.frame), ret.x = TRUE, initialize = FALSE, ...)
 
@@ -3968,7 +3968,7 @@ set.starting.values <- function(x, start)
 }
 
 
-lasso <- function(x, y, start = NULL, adaptive = TRUE,
+opt_lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL, multiple = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.5,
@@ -4032,9 +4032,9 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
       cat("Estimating adaptive weights\n---\n")
     if(is.null(zeromodel)) {
       if(method == 1) {
-        zeromodel <- bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
+        zeromodel <- opt_bfit(x = x, y = y, start = start, verbose = verbose[1], nu = nu[2], stop.nu = stop.nu[2], ...)
       } else {
-        zeromodel <- opt(x = x, y = y, start = start, verbose = verbose[1], ...)
+        zeromodel <- opt_optim(x = x, y = y, start = start, verbose = verbose[1], ...)
       }
     }
     x <- lasso_transform(x, zeromodel, nobs = nrow(y))
@@ -4070,9 +4070,9 @@ lasso <- function(x, y, start = NULL, adaptive = TRUE,
     }
     
     if(method == 1) {
-      b <- bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu[2], stop.nu = stop.nu[2], ...)
+      b <- opt_bfit(x = x, y = y, start = start, verbose = verbose[2], nu = nu[2], stop.nu = stop.nu[2], ...)
     } else {
-      b <- opt(x = x, y = y, start = start, verbose = verbose[2], ...)
+      b <- opt_optim(x = x, y = y, start = start, verbose = verbose[2], ...)
     }
     
     nic <- grep("ic", names(b), value = TRUE, ignore.case = TRUE)
@@ -4689,7 +4689,7 @@ predict.dl.bamlss <- function(object, newdata, model = NULL, drop = TRUE, ...)
 
 
 ## Most likely transformations.
-mlt.mode <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+opt_mlt <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL, ...)
@@ -4713,7 +4713,7 @@ mlt.mode <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   Fy[Fy < 0.0001] <- 0.001
   Yhat <- family$distr$q(Fy)
 
-  opt <- bfit(x = x, y = data.frame("y" = Yhat),
+  opt <- opt_bfit(x = x, y = data.frame("y" = Yhat),
     family = complete.bamlss.family(Gaussian_bamlss()),
     eps = eps, maxit = maxit, nu = nu, update = bfit_optim())
   
@@ -5216,7 +5216,7 @@ predict.boost.net <- function(object, newdata, model = NULL,
 ####  
 
 ## Implicit SGD
-isgd <- function(x, y, family, weights = NULL, offset = NULL,
+opt_isgd <- function(x, y, family, weights = NULL, offset = NULL,
                  gammaFun = function(i) 1/(1+i), shuffle = TRUE,
                  CFun = function(beta) diag(length(beta)),
                  start = NULL, i.state = 0) {
@@ -5385,7 +5385,7 @@ sgd_grep_X <- function(x) {
     return(X)
 }
 
-#sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
+#opt_sgd.ff <- function(x, y, family, weights = NULL, offset = NULL,
 #  gammaFun = function(i) 1/(1+i),
 #  shuffle = TRUE, start = NULL, i.state = 0,
 #  batch = 1L)
@@ -5540,7 +5540,7 @@ sgd_grep_X <- function(x) {
 #}
 
 
-bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+opt_bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   epochs = 1, nbatch = 10, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
@@ -6381,12 +6381,12 @@ contribplot <- function(x, ...) {
 }
 
 
-bbfitp <- function(x, y, family, mc.cores = 1, ...)
+opt_bbfitp <- function(x, y, family, mc.cores = 1, ...)
 {
   seeds <- ceiling(runif(mc.cores, 1, 1000000))
   parallel_fun <- function(i) {
     set.seed(seeds[i])
-    bbfit(x, y, family, ...)
+    opt_bbfit(x, y, family, ...)
   }
   b <- parallel::mclapply(1:mc.cores, parallel_fun, mc.cores = mc.cores)
   rval <- list()

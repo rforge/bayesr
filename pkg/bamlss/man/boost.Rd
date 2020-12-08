@@ -1,6 +1,8 @@
-\name{boost}
+\name{opt_boost}
 \alias{boost}
+\alias{opt_boost}
 \alias{boostm}
+\alias{opt_boostm}
 \alias{boost_summary}
 \alias{boost_plot}
 \alias{print.boost_summary}
@@ -17,7 +19,7 @@
 
 \usage{
 ## Gradient boosting optimizer.
-boost(x, y, family, weights = NULL,
+opt_boost(x, y, family, weights = NULL,
   offset = NULL, nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400,
   mstop = NULL, maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
@@ -29,7 +31,7 @@ boost(x, y, family, weights = NULL,
   always = FALSE, ...)
 
 ## Modified likelihood based boosting.
-boostm(x, y, family, offset = NULL,
+opt_boostm(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
@@ -56,10 +58,10 @@ boost_frame(formula, train, test, family = "gaussian", ...)
 }
 
 \arguments{
-  \item{x}{For function \code{boost()} the \code{x} list, as returned from function
+  \item{x}{For function \code{opt_boost()} the \code{x} list, as returned from function
     \code{\link{bamlss.frame}}, holding all model matrices and other information that is used for
     fitting the model. For the plotting function the corresponding \code{\link{bamlss}} object
-    fitted with the \code{boost()} optimizer.}
+    fitted with the \code{opt_boost()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{family}{A \pkg{bamlss} family object, see \code{\link{family.bamlss}}.}
   \item{weights}{Prior weights on the data, as returned from function \code{\link{bamlss.frame}}.}
@@ -111,20 +113,20 @@ boost_frame(formula, train, test, family = "gaussian", ...)
     If \code{always = TRUE} each intercept of each distributional parameter is updated,
     if \code{always = "best"} only the intercept corresponding to the distributional of the best
     fitting model term is updated.}
-  \item{object}{A \code{\link{bamlss}} object that was fitted using \code{boost()}.}
+  \item{object}{A \code{\link{bamlss}} object that was fitted using \code{opt_boost()}.}
   \item{summary}{Should the summary be printed?}
   \item{which}{Which of the three provided plots should be created?}
   \item{intercept}{Should the coefficient paths of intercepts be dropped in the plot?}
   \item{spar}{Should graphical parmeters be set with \code{\link[graphics]{par}}?}
   \item{formula}{See \code{\link{bamlss.frame}}.}
   \item{train, test}{Data frames used for training and testing the model..}
-  \item{\dots}{For function \code{boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
+  \item{\dots}{For function \code{opt_boost()}, arguments passed to \code{\link{bamlss.engine.setup}}.
     for function \code{boost_summary()} arguments passed to function \code{print.boost_summary()}.}
 }
 
 \value{
   For function \code{boost_summary()} a list containing information on selection frequencies etc.
-  For function \code{boost()} and \code{boostm()} a list containing the following objects:
+  For function \code{opt_boost()} and \code{opt_boostm()} a list containing the following objects:
   \item{fitted.values}{A named list of the fitted values based on the last boosting iteration
     of the modeled parameters of the selected distribution.}
   \item{parameters}{A matrix, each row corresponds to the parameter values of one boosting iteration.}
@@ -136,8 +138,8 @@ boost_frame(formula, train, test, family = "gaussian", ...)
   user, e.g., one option is to use argument \code{scale.d} in function \code{\link{bamlss.frame}},
   which uses \code{\link[base]{scale}}.
 
-  Function \code{boost()} does not select the optimum stopping iteration! The modified likelihood
-  based algorithm implemented in function \code{boostm()} is still experimental!
+  Function \code{opt_boost()} does not select the optimum stopping iteration! The modified likelihood
+  based algorithm implemented in function \code{opt_boostm()} is still experimental!
 }
 
 \seealso{
@@ -153,7 +155,7 @@ d <- GAMart()
 f <- num ~ x1 + x2 + x3 + lon + lat +
   s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
 
-b <- bamlss(f, data = d, optimizer = boost,
+b <- bamlss(f, data = d, optimizer = opt_boost,
   sampler = FALSE, scale.d = TRUE, nu = 0.01,
   maxit = 1000, plot = FALSE)
 
@@ -184,7 +186,7 @@ f <- list(
     s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
 )
 
-b <- bamlss(f, data = d, optimizer = boostm,
+b <- bamlss(f, data = d, optimizer = opt_boostm,
   sampler = FALSE, scale.d = TRUE, nu = 0.05,
   maxit = 400, stop.criterion = "AIC", force.stop = FALSE)
 
@@ -222,7 +224,7 @@ sfun <- function(parameters) {
 
 ## Start boosting with out-of-sample negative
 ## log-likelihood selection of model terms.
-b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = boost,
+b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = opt_boost,
   selectfun = sfun, always = "best")
 
 ## Plot curve of negative out-of-sample log-likelihood.

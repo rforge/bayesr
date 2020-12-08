@@ -1,4 +1,5 @@
-\name{JAGS}
+\name{sam_JAGS}
+\alias{sam_JAGS}
 \alias{JAGS}
 \alias{BUGSeta}
 \alias{BUGSmodel}
@@ -25,7 +26,7 @@
 
 \usage{
 ## Sampler function:
-JAGS(x, y, family, start = NULL,
+sam_JAGS(x, y, family, start = NULL,
   tdir = NULL, n.chains = 1, n.adapt = 100,
   n.iter = 4000, thin = 2, burnin = 1000,
   seed = NULL, verbose = TRUE, set.inits = TRUE,
@@ -39,7 +40,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \arguments{
-  \item{x}{For function \code{JAGS()} and \code{BUGSmodel()} the \code{x} list, as returned from
+  \item{x}{For function \code{sam_JAGS()} and \code{BUGSmodel()} the \code{x} list, as returned from
     function \code{\link{bamlss.frame}}, holding all model matrices and other information that is
     used for fitting the model. For function \code{BUGSeta()} argument \code{x} is one element of
     the \code{x} object, i.e., one parameter.}
@@ -69,7 +70,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \value{
-  Function \code{JAGS()} returns samples of parameters. The samples are provided as a \code{\link[coda]{mcmc}}
+  Function \code{sam_JAGS()} returns samples of parameters. The samples are provided as a \code{\link[coda]{mcmc}}
   matrix. If \code{n.chains > 1}, the samples are provided as a \code{\link[coda]{mcmc.list}}.
 
   Function \code{BUGSeta()} returns the BUGS model code and preprocessed data for one
@@ -78,7 +79,7 @@ BUGSmodel(x, family, is.stan = FALSE, reference = NULL, ...)
 }
 
 \note{
-  Note that for setting up a new family object to be used with \code{JAGS()} additional
+  Note that for setting up a new family object to be used with \code{sam_JAGS()} additional
   information needs to be supplied. The extra information must be placed within the
   family object in an element named \code{"bugs"}. The following entries should be supplied
   within the \code{..$bugs} list:
@@ -113,7 +114,7 @@ opt <- with(bf, bfit(x, y, family))
 
 ## Sample with JAGS.
 if(require("rjags")) {
-  samps <- with(bf, JAGS(x, y, family, start = opt$parameters))
+  samps <- with(bf, sam_JAGS(x, y, family, start = opt$parameters))
   plot(samps)
 }
 }

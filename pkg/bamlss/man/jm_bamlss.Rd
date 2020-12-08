@@ -1,5 +1,7 @@
 \name{jm_bamlss}
 \alias{jm_bamlss}
+\alias{sam_JM}
+\alias{opt_JM}
 \alias{jm_mode}
 \alias{jm_mcmc}
 \alias{jm_transform}
@@ -30,7 +32,7 @@ jm_transform(x, y, data, terms, knots, formula, family, subdivisions = 25,
   k_mu = 6, ...)
                     
 ## Posterior mode optimizing engine.     
-jm_mode(x, y, start = NULL, weights = NULL, offset = NULL, 
+opt_JM(x, y, start = NULL, weights = NULL, offset = NULL, 
   criterion = c("AICc", "BIC", "AIC"), maxit = c(100, 1), 
   nu = c("lambda" = 0.1, "gamma" = 0.1, "mu" = 0.1, "sigma" = 0.1, 
   "alpha" = 0.1, "dalpha" = 0.1),
@@ -38,7 +40,7 @@ jm_mode(x, y, start = NULL, weights = NULL, offset = NULL,
   nback = 40, verbose = TRUE, digits = 4, ...)
 
 ## Sampler function.
-jm_mcmc(x, y, family, start = NULL, weights = NULL, offset = NULL, 
+sam_JM(x, y, family, start = NULL, weights = NULL, offset = NULL, 
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, digits = 4, 
   step = 20, ...)
   
@@ -120,7 +122,7 @@ jm_survplot(object, id = 1, dt = NULL, steps = 10,
     that only every 10th sampled parameter will be stored.}
   \item{step}{How many times should algorithm runtime information be printed, divides \code{n.iter}.}
   \item{object}{A \code{"bamlss"} object processed with the JM optimizer function
-    \code{jm_mode()} ans/or sampler function \code{jm_mcmc()} for which the survival plot
+    \code{opt_JM()} ans/or sampler function \code{sam_JM()} for which the survival plot
     should be created.}
   \item{newdata}{Dataset for which to create predictions. Not needed for conditional survival probabilities.}
   \item{type}{Character string indicating which type of predictions to compute. \code{link} returns estimates
@@ -220,7 +222,7 @@ f <- list(
 ## Joint model estimation
 ## jm_bamlss() sets the default optimizer and sampler function.
 ## First, posterior mode estimates are computed using function
-## jm_mode(), afterwards the sampler jm_mcmc() is started.
+## opt_JM(), afterwards the sampler sam_JM() is started.
 b <- bamlss(f, data = d, family = "jm",
            timevar = "obstime", idvar = "id")
 
@@ -264,12 +266,12 @@ f <- list(
   dalpha ~ -1
 )
 
-## Estimating posterior mode only using jm_mode()
+## Estimating posterior mode only using opt_JM()
 b_mode <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", 
                  sampler = FALSE)
 
-## Estimating posterior means using jm_mcmc() 
+## Estimating posterior means using sam_JM() 
 ##  with starting values generated from posterior mode 
 b_mean <- bamlss(f, data = d, family = "jm",
                  timevar = "obstime", idvar = "id", optimizer = FALSE,

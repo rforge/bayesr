@@ -54,28 +54,28 @@ export(
   "bamlss.frame",
   "bamlss.formula",
   "bamlss.family",
-  "bfit",
-  "bbfit",
-  "bbfitp",
+  "opt_bfit",
+  "opt_bbfit",
+  "opt_bbfitp",
   "contribplot",
   "bfit_iwls",
   "bfit_iwls_Matrix",
   "bfit_lm",
   "bfit_optim",
   "bfit_glmnet",
-  "GMCMC",
+  "sam_GMCMC",
   "GMCMC_iwls",
   "GMCMC_iwlsC",
   "GMCMC_iwlsC_gp",
   "GMCMC_slice",
-  "JAGS",
-  "BayesX",
+  "sam_JAGS",
+  "sam_BayesX",
   "BayesX.control",
   "get_BayesXsrc",
-  "MVNORM",
+  "sam_MVNORM",
   "surv_transform",
-  "cox_mode",
-  "cox_mcmc",
+  "opt_Cox",
+  "sam_Cox",
   "cox_predict",
 
   ## engine setup functions
@@ -133,8 +133,8 @@ export(
 
   ## JM
   "jm_bamlss",
-  "jm_mode",
-  "jm_mcmc",
+  "opt_JM",
+  "sam_JM",
   "simJM",
   "rJM",
   "jm_survplot",
@@ -170,13 +170,13 @@ export(
   "bamlss.model.frame",
   
   ## boosting/lasso
-  "boost",
-  "boostm",
+  "opt_boost",
+  "opt_boostm",
   "boost_summary",
   "boost_plot",
   "boost_frame",
   "la",
-  "lasso",
+  "opt_lasso",
   "lasso_plot",
   "lasso_stop",
   "lasso_coef",
@@ -219,7 +219,8 @@ export(
 
   ## misc
   "response_name",
-  "smooth_check"
+  "smooth_check",
+  "engines"
 )
 
 S3method("plot", "bamlss")

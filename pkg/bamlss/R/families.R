@@ -4550,7 +4550,7 @@ mlt_bamlss <- function(todistr = "Normal")
     "family" = "mlt",
     "names" = "mu",
     "links" = c("mu" = "identity"),
-    "optimizer" = mlt.mode,
+    "optimizer" = opt_mlt,
     "sampler" = FALSE
   )
   rval$distr <- mlt_distr(todistr)

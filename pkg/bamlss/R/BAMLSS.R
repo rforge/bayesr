@@ -763,7 +763,6 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     }
     QR <- qr(matrix(csum, ncol = 1L))
     object[["Z"]] <- qr.Q(QR, complete = TRUE)[, -1]
-writeLines(object$label, "~/tmp/label.txt")
     tX <- try(ffmatrixmult(object[["X"]], object[["Z"]]), silent = TRUE)
     if(!inherits(tX, "try-error")) {
       object[["X"]] <- tX
@@ -1735,7 +1734,7 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     "sampler" = sampler, "samplestats" = samplestats, "results" = results)
 
   nf <- names(foo)
-  default_fun <- c("no.transform", "bfit", "GMCMC", "samplestats", "results.bamlss.default")
+  default_fun <- c("no.transform", "opt_bfit", "sam_GMCMC", "samplestats", "results.bamlss.default")
   functions <- list()
   for(j in 1:length(foo)) {
     if(is.null(foo[[nf[j]]])) {
@@ -2140,7 +2139,7 @@ samplestats <- function(samples, x = NULL, y = NULL, family = NULL, logLik = FAL
 #########################
 ## (2) Engine stacker. ##
 #########################
-#stacker <- function(x, optimizer = bfit0, sampler = samplerJAGS, ...)
+#stacker <- function(x, optimizer = opt_bfit, sampler = samplerJAGS, ...)
 #{
 #  if(is.function(optimizer) | is.character(optimizer))
 #    optimizer <- list(optimizer)
@@ -10392,15 +10391,15 @@ Predict.matrix.srand.smooth <- function(object, data)
 
 ## Model fitting shortcuts.
 boost2 <- function(...) {
-  bamlss(..., sampler = FALSE, optimizer = boost)
+  bamlss(..., sampler = FALSE, optimizer = opt_boost)
 }
 
 lasso2 <- function(...) {
-  bamlss(..., sampler = FALSE, optimizer = lasso)
+  bamlss(..., sampler = FALSE, optimizer = opt_lasso)
 }
 
 bayesx2 <- function(...) {
-  bamlss(..., sampler = BayesX, optimizer = FALSE)
+  bamlss(..., sampler = sam_BayesX, optimizer = FALSE)
 }
 
 bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
@@ -10430,7 +10429,7 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
       d0 <- data[i, , drop = FALSE]
       d1 <- data[!(ind %in% i), , drop = FALSE]
       b <- bamlss(..., data = d0, plot = FALSE, sampler = FALSE,
-        optimizer = boost, boost.light = FALSE, light = TRUE)
+        optimizer = opt_boost, boost.light = FALSE, light = TRUE)
       attr(b, "mstop") <- fmstop(b, d1)
       if(drop)
         b$parameters <- b$parameters[attr(b, "mstop")$mstop, ]
@@ -10449,7 +10448,7 @@ bboost <- function(..., data, type = 1, cores = 1, n = 2, prob = 0.623,
       }
       d0 <- data[i, , drop = FALSE]
       b <- bamlss(..., data = d0, plot = FALSE, boost.light = TRUE,
-        light = TRUE, sampler = FALSE, optimizer = boost)
+        light = TRUE, sampler = FALSE, optimizer = opt_boost)
       attr(b, "mstop") <- list(
         "logLik" = b$model.stats$optimizer$boost_summary$ic,
         "mstop" = nrow(b$parameters))
@@ -10950,5 +10949,54 @@ if(FALSE) {
 
   plot(x, fits, type = "l", main = "smooth", ylim = range(c(sin(x), fits)))
   lines(sin(x) ~ x, col = 2)
+}
+
+
+.engines <- function(family)
+{
+  family <- bamlss.family(family)
+  bayesx <- !is.null(family$bayesx)
+  jags <- !is.null(family$bugs)
+  optimizer <- !is.null(family$optimizer)
+  sampler <- !is.null(family$sampler)
+  tab <- c(
+    "family" = family$family,
+    "opt_bfit()" = !optimizer,
+    "opt_boost()" = !optimizer,
+    "opt_bbfit()" = !optimizer,
+    "sam_GMCMC()" = !sampler,
+    "sam_BayesX()" = bayesx,
+    "sam_JAGS()" = jags,
+    "special_opt()" = optimizer,
+    "special_sam()" = sampler
+  )
+  return(tab)
+}
+
+engines <- function(family, ...)
+{
+  if(missing(family)) {
+    family <- ls("package:bamlss")
+    family <- grep("_bamlss", family, fixed = TRUE, value = TRUE)
+    fam <- NULL
+    for(f in family) {
+      foo <- get(f)
+      foo <- try(foo(), silent = TRUE)
+      if(!inherits(foo, "try-error")) {
+        if(inherits(foo, "family.bamlss"))
+          fam <- c(fam, f)
+      }
+    }
+    family <- fam
+  }
+  family <- list(family, ...)
+  tab <- list()
+  call <- match.call()
+  fn <- as.character(call)[-1L]
+  for(i in seq_along(family)) {
+    tab[[i]] <- .engines(family[[i]])
+  }
+  tab <- do.call("rbind", tab)
+  return(as.data.frame(tab))
 }
 

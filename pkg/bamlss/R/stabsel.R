@@ -84,7 +84,7 @@ StabStep <- function(formula, data, family = "gaussian", q, maxit, seed = NULL,
     }
     d <- data[sample(nrow(data), size = round(nrow(data) * fraction)), ]
     b <- bamlss(formula, data = d, family = family,
-                optimizer = boost, maxit = maxit, maxq = q,
+                optimizer = opt_boost, maxit = maxit, maxq = q,
                 sampler = FALSE, binning = TRUE,
                 plot = FALSE, verbose = TRUE, ...)
 

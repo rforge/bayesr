@@ -1,6 +1,7 @@
 \name{la}
 \alias{la}
 \alias{lasso}
+\alias{opt_lasso}
 \alias{lasso_plot}
 \alias{lasso_stop}
 \alias{lasso_coef}
@@ -18,7 +19,7 @@
 la(formula, type = c("single", "multiple"), ...)
 
 ## Single Lasso smoothing parameter optimizer.
-lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
+opt_lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   nlambda = 100, lambda = NULL,  multiple = FALSE, verbose = TRUE,
   digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL,
   ridge = .Machine$double.eps^0.5, zeromodel = NULL, ...)
@@ -27,13 +28,13 @@ lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
 ## adaptive weights from an unpenalized model.
 lasso_transform(x, zeromodel, nobs = NULL, ...)
 
-## Plotting function for lasso() optimizer.
+## Plotting function for opt_lasso() optimizer.
 lasso_plot(x, which = c("criterion", "parameters"),
   spar = TRUE, model = NULL, name = NULL, mstop = NULL,
   retrans = FALSE, color = NULL, show.lambda = TRUE,
   labels = NULL, digits = 2, ...)
 
-## Extract optimum stopping iteration for lasso() optimizer.
+## Extract optimum stopping iteration for opt_lasso() optimizer.
 ## Based on the minimum of the information criterion.
 lasso_stop(x)
 
@@ -46,11 +47,11 @@ lasso_coef(x, ...)
     penalized with Lasso.}
   \item{type}{Should one single penalty parameter be used or multiple parameters, one for each
     covariate in \code{formula}.}
-  \item{x}{For function \code{lasso()} and \code{lasso_transform()} the \code{x} list, as returned
+  \item{x}{For function \code{opt_lasso()} and \code{lasso_transform()} the \code{x} list, as returned
     from function \code{\link{bamlss.frame}}, holding all model matrices and other information that
     is used for fitting the model. For the plotting function and
     \code{lasso_stop()}/\code{lasso_coef()} the
-    corresponding \code{\link{bamlss}} object fitted with the \code{lasso()} optimizer.}
+    corresponding \code{\link{bamlss}} object fitted with the \code{opt_lasso()} optimizer.}
   \item{y}{The model response, as returned from function \code{\link{bamlss.frame}}.}
   \item{start}{A vector of starting values. Note, Lasso smoothing parameters will be dropped.}
   \item{adaptive}{Should adaptive weights be used for fused Lasso terms?}
@@ -94,16 +95,16 @@ lasso_coef(x, ...)
     \code{lambda} controls the starting value of the penalty parameter, \code{const} the constant
     that is added within the penalty approximation. Moreover, \code{fuse = 1} enforces nominal
     fusion of categorical variables and \code{fuse = 2} ordered fusion within \code{la()} Note that
-    \code{la()} terms with and without fusion should not be mixed when using the \code{lasso()}
+    \code{la()} terms with and without fusion should not be mixed when using the \code{opt_lasso()}
     optimizer function.
-    For the optimizer \code{lasso()} arguments passed to function \code{\link{bfit}}.}
+    For the optimizer \code{opt_lasso()} arguments passed to function \code{\link{bfit}}.}
 }
 
 \value{
   For function \code{la()}, similar to function \code{\link[mgcv]{s}} a simple smooth
   specification object.
 
-  For function \code{lasso()} a list containing the following objects:
+  For function \code{opt_lasso()} a list containing the following objects:
   \item{fitted.values}{A named list of the fitted values based on the last lasso iteration
     of the modeled parameters of the selected distribution.}
   \item{parameters}{A matrix, each row corresponds to the parameter values of one boosting iteration.}
@@ -145,7 +146,7 @@ b0 <- bamlss(f, sampler = FALSE)
 
 ## Model with single lambda parameter.
 f <- list(y ~ la(id,fuse=2), sigma ~ la(id,fuse=1))
-b1 <- bamlss(f, sampler = FALSE, optimizer = lasso,
+b1 <- bamlss(f, sampler = FALSE, optimizer = opt_lasso,
   criterion = "BIC", zeromodel = b0)
 
 ## Plot information criterion and coefficient paths.

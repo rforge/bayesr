@@ -110,7 +110,7 @@ bugs2stan <- function(x)
 ########################################
 ## (3) Interface to the STAN sampler. ##
 ########################################
-STAN <- function(x, tdir = NULL,
+sam_STAN <- function(x, tdir = NULL,
   n.chains = 1, n.iter = 4000, thin = 2, burnin = 1000,
   seed = NULL, verbose = FALSE, show.model = TRUE, ...)
 {

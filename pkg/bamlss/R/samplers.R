@@ -13,7 +13,7 @@
 #}
 
 
-GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+sam_GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, step = 20,
   propose = "iwlsC_gp", chains = NULL, ...)
 {
@@ -1534,20 +1534,20 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 
 
 ## Naive sampler.
-MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
+sam_MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
 {
   if(!is.null(start))
     start <- unlist(start)
   if(is.null(hessian)) {
     if(inherits(x, "bamlss")) {
       if(is.null(x$hessian)) {
-        hessian <- opt(x = x$x, y = x$y, family = x$family,
+        hessian <- opt_optim(x = x$x, y = x$y, family = x$family,
           start = start, hessian = TRUE, ...)
       } else {
         hessian <- x$hessian
       }
     } else {
-      hessian <- opt(x = x, y = y, family = family, start = start, hessian = TRUE, ...)
+      hessian <- opt_optim(x = x, y = y, family = family, start = start, hessian = TRUE, ...)
     }
   }
 
