@@ -4,7 +4,7 @@
 \title{GEFCom2014 Electricity Load Data}
 
 \description{
-  This data set is a subset of the electricity load data of the GEFcom2014 challenge. The full
+  This data set is a subset of the electricity load data of the GEFCom2014 challenge. The full
   data is published in the Appendix of Hong T. et al. (2016).
 }
 
@@ -13,7 +13,7 @@
 }
 
 \format{
-  The \code{GEFcom2014} contains the following variables:
+  The \code{GEFCom2014} contains the following variables:
   \describe{
     \item{Date}{The date of recording.}
     \item{Load}{The corresponding electricty load.}
@@ -28,9 +28,9 @@
 }
 
 \examples{
-  data("GEFcom2014", package = "bamlss")
-  GEFcom2014$yday <- as.POSIXlt(GEFcom2014$Date)$yday
-  plot(Load ~ yday, data = GEFcom2014)
+  data("GEFCom2014", package = "bamlss")
+  GEFCom2014$yday <- as.POSIXlt(GEFCom2014$Date)$yday
+  plot(Load ~ yday, data = GEFCom2014)
 }
 
 \keyword{datasets}
