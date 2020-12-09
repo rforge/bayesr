@@ -9581,8 +9581,12 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
     }
 
     par <- predict(object, nsamps = nsamps, drop = FALSE, ...)
-    for(j in family$names)
+    nod <- is.null(dim(par[[1L]]))
+    for(j in family$names) {
+      if(!nod)
+        par[[j]] <- as.matrix(par[[j]])
       par[[j]] <- make.link2(family$links[j])$linkinv(par[[j]])
+    }
 
     if(type == "quantile") {
       if(is.null(family$p)) {
@@ -9684,15 +9688,20 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
     for(w in which) {
       args <- list(...)
       if(w == "hist-resid") {
-        rdens <- density(as.numeric(x), na.rm = TRUE)
-        rh <- hist(as.numeric(x), plot = FALSE)
+        if(ncol(x) > 10) {
+          x2 <- rowMeans(x)
+        } else {
+          x2 <- x
+        }
+        rdens <- density(as.numeric(x2), na.rm = TRUE)
+        rh <- hist(as.numeric(x2), plot = FALSE)
         args$ylim <- c(0, max(c(rh$density, rdens$y)))
 #        if(is.null(args$xlim)) {
 #          args$xlim <- range(x[is.finite(x)], na.rm = TRUE)
 #          args$xlim <- c(-1, 1) * max(args$xlim)
 #        }
         args$freq <- FALSE
-        args$x <- as.numeric(x)
+        args$x <- as.numeric(x2)
         args <- delete.args("hist.default", args, package = "graphics", not = c("xlim", "ylim"))
         if(is.null(args$xlab))
           args$xlab <- if(is.null(type)) "Residuals" else paste(type, "residuals")
@@ -9707,36 +9716,36 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
       }
       if(w == "qq-resid") {
         if(ncol(x) > 10) {
-          x <- t(apply(x, 1, c95))
+          x2 <- t(apply(x, 1, c95))
 
           args$x <- NULL
           args$plot.it <- FALSE
-          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch"))
+          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "cex"))
           if(is.null(args$main))
             args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
 
-          args$y <- x[, "Mean"]
+          args$y <- x2[, "Mean"]
           mean <- do.call(qqnorm, args)
-          args$y <- x[, "2.5%"]
+          args$y <- x2[, "2.5%"]
           lower <- do.call(qqnorm, args)
-          args$y <- x[, "97.5%"]
+          args$y <- x2[, "97.5%"]
           upper <- do.call(qqnorm, args)
 
           ylim <- range(c(mean$y, lower$y, upper$y), na.rm = TRUE)
           args$plot.it <- TRUE
           # args$ylim <- ylim
-          args$y <- x[, "Mean"]
+          args$y <- x2[, "Mean"]
           mean <- do.call(qqnorm, args)
 
           if(is.null(args$ci.col))
-            args$ci.col <- "blue"
+            args$ci.col <- 4
           if(is.null(args$ci.lty))
             args$ci.lty <- 2
 
           lines(lower$x[order(lower$x)], lower$y[order(lower$x)], lty = args$ci.lty, col = args$ci.col)
           lines(upper$x[order(upper$x)], upper$y[order(upper$x)], lty = args$ci.lty, col = args$ci.col)
 
-          args$y <- x[, "Mean"]
+          args$y <- x2[, "Mean"]
           qqline(args$y)
         } else {
           args$y <- x
@@ -9749,7 +9758,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
 #            args$xlim <- c(-2.5, 2.5) * max(args$xlim)
 #          }
           args$x <- NULL
-          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "xlim", "ylim"))
+          args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "xlim", "ylim", "cex"))
           if(is.null(args$main))
             args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
           args$plot.it <- !add
@@ -9765,14 +9774,31 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         }
       }
       if(w == "wp") {
-        d <- qqnorm(x, plot = FALSE)
+        xlo <- xup <- NULL
+        if(ncol(x) > 10) {
+          x2 <- t(apply(x, 1, c95))
+          xlo <- x2[, "2.5%"]
+          xup <- x2[, "97.5%"]
+          x2 <- x2[, "Mean"]
+        } else {
+          x2 <- x
+        }
+        d <- qqnorm(x2, plot = FALSE)
         d$y <- d$y - d$x
+        if(!is.null(xlo)) {
+          d2 <- qqnorm(xlo, plot = FALSE)
+          d$ylo <- d2$y - d2$x
+          d$xlo <- d2$x
+          d2 <- qqnorm(xup, plot = FALSE)
+          d$yup <- d2$y - d2$x
+          d$xup <- d2$x
+        }
         level <- 0.95
         xlim <- max(abs(d$x))
         xlim <- c(-xlim, xlim)
-        ylim <- max(abs(d$y))
+        ylim <- max(abs(c(d$y, d$ylo, d$yup)))
         ylim <- c(-ylim, ylim)
-        z <- seq(xlim[1], xlim[2], 0.25)
+        z <- seq(xlim[1] - 10, xlim[2] + 10, 0.25)
         p <- pnorm(z)
         se <- (1/dnorm(z)) * (sqrt(p * (1 - p)/length(d$y)))
         low <- qnorm((1 - level)/2) * se
@@ -9798,6 +9824,16 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           abline(0, 1e+05, lty = 2, col = "lightgray")
           lines(z, low, lty = 2)
           lines(z, high, lty = 2)
+        }
+        if(!is.null(xlo)) {
+          if(is.null(args$ci.col))
+            args$ci.col <- 4
+          if(is.null(args$ci.lty))
+            args$ci.lty <- 2
+          i <- order(d$xlo)
+          lines(d$ylo[i] ~ d$xlo[i], lty = args$ci.lty, col = args$ci.col)
+          i <- order(d$xup)
+          lines(d$yup[i] ~ d$xup[i], lty = args$ci.lty, col = args$ci.col)
         }
       }
     }

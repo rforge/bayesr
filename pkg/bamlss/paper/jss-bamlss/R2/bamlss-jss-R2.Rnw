@@ -452,7 +452,7 @@ if(!file.exists("SwissLaborModel-lasso.rda")) {
     la(cage, fuse = 2)
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
-    optimizer = lasso, sampler = FALSE, upper = exp(5), lower = 1,
+    optimizer = opt_lasso, sampler = FALSE, upper = exp(5), lower = 1,
     criterion = "BIC")
 
   save(b, file = "SwissLaborModel-lasso.rda")
@@ -490,7 +490,7 @@ ordered fusion \code{fuse = 2}). To estimate the fused lasso model only the defa
 function in the \fct{bamlss} wrapper function call needs to exchanged
 <<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
-  optimizer = lasso, sampler = FALSE,
+  optimizer = opt_lasso, sampler = FALSE,
   criterion = "BIC", upper = exp(5), lower = 1)
 @
 The optimum shrinkage parameter $\lambda$ is selected by the BIC. Arguments \code{upper} and
@@ -970,11 +970,11 @@ Step & Type        & Function \\ \hline
 \multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
  & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
  & & \code{lasso\_transform()} \\ \hline
-\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{bfit()}, \code{bbfit()},
-                              \code{boost()}, \code{lasso()} \\
- & &\code{cox\_mode()}, \code{jm\_mode()}  \\ \cline{2-3}
- & \multirow{2}{*}{Sampler} & \code{GMCMC()}, \code{BayesX()}, \code{JAGS()} \\
- & & \code{cox\_mcmc()}, \code{jm\_mcmc()} \\ \hline
+\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{opt\_bfit()}, \code{opt\_bbfit()},
+                              \code{opt\_boost()}, \code{opt\_lasso()} \\
+ & &\code{opt\_Cox()}, \code{opt\_JM()}  \\ \cline{2-3}
+ & \multirow{2}{*}{Sampler} & \code{sam\_GMCMC()}, \code{sam\_BayesX()}, \code{sm\_JAGS()} \\
+ & & \code{sam\_Cox()}, \code{sam\_JM()} \\ \hline
 Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
 \end{tabular}
 \caption{\label{tab:functions} Current available functions that can be used for
@@ -1019,17 +1019,17 @@ parser function \fct{bamlss.frame}
 bf <- bamlss.frame(f, data = SwissLabor, family = "binomial")
 @
 Then, posterior mode estimates are obtained by using the implemented backfitting estimation
-function \fct{bfit}
+function \fct{opt\_bfit}
 <<results=hide>>=
-pm <- with(bf, bfit(x, y, family))
+pm <- with(bf, opt_bfit(x, y, family))
 @
-The estimated parameters returned from function \fct{bfit} can then be used as starting
-values for the MCMC sampler function \fct{GMCMC}
+The estimated parameters returned from function \fct{opt\_bfit} can then be used as starting
+values for the MCMC sampler function \fct{sam\_GMCMC}
 <<results=hide>>=
 set.seed(123)
-samps <- with(bf, GMCMC(x, y, family, start = pm$parameters))
+samps <- with(bf, sam_GMCMC(x, y, family, start = pm$parameters))
 @
-Using the parameters samples returned from function \fct{GMCMC}, statistics like the DIC are
+Using the parameters samples returned from function \fct{sam\_GMCMC}, statistics like the DIC are
 computed using the \fct{samplestats} function
 <<>>=
 stats <- with(bf, samplestats(samps, x, y, family))
@@ -1055,8 +1055,8 @@ using the \pkg{bamlss} wrapper function \fct{bamlss}. The main arguments of \fct
 where the first line basically represents the standard model frame specifications
 \citep[see][]{bamlss:Chambers+Hastie:1992}. All other arguments represent functions presented
 in Table~\ref{tab:functions} and can be exchanged. Note that the default for argument
-\code{optimizer} is the backfitting estimation function \fct{bfit} and the default for argument
-\code{sampler} is the \fct{GMCMC} sampling function.
+\code{optimizer} is the backfitting estimation function \fct{opt\_bfit} and the default for argument
+\code{sampler} is the \fct{sam\_GMCMC} sampling function.
 
 The returned fitted model object is a list of class \class{bamlss}, which is supported by several
 standard methods and extractor functions, such as \fct{plot}, \fct{summary} and \fct{predict}.
@@ -1067,7 +1067,7 @@ the estimation engines. This feature can be particularly important in complex mo
 where good mixing of the MCMC algorithm requires very good starting values. One use case is presented
 in Section~\ref{sec:application}, where for stability reasons posterior mode estimates are obtained
 using the gradient boosting optimizer function \fct{boost}. Afterwards the MCMC sampling engine
-\fct{GMCMC} is applied with the boosting estimates as starting values.
+\fct{sam\_GMCMC} is applied with the boosting estimates as starting values.
 
 \subsection{The BAMLSS model frame} \label{sec:bf}
 
@@ -1253,15 +1253,15 @@ argument, i.e., one could write an estimation function that is designed for one 
 problem, only.
 
 The modeling setup is best explained by looking at the main estimation engines provided by
-\pkg{bamlss}. The default optimizer using the \fct{bamlss} wrapper function is \fct{bfit}, which is a
+\pkg{bamlss}. The default optimizer using the \fct{bamlss} wrapper function is \fct{opt\_bfit}, which is a
 backfitting routine. The most important arguments are
 \begin{Code}
-  bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+  opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 \end{Code}
-The default sampling engine in \pkg{bamlss} is \fct{GMCMC}, again the most important
+The default sampling engine in \pkg{bamlss} is \fct{sam\_GMCMC}, again the most important
 arguments are
 \begin{Code}
-  GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+  sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 \end{Code}
 So basically, the arguments of the optimizer and the sampling function are the same, the
 main difference is the return value. In \pkg{bamlss} optimizer functions usually return
@@ -1389,8 +1389,8 @@ statistical models in \proglang{R}: A formula \code{f}, a family
 \code{ztnbinom_bamlss()}, and a data set \code{FlashAustriaTrain}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
 optimizer and the sampler. We choose the gradient boosting optimizer
-\code{boost()} in order to find initial values for the default sampler
-\code{GMCMC()}. Gradient boosting proved to offer a very stable method for
+\code{opt\_boost()} in order to find initial values for the default sampler
+\code{sam\_GMCMC()}. Gradient boosting proved to offer a very stable method for
 finding regression coefficients that serve as initial values for a MCMC sampler
 \citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.  We set the number of iteration
 to $1000$. For the sampling we allow another $1000$ iterations as burn-in
@@ -1402,7 +1402,7 @@ end:
 \begin{Sinput}
 R> set.seed(111)
 R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
-+    optimizer = boost, maxit = 1000,         ## Boosting arguments.
++    optimizer = opt_boost, maxit = 1000,     ## Boosting arguments.
 +    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
 \end{Sinput}
 \begin{Soutput}
@@ -1754,7 +1754,7 @@ Gauss_bamlss <- function(...) {
 
 \section[Special model terms]{Special model terms} \label{appendix:specialterms}
 
-The default estimation engines \fct{bfit} and \fct{GMCMC} (also the gradient boosting optimizer function
+The default estimation engines \fct{opt\_bfit} and \fct{sam\_GMCMC} (also the gradient boosting optimizer function
 \fct{boost}) in \pkg{bamlss} provide support for the implementation of special model terms, i.e.,
 model terms that cannot be represented by the \pkg{mgcv} smooth term constructor infrastructures.
 One simple example of such a special model term is a nonlinear growth curve, e.g., a nonlinear
@@ -1771,7 +1771,7 @@ means that each model term can have its own updating function. The user interest
 only needs to write a new \fct{smooth.construct} and \fct{Predict.matrix} method.
 
 The following \proglang{R} code implements a Gompertz growth model term
-which can be used by the default optimizer function \fct{bfit} and sampling function \fct{GMCMC}
+which can be used by the default optimizer function \fct{opt\_bfit} and sampling function \fct{sam\_GMCMC}
 of the \pkg{bamlss} package. The new \fct{smooth.construct} method is
 <<>>=
 smooth.construct.gc.smooth.spec <- function(object, data, knots) 
@@ -1784,7 +1784,7 @@ smooth.construct.gc.smooth.spec <- function(object, data, knots)
   if(object$by != "NA")
     stop("by variables not supported!")
 
-  ## Begin special elements to be used with bfit() and GMCMC().
+  ## Begin special elements to be used with opt_bfit() and sam_GMCMC().
   object$fit.fun <- function(X, b, ...) {
     f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
     if(center)
@@ -1812,8 +1812,8 @@ In principle, the setup is very similar to the smooth constructor functions prov
 \begin{itemize}
 \item \fct{fit.fun}: A function of the data \code{X} and parameter vector \code{b} that
   evaluates the fitted values.
-\item \fct{update}: An updating function to be used with optimizer \fct{bfit}.
-\item \fct{propose}: A MCMC propose function to be used with sampler \fct{GMCMC}.
+\item \fct{update}: An updating function to be used with optimizer \fct{opt\_bfit}.
+\item \fct{propose}: A MCMC propose function to be used with sampler \fct{sam\_GMCMC}.
 \item \fct{prior}: Function of the parameters \code{b} that evaluates the log-prior. Note,
   additional functions can be \fct{grad} and \code{hess} that evaluate the first and second
   derivative of the log-prior w.r.t.\ the parameters \code{b}.
@@ -1857,7 +1857,7 @@ f <- list(
 )
 
 if(!file.exists("GrowthCurveModel.rda")) {
-  b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
+  b <- bamlss(f, data = d, optimizer = opt_bfit, sampler = sam_GMCMC)
   save(b, file = "GrowthCurveModel.rda")
 } else {
   load("GrowthCurveModel.rda")
@@ -1890,7 +1890,7 @@ f <- list(
   y ~ s2(time, bs = "gc"),
   sigma ~ s(time)
 )
-b <- bamlss(f, data = d, optimizer = bfit, sampler = GMCMC)
+b <- bamlss(f, data = d, optimizer = opt_bfit, sampler = sam_GMCMC)
 plot(b)
 @
 The estimated effects are shown in Figure~\ref{fig:gcurve}.
@@ -1952,7 +1952,7 @@ head(bf$y)
 @
 to setup the optimizer function with:
 <<>>=
-lm.opt <- function(x, y, ...)
+opt_LM <- function(x, y, ...)
 {
   ## Only univariate response.
   y <- y[[1L]]
@@ -1985,7 +1985,7 @@ This optimizer function can already be used with the \fct{bamlss} wrapper functi
 all extractor functions are readily available.
 <<>>=
 f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
-b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = FALSE)
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = FALSE)
 summary(b)
 nd <- data.frame("x2" = seq(0, 1, length = 100))
 nd$p <- predict(b, newdata = nd, term = "x2")
@@ -2037,7 +2037,7 @@ flat and uninformative.
 
 We can implement the MCMC algorithm in the following sampling function
 <<>>=
-lm.mcmc <- function(x, y, start = NULL,
+sam_LM <- function(x, y, start = NULL,
   n.iter = 12000, burnin = 2000, thin = 10,
   m = 0, M = 1e+05,
   a = 1, b = 1e-05,
@@ -2135,7 +2135,7 @@ lm.mcmc <- function(x, y, start = NULL,
 @
 The new sampling function can be directly used with the \fct{bamlss} wrapper
 <<>>=
-b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = lm.mcmc)
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = sam_LM)
 
 summary(b)
 
