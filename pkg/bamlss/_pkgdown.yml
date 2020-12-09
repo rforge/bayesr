@@ -71,24 +71,24 @@ reference:
     desc: >
       Optimizer functions that can be used for model fitting using `bamlss()`
     contents:
-    - '`bfit`'
-    - '`boost`'
-    - '`cox_mode`'
-    - '`jm_bamlss`'
+    - '`opt_bfit`'
+    - '`opt_boost`'
+    - '`opt_bbfit`'
+    - '`opt_Cox`'
+    - '`opt_JM`'
     - '`stabsel`'
-    - '`boost2`'
     - '`bboost`'
-    - '`bbfit`'
+    - '`boost2`'
   - title: Samplers
     desc: >
       Sampler functions that can be used for model fitting using `bamlss()`
     contents:
-    - '`BayesX`'
-    - '`JAGS`'
-    - '`MVNORM`'
-    - '`cox_mcmc`'
-    - '`GMCMC`'
-    - '`jm_bamlss`'
+    - '`sam_BayesX`'
+    - '`sam_JAGS`'
+    - '`sam_MVNORM`'
+    - '`sam_Cox`'
+    - '`sam_GMCMC`'
+    - '`sam_JM`'
   - title: Special Model Terms
     contents:
     - '`la`'
@@ -118,11 +118,13 @@ reference:
     - '`coef.bamlss`'
     - '`colorlegend`'
     - '`continue`'
+    - '`cox_bamlss`'
     - '`cox_predict`'
     - '`dl.bamlss`'
     - '`family.bamlss`'
     - '`fitted.bamlss`'
     - '`gF`'
+    - '`jm_bamlss`'
     - '`smooth.construct.kr.smooth.spec`'
     - '`model.frame.bamlss`'
     - '`model.matrix.bamlss.frame`'

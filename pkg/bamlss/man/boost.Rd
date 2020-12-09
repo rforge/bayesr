@@ -177,8 +177,8 @@ parameters(b, mstop = 100)
 head(do.call("cbind", predict(b, mstop = 1)))
 head(do.call("cbind", predict(b, mstop = 100)))
 
-## Another example using the modified liklihood
-## bootsing algorithm.
+## Another example using the modified likelihood
+## boosting algorithm.
 f <- list(
   num ~ x1 + x2 + x3 + lon + lat +
     s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),
@@ -203,8 +203,8 @@ d <- GAMart(n = 5000)
 
 ## Split data into training and testing
 i <- sample(1:2, size = nrow(d), replace = TRUE)
-d.test <- subset(d, i == 1)
-d.train <- subset(d, i == 2)
+dtest <- subset(d, i == 1)
+dtrain <- subset(d, i == 2)
 
 ## Model formula
 f <- list(
@@ -213,18 +213,18 @@ f <- list(
 )
 
 ## Create model frame for out-of-sample selection.
-sm <- boost_frame(f, train = d.train, test = d.test, family = "gaussian")
+sm <- boost_frame(f, train = dtrain, test = dtest, family = "gaussian")
 
 ## Out-of-sample selection function.
 sfun <- function(parameters) {
   sm$parameters <- parameters
   p <- predict(sm, type = "parameter")
-  -1 * sum(sm$family$d(d.test$num, p, log = TRUE))
+  -1 * sum(sm$family$d(dtest$num, p, log = TRUE))
 }
 
 ## Start boosting with out-of-sample negative
 ## log-likelihood selection of model terms.
-b <- bamlss(f, data = d.train, sampler = FALSE, optimizer = opt_boost,
+b <- bamlss(f, data = dtrain, sampler = FALSE, optimizer = opt_boost,
   selectfun = sfun, always = "best")
 
 ## Plot curve of negative out-of-sample log-likelihood.

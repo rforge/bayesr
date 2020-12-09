@@ -3581,6 +3581,11 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
       attr(object$formula, "response.name") <- rn
   }
 
+  if(!missing(newdata)) {
+    if(nrow(newdata) < 1)
+      stop("newdata is empty with nrow < 1!")
+  }
+
   ## If data have been scaled (scale.d=TRUE)
   if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
     sc <- attr(object$model.frame, 'scale')

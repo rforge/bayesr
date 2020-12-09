@@ -44,12 +44,12 @@ argument, i.e., one could write an estimation function that is designed for one 
 problem, only.
 
 The modeling setup is best explained by looking at the main estimation engines provided by _bamlss_.
-The default optimizer using the `bamlss()` wrapper function is `bfit()`, which is a
+The default optimizer using the `bamlss()` wrapper function is `opt_bfit()`, which is a
 backfitting routine. The most important arguments are
 ```{r, eval=FALSE}
 opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
 ```
-The default sampling engine in _bamlss_ is `GMCMC()`, again the most important
+The default sampling engine in _bamlss_ is `sam_GMCMC()`, again the most important
 arguments are
 ```{r, eval=FALSE}
 sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
@@ -63,7 +63,7 @@ documentation of the _coda_ package).
 Internally, what the optimizer or sampling function is actually processing is not important
 for the `bamlss()` wrapper function as long as a vector or matrix of parameters is
 returned. For optimizer functions the return value needs to be named list with an element
-`"parameters"`, the vector (also a matrix, e.g., for `lasso()` and `boost()` optimizers)
+`"parameters"`, the vector (also a matrix, e.g., for `opt_lasso()` and `opt_boost()` optimizers)
 of estimated parameters. The most important requirement to make use of all extractor
 functions like `summary.bamlss()`, `predict.bamlss()`, `plot.bamlss()`,
 `residuals.bamlss()`, etc., is to follow the naming convention of the returned estimates.
@@ -339,7 +339,7 @@ sam_LM <- function(x, y, start = NULL,
 ```
 The new estimation function can be directly used with the `bamlss()` wrapper.
 ```{r}
-b <- bamlss(f, data = d, family = "lm", optimizer = lm.opt, sampler = sam_LM)
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = sam_LM)
 
 summary(b)
 

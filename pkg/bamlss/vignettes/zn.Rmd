@@ -98,7 +98,7 @@ information
 summary(b)
 
 ## Now, to predict the spatial effects we set up new data.
-nd <- data.frame("district" = levels(ZambiaNutrition$district))
+nd <- data.frame("district" = unique(ZambiaNutrition$district))
 
 ## Predict for the structured spatial effects.
 p_str <- predict(b, newdata = nd, term = "s(district,id='mrf1')", intercept = FALSE)
