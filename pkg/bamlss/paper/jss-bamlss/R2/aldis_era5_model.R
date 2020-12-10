@@ -51,7 +51,7 @@ if(!file.exists("b1.rda")) {
     family = SItr, binning = TRUE,           # general arguments
     optimizer = boost, maxit = 1000,         # boosting arguments
     thin = 5, burnin = 1000, n.iter = 6000,  # sampler arguments
-    init = FALSE
+    init = FALSE, light = TRUE
   )
 
   save(b1, file = "b1.rda")
@@ -63,7 +63,8 @@ if(!file.exists("b2.rda")) {
   b2 <- bamlss(newf2, data = d_train,
     family = "ztnbinom", binning = TRUE,
     optimizer = boost, maxit = 1000,
-    thin = 5, burnin = 1000, n.iter = 6000
+    thin = 5, burnin = 1000, n.iter = 6000,
+    init = FALSE, light = TRUE
   )
 
   save(b2, file = "b2.rda")
