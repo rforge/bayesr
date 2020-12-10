@@ -15,8 +15,8 @@
 \format{
   The \code{GEFCom2014} contains the following variables:
   \describe{
-    \item{Date}{The date of recording.}
-    \item{Load}{The corresponding electricty load.}
+    \item{date}{The date of recording.}
+    \item{load}{The corresponding electricty load.}
   }
 }
 
@@ -29,8 +29,8 @@
 
 \examples{
   data("GEFCom2014", package = "bamlss")
-  GEFCom2014$yday <- as.POSIXlt(GEFCom2014$Date)$yday
-  plot(Load ~ yday, data = GEFCom2014)
+  GEFCom2014$yday <- as.POSIXlt(GEFCom2014$date)$yday
+  plot(load ~ yday, data = GEFCom2014)
 }
 
 \keyword{datasets}
