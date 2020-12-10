@@ -559,15 +559,15 @@ be loaded with
 <<>>=
 data("GEFCom2014", package = "bamlss")
 @
-The data set contains information on the electricity load (variable \code{Load}) and the
+The data set contains information on the electricity load (variable \code{load}) and the
 date of measurement (variable \code{Date}). The electricity load data can be visualized with
 <<eval=FALSE>>=
-GEFCom2014$Trend <- 1:nrow(GEFCom2014)
-GEFCom2014$Yday <- as.POSIXlt(GEFCom2014$Date)$yday
+GEFCom2014$trend <- 1:nrow(GEFCom2014)
+GEFCom2014$yday <- as.POSIXlt(GEFCom2014$date)$yday
 
 par(mfrow = c(1, 2))
-plot(Load ~ Trend, data = GEFCom2014, type = "l")
-plot(Load ~ Yday, data = GEFCom2014)
+plot(load ~ trend, data = GEFCom2014, type = "l")
+plot(load ~ yday, data = GEFCom2014)
 @
 The data in Figure~\ref{fig:GEFCom2014} show a rather strong cyclical trend, i.e., electricity load 
 increases in the summer months and also over the turn of the year. In addition, the variation in
@@ -578,14 +578,14 @@ is not as pronounced in comparison.
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-GEFCom2014$Trend <- 1:nrow(GEFCom2014)
-GEFCom2014$Yday <- as.POSIXlt(GEFCom2014$Date)$yday
-plot(Load ~ Trend, data = GEFCom2014, type = "l")
-plot(Load ~ Yday, data = GEFCom2014)
+GEFCom2014$trend <- 1:nrow(GEFCom2014)
+GEFCom2014$yday <- as.POSIXlt(GEFCom2014$date)$yday
+plot(load ~ trend, data = GEFCom2014, type = "l")
+plot(load ~ yday, data = GEFCom2014)
 @
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(Load ~ Yday, data = GEFCom2014)
+plot(load ~ yday, data = GEFCom2014)
 @
 \caption{\label{fig:GEFCom2014} GEFCom2014 electricity load data plotted vs.\ day of the year.}
 \end{figure}
@@ -593,16 +593,16 @@ Therefore, to provide a competitive probabilistic forecast it is
 important to account for seasonality (note, for the sake of simplicity, we neglect other
 potential covariates). We estimate a location-scale model with
 $$
-\texttt{Load} \sim \mathcal{N}(\mu = f_{\mu,1}(\texttt{Trend}) + f_{\mu,2}(\texttt{Yday}),\,
-  \log(\sigma) = f_{\sigma,1}(\texttt{Trend}) + f_{\sigma,2}(\texttt{Yday})),
+\texttt{load} \sim \mathcal{N}(\mu = f_{\mu,1}(\texttt{trend}) + f_{\mu,2}(\texttt{yday}),\,
+  \log(\sigma) = f_{\sigma,1}(\texttt{trend}) + f_{\sigma,2}(\texttt{yday})),
 $$
 where functions $f_{\mu, j}( \cdot )$ and $f_{\sigma, j}( \cdot )$ are unspecified smooth
 functions, which are estimated using regression splines. The log-link for parameter
 $\sigma$ ensures positivity. The following model formula is used estimation
 <<>>=
 f <- list(
-  Load  ~ s(Trend) + s(Yday, bs = "cc"),
-  sigma ~ s(Trend) + s(Yday, bs = "cc")
+  load  ~ s(trend) + s(yday, bs = "cc"),
+  sigma ~ s(trend) + s(yday, bs = "cc")
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
@@ -647,7 +647,7 @@ plot(b, model = "mu", spar = FALSE)
 par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
 plot(b, model = "sigma", spar = FALSE)
 @
-\caption{\label{fig:GEFCom:effects} Estimated effects of \code{Trend} and \code{Yday} on
+\caption{\label{fig:GEFCom:effects} Estimated effects of \code{trend} and \code{yday} on
   parameter $\mu$ and $\sigma$ of the normal location-scale model. The grey shaded areas represent
   95\% credible intervals.}
 \end{figure}
