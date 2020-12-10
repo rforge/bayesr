@@ -97,6 +97,7 @@
 options(width = 70, prompt = "R> ", continue = "+  ",
   SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 1, 1))))
 library("bamlss")
+library("gamlss.dist")
 Sys.setenv("TZ" = "UTC")
 @
 
@@ -549,8 +550,138 @@ Using the fused lasso estimation some nonlinearities can be identified again, ho
 BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
 in the right panel of Figure~\ref{fig:logit_effects}.
 
-
 \subsection{Location-scale model} \label{sec:locscalemodel}
+
+In this example we will now extend the framework and estimate a complete distributional regression
+model using electricity load data from the GEFCom2014 forecasting competition
+\citep{bamlss:Hong:2016}. A subset of the data is povided in the \pkg{bamlss} package and can
+be loaded with
+<<>>=
+data("GEFCom2014", package = "bamlss")
+@
+The data set contains information on the electricity load (variable \code{Load}) and the
+date of measurement (variable \code{Date}). The electricity load data can be visualized with
+<<eval=FALSE>>=
+GEFCom2014$Trend <- 1:nrow(GEFCom2014)
+GEFCom2014$Yday <- as.POSIXlt(GEFCom2014$Date)$yday
+
+par(mfrow = c(1, 2))
+plot(Load ~ Trend, data = GEFCom2014, type = "l")
+plot(Load ~ Yday, data = GEFCom2014)
+@
+The data in Figure~\ref{fig:GEFCom2014} show a rather strong cyclical trend, i.e., electricity load 
+increases in the summer months and also over the turn of the year. In addition, the variation in
+summer and winter also seems to be greater than in the transition periods. The overall time trend
+is not as pronounced in comparison.
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+GEFCom2014$Trend <- 1:nrow(GEFCom2014)
+GEFCom2014$Yday <- as.POSIXlt(GEFCom2014$Date)$yday
+plot(Load ~ Trend, data = GEFCom2014, type = "l")
+plot(Load ~ Yday, data = GEFCom2014)
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
+plot(Load ~ Yday, data = GEFCom2014)
+@
+\caption{\label{fig:GEFCom2014} GEFCom2014 electricity load data plotted vs.\ day of the year.}
+\end{figure}
+Therefore, to provide a competitive probabilistic forecast it is
+important to account for seasonality (note, for the sake of simplicity, we neglect other
+potential covariates). We estimate a location-scale model with
+$$
+\texttt{Load} \sim \mathcal{N}(\mu = f_{\mu,1}(\texttt{Trend}) + f_{\mu,2}(\texttt{Yday}),\,
+  \log(\sigma) = f_{\sigma,1}(\texttt{Trend}) + f_{\sigma,2}(\texttt{Yday})),
+$$
+where functions $f_{\mu, j}( \cdot )$ and $f_{\sigma, j}( \cdot )$ are unspecified smooth
+functions, which are estimated using regression splines. The log-link for parameter
+$\sigma$ ensures positivity. The following model formula is used estimation
+<<>>=
+f <- list(
+  Load  ~ s(Trend) + s(Yday, bs = "cc"),
+  sigma ~ s(Trend) + s(Yday, bs = "cc")
+)
+@
+again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
+\citep{bamlss:Wood:2019} and with \code{bs = "cc"} a cyclical spline is estimated,
+which is a common way to reproduce seasonal effects.
+Note that model formulae are provided as lists of formulae, i.e., each list entry
+represents one parameter of the response distribution. Moreover, note that all smooth
+terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
+also possible to incorporate user defined model terms. In this example we use the normal
+distribution family object \fct{NO} from the \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist}
+to estimate a full Bayesian semi-parametric distributional regression model with
+<<echo=FALSE, results=hide>>=
+if(!file.exists("GEFComModel.rda")) {
+  set.seed(456)
+  b <- bamlss(f, data = GEFCom2014, family = GA)
+  save(b, file = "GEFComModel.rda")
+} else {
+  load("GEFComModel.rda")
+}
+@
+<<eval=FALSE>>=
+library("gamlss.dist")
+set.seed(456)
+b <- bamlss(f, family = NO, data = GEFCom2014)
+@
+After the estimation algorithms are finished, the estimated effects can be visualized instantly
+using the plotting method.
+<<eval=FALSE>>=
+plot(b, model = c("mu", "sigma"))
+@
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.8\textwidth}
+<<echo=FALSE, fig=TRUE, width=9, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
+plot(b, model = "mu", spar = FALSE)
+@
+
+\medskip
+
+<<echo=FALSE, fig=TRUE, width=9, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
+plot(b, model = "sigma", spar = FALSE)
+@
+\caption{\label{fig:GEFCom:effects} Estimated effects of \code{Trend} and \code{Yday} on
+  parameter $\mu$ and $\sigma$ of the normal location-scale model. The grey shaded areas represent
+  95\% credible intervals.}
+\end{figure}
+The estimated effects are shown in Figure~\ref{fig:GEFCom:effects} depicting a clear nonlinear
+seasonal effect for parameter $\mu$ and $\sigma$. The estimated overall time trend indicates
+that the mean and standard deviation of the modeled normal distribution is slightly increasing.
+
+For judging how well the model fits to the data the user can inspect randomized quantile
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile plots. 
+Residuals can be extracted using function \fct{residuals} and has a plotting method. 
+Alternatively, residuals can be investigated with
+<<eval=FALSE>>=
+plot(b, which = c("hist-resid", "qq-resid"))
+@
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "qq-resid", spar = FALSE)
+@
+\caption{\label{fig:GEFCom_resids} Histogram and quantile-quantile plot of the
+  resulting randomized quantile residuals of the normal location-scale model.}
+\end{figure}
+According the histogram and the quantile-quantile plot of the resulting randomized
+quantile residuals in Figure~\ref{fig:GEFCom_resids}, the model seems to fit relatively well. 
+Only for very low and very high values of \code{Load} the fitted distributions seem
+to be less appropriate.
+
+\subsection{Location-scale model v0} \label{sec:locscalemodel:v0}
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using a small textbook example of the well-known simulated motorcycle accident data
