@@ -82,7 +82,8 @@ bfit_glmnet(x, family, y, eta, id, weights, criterion, ...)
     in each iteration of the backfitting algorithm. If \code{nu} is numeric, e.g. \code{nu = 1},
     then \code{nu} is halfed until an improvement in the log-posterior is obtained or nu is
     smaller than \code{.Machine$double.eps}. If \code{nu = NULL}, no step length optimization
-    is performed.}
+    is performed. Note, using very large data sets it is usually better to switch of
+    step length optimization.}
   \item{stop.nu}{Integer. Should step length reduction be stopped after \code{stop.nu} iterations
     of the backfitting algorithm?}
   \item{eta}{The current value of the predictors, provided as a named list, one list entry

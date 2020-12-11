@@ -845,10 +845,10 @@ opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                                                        get.par(p.state$parameters, "b"))
               eta2[[id]] <- eta2[[id]] + p.state$fitted.values
               lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[sj]]$prior(p.state$parameters)
-              if(lpost1 < lpost0) {
-                warning(paste("logLik is decreasing updating term: ", id, ", ",
-                  x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
-              }
+#              if(lpost1 < lpost0) {
+#                warning(paste("logLik is decreasing updating term: ", id, ", ",
+#                  x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
+#              }
             }
           }
           
@@ -1026,10 +1026,10 @@ opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                                                                                    get.par(p.state$parameters, "b"))
                 eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
                 lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-                if(lpost1 < lpost0) {
-                  warning(paste("logLik is decreasing updating term: ", nx[j], ", ",
-                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
-                }
+#                if(lpost1 < lpost0) {
+#                  warning(paste("logLik is decreasing updating term: ", nx[j], ", ",
+#                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
+#                }
               }
             }
             
