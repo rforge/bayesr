@@ -550,83 +550,104 @@ Using the fused lasso estimation some nonlinearities can be identified again, ho
 BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
 in the right panel of Figure~\ref{fig:logit_effects}.
 
-\subsection{Location-scale model} \label{sec:locscalemodel}
+\subsection{Distributional model} \label{sec:distmodel}
 
 In this example we will now extend the framework and estimate a complete distributional regression
-model using electricity load data from the GEFCom2014 forecasting competition
-\citep{bamlss:Hong:2016}. A subset of the data is povided in the \pkg{bamlss} package and can
-be loaded with
-<<>>=
-data("GEFCom2014", package = "bamlss")
-@
-The data set contains information on the electricity load (variable \code{load}) and the
-date of measurement (variable \code{Date}). The electricity load data can be visualized with
-<<eval=FALSE>>=
-GEFCom2014$trend <- 1:nrow(GEFCom2014)
-GEFCom2014$yday <- as.POSIXlt(GEFCom2014$date)$yday
+model using data on fatalities in Austria. The data is taken from the Eurostat data base
+(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from 2000 to 45
+weeks in 2020.
 
-par(mfrow = c(1, 2))
-plot(load ~ trend, data = GEFCom2014, type = "l")
-plot(load ~ yday, data = GEFCom2014)
+The data is provided in the \pkg{bamlss} package and can be loaded with
+<<>>=
+data("fatalities", package = "bamlss")
 @
-The data in Figure~\ref{fig:GEFCom2014} show a rather strong cyclical trend, i.e., electricity load 
-increases in the summer months and also over the turn of the year. In addition, the variation in
-summer and winter also seems to be greater than in the transition periods. The overall time trend
-is not as pronounced in comparison.
+The data set contains information on the number of fatalities (variable \code{num}) and
+the year and week of recording (variables \code{year} and \code{week}). The aim of this
+analysis is to investigate excess mortality to get a better picture of the scale of the COVID-19
+pandemic \citep{bamlss:Leon:2020} \fixme{Thorsten: besser generell excess mortality beschreiben, e.g.,
+durch Naturkatastrophen etc.}.
+Excess mortality refers to mortality in excess of what would be
+expected based on the non-crisis mortality rate in the population of interest. Therefore,
+we model the long-term seasonal trend of fatality numbers before the crisis and compare
+estimated quantiles with the cases in 2020.
+
+To find a well-calibrated model, the first step is to look for a suitable distribution for the
+data at hand. Therefore, we use the several families as implemented in the \pkg{gamlss.dist}
+package \citep{bamlss:gamlss.dist} and estimate intercept only models and compare the
+log-likelihood and the resulting density functions. Note that we do not use discrete distributions
+in this example because the number of fatalities is far away from zero in the thousands, i.e., a
+model for count data will most probable not improve the overall fit.
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-GEFCom2014$trend <- 1:nrow(GEFCom2014)
-GEFCom2014$yday <- as.POSIXlt(GEFCom2014$date)$yday
-plot(load ~ trend, data = GEFCom2014, type = "l")
-plot(load ~ yday, data = GEFCom2014)
+families <- list("NO" = NO(), "GA" = GA(), "BCCG" = BCCG(mu.link = "log"),
+  "BCPE" = BCPE(mu.link = "log"), "BCT" = BCPE(mu.link = "log"))
+if(!file.exists("FatDens.rda")) {
+  set.seed(123)
+  ll <- NULL
+  dnum <- NULL
+  for(j in seq_along(families)) {
+    b <- bamlss(num ~ 1, data = fatalities, family = families[[j]])
+    par <- predict(b, type = "parameter")
+    ll <- c(ll, family(b)$loglik(fatalities$num, par))
+    dnum <- cbind(dnum, family(b)$d(fatalities$num, par))
+  }
+  save(ll, dnum, file = "FatDens.rda")
+} else {
+  load("FatDens.rda")
+}
+names(ll) <- names(families)
+ll <- sort(ll)
+hist(fatalities$num, breaks = "Scott", freq = FALSE,
+  main = "", xlab = "#Number of fatalities")
+i <- order(fatalities$num)
+col <- rev(qualitative_hcl(ncol(dnum), palette = "dynamic"))
+matplot(fatalities$num[i], dnum[i, ], type = "l",
+  lty = 1, col = col, add = TRUE, lwd = 3)
+legend("topright", paste0(names(ll), ": ", round(ll, 2)),
+  lty = 1, lwd = 3, bty = "n", col = col,
+  title = "Family & log-likelihood")
 @
-<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(load ~ yday, data = GEFCom2014)
-@
-\caption{\label{fig:GEFCom2014} GEFCom2014 electricity load data plotted vs.\ day of the year.}
+\caption{\label{fig:fathist} Histogram and fitted distributions of the fatalities data
+  in Austria.}
 \end{figure}
-Therefore, to provide a competitive probabilistic forecast it is
-important to account for seasonality (note, for the sake of simplicity, we neglect other
-potential covariates). We estimate a location-scale model with
-$$
-\texttt{load} \sim \mathcal{N}(\mu = f_{\mu,1}(\texttt{trend}) + f_{\mu,2}(\texttt{yday}),\,
-  \log(\sigma) = f_{\sigma,1}(\texttt{trend}) + f_{\sigma,2}(\texttt{yday})),
-$$
-where functions $f_{\mu, j}( \cdot )$ and $f_{\sigma, j}( \cdot )$ are unspecified smooth
-functions, which are estimated using regression splines. The log-link for parameter
-$\sigma$ ensures positivity. The following model formula is used estimation
+The histogram of the number of fatalities together with fitted densities and corresponding
+log-likelihoods for several estimated distributions is shown in
+Figure~\ref{fig:fathist}. One of the most flexible distributions of the \pkg{gamlss.dist} package,
+the four parameter Box-Cox power exponential distribution (family \code{BCPE}), has the best fit
+to the data (though only by a small difference). Therefore, we use the \fct{BCPE} family function
+and estimate a model using the weekly information as a cyclical seasonal effect. We can use the
+following model formula for estimation
 <<>>=
 f <- list(
-  load  ~ s(trend) + s(yday, bs = "cc"),
-  sigma ~ s(trend) + s(yday, bs = "cc")
+  num   ~ s(week, k = 20, bs = "cc"),
+  sigma ~ s(week, k = 20, bs = "cc"),
+  nu    ~ s(week, k = 20, bs = "cc"),
+  tau   ~ s(week, k = 20, bs = "cc")
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
-\citep{bamlss:Wood:2019} and with \code{bs = "cc"} a cyclical spline is estimated,
-which is a common way to reproduce seasonal effects.
+\citep{bamlss:Wood:2019}.
 Note that model formulae are provided as lists of formulae, i.e., each list entry
 represents one parameter of the response distribution. Moreover, note that all smooth
 terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
-also possible to incorporate user defined model terms. In this example we use the normal
-distribution family object \fct{NO} from the \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist}
-to estimate a full Bayesian semi-parametric distributional regression model with
+also possible to incorporate user defined model terms. A full Bayesian semi-parametric 
+distributional regression model can be estimated with
 <<echo=FALSE, results=hide>>=
-if(!file.exists("GEFComModel.rda")) {
+d19 <- subset(fatalities, year < 2020)
+d20 <- subset(fatalities, year > 2019)
+if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = GEFCom2014, family = GA)
-  save(b, file = "GEFComModel.rda")
+  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"))
+  save(b, file = "FatModel.rda")
 } else {
-  load("GEFComModel.rda")
+  load("FatModel.rda")
 }
 @
 <<eval=FALSE>>=
-library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, family = NO, data = GEFCom2014)
+b <- bamlss(f, family = "gaussian", data = mcycle)
 @
 After the estimation algorithms are finished, the estimated effects can be visualized instantly
 using the plotting method.
@@ -635,53 +656,25 @@ plot(b, model = c("mu", "sigma"))
 @
 \begin{figure}[!ht]
 \centering
-\setkeys{Gin}{width=0.8\textwidth}
-<<echo=FALSE, fig=TRUE, width=9, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "mu", spar = FALSE)
 @
-
-\medskip
-
-<<echo=FALSE, fig=TRUE, width=9, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1), mfrow = c(1, 2))
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE)
 @
-\caption{\label{fig:GEFCom:effects} Estimated effects of \code{trend} and \code{yday} on
-  parameter $\mu$ and $\sigma$ of the normal location-scale model. The grey shaded areas represent
+\caption{\label{fig:toy_effects} Estimated effects of \code{times} on parameter
+  $\mu$ and $\sigma$ of the normal location-scale model. The grey shaded areas represent
   95\% credible intervals.}
 \end{figure}
-The estimated effects are shown in Figure~\ref{fig:GEFCom:effects} depicting a clear nonlinear
-seasonal effect for parameter $\mu$ and $\sigma$. The estimated overall time trend indicates
-that the mean and standard deviation of the modeled normal distribution is slightly increasing.
+The estimated effects are shown in Figure~\ref{fig:toy_effects} depicting a clear nonlinear
+relationship for parameter $\mu$ and $\sigma$.
 
-For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile plots. 
-Residuals can be extracted using function \fct{residuals} and has a plotting method. 
-Alternatively, residuals can be investigated with
-<<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid"))
-@
-\begin{figure}[!ht]
-\centering
-\setkeys{Gin}{width=0.4\textwidth}
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
-@
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "qq-resid", spar = FALSE)
-@
-\caption{\label{fig:GEFCom_resids} Histogram and quantile-quantile plot of the
-  resulting randomized quantile residuals of the normal location-scale model.}
-\end{figure}
-According the histogram and the quantile-quantile plot of the resulting randomized
-quantile residuals in Figure~\ref{fig:GEFCom_resids}, the model seems to fit relatively well. 
-Only for very low and very high values of \code{Load} the fitted distributions seem
-to be less appropriate.
 
-\subsection{Location-scale model v0} \label{sec:locscalemodel:v0}
+
+\subsection{Location-scale model v0} \label{sec:distmodel:v0}
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using a small textbook example of the well-known simulated motorcycle accident data
@@ -1815,7 +1808,7 @@ candidate distributions in BAMLSS is quite large, it can happen that the CRPS fo
 distributions is not implemented. In such a case the reader can implement the CRPS using
 numerical integration. The following \proglang{R} code implements the \fct{CRPS} to be used with
 \pkg{bamlss} and a numeric response, e.g., which can be used with the motorcycle accident model
-presented in Section~\ref{sec:locscalemodel}.
+presented in Section~\ref{sec:distmodel}.
 <<>>=
 CRPS <- function(object, newdata = NULL) {
   yname <- response_name(object)
