@@ -34,6 +34,8 @@ print.family.bamlss <- function(x, full = TRUE, ...)
 ## Second make.link function.
 make.link2 <- function(link)
 {
+  if(is.null(link))
+    link <- "identity"
   link0 <- link
   if(link0 == "tanhalf"){
     rval <- list(
@@ -5541,7 +5543,59 @@ dgp_bamlss <- function(...)
       return(p)
     }
   )
+  rval$type <- "discrete"
 
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+discretize <- function(family)
+{
+  family <- bamlss.family(family)
+  rval <- list()
+  rval$family <- paste("discrete", family$family)
+  rval$names <- family$names
+  rval$links <- family$links
+  rval$valid.response <- function(x) {
+    if(is.factor(x)) return(FALSE)
+    if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+    ok
+  }
+  rval$d <- function(y, par, log = FALSE, ...) {
+    d <- family$p(y + 1, par) - family$p(y, par)
+    if(log)
+      d <- log(d)
+    return(d)
+  }
+  rval$p <- function(y, par, log = FALSE, ...) {
+    par <- as.data.frame(par)
+    n <- length(y)
+    p <- rep(0, n)
+    for(i in 1:n) {
+      dy <- family$p((y[i] + 1):1, par[i, ]) - family$p((y[i]):0, par[i, ])
+      p[i] <- sum(dy)
+    }
+    return(p)
+  }
+  rval$q <- function(p, par, ...) {
+    par <- as.data.frame(par)
+    n <- nrow(par)
+    x <- rep(NA, n)
+    p <- rep(p, length.out = n)
+    for(i in 1:n) {
+      alpha <- 0
+      y <- 0
+      while(alpha < p[i]) {
+        alpha <- rval$p(y, par[i, ])
+        y <- y + 1
+      }
+      x[i] <- y
+    }
+    return(x)
+  }
+  rval$initialize <- family$initialize
+  rval$type <- "discrete"
   class(rval) <- "family.bamlss"
   rval
 }

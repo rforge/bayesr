@@ -2421,7 +2421,7 @@ complete.bamlss.family <- function(family)
       family$loglik <- function(y, par, ...) {
         logdens <- family$d(y, par, log = TRUE)
         if(any(i <- !is.finite(logdens))) {
-          logdens[i] <- 0
+          logdens[i] <- -100
           warning("non finite log density!")
         }
         return(sum(logdens, na.rm = TRUE))
@@ -2592,8 +2592,12 @@ bamlss.formula <- function(formula, family = NULL, specials = NULL, env = NULL, 
         attr(formula[[j]], ".Environment") <- NULL
       }
     }
+    if(any(j <- is.na(names(formula)))) {
+      formula <- formula[!j]
+    }
     formula
   }
+
   formula <- formula_and(formula)
   formula <- formula_at(formula)
   formula <- complete_formula(formula_hierarchical(formula))
@@ -7276,12 +7280,12 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   }
 
   ## What should be plotted?
-  which.match <- c("effects", "samples", "hist-resid", "qq-resid",
+  which.match <- c("effects", "samples", "hist-resid", "qq-resid", "wp",
     "scatter-resid", "max-acf", "param-samples", "boost_summary", "results",
     "max-acf")
   if(!is.character(which)) {
-    if(any(which > 8L))
-      which <- which[which <= 8L]
+    if(any(which > 9L))
+      which <- which[which <= 9L]
     which <- which.match[which]
   } else which <- which.match[pmatch(tolower(which), which.match)]
   if(length(which) > length(which.match) || !any(which %in% which.match))
@@ -7292,12 +7296,12 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   }
   which <- which[which != "results"]
 
-  ok <- any(c("hist-resid", "qq-resid") %in% which)
+  ok <- any(c("hist-resid", "qq-resid", "wp") %in% which)
 
   x$formula <- as.formula(x$formula)
 
   if(length(which) > 1 | ok) {
-    which2 <- which[which %in% c("hist-resid", "qq-resid")]
+    which2 <- which[which %in% c("hist-resid", "qq-resid", "wp")]
     if(length(which2)) {
       res <- residuals.bamlss(x, ...)
       plot(res, which = which2, spar = spar, ...)
@@ -7471,7 +7475,7 @@ plot.bamlss.results <- function(x, model = NULL, term = NULL,
           args2$y <- if(rtype == "quantile") (res) else (res - mean(res)) / sd(res)
           args2 <- delete.args("qqnorm.default", args2, package = "stats", not = c("col", "pch"))
           if(is.null(args$main)) {
-            args2$main <- "Normal Q-Q Plot"
+            args2$main <- "Normal Q-Q plot"
             if(ny > 1)
               args2$main <- paste(names(res0)[j], args2$main, sep = ": ")
           }
@@ -9722,7 +9726,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           args$plot.it <- FALSE
           args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "cex"))
           if(is.null(args$main))
-            args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+            args$main <- paste("Normal Q-Q plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
 
           args$y <- x2[, "Mean"]
           mean <- do.call(qqnorm, args)
@@ -9760,7 +9764,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           args$x <- NULL
           args <- delete.args("qqnorm.default", args, package = "stats", not = c("col", "pch", "xlim", "ylim", "cex"))
           if(is.null(args$main))
-            args$main <- paste("Normal Q-Q Plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+            args$main <- paste("Normal Q-Q plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
           args$plot.it <- !add
           ok <- try(do.call(qqnorm, args))
           if(add) {
@@ -9817,7 +9821,9 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         if(add) {
           points(d$x, d$y, col = args$col, pch = args$pch, cex = args$cex)
         } else {
-          plot(d$x, d$y, ylab = args$ylab, xlab = args$xlab, 
+          if(is.null(args$main))
+            args$main <- paste("Worm plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
+          plot(d$x, d$y, ylab = args$ylab, xlab = args$xlab, main = args$main,
             xlim = xlim, ylim = ylim, col = args$col, pch = args$pch, cex = args$cex)
           grid(lty = "solid")
           abline(0, 0, lty = 2, col = "lightgray")

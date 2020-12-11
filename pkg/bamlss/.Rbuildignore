@@ -1,4 +1,5 @@
 inst/tscript.R
+inst/fatalities.R
 
 R/devtools.R
 R/STAN.R
