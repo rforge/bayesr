@@ -573,10 +573,10 @@ estimated quantiles with the cases in 2020.
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
 data at hand. Therefore, we use the several families as implemented in the \pkg{gamlss.dist}
-package \citep{bamlss:gamlss.dist} and estimate intercept only models and compare the
-log-likelihood and the resulting density functions. Note that we do not use discrete distributions
-in this example because the number of fatalities is far away from zero in the thousands, i.e., a
-model for count data will most probable not improve the overall fit.
+package \citep{bamlss:gamlss.dist} and compare the model fits using the
+log-likelihood (the complete \proglang{R}-code is available in the supplements). Note that we do not
+use discrete distributions in this example because the number of fatalities is far away from
+zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.5\textwidth}
@@ -616,12 +616,14 @@ legend("topright", paste0(names(ll), ": ", round(ll, 2)),
 The histogram of the number of fatalities together with fitted densities and corresponding
 log-likelihoods for several estimated distributions is shown in
 Figure~\ref{fig:fathist}. One of the most flexible distributions of the \pkg{gamlss.dist} package,
-the four parameter Box-Cox power exponential distribution (family \code{BCPE}), has the best fit
+the four parameter Box-Cox power exponential distribution (family \fct{BCPE}), has the best fit
 to the data (though only by a small difference). Therefore, we use the \fct{BCPE} family function
-and estimate a model using the weekly information as a cyclical seasonal effect given by
+and estimate a Bayesian model that takes into account the cyclical pattern of the year, in
+winter there are usually quite a lot of flu and similar illnesses that lead to a higher mortality 
+rate. The model is specified with
 $$
-\texttt{num} \sim \mathcal{BCPE}(\log(\mu) = f_{\mu}(\texttt{week}),
-  \log(\sigma) = f_{\sigma}(\texttt{week}), \nu = f_{\nu}(\texttt{week}),
+\texttt{num} \sim \mathcal{BCPE}(\log(\mu) = f_{\mu}(\texttt{week}),\,
+  \log(\sigma) = f_{\sigma}(\texttt{week}),\, \nu = f_{\nu}(\texttt{week}),\,
   \log(\tau) = f_{\tau}(\texttt{week}))
 $$
 where functions $f_{j}( \cdot )$ are unspecified smooth functions, which are estimated using
@@ -724,28 +726,56 @@ plot(b, which = "qq-resid", spar = FALSE)
 According the histogram and the quantile-quantile plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
 
+In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
+distribution with the current situation in 2020. Therefore parameters for each week of the
+year are predicted
+<<eval=TRUE>>=
+nd <- data.frame("week" = 1:53)
+par <- predict(b, newdata = nd, type = "parameter")
+@
+and the estimated quantiles are computed with the quantile function of the family
+<<>>=
+nd$fit <- sapply(c(0.05, 0.5, 0.95),
+  FUN = function(p) { family(b)$q(p, par) })
+@
+The estimated quantiles and the data used for modeling can now be plotted with
+<<echo=TRUE,eval=FALSE>>=
+d19w <- reshape(d19, idvar = "week",
+  timevar = "year", direction = "wide")
+matplot(d19w$week, d19w[, -1], data = d19,
+  type = "b", pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "#Fatalities")
+matplot(nd$week, nd$fit, type = "l", lty = c(2,  1, 2),
+  col = 1, lwd = 3, add = TRUE)
+lines(num ~ week, data = d20, col = 2, lwd = 2,
+  type = "b", pch = 16, cex = 1.3)
+@
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.7\textwidth}
-<<fig=TRUE, height=5, width=6, echo=FALSE>>=
-nd <- data.frame("week" = 1:53)
-par <- predict(b, newdata = nd, type = "parameter")
-nd$fit <- sapply(c(0.025, 0.1, 0.5, 0.9, 0.975),
-  FUN = function(p) { family(b)$q(p, par) })
-d19w <- reshape(d19, idvar = "week", timevar = "year", direction = "wide")
+<<echo=FALSE, fig=TRUE, height=5, width=6>>=
+d19w <- reshape(d19, idvar = "week",
+  timevar = "year", direction = "wide")
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 matplot(d19w$week, d19w[, -1], data = d19,
   type = "b", pch = 16, col = gray(0.1, alpha = 0.1),
   xlab = "Week", ylab = "#Fatalities")
-matplot(nd$week, nd$fit, type = "l", lty = c(3, 2,  1, 2, 3),
+matplot(nd$week, nd$fit, type = "l", lty = c(2,  1, 2),
   col = 1, lwd = 3, add = TRUE)
-lines(num ~ week, data = d20, col = 2, lwd = 2, type = "b", pch = 16, cex = 1.3)
+lines(num ~ week, data = d20, col = 2, lwd = 2,
+  type = "b", pch = 16, cex = 1.3)
 @
-\caption{\label{fig:fatmodel_compare}. Predicted 2.5\%, 50\% and 97.5\% quantiles of
+\caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\% and 95\% quantiles of
   the cyclic seasonal week model, black dashed lines, and number of fatalities in 2020 up
-  to week 45, red solid line. Data before 2020 is shown by the light gray solid lines in the
+  to week 45, red points and line. Data before 2020 is shown in light gray in the
   background.}
 \end{figure}
+The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals the seasonal
+variation of fatalities. In winter there is a clear peak, but also in the summer there is
+a visible increase, which is probably due to particularly hot summer months, which lead to greater 
+cardiovascular stress. The mortality rate from beginning of 2020 to week 45 is plotted in red and 
+clearly indicates that this is much higher than the long-term median in the spring and from about 
+week 40 onward, and also well above the estimated 95\% quantile, respectively.
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
