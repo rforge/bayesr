@@ -89,6 +89,6 @@ e1e <- residuals(b1, newdata = d_eval)
 e2e <- residuals(b2, newdata = d_eval)
 
 par(mfrow = c(1, 2))
-plot(c(e1t, e2t), which = "wp", main = "Training")
-plot(c(e1e, e2e), which = "wp", main = "Testing")
+plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
+plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
 

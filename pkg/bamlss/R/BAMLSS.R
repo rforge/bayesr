@@ -9872,7 +9872,7 @@ c.bamlss.residuals <- function(...) {
   res <- list(...)
   Call <- match.call()
   mn <- as.character(Call)[-1L]
-  names(res) <- mn
+  names(res) <- if(is.null(names(res))) mn else names(res)
   class(res) <- "bamlss.residuals.list"
   return(res)
 }
@@ -9895,7 +9895,10 @@ plot.bamlss.residuals.list <- function(x, ...) {
   if(is.null(legend))
     legend <- TRUE
   if(legend) {
-    legend("topleft", names(x), pch = 1, bty = "n", col = col)
+    pos <- args$pos
+    if(is.null(pos))
+      pos <- "topleft"
+    legend(pos, names(x), pch = 1, bty = "n", col = col)
   }
   return(invisible(NULL))
 }
