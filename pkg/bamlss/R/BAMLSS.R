@@ -3766,6 +3766,13 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
 
   ia <- interactive()
 
+  na.action <- NULL
+  if(any(is.na(newdata))) {
+    warning("NA values in newdata, calling na.omit()!")
+    newdata <- na.omit(newdata)
+    na.action <- attr(newdata, "na.action")
+  }
+
   if(is.null(cores)) {
     pred <- list()
     if(chunks > 1) {
@@ -3882,6 +3889,9 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
 
   if((length(pred) < 2) & drop)
     pred <- pred[[1]]
+
+  if(!is.null(na.action))
+    attr(pred, "na.action") <- na.action
 
   return(pred)
 }
@@ -9563,16 +9573,15 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
   } else {
     type <- match.arg(type)
 
-    if(is.null(object$y))
-      stop("response variable is missing, cannot compute residuals!")
-
-    nobs <- nrow(object$y)
-    y <- if(is.data.frame(object$y)) {
-      if(ncol(object$y) < 2) {
-        object$y[[1]]
-      } else object$y
-    } else {
-      object$y
+    y <- NULL
+    if(!is.null(object$y)) {
+      y <- if(is.data.frame(object$y)) {
+        if(ncol(object$y) < 2) {
+          object$y[[1]]
+        } else object$y
+      } else {
+        object$y
+      }
     }
 
     if(!is.null(nd <- list(...)$newdata)) {
@@ -9584,7 +9593,18 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
       n <- if(is.null(dim(y))) length(y) else nrow(y)
     }
 
+    if(is.null(y))
+      stop("response variable is missing, cannot compute residuals!")
+
     par <- predict(object, nsamps = nsamps, drop = FALSE, ...)
+    nas <- attr(par, "na.action")
+    if(!is.null(nas)) {
+      if(is.null(dim(y))) {
+        y <- y[-nas]
+      } else {
+        y <- y[-nas, ]
+      }
+    }
     nod <- is.null(dim(par[[1L]]))
     for(j in family$names) {
       if(!nod)
@@ -9607,7 +9627,6 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
           discrete <- TRUE
         if(discrete) {
           ymin <- min(y, na.rm = TRUE)
-
           a <- family$p(ifelse(y == ymin, y, y - 1), par)
           a <- ifelse(y == ymin, 0, a)
           b <- family$p(y, par)

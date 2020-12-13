@@ -72,18 +72,9 @@ if(!file.exists("b2.rda")) {
   load("b2.rda")
 }
 
-## --- out-of-sample prediciton ---
+## --- predictions ---
 d_eval <- na.omit(d_eval)
-fit1 <- predict(b1, newdata = d_eval, type = "parameter")
-fit2 <- predict(b2, newdata = d_eval, type = "parameter")
-
-d_eval <- cbind(d_eval,
-  "SItr" = fit1,
-  "ztnbinom" = fit2
-)
-
-## --- save results ---
-save(b1, b2, d_eval, sel_SItr, sel_ztnbinom, file = "full_model.rda")
+d_train <- na.omit(d_train)
 
 fit1 <- predict(b1, newdata = d_eval, type = "parameter")
 fit2 <- predict(b2, newdata = d_eval, type = "parameter")
@@ -91,8 +82,13 @@ fit2 <- predict(b2, newdata = d_eval, type = "parameter")
 family(b1)$loglik(d_eval$counts, fit1)
 family(b2)$loglik(d_eval$counts, fit2)
 
-e1 <- residuals(b1, newdata = d_eval)
-e2 <- residuals(b2, newdata = d_eval)
+e1t <- residuals(b1, newdata = d_train)
+e2t <- residuals(b2, newdata = d_train)
 
-plot(c(e1, e2), which = "wp")
+e1e <- residuals(b1, newdata = d_eval)
+e2e <- residuals(b2, newdata = d_eval)
+
+par(mfrow = c(1, 2))
+plot(c(e1t, e2t), which = "wp", main = "Training")
+plot(c(e1e, e2e), which = "wp", main = "Testing")
 
