@@ -19,22 +19,21 @@ _pkgdown.yml
 
 vignettes/figures
 vignettes/__MACOSX
-vignettes/bf.Rmd
-vignettes/bivnorm.Rmd
-vignettes/distregvis.Rmd
+
 vignettes/engines.Rmd
-vignettes/families.Rmd
-vignettes/glm.Rmd
-vignettes/lasso.Rmd
 vignettes/misc.Rmd
-vignettes/rent.Rmd
-vignettes/terms.Rmd
-vignettes/toymodel.rda
-vignettes/jm.Rmd
-vignettes/zn.Rmd
+vignettes/bf.Rmd
+vignettes/families.Rmd
 vignettes/multinomial.Rmd
-vignettes/bdrp.Rmd
+vignettes/bivnorm.Rmd
+vignettes/glm.Rmd
+vignettes/rent.Rmd
 vignettes/cox.Rmd
+vignettes/jm.Rmd
+vignettes/terms.Rmd
+vignettes/distregvis.Rmd
+vignettes/lasso.Rmd
+vignettes/zn.Rmd
 
 vignettes/DebTrivedi.rda.zip
 vignettes/DebTrivedi.rda
