@@ -1,0 +1,110 @@
+\documentclass[nojss,notitle]{jss}
+\usepackage{amsmath,amssymb,amsfonts,multirow,longtable,tikz,thumbpdf,lmodern}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% Authors: NU + rest in alphabetical order
+\author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
+        Nadja Klein\\Humboldt Universit\"at\\zu Berlin \And
+        Thorsten Simon\\Universit\"at Innsbruck \And
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nikolaus Umlauf, Nadja Klein, Thorsten Simon, Achim Zeileis}
+
+\title{\pkg{bamlss}: A Lego Toolbox for Flexible {B}ayesian Regression (and Beyond)}
+\Plaintitle{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond)}
+\Shorttitle{\pkg{bamlss}: A Lego Toolbox for Flexible Bayesian Regression}
+
+\Address{
+  Nikolaus Umlauf, Achim Zeileis, Thorsten Simon\\
+  Department of Statistics\\
+  Faculty of Economics and Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  6020 Innsbruck, Austria\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
+  \phantom{E-mail: }\email{Thorsten.Simon@uibk.ac.at}\\
+  URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+
+  Nadja Klein\\
+  Humboldt Universit\"at zu Berlin\\
+  School of Business and Economics\\
+  Applied Statistics\\
+  Unter den Linden 6\\
+  10099 Berlin, Germany\\
+  E-mail: \email{nadja.klein@hu-berlin.de}\\
+  URL: \url{https://hu.berlin/NK}
+}
+
+% for \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ",
+  SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 1, 1))))
+library("bamlss")
+Sys.setenv("TZ" = "UTC")
+@
+
+\begin{document}
+
+\section{Answers to Reviewer 1}
+
+\begin{enumerate}
+\item \emph{I have two main comments. The first is that it would be very useful to have a table
+  of all the samplers and 
+  optimizers provided by the package. It would also be useful to specify which classes of models are 
+  compatible with which optimizers/samplers (as I understand some samplers are specifically aimed at 
+  certain models, e.g. \code{cox\_mcmc()}.). Maybe the best way to do this is to include a function
+  in the package which, given a bamlss model specification as input, returns a list of
+  optimizers/samplers that could be used to fit it.}
+
+  Thank you for the suggestion. We now implemented a function \fct{enines} that gives exactly this
+  information. We added the information in the text in Section 4.
+
+  \medskip
+
+\item \emph{A related suggestion is that it would be useful to adopt prefixes in the package to 
+  indicate sampler and optimizers (e.g., all the sampler could start with \code{sam\_*} and
+  all optimizers with \code{opt\_*}), because the package provides quite a lot of functions but
+  no consistent naming convention for functions that do similar things.}
+
+  Again, thank you for this very useful suggestion. We now changed the package infrastructures
+  completely and added the suggested prefixes to the optimizer and sampler functions.
+
+  \medskip
+
+\item \emph{The second comment is that the paper needs to clarify the fact that some features of
+  \pkg{bamlss} implicitly depend on packages and stand alone software such as \pkg{BayesX}, which
+  must be installed separately. Are you planning to make bamlss depend on \pkg{R2BayesX}
+  explicitly (i.e. via the Depends or Imports fields) in future versions of the package?}
+
+  We now clarify that the sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS} need installation
+  of the \pkg{BayesXsrc} and the \pkg{rjags} package. We do not plan to make \pkg{bamlss} depend on
+  \pkg{R2BayesX}, it is exactly the other way round. The \pkg{bamlss} package does not depend on
+  any features of \pkg{R2BayesX}, but we will rewrite \pkg{R2BayesX} and integrate it in \pkg{bamlss}
+  in the future. The manuscript (and the package) does not state a dependency to \pkg{R2BayesX},
+  so we believe the reader recognizes that the \pkg{bamlss} package does something
+  completely different.
+
+  \medskip
+
+\item \emph{pg 1 says "(3) Enhanced inference infrastructure, typically Bayesian, beyond classical 
+  frequentist significance tests." maybe rephrase this, as it seems to say that frequentist
+  inference consists only of significance tests.}
+
+  We now write "Enhanced inference infrastructure, typically Bayesian,
+  beyond classical frequentist methods".
+
+\end{enumerate}
+
+\end{document}
+
