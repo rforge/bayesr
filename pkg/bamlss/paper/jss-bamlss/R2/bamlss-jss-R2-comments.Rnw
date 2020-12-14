@@ -286,7 +286,7 @@ Sys.setenv("TZ" = "UTC")
   for instance, a \pkg{brms} or \fct{jagam} implementation using the same (or similar) model? Is the
   sampler implemented in R or C++?}
 
-  \fixme{Niki}
+  \fixme{Niki/Thorsten}
 
 \medskip
 
