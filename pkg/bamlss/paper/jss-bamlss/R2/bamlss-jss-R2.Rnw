@@ -301,7 +301,7 @@ The column \code{parameters} shows respective posterior mode estimates of the re
 coefficients, which are calculated by the upstream backfitting algorithm (note that the column
 is named parameters, because optimizer functions can in principle return any type of parameters).
 Before proceeding the analysis, users usually perform additional convergence checks of the
-MCMC chains by looking at traceplots and auto-correlation.
+MCMC chains by looking at traceplots and auto-correlation (besides acceptance probabilities).
 <<eval=FALSE>>=
 plot(b, which = c("samples", "max-acf"))
 @
