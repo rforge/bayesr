@@ -92,3 +92,15 @@ par(mfrow = c(1, 2))
 plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
 plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
 
+## b1
+logLik -36644.9 eps 0.0040 iteration 1000 qsel 26
+ elapsed time: 116.92min
+|********************| 100%  0.00sec 2880.81min
+
+## b2
+logLik -36511.1 eps 0.0006 iteration 1000 qsel 24
+ elapsed time:  5.66min
+|********************| 100%  0.00sec 83.89min
+
+
+

@@ -610,8 +610,8 @@ legend("topright", paste0(names(ll), ": ", round(ll, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & log-likelihood")
 @
-\caption{\label{fig:fathist} Histogram and fitted distributions of the fatalities data
-  in Austria.}
+\caption{\label{fig:fathist} Fatalities data in Austria (2000-2020), histogram and
+  fitted distributions.}
 \end{figure}
 The histogram of the number of fatalities together with fitted densities and corresponding
 log-likelihoods for several estimated distributions is shown in
@@ -622,13 +622,13 @@ and estimate a Bayesian model that takes into account the cyclical pattern of th
 winter there are usually quite a lot of flu and similar illnesses that lead to a higher mortality 
 rate. The model is specified with
 $$
-\texttt{num} \sim \mathcal{BCPE}(\log(\mu) = f_{\mu}(\texttt{week}),\,
+\texttt{num} \sim BCPE(\log(\mu) = f_{\mu}(\texttt{week}),\,
   \log(\sigma) = f_{\sigma}(\texttt{week}),\, \nu = f_{\nu}(\texttt{week}),\,
   \log(\tau) = f_{\tau}(\texttt{week}))
 $$
 where functions $f_{j}( \cdot )$ are unspecified smooth functions, which are estimated using
-regression splines. The log-link for parameter $\mu$, $\sigma$ and $\tau$ ensures positivity. We
-can use the following model formula for estimation
+regression splines. The log-link for parameter $\mu$, $\sigma$ and $\tau$ ensures positivity.
+We can use the following model formula for estimation
 <<>>=
 f <- list(
   num   ~ s(week, bs = "cc"),
@@ -721,7 +721,7 @@ par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE)
 @
 \caption{\label{fig:fatmodel_resids} Histogram and quantile-quantile plot of the
-  resulting randomized quantile residuals of the normal location-scale model.}
+  resulting randomized quantile residuals of the distributional regression model.}
 \end{figure}
 According the histogram and the quantile-quantile plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
@@ -743,12 +743,13 @@ The estimated quantiles and the data used for modeling can now be plotted with
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 matplot(d19w$week, d19w[, -1], data = d19,
-  type = "b", pch = 16, col = gray(0.1, alpha = 0.1),
+  type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
   xlab = "Week", ylab = "#Fatalities")
-matplot(nd$week, nd$fit, type = "l", lty = c(2,  1, 2),
+matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
   col = 1, lwd = 3, add = TRUE)
 lines(num ~ week, data = d20, col = 2, lwd = 2,
   type = "b", pch = 16, cex = 1.3)
+grid()
 @
 \begin{figure}[!ht]
 \centering
@@ -758,12 +759,13 @@ d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 matplot(d19w$week, d19w[, -1], data = d19,
-  type = "b", pch = 16, col = gray(0.1, alpha = 0.1),
+  type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
   xlab = "Week", ylab = "#Fatalities")
-matplot(nd$week, nd$fit, type = "l", lty = c(2,  1, 2),
+matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
   col = 1, lwd = 3, add = TRUE)
 lines(num ~ week, data = d20, col = 2, lwd = 2,
   type = "b", pch = 16, cex = 1.3)
+grid()
 @
 \caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\% and 95\% quantiles of
   the cyclic seasonal week model, black dashed lines, and number of fatalities in 2020 up
