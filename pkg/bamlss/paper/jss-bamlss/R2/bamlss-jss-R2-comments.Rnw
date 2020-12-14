@@ -112,6 +112,16 @@ Sys.setenv("TZ" = "UTC")
   problem is that the posterior distribution is undefined (or at least not explicitly defined)
   for such models. Some rephrasing would be helpful here.}
 
+  We rephrased the sentence to "However, because the posterior distribution for such models is not
+  (explicitly) defined, obtaining MCMC samples is not supported by the software packages in most
+  cases."
+
+\medskip
+
+\item \emph{pg 4 "Now, a standard Bayesian binomial logit model using the default MCMC algorithm
+  can be fitted." what MCMC sampler has been used here (slice sampling?) and where does the
+  sampling occur (in \pkg{BayesX} or in \pkg{bamlss})?}
+
 \end{enumerate}
 
 \end{document}

@@ -177,9 +177,9 @@ described above, especially for large/wide data with many potential regressors a
 effects/interactions/etc. Widely-used approaches for this include the lasso, e.g., as available
 for GLM-type models in the \proglang{R} package \pkg{glmnet} \citep{bamlss:Friedmann+Hastie+Tibshirani:2010},
 or gradient boosting as available for GAMLSS-type models in the \proglang{R} package
-\pkg{gamboostLSS} \citep{bamlss:Hofner+Mayr+Schmid:2014}. However, obtaining MCMC samples from
-the posterior distributions corresponding to such models is not easily available in these
-packages.
+\pkg{gamboostLSS} \citep{bamlss:Hofner+Mayr+Schmid:2014}. However, because the posterior
+distribution for such models is not (explicitly) defined, obtaining MCMC samples is not supported
+by the software packages in most cases.
 
 \end{itemize}
 %
