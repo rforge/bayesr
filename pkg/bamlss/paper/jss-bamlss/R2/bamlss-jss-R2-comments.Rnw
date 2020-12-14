@@ -139,6 +139,10 @@ Sys.setenv("TZ" = "UTC")
   It is the acceptance probability of the sample candidate which is computed in each iteration.
   We clarify this in the text now.
 
+  "In addition, the acceptance probabilities \code{alpha} are reported, i.e., the acceptance
+  probability of the sample candidate based on the proposal and the posterior distribution which
+  is calculated in each iteration, indicating proper behavior of the MCMC algorithm."
+
 \end{enumerate}
 
 \end{document}

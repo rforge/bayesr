@@ -295,8 +295,8 @@ summary(b)
 and is based on MCMC samples, which suggest ``significant'' effects for all covariates, 
 except for variable \code{education}, since the 95\% credible interval contains zero.
 In addition, the acceptance probabilities \code{alpha} are reported, i.e., the acceptance
-probability of the sample candidate which is computed in each iteration, and indicate
-proper behavior of the MCMC algorithm.
+probability of the sample candidate based on the proposal and the posterior distribution which is 
+calculated in each iteration, indicating proper behavior of the MCMC algorithm.
 The column \code{parameters} shows respective posterior mode estimates of the regression
 coefficients, which are calculated by the upstream backfitting algorithm (note that the column
 is named parameters, because optimizer functions can in principle return any type of parameters).
