@@ -244,7 +244,12 @@ data("SwissLabor", package = "AER")
 @
 The data frame contains 872 observations of 6 variables, where some of them might have
 a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
-binomial logit model using the default MCMC algorithm can be fitted. First, the model formula
+binomial logit model using the default MCMC algorithm can be fitted (sampler function
+\fct{sam\_GMCMC}, see also Section~\ref{sec:package} for other options). The MCMC algorithm
+uses iteratively weighted least squares (IWLS,~\citealp{bamlss:Gamerman:1997}, for more
+details see Section~\ref{sec:algos}) proposals, which have very good mixing properties and
+computational advances when using very large data sets
+\citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. First, the model formula
 specified with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("SwissLaborModel.rda")) {
@@ -289,7 +294,8 @@ summary(b)
 @
 and is based on MCMC samples, which suggest ``significant'' effects for all covariates, 
 except for variable \code{education}, since the 95\% credible interval contains zero.
-In addition, the acceptance probabilities \code{alpha} are reported and indicate
+In addition, the acceptance probabilities \code{alpha} are reported, i.e., the acceptance
+probability of the sample candidate which is computed in each iteration, and indicate
 proper behavior of the MCMC algorithm.
 The column \code{parameters} shows respective posterior mode estimates of the regression
 coefficients, which are calculated by the upstream backfitting algorithm (note that the column

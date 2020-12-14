@@ -122,6 +122,23 @@ Sys.setenv("TZ" = "UTC")
   can be fitted." what MCMC sampler has been used here (slice sampling?) and where does the
   sampling occur (in \pkg{BayesX} or in \pkg{bamlss})?}
 
+  We tried to clarify this. We now write: "Now, a standard Bayesian binomial
+  logit model using the default MCMC algorithm can be fitted (sampler function \fct{sam\_GMCMC},
+  see also Section 4 for other options). The MCMC algorithm uses iteratively weighted
+  least squares (IWLS, Gamerman 1997, for more details see Section 3.2) proposals, which
+  have very good mixing properties and computational advances when using very large data
+  sets."
+
+\medskip
+
+\item \emph{pg 5 "In addition, the acceptance probabilities alpha are reported and indicate proper
+  behavior of the MCMC algorithm." I am not sure I know what the acceptance probabilities are.
+  That is, I guess that they are not just the acceptance ratio of the MCMC chain. Please
+  clarify in the text.}
+
+  It is the acceptance probability of the sample candidate which is computed in each iteration.
+  We clarify this in the text now.
+
 \end{enumerate}
 
 \end{document}
