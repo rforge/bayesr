@@ -108,7 +108,7 @@ Sys.setenv("TZ" = "UTC")
 Many modern modeling tasks necessitate flexible regression tools that can deal with:
 (1)~Big data sets that can be both long (many observations) and/or wide (many variables or complex effect types).
 (2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
-(3)~Enhanced inference infrastructure, typically Bayesian, beyond classical frequentist significance tests.
+(3)~Enhanced inference infrastructure, typically Bayesian, beyond classical frequentist methods.
 A popular framework to combine flexible regression with probabilistic modeling
 are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
 to generalized additive models for location, scale, and shape \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
@@ -1114,10 +1114,12 @@ may also be transformed. The BAMLSS model frame can then be used with \fct{optim
 \fct{sampler} functions in the estimation step. This is probably the main advantage of the
 architecture, users can easily exchange and integrate user defined estimation functions.
 The only requirement is to keep the structure of the \fct{bamlss.frame} function, as well for
-\fct{optimizer} and \fct{sampler} functions. After the estimation step optional post-processing
+\fct{optimizer} and \fct{sampler} functions. Note that there is naming convention, optimizer
+functions start with prefix \code{opt\_*} and sampler functions with \code{sam\_*}.
+After the estimation step optional post-processing
 functions can be applied to create additional sampling statistics, function \fct{samplestats},
-or results that can be used for plotting the estimated effects, function \fct{results}. Note
-that the post-processing step is optional since it is not necessarily needed in the last
+or results that can be used for plotting the estimated effects, function \fct{results}. The
+post-processing step is optional since it is not necessarily needed in the last
 output step, e.g., for computing predictions. This feature is especially important when using
 large data sets, because the run time for computing \fct{samplestats} or \fct{results} can be
 quite long or computations can even lead to memory problems. In summary, the architecture is very flexible
@@ -1127,7 +1129,20 @@ and extractor functionalities ``for free''. This way, prototyping
 becomes relatively easy, but also the integration/implementation of (new) high-performance
 estimation engines is facilitated.
 %
-Table~\ref{tab:functions} provides an overview of current available functions.
+Table~\ref{tab:functions} provides an overview of current available functions. Note that
+sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS} need installation of the
+\pkg{BayesXsrc} \citep{bamlss:BayesXsrc}  and the \pkg{rjags} \citep{bamlss:rjags} package.
+To have a better overview of various functionalities, function \fct{engines} provides information
+about which optimizer and sampler functions can be used with which family. For example, to look up
+compatibility for the normal distribution of the \pkg{gamlss.dist} package and the family
+implemented in \pkg{bamlss} the user can type
+<<eval=TRUE, echo=TRUE>>=
+engines(NO, gaussian_bamlss)
+@
+The table shows that the \fct{NO} family is compatible with all pure \proglang{R} implementations of 
+optimizer and sampler functions, but not with special samplers like \pkg{BayesX} and \pkg{JAGS}. 
+These can only be used with the \fct{gaussian\_bamlss} family. In addition, neither family has its 
+own special optimizer or sampler implemented (such as the \fct{cox\_bamlss} family).
 
 To exemplify the presented ``Lego toolbox'', the following \proglang{R} code estimates the
 logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logitmodel}. First,
