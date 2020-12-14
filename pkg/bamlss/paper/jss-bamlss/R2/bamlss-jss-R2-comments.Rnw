@@ -251,6 +251,53 @@ Sys.setenv("TZ" = "UTC")
   matrix. Also, I guess that the observed Fisher information cannot be used in place of its
   expected version?}
 
+  Thank you for pointing this out. We have added a new paragraph that gives more details about
+  the specification of families, respectively also describes internal mechanisms.
+
+\medskip
+
+\item \emph{pg 23 to make the example more interesting, it would make sense providing a brief 
+  description of the variables contained in the \code{FlashAustria} data set.}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{pg 24 "With a statistical model on hand one could predict lightning counts for the
+  time before 2010 and thus analyze lightning events in the past for which no observations are 
+  available." To better motivate the example, please add a sentence to explain what is the
+  purpose of reconstructing lightning events before 2010 (is this an useful thing to do in practice? 
+  I guess so, but the text does not say anything about it).}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{pg 24 "The second element specifies the formula for parameter $\theta$. Hence well
+  known for their sampling properties, we are applying P-splines (Eilers and Marx 1996) for all 
+  terms." Please rephrase the second sentence, which is quite unclear (e.g., "We adopt P-splines
+  (Eilers and Marx 1996), which are well known for their sampling properties.").}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{pg 24 the model seems to take 5 + 27 = 32 minutes to compute. How does this compare with, 
+  for instance, a \pkg{brms} or \fct{jagam} implementation using the same (or similar) model? Is the
+  sampler implemented in R or C++?}
+
+  \fixme{Niki}
+
+\medskip
+
+\item \emph{pg 25 "After 1000 iterations the term \code{s(q\_prof\_PC1).mu} has the highest
+  contribution to  the log-likelihood with 282 followed by \code{s(sqrt\_cape).mu} with 344. The
+  term of the parameter $\theta$ \code{s(sqrt\_lsp).theta} has a relatively small contribution with
+  38." but from Figure~7 it seems that \code{s(sqrt\_cape).mu} has the highest contribution, while
+  \code{s(sqrt\_lsp).theta} does not appear in the plot.}
+
+  \fixme{Thorsten}
+
 \end{enumerate}
 
 \end{document}

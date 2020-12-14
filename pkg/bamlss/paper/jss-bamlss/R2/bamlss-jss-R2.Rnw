@@ -1378,12 +1378,13 @@ In more detail, the default \pkg{bamlss} estimation engines are based on IWLS up
 and do not require the mixed elements of the Hessian, i.e., the backfitting optimizer
 function \fct{opt\_bfit} uses leapfrog or zizag iterations \citep{bamlss:Smyth:1996} and
 the MCMC sampler function \fct{sam\_GMCMC} also only updates one model term $f_{jk}( \cdot )$ at
-a time. Furthermore, it is not mandatory to use the expected Fisher information, but for numerical
+a time, hence, only the diagonal elements of the Fisher information matrix are needed.
+Furthermore, it is not mandatory to use the expected Fisher information, but for numerical
 stability it is recommended. If the information on the second derivatives is not provided the
-\fct{bamlss.frame} will set up approximate versions by numerical differentiation, the same
-mechanism is applied for first order derivatives. Hence, in quite a few cases implementing
-a new family can only be based on the specification of the density function, however,
-even though this is not recommended in terms of optimization runtime.
+\fct{bamlss.frame} will set up approximate versions by numerical differentiation of the score
+functions, the same mechanism is applied for first order derivatives. Hence, in quite a few cases
+implementing a new family can only be based on the specification of the density function, however,
+in terms of optimization runtime this is certainly not the most efficient choice.
 
 Now we have to write a function that returns a \code{family.bamlss} object (S3)
 which encapsulates functions for density, score and Hessian, and the names of
