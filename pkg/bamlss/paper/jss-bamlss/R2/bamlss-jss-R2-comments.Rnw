@@ -57,7 +57,7 @@ Sys.setenv("TZ" = "UTC")
 \begin{document}
 
 \begin{center}
-\large Point-to-Point Response to Reviews.
+\huge\bf Point-to-Point Response to Reviews.
 \end{center}
 
 We thank the two anonymous reviewers for their helpful comments. We agree with almost all points
@@ -306,6 +306,12 @@ of the reviewers are highlighted in italics, with our responses directly below.
 
   \fixme{Thorsten}
 
+\end{enumerate}
+
+\section*{Answers to Reviewer 2}
+
+\begin{enumerate}
+\itam \dots
 \end{enumerate}
 
 \end{document}
