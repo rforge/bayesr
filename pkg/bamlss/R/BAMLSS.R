@@ -7313,7 +7313,15 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
   if(length(which) > 1 | ok) {
     which2 <- which[which %in% c("hist-resid", "qq-resid", "wp")]
     if(length(which2)) {
-      res <- residuals.bamlss(x, ...)
+      c95 <- list(...)$c95
+      if(is.null(c95))
+        c95 <- FALSE
+      FUN <- list(...)$FUN
+      if(c95)
+        FUN <- identity
+      if(is.null(FUN))
+        FUN <- function(x) { mean(x, na.rm = TRUE) } 
+      res <- residuals.bamlss(x, FUN = FUN, ...)
       plot(res, which = which2, spar = spar, ...)
     } else {
       for(w in which) {
@@ -9711,8 +9719,8 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
     for(w in which) {
       args <- list(...)
       if(w == "hist-resid") {
-        if(ncol(x) > 10) {
-          x2 <- rowMeans(x)
+        if(ncol(x) > 1) {
+          x2 <- rowMeans(x, na.rm = TRUE)
         } else {
           x2 <- x
         }
@@ -9738,7 +9746,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         box()
       }
       if(w == "qq-resid") {
-        if(ncol(x) > 10) {
+        if(ncol(x) > 1) {
           x2 <- t(apply(x, 1, c95))
 
           args$x <- NULL
@@ -9756,12 +9764,13 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
 
           ylim <- range(c(mean$y, lower$y, upper$y), na.rm = TRUE)
           args$plot.it <- TRUE
-          # args$ylim <- ylim
+          if(is.null(args$ylim))
+            args$ylim <- ylim
           args$y <- x2[, "Mean"]
           mean <- do.call(qqnorm, args)
 
           if(is.null(args$ci.col))
-            args$ci.col <- 4
+            args$ci.col <- 1
           if(is.null(args$ci.lty))
             args$ci.lty <- 2
 
@@ -9798,7 +9807,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
       }
       if(w == "wp") {
         xlo <- xup <- NULL
-        if(ncol(x) > 10) {
+        if(ncol(x) > 1) {
           x2 <- t(apply(x, 1, c95))
           xlo <- x2[, "2.5%"]
           xup <- x2[, "97.5%"]

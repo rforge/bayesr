@@ -143,6 +143,76 @@ Sys.setenv("TZ" = "UTC")
   probability of the sample candidate based on the proposal and the posterior distribution which
   is calculated in each iteration, indicating proper behavior of the MCMC algorithm."
 
+\medskip
+
+\item \emph{pg 6 "maximum auto-correlation for all parameters" please clarify what you mean
+  by maximum auto-correlation, as it might be, for example, the maximum auto-correlation across
+  the parameters at each lag or averaged across the lags.}
+
+  We have now rephrased the sentence: "\dots , there is no visible trend, and the very low auto-
+  correlation shown for the intercept and the maximum auto-correlation calculated as the maximum
+  for each lag across all parameters suggest close to i.i.d.\ samples from the posterior 
+  distribution."
+
+\medskip
+
+\item \emph{pg 10 "Moreover, note that all smooth terms, i.e., \fct{te}, \fct{ti}, etc., are
+  supported by \pkg{bamlss}. This way, it is also possible to incorporate user defined model
+  terms." Please add more explanations, as the fact that \pkg{bamlss} support \fct{te}, 
+  \fct{ti}, etc.\ does not necessarily imply that user defined terms can be used.}
+
+  Thanks for pointing that out, of course it's not immediately obvious. We now write:
+  "This way, it is also possible to incorporate user defined model terms, since the \pkg{mgcv}
+  smooth term constructor functions are based on the generic \fct{smooth.construct} method, for
+  which new classes can be added (see also the \pkg{mgcv} manual)."
+
+\medskip
+
+\item \emph{pg 11 "According the histogram and the quantile-quantile plot of the resulting
+  randomized quantile residuals in Figure 5, the model seems to fit relatively well. Only for very
+  low and very high values of \code{accel} the fitted distributions seem to be less appropriate."
+  I guess that the last part of the sentence refers to the QQ-plot, but the plot does not provide 
+  confidence intervals, hence it might be that there is no significant departure from normality
+  in the tails.}
+
+  We have now completely replaced this example because one of the reviewers was quite unhappy with 
+  it. The previous example was based on an old dataset that has served as an illustration countless 
+  times. Our new example is, we believe, much better and more interesting. It is about excess 
+  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals.
+
+\medskip
+
+\item \emph{pg 13 "For fully Bayesian inference the log-posterior is either used for posterior mode 
+  estimation, or for solving high-dimensional integrals, e.g., for posterior mean estimation MCMC 
+  samples need to be computed." I would remove "fully" as for some people mode estimation if not
+  full Bayesian inference.}
+
+  Thank you, done.
+
+\medskip
+
+\item \emph{pg 13 bottom, the paragraph starting with "Using a basis function approach \dots" needs
+  some rephrasing. In fact "a basis function approach" is a bit vague and later in the paragraph
+  the $\mathbf{G}_jk$'s are referred to as both derivative matrices and penalty matrix, which can
+  be understood only by readers already familiar with these models.}
+
+  We have now tried to formulate everything a little more precisely: "Using a basis function 
+  approach, i.e., each function $f_{jk}( \cdot )$ can be represented by a
+  linear combination of a design matrix and regression coefficients, \dots, the
+  regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for
+  $f_{jk}( \cdot )$ matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that
+  penalize the complexity using a P-spline representation."
+
+\medskip
+
+\item \emph{pg 14 bottom "Estimated functions $f_{jk}( \cdot )$ are usually centered around their
+  mean \dots" please clarify what this means in the text, as I guess that the effect are centered
+  to have mean equal to 0 across the data (i.e., $\sum f_{jk}( x_i ) = 0$), but this is not what the 
+  text says.}
+
+  Thank you, we rephrased to: "Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to
+  a centering constraint (e.g., $\sum \hat{f}_{jk}( x_i ) = 0$), \dots"
+
 \end{enumerate}
 
 \end{document}

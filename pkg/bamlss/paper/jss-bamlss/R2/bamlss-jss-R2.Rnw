@@ -320,9 +320,10 @@ plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
   parameters (right panel).}
 \end{figure}
 These are visualized in Figure~\ref{fig:logit_traceplots} and reveal approximate convergence of
-the MCMC chains, i.e., there is no visible trend and the very low
-auto-correlation shown for the intercept and the maximum auto-correlation of all
-parameters suggest close to i.i.d.\ samples from the posterior distribution. As mentioned above, the
+the MCMC chains, i.e., there is no visible trend, and the very low auto-correlation shown for
+the intercept and the maximum auto-correlation calculated as the maximum for each lag across all 
+parameters suggest close to i.i.d.\ samples from the posterior distribution.
+As mentioned above, the
 user could also increase the number iterations and the burnin-phase, as well as adapt the thinning
 parameter, to make the significant bar at lag one disappear.
 Note that the function call would compute all trace- and auto-correlation plots, however,
@@ -649,7 +650,9 @@ regression spline.
 Note that model formulae are provided as lists of formulae, i.e., each list entry
 represents one parameter of the response distribution. Moreover, note that all smooth
 terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
-also possible to incorporate user defined model terms.
+also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
+constructor functions are based on the generic \fct{smooth.construct} method, for which
+new classes can be added (see also the \pkg{mgcv} manual).
 As mentioned above we subset the data set before 2020 for estimating the model and
 use the 2020 data for comparison
 <<eval=TRUE,echo=TRUE>>=
@@ -709,11 +712,11 @@ seems to be zero, since the estimated smooth function does not significantly dev
 zero horizontal line, i.e., an intercept only term might be sufficient for parameter $\tau$.
 
 For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile plots. 
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
 <<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid"))
+plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
 @
 \begin{figure}[!ht]
 \centering
@@ -724,12 +727,14 @@ plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 @
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "qq-resid", spar = FALSE)
+plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
 @
-\caption{\label{fig:fatmodel_resids} Histogram and quantile-quantile plot of the
-  resulting randomized quantile residuals of the distributional regression model.}
+\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
+  intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
+  regression model.}
 \end{figure}
-According the histogram and the quantile-quantile plot of the resulting randomized
+By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
+According the histogram and the Q-Q plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
 
 In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
@@ -748,7 +753,7 @@ The estimated quantiles and the data used for modeling can now be plotted with
 <<echo=TRUE,eval=FALSE>>=
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
-matplot(d19w$week, d19w[, -1], data = d19,
+matplot(d19w$week, d19w[, -1],
   type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
   xlab = "Week", ylab = "#Fatalities")
 matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
@@ -764,7 +769,7 @@ grid()
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 par(mar = c(4.1, 4.1, 0.1, 0.1))
-matplot(d19w$week, d19w[, -1], data = d19,
+matplot(d19w$week, d19w[, -1],
   type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
   xlab = "Week", ylab = "#Fatalities")
 matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
@@ -873,7 +878,7 @@ framework are the ones for: \label{somerefs2}
 
 Estimation typically requires to evaluate the log-likelihood
 $\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ function and its derivatives w.r.t.\
-all regression coefficients $\boldsymbol{\beta}$ a number of times. For fully Bayesian inference
+all regression coefficients $\boldsymbol{\beta}$ a number of times. For Bayesian inference
 the log-posterior is either used for posterior mode estimation, or for solving
 high-dimensional integrals. e.g., for posterior mean estimation MCMC samples need to be computed.
 
@@ -892,8 +897,10 @@ with updating equations
 where function $U_{jk}( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson
 step or for getting the next step in an MCMC simulation, a.o.
 
-Using a basis function approach, the updating functions $U_{jk}( \cdot )$ for posterior mode
-(frequentist penalized likelihood) estimation or MCMC for $\boldsymbol{\beta}_{jk}$ share an iteratively
+Using a basis function approach, i.e., each function $f_{jk}( \cdot )$ can be represented by a
+linear combination of a design matrix and regression coefficients, the updating functions
+$U_{jk}( \cdot )$ for posterior mode (frequentist penalized likelihood) estimation or MCMC for
+$\boldsymbol{\beta}_{jk}$ share an iteratively
 weighted least squares updating step (IWLS,~\citealp{bamlss:Gamerman:1997})
 \begin{equation} \label{eqn:blockbackfit}
   \boldsymbol{\beta}_{jk}^{(t+1)}
@@ -906,9 +913,9 @@ with weight matrices $\mathbf{W}_{kk}$ and working responses $\mathbf{z}_k$, sim
 well-known IWLS updating scheme for generalized linear models (GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}).
 The matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are derivative matrices of the priors
 $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ w.r.t.\ the
-regression coefficients $\boldsymbol{\beta}_{jk}$, e.g.,
-$\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that penalizes the complexity of
-$f_{jk}( \cdot )$ using a P-spline representation \citep{bamlss:Eilers+Marx:1996}.
+regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for $f_{jk}( \cdot )$
+matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that penalize the
+complexity using a P-spline representation \citep{bamlss:Eilers+Marx:1996}.
 
 Even if the functions $f_{jk}( \cdot )$ are not based on a basis function approach, the
 updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
@@ -960,8 +967,9 @@ number of candidate models. The following lists commonly used tools:
 
 \subsubsection{Evaluation and interpretation}
  \begin{itemize}
-\item \emph{Plotting}: Estimated functions $\hat{f}_{jk}( \cdot )$ are usually centered around their
-  mean, therefore, simple effect plots are a straightforward method to evaluate individual model
+\item \emph{Plotting}: Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to a
+  centering constraint (e.g., $\sum \hat{f}_{jk}( x_i ) = 0$), therefore, simple effect plots are
+  a straightforward method to evaluate individual model
   term importance and can also be used for respective interpretations. Sometimes it can be useful in
   distributional regression to look at transformations of the original model parameters such as
   expected value or variance of the response variable $\mathbf{y}$.
