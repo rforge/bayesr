@@ -56,6 +56,14 @@ Sys.setenv("TZ" = "UTC")
 
 \begin{document}
 
+\begin{center}
+\large Point-to-Point Response to Reviews.
+\end{center}
+
+We thank the two anonymous reviewers for their helpful comments. We agree with almost all points
+raised and considered them in the revised version of the manuscript. In the following, comments
+of the reviewers are highlighted in italics, with our responses directly below.
+
 \section*{Answers to Reviewer 1}
 
 \begin{enumerate}
@@ -67,7 +75,7 @@ Sys.setenv("TZ" = "UTC")
   in the package which, given a bamlss model specification as input, returns a list of
   optimizers/samplers that could be used to fit it.}
 
-  Thank you for the suggestion. We now implemented a function \fct{enines} that gives exactly this
+  Thank you for the suggestion. We now implemented a function \fct{engines} that gives exactly this
   information. We added the information in the text in Section 4.
 
   \medskip
