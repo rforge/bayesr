@@ -108,7 +108,7 @@ Sys.setenv("TZ" = "UTC")
 Many modern modeling tasks necessitate flexible regression tools that can deal with:
 (1)~Big data sets that can be both long (many observations) and/or wide (many variables or complex effect types).
 (2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
-(3)~Enhanced inference infrastructure, typically Bayesian, beyond classical frequentist methods.
+(3)~Enhanced inference infrastructure, typically Bayesian, broaden classical frequentist methodology.
 A popular framework to combine flexible regression with probabilistic modeling
 are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
 to generalized additive models for location, scale, and shape \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},

@@ -101,8 +101,16 @@ Sys.setenv("TZ" = "UTC")
   frequentist significance tests." maybe rephrase this, as it seems to say that frequentist
   inference consists only of significance tests.}
 
-  We now write "Enhanced inference infrastructure, typically Bayesian,
-  beyond classical frequentist methods".
+  We now write "Enhanced inference infrastructure, typically Bayesian, broaden classical
+  frequentist methodology".
+
+\medskip
+
+\item \empH{pg 3, talking about gradient boosting “However, obtaining MCMC samples from the posterior
+  distributions corresponding to such models is not easily available in these packages” in my
+  understanding, the problem is not that it is difficult to do MCMC sampling for boosting, the
+  problem is that the posterior distribution is undefined (or at least not explicitly defined)
+  for such models. Some rephrasing would be helpful here.}
 
 \end{enumerate}
 
