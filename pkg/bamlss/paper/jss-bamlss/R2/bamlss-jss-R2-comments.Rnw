@@ -56,7 +56,7 @@ Sys.setenv("TZ" = "UTC")
 
 \begin{document}
 
-\section{Answers to Reviewer 1}
+\section*{Answers to Reviewer 1}
 
 \begin{enumerate}
 \item \emph{I have two main comments. The first is that it would be very useful to have a table
