@@ -4633,7 +4633,7 @@ smooth.construct.rs.smooth.spec <- function(object, data, knots)
       }
     }
 
-    ## Compute acceptance probablity.
+    ## Compute acceptance probability.
     alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
 
     ## New theta.
@@ -7965,7 +7965,7 @@ print.summary.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ..
       }
       printCoefmat(x$model.matrix[[i]], digits = digits)
       if(!is.null(alpha)) {
-        cat("-\nAcceptance probabilty:\n")
+        cat("-\nAcceptance probability:\n")
         printCoefmat(alpha, digits = digits)
       }
     }
@@ -11066,6 +11066,12 @@ engines <- function(family, ...)
     tab[[i]] <- .engines(family[[i]])
   }
   tab <- do.call("rbind", tab)
+  nt <- colnames(tab)
+  rn <- tab[, 1]
+  tab <- t(tab[, -1])
+  mode(tab) <- "logical"
+  rownames(tab) <- nt[-1]
+  colnames(tab) <- rn
   return(as.data.frame(tab))
 }
 

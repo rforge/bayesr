@@ -110,12 +110,15 @@ f <- num ~ s(x1, bs = "ps")
 bf <- bamlss.frame(f, data = d, family = "gaussian")
 
 ## First, find starting values with optimizer.
-opt <- with(bf, bfit(x, y, family))
+opt <- with(bf, opt_bfit(x, y, family))
 
 ## Sample with JAGS.
 if(require("rjags")) {
   samps <- with(bf, sam_JAGS(x, y, family, start = opt$parameters))
   plot(samps)
+
+  b <- bamlss(f, data = d, family = "gaussian", sampler = sam_JAGS)
+  plot(b)
 }
 }
 }
