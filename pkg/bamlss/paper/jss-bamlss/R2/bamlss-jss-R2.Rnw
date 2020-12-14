@@ -497,7 +497,7 @@ b <- bamlss(f, family = "binomial", data = SwissLabor,
 The optimum shrinkage parameter $\lambda$ is selected by the BIC. Arguments \code{upper} and
 \code{lower} determine the search interval of $\lambda$, per default \code{nlambda = 100} values
 are generated.
-Note that no MCMC sampling is used after the \fct{lasso} estimation engine is applied,
+Note that no MCMC sampling is used after the \fct{opt\_lasso} estimation engine is applied,
 argument \code{sampler = FALSE} in the \fct{bamlss} call.
 
 \begin{figure}[t!]
