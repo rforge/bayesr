@@ -1136,11 +1136,14 @@ or results that can be used for plotting the estimated effects, function \fct{re
 post-processing step is optional since it is not necessarily needed in the last
 output step, e.g., for computing predictions. This feature is especially important when using
 large data sets, because the run time for computing \fct{samplestats} or \fct{results} can be
-quite long or computations can even lead to memory problems. In summary, the architecture is very flexible
-such that users interested in implementing new models only need to focus on the
-estimation step, i.e., write \fct{optimizer} or \fct{sampler} functions and get all post-processing
-and extractor functionalities ``for free''. This way, prototyping
-becomes relatively easy, but also the integration/implementation of (new) high-performance
+quite long or computations can even lead to memory problems.
+
+In summary, besides implementing models using the family infrastructure
+(see Section~\ref{sec:families}) the architecture is very 
+flexible such that also users interested in implementing new and non-standard models or
+algorithms only need to focus on the estimation step, i.e., write \fct{optimizer} or
+\fct{sampler} functions and get all post-processing and extractor functionalities ``for free''.
+This way, prototyping becomes relatively easy, but also the integration high-performance
 estimation engines is facilitated.
 %
 Table~\ref{tab:functions} provides an overview of current available functions. Note that
@@ -1307,7 +1310,8 @@ collecting functions of the density, respective log-likelihood, first-order deri
 log-likelihood w.r.t.\ predictors (the score function), and (optionally) second-order derivatives of
 the log-likelihood w.r.t.\ predictors or their expectation (the Hessian). Commonly used
 distributions are already implemented in \pkg{bamlss}; and note that the ones
-from the \pkg{gamlss} package can also be accessed through the \pkg{bamlss} package.
+from the \pkg{gamlss} and \pkg{gamlss.dist} package can also be accessed through the
+\pkg{bamlss} package (see Section~\ref{sec:distmodel} for an example).
 
 We illustrate how to build a \pkg{bamlss} family by hand along the Gaussian
 distribution, with density
@@ -1370,10 +1374,23 @@ and
 $$
 \mathsf{E}(-\partial^2\ell / \partial\eta_{\sigma}^{2} ) = 2.
 $$
+In more detail, the default \pkg{bamlss} estimation engines are based on IWLS updating functions
+and do not require the mixed elements of the Hessian, i.e., the backfitting optimizer
+function \fct{opt\_bfit} uses leapfrog or zizag iterations \citep{bamlss:Smyth:1996} and
+the MCMC sampler function \fct{sam\_GMCMC} also only updates one model term $f_{jk}( \cdot )$ at
+a time. Furthermore, it is not mandatory to use the expected Fisher information, but for numerical
+stability it is recommended. If the information on the second derivatives is not provided the
+\fct{bamlss.frame} will set up approximate versions by numerical differentiation, the same
+mechanism is applied for first order derivatives. Hence, in quite a few cases implementing
+a new family can only be based on the specification of the density function, however,
+even though this is not recommended in terms of optimization runtime.
+
 Now we have to write a function that returns a \code{family.bamlss} object (S3)
 which encapsulates functions for density, score and Hessian, and the names of
 the family, parameter and link functions. The required elements are listed
-in Table~\ref{tab:families}.
+in Table~\ref{tab:families}. Note that there are no other specifications to follow, for example
+one could also build a family that allows for flexible link functions (like the families from the
+\pkg{gamlss} package).
 
 Merely all functions take as first argument the response \code{y} and as second
 argument a named list holding the evaluated parameters \code{par} of the

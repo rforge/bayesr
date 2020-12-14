@@ -213,6 +213,44 @@ Sys.setenv("TZ" = "UTC")
   Thank you, we rephrased to: "Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to
   a centering constraint (e.g., $\sum \hat{f}_{jk}( x_i ) = 0$), \dots"
 
+\medskip
+
+\item \emph{pg 17, top "In summary, the architecture is very flexible such that users interested
+  in implementing new models only need to focus on the estimation step, i.e., write \fct{optimizer}
+  or \fct{sampler} functions and get all post-processing and extractor functionalities
+  ``for free''." This sounds a bit confusing, in fact if I want to implement a new model, why
+  should I implement a new sampler rather than use one of those already provided by bamlss? Are
+  you referring to non-standard models that cannot use the standard samplers? Please clarify.}
+
+  We have now adjusted the paragraph accordingly: "In summary, besides implementing models using the 
+  family infrastructure (see Section~4.2) the architecture is very 
+  flexible such that also users interested in implementing new and non-standard models or
+  algorithms only need to focus on the estimation step, i.e., write \fct{optimizer} or
+  \fct{sampler} functions and get all post-processing and extractor functionalities ``for free''.
+  This way, prototyping becomes relatively easy, but also the integration high-performance
+  estimation engines is facilitated."
+
+\medskip
+
+\item \emph{pg 21, table 3. I see that the link functions have to be specified by name, is it
+  possible to pass the link functions directly? I guess that that would allow more flexibility,
+  in particular the use of user-defined link functions.}
+
+  This depends on the implementation of the family. The ones provided by \pkg{bamlss} do not
+  allow for user-defined link functions, mainly because of speed reasons. But it is in principle
+  possible, similar to the families implemented in the \pkg{gamlss} package. We added the
+  following sentence to clarify: "Note that there are no other specifications to follow, for
+  example one could also build a family that allows for flexible link functions (like the families
+  from the \pkg{gamlss} package)."
+
+\medskip
+
+\item \emph{pg 21 table 3 and text under the table. I am a bit surprised that the mixed elements
+  of the Fisher information are not needed. Is this because the model are fitted by backfitting? 
+  Please state explicitly that you are using the diagonal elements of the Fisher information
+  matrix. Also, I guess that the observed Fisher information cannot be used in place of its
+  expected version?}
+
 \end{enumerate}
 
 \end{document}
