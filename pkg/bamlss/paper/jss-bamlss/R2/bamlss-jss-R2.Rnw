@@ -130,9 +130,14 @@ extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framewor
 not only the response distribution or the regression terms are ``Lego bricks''
 but also the estimation algorithm or the MCMC sampler.
 
-
-In terms of software infrastructure, the \proglang{R} ecosystem already provides a
-rich variety of packages that combine several -- but not all -- of the aspects discussed above.
+The idea of a Lego toolbox for regression models has of course been around for some time, in some 
+implementations, Bayesian and frequentist, there is not only the possibility to easily 
+implement new distributions, but also model terms, from splines to neural networks to regression 
+trees. In some implementations optimization routines may also be exchanged. Nevertheless, to the
+best of our knowledge, the possibility to create new models through a flexible implementation that 
+combines all concepts in an unified way is unique.
+The following is a list of the best known packages in the \proglang{R} ecosystem,
+whose implementations are designed to be extremely flexible.
 %
 \begin{itemize}
 
@@ -140,12 +145,11 @@ rich variety of packages that combine several -- but not all -- of the aspects d
 are available in a number of packages, most notably the \pkg{mgcv} package \citep{bamlss:Wood:2017}
 and also the \pkg{gamlss} family of packages \citep{bamlss:Stasinopoulos:Rigby:2007}
 and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
-of a wide range of response distributions. However, for complex predictor structures
-and response distributions beyond the exponential family, estimation may be challenging
-or subject to numerical instabilities. In contrast, \pkg{mgcv} excels at providing
-highly-optimized algorithms for general smooth models \citep{bamlss:Wood+Pya+Saefken:2016}
-as well as the dedicated \fct{bam} function for big data that is long and/or wide
-\citep{bamlss:Wood+Li+Shaddick:2017}.
+of a wide range of response distributions. However, for complex predictor structures, e.g.,
+complex space-time interactions, estimation may be challenging. In contrast, \pkg{mgcv} excels
+at providing highly-optimized algorithms for general smooth models
+\citep{bamlss:Wood+Pya+Saefken:2016} as well as the dedicated \fct{bam} function for big data
+that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}.
 
 \item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
 frequentist inference, it is also particularly attractive for hierarchical or multilevel
@@ -745,6 +749,7 @@ nd <- data.frame("week" = 1:53)
 par <- predict(b, newdata = nd, type = "parameter")
 @
 and the estimated quantiles are computed with the quantile function of the family
+(see Section~\ref{sec:families} for details)
 <<>>=
 nd$fit <- sapply(c(0.05, 0.5, 0.95),
   FUN = function(p) { family(b)$q(p, par) })
