@@ -599,6 +599,7 @@ if(!file.exists("FatDens.rda")) {
   ll <- dnum <- list()
   start <- proc.time()
   for(j in names(families)) {
+    cat("family", j, "\n")
     b <- try(bamlss(num ~ 1, data = fatalities,
       family = families[[j]](mu.link = "log")),
       silent = TRUE)
