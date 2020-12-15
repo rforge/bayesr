@@ -143,7 +143,7 @@ whose implementations are designed to be extremely flexible.
 
 \item \emph{GAMs and GAMLSSs}
 are available in a number of packages, most notably the \pkg{mgcv} package \citep{bamlss:Wood:2017}
-and also the \pkg{gamlss} family of packages \citep{bamlss:Stasinopoulos:Rigby:2007}
+and also the \pkg{gamlss} family of packages \citep{gamlss:book1, gamlss:book2}
 and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
 of a wide range of response distributions. However, for complex predictor structures, e.g.,
 complex space-time interactions, estimation may be challenging. In contrast, \pkg{mgcv} excels
