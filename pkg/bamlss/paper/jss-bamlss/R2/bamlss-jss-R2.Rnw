@@ -583,40 +583,45 @@ we model the long-term seasonal trend of fatality numbers before the crisis and 
 estimated quantiles with the cases in 2020.
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
-data at hand. Therefore, we use the several families as implemented in the \pkg{gamlss.dist}
-package \citep{bamlss:gamlss.dist} and compare the model fits using the
+data at hand. Therefore, we all families as implemented in the \pkg{gamlss.dist}
+package \citep{bamlss:gamlss.dist} for continuous responses and compare the model fits using the
 log-likelihood (the complete \proglang{R}-code is available in the supplements). Note that we do not
 use discrete distributions in this example because the number of fatalities is far away from
 zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.
 \begin{figure}[!ht]
 \centering
-\setkeys{Gin}{width=0.5\textwidth}
-<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+\setkeys{Gin}{width=0.7\textwidth}
+<<echo=FALSE, fig=TRUE, width=6, height=5>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
-
-families <- list("NO" = NO(), "GA" = GA(), "BCCG" = BCCG(mu.link = "log"),
-  "BCPE" = BCPE(mu.link = "log"), "BCT" = BCPE(mu.link = "log"))
-families <- ls()
 if(!file.exists("FatDens.rda")) {
+  families <- gamlss_distributions(type = "continuous")
   set.seed(123)
-  ll <- NULL
-  dnum <- NULL
-  for(j in seq_along(families)) {
-    b <- bamlss(num ~ 1, data = fatalities, family = families[[j]])
-    par <- predict(b, type = "parameter")
-    ll <- c(ll, family(b)$loglik(fatalities$num, par))
-    dnum <- cbind(dnum, family(b)$d(fatalities$num, par))
+  ll <- dnum <- list()
+  start <- proc.time()
+  for(j in names(families)) {
+    b <- try(bamlss(num ~ 1, data = fatalities,
+      family = families[[j]](mu.link = "log")),
+      silent = TRUE)
+    if(!inherits(b, "try-error")) {
+      par <- predict(b, type = "parameter", drop = FALSE)
+      ll[[j]] <- family(b)$loglik(fatalities$num, par)
+      dnum[[j]] <- family(b)$d(fatalities$num, par)
+    }
   }
-  save(ll, dnum, file = "FatDens.rda")
+  elapsed <- c(proc.time() - start)[3]
+  save(ll, dnum, elapsed, file = "FatDens.rda")
 } else {
   load("FatDens.rda")
 }
-names(ll) <- names(families)
-ll <- sort(ll)
+ll <- unlist(ll)
+dnum <- do.call("cbind", dnum)
+i <- order(ll, decreasing = TRUE)
+dnum <- dnum[, i][, 1:10]
+ll <- ll[i][1:10]
 hist(fatalities$num, breaks = "Scott", freq = FALSE,
-  main = "", xlab = "#Fatalities")
+  main = "", xlab = "#Fatalities", ylim = c(0, max(dnum)))
 i <- order(fatalities$num)
-col <- rev(qualitative_hcl(ncol(dnum), palette = "dynamic"))
+col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
 matplot(fatalities$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
 legend("topright", paste0(names(ll), ": ", round(ll, 2)),
@@ -626,16 +631,17 @@ legend("topright", paste0(names(ll), ": ", round(ll, 2)),
 \caption{\label{fig:fathist} Fatalities data in Austria (2000-2020), histogram and
   fitted distributions.}
 \end{figure}
-The histogram of the number of fatalities together with fitted densities and corresponding
-log-likelihoods for several estimated distributions is shown in
+The histogram of the number of fatalities together with the 10 best fitting densities and 
+corresponding log-likelihoods is shown in
 Figure~\ref{fig:fathist}. One of the most flexible distributions of the \pkg{gamlss.dist} package,
-the four parameter Box-Cox power exponential distribution (family \fct{BCPE}), has the best fit
-to the data (though only by a small difference). Therefore, we use the \fct{BCPE} family function
+the four parameter skew power exponential type 4 distribution (family \fct{SEP4},
+\citealp{bamlss:DiCiccio:2004}), has the best fit
+to the data (though only by a small difference). Therefore, we use the \fct{SEP4} family function
 and estimate a Bayesian model that takes into account the cyclical pattern of the year, in
 winter there are usually quite a lot of flu and similar illnesses that lead to a higher mortality 
 rate. The model is specified with
 $$
-\texttt{num} \sim BCPE(\log(\mu) = f_{\mu}(\texttt{week}),\,
+\texttt{num} \sim SEP(\log(\mu) = f_{\mu}(\texttt{week}),\,
   \log(\sigma) = f_{\sigma}(\texttt{week}),\, \nu = f_{\nu}(\texttt{week}),\,
   \log(\tau) = f_{\tau}(\texttt{week}))
 $$
@@ -666,11 +672,13 @@ d19 <- subset(fatalities, year < 2020)
 d20 <- subset(fatalities, year > 2019)
 @
 A full Bayesian semi-parametric distributional regression model using the
-\fct{BCPE} family of the \pkg{gamlss.dist} package can be estimated with
+\fct{SEP4} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"))
+  b <- bamlss(f, data = d19, family = SEP4,##(mu.link = "log"),
+    optimizer = opt_boost, sampler = sam_GMCMC,
+    n.iter = 12000, burnin = 2000, thin = 10)
   save(b, file = "FatModel.rda")
 } else {
   load("FatModel.rda")
@@ -679,10 +687,16 @@ if(!file.exists("FatModel.rda")) {
 <<eval=FALSE>>=
 library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"))
+b <- bamlss(f, data = d19, family = SEP4(mu.link = "log"),
+  optimizer = opt_boost, sampler = sam_GMCMC,
+  n.iter = 12000, burnin = 2000, thin = 10)
 @
-After the estimation algorithms are finished, the estimated effects can be visualized instantly
-using the plotting method.
+Here, we use the gradient boosting optimizer function \fct{opt\_boost} to find suitable
+starting values for the default MCMC sampler function \fct{sam\_GMCMC}. The Boosting Optimizer runs 
+more stable in many cases and is of great advantage especially for very flexible distributions.
+For the MCMC sampler we use 12000 iterations and withdraw the first 2000 samples and only save
+every 10th sample. After the estimation algorithms are finished, the estimated effects can be
+visualized instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma", "nu", "tau"))
 @

@@ -751,8 +751,10 @@ opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   np <- length(nx)
   
   if(!is.null(nu)) {
-    if(nu < 0)
-      nu <- NULL
+    if(!is.logical(nu)) {
+      if(nu < 0)
+        nu <- NULL
+    }
   }
   
   no_ff <- !inherits(y, "ffdf")
@@ -839,16 +841,16 @@ opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                   nuo <- nuo / 2
                 }
               }
-              
-              p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
-              p.state$fitted.values <- x[[sj]]$fit.fun(x[[sj]]$X,
+
+              if(!(objfun(nuo, diff = FALSE) < lpost0)) {
+                p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
+                p.state$fitted.values <- x[[sj]]$fit.fun(x[[sj]]$X,
                                                        get.par(p.state$parameters, "b"))
-              eta2[[id]] <- eta2[[id]] + p.state$fitted.values
-              lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[sj]]$prior(p.state$parameters)
-#              if(lpost1 < lpost0) {
-#                warning(paste("logLik is decreasing updating term: ", id, ", ",
-#                  x[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
-#              }
+                eta2[[id]] <- eta2[[id]] + p.state$fitted.values
+                lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[sj]]$prior(p.state$parameters)
+              } else {
+                next
+              }
             }
           }
           
@@ -1020,16 +1022,15 @@ opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
                     nuo <- nuo / 2
                   }
                 }
-                
-                p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
-                p.state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X,
-                                                                                   get.par(p.state$parameters, "b"))
-                eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
-                lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[nx[j]]]$smooth.construct[[sj]]$prior(p.state$parameters)
-#                if(lpost1 < lpost0) {
-#                  warning(paste("logLik is decreasing updating term: ", nx[j], ", ",
-#                    x[[nx[j]]]$smooth.construct[[sj]]$label, "; diff: ", lpost1 - lpost0, sep = ""))
-#                }
+
+                if(!(objfun(nuo, diff = FALSE) < lpost0)) {
+                  p.state$parameters <- set.par(p.state$parameters, nuo * b1 + (1 - nuo) * b0, "b")
+                  p.state$fitted.values <- x[[nx[j]]]$smooth.construct[[sj]]$fit.fun(x[[nx[j]]]$smooth.construct[[sj]]$X, get.par(p.state$parameters, "b"))
+                  eta2[[nx[j]]] <- eta2[[nx[j]]] + p.state$fitted.values
+                  lpost1 <- family$loglik(y, family$map2par(eta2)) ##+ lp + x[[nx[j]]]
+                } else {
+                  next
+                }
               }
             }
             

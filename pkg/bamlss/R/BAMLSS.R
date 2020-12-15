@@ -2422,7 +2422,6 @@ complete.bamlss.family <- function(family)
         logdens <- family$d(y, par, log = TRUE)
         if(any(i <- !is.finite(logdens))) {
           logdens[i] <- -100
-          warning("non finite log density!")
         }
         return(sum(logdens, na.rm = TRUE))
       }
