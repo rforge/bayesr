@@ -121,6 +121,7 @@ reference:
     - '`cox_bamlss`'
     - '`cox_predict`'
     - '`dl.bamlss`'
+    - '`gamlss_distributions`'
     - '`family.bamlss`'
     - '`fitted.bamlss`'
     - '`gF`'
