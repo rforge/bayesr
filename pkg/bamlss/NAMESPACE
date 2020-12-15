@@ -220,7 +220,8 @@ export(
   ## misc
   "response_name",
   "smooth_check",
-  "engines"
+  "engines",
+  "gamlss_distributions"
 )
 
 S3method("plot", "bamlss")

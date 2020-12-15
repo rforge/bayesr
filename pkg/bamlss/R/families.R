@@ -5861,3 +5861,34 @@ GEV_bamlss <- function(...)
   rval
 }
 
+gamlss_distributions <- function(type = c("continuous", "discrete"))
+{
+  stopifnot(requireNamespace("gamlss.dist"))
+  if(!("package:gamlss.dist" %in% search()))
+    attachNamespace("gamlss.dist")
+  funs <- ls("package:gamlss.dist")
+  type <- match.arg(type)
+  d <- list()
+  tf <- tempfile()
+  tf2 <- tempfile()
+  warn <- getOption("warn")
+  options("warn" = -1)
+  for(j in seq_along(funs)) {
+    fj0 <- get(funs[j])
+    png(tf)
+    capture.output(fj <- try(fj0(), silent = TRUE), file = tf2)
+    dev.off()
+    if(!inherits(fj, "try-error")) {
+      if(inherits(fj, "gamlss.family")) {
+        if(tolower(fj$type) == tolower(type)) {
+          d[[funs[j]]] <- fj0
+        }
+      }
+    }
+  }
+  unlink(tf)
+  unlink(tf2)
+  options("warn" = warn)
+  return(d)
+}
+

@@ -593,8 +593,10 @@ zero in the thousands, i.e., a model for count data will most probable not impro
 \setkeys{Gin}{width=0.5\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
+
 families <- list("NO" = NO(), "GA" = GA(), "BCCG" = BCCG(mu.link = "log"),
   "BCPE" = BCPE(mu.link = "log"), "BCT" = BCPE(mu.link = "log"))
+families <- ls()
 if(!file.exists("FatDens.rda")) {
   set.seed(123)
   ll <- NULL
