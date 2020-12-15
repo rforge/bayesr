@@ -1306,6 +1306,7 @@ model.frame.bamlss <- model.frame.bamlss.frame <- function(formula, ...)
     env <- environment(formula$formula)
     if(is.null(env))
       env <- parent.frame()
+    fcall$formula <- formula$formula
     ft <- eval(fcall[["formula"]], env)
     if(!is.null(attr(ft, "orig.formula"))) {
       fcall["formula"] <- parse(text = paste("attr(", fcall["formula"], ", 'orig.formula')", sep = ""))
