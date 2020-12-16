@@ -108,7 +108,7 @@ Sys.setenv("TZ" = "UTC")
 Many modern modeling tasks necessitate flexible regression tools that can deal with:
 (1)~Big data sets that can be both long (many observations) and/or wide (many variables or complex effect types).
 (2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
-(3)~Enhanced inference infrastructure, typically Bayesian, broaden classical frequentist methodology.
+(3)~Enhanced inference infrastructure, typically Bayesian, broadening classical frequentist methodology.
 A popular framework to combine flexible regression with probabilistic modeling
 are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
 to generalized additive models for location, scale, and shape \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
@@ -130,8 +130,8 @@ extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framewor
 not only the response distribution or the regression terms are ``Lego bricks''
 but also the estimation algorithm or the MCMC sampler.
 
-The idea of a ``Lego toolbox'' for regression models has of course been around for some time,
-in some  implementations, Bayesian and frequentist, there is not only the possibility to easily 
+The idea of a ``Lego toolbox'' for regression models has of course been around for some time;
+in some implementations, Bayesian and frequentist, there is not only the possibility to easily 
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. Nevertheless, to the
 best of our knowledge, the possibility to create new models through a flexible implementation that 
@@ -146,10 +146,15 @@ are available in a number of packages, most notably the \pkg{mgcv} package \cite
 and also the \pkg{gamlss} family of packages \citep{gamlss:book1, gamlss:book2}
 and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
 of a wide range of response distributions. However, for complex predictor structures, e.g.,
-complex space-time interactions, estimation may be challenging. In contrast, \pkg{mgcv} excels
+complex space-time interactions, estimation may be challenging. The \proglang{R} package \pkg{gamlss} also
+supports flexible additive smooth terms, but cannot easily provide inference for probabilistic
+predictions, if at all. In contrast, \pkg{mgcv} excels
 at providing highly-optimized algorithms for general smooth models
-\citep{bamlss:Wood+Pya+Saefken:2016} as well as the dedicated \fct{bam} function for big data
-that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}.
+\citep{bamlss:Wood+Pya+Saefken:2016}, including inference,
+as well as the dedicated \fct{bam} function for big data
+that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. Moreover, the package provides
+sophisticated infrastructures for generating new classes of smooth terms (which is completely
+adopted by the \pkg{bamlss} package).
 
 \item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
 frequentist inference, it is also particularly attractive for hierarchical or multilevel
