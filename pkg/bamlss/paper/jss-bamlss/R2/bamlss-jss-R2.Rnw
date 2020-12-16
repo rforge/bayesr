@@ -130,8 +130,8 @@ extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framewor
 not only the response distribution or the regression terms are ``Lego bricks''
 but also the estimation algorithm or the MCMC sampler.
 
-The idea of a Lego toolbox for regression models has of course been around for some time, in some 
-implementations, Bayesian and frequentist, there is not only the possibility to easily 
+The idea of a ``Lego toolbox'' for regression models has of course been around for some time,
+in some  implementations, Bayesian and frequentist, there is not only the possibility to easily 
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. Nevertheless, to the
 best of our knowledge, the possibility to create new models through a flexible implementation that 
@@ -565,7 +565,7 @@ in the right panel of Figure~\ref{fig:logit_effects}.
 
 In this example we will now extend the framework and estimate a complete distributional regression
 model using data on fatalities in Austria. The data is taken from the Eurostat data base
-(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from 2000 to 45
+(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from 2000 to 46
 weeks in 2020.
 
 The data is provided in the \pkg{bamlss} package and can be loaded with
@@ -804,13 +804,13 @@ grid()
 @
 \caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\% and 95\% quantiles of
   the cyclic seasonal week model, black dashed lines, and number of fatalities in 2020 up
-  to week 45, red points and line. Data before 2020 is shown in light gray in the
+  to week 46, red points and line. Data before 2020 is shown in light gray in the
   background.}
 \end{figure}
 The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals the seasonal
 variation of fatalities. In winter there is a clear peak, but also in the summer there is
 a visible increase, which is probably due to particularly hot summer months, which lead to greater 
-cardiovascular stress. The mortality rate from beginning of 2020 to week 45 is plotted in red and 
+cardiovascular stress. The mortality rate from beginning of 2020 to week 46 is plotted in red and 
 clearly indicates that this is much higher than the long-term median in the spring and from about 
 week 40 onward, and also well above the estimated 95\% quantile, respectively.
 

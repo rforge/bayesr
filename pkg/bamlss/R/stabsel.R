@@ -45,12 +45,19 @@ stabsel <- function(formula, data, family = "gaussian",
     if(!is.null(cores)) {
       parallel_fun <- function(i) {
         cat(sprintf("Stability selection boosting run %d / %d \r", i, B))
-        xx <- StabStep(formula = formula, data = data,
+        xx <- try(StabStep(formula = formula, data = data,
                        family  = family, q = q, maxit = maxit, seed = seeds[i],
-                       fraction = fraction, ...)
-        return(list("sel" = xx$sel, "formula" = xx$formula, "family" = xx$family))
+                       fraction = fraction, ...), silent = TRUE)
+        if(inherits(xx, "try-error")) {
+          return(NULL)
+        } else {
+          return(list("sel" = xx$sel, "formula" = xx$formula, "family" = xx$family))
+        }
       }
       psel <- parallel::mclapply(seq(B), parallel_fun, mc.cores = cores)
+      psel <- psel[!sapply(psel, is.null)]
+      if(length(psel) < 1)
+        stop("parallel stability selection failed, please debug in sequential mode!")
       stabselection <- sapply(psel, function(x) { x$sel })
       formula <- psel[[1L]]$formula
       environment(formula) <- NULL
