@@ -77,6 +77,8 @@ stabsel <- function(formula, data, family = "gaussian",
       family  <- xx$family
     }
 
+save(stabselection, file = "~/stabselection.rda")
+
     ## --- Re-build formula ---
     tabsel <- sort(table(stabselection), decreasing = FALSE)
     f <- StabFormula(tabsel, formula, family, thr, B)
