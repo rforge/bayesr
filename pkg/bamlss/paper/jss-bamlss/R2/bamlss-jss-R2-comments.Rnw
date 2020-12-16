@@ -326,8 +326,11 @@ of the reviewers are highlighted in italics, with our responses directly below.
 
 \medskip
 
-\item \emph{}
-
+\item \emph{The authors explain the features of the package using three different examples.
+  The first two examples are introduced in section 2, while the third is in section 5. The first
+  example uses a binary response. This is a rather strange choice because for binary response
+  variables the GAMLSS methodology has nothing to add compared to GLM's and GAM's.
+  I guess, it can be seen as a gentle introduction to the package.}
 
 \end{enumerate}
 

@@ -135,7 +135,7 @@ in some implementations, Bayesian and frequentist, there is not only the possibi
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. The following is a list
 of the best known packages for regression models in the \proglang{R} ecosystem, whose
-implementations are designed to be extremely flexible.
+implementations are des igned to be extremely flexible.
 %
 \begin{itemize}
 
