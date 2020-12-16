@@ -133,11 +133,9 @@ but also the estimation algorithm or the MCMC sampler.
 The idea of a ``Lego toolbox'' for regression models has of course been around for some time;
 in some implementations, Bayesian and frequentist, there is not only the possibility to easily 
 implement new distributions, but also model terms, from splines to neural networks to regression 
-trees. In some implementations optimization routines may also be exchanged. Nevertheless, to the
-best of our knowledge, the possibility to create new models through a flexible implementation that 
-combines all concepts in an unified way is unique.
-The following is a list of the best known packages in the \proglang{R} ecosystem,
-whose implementations are designed to be extremely flexible.
+trees. In some implementations optimization routines may also be exchanged. The following is a list
+of the best known packages for regression models in the \proglang{R} ecosystem, whose
+implementations are designed to be extremely flexible.
 %
 \begin{itemize}
 
@@ -147,8 +145,8 @@ and also the \pkg{gamlss} family of packages \citep{gamlss:book1, gamlss:book2}
 and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
 of a wide range of response distributions. While \pkg{VGAM} is restrictive with respect to the
 integration of flexible model terms, the \pkg{gamlss} package also
-supports (user-defined) flexible additive smooth terms, however, inference is mainly supported only
-for linear terms. In contrast, \pkg{mgcv} excels
+supports (user-defined) smooth additive terms, however, inference is mainly supported only
+for linear model terms. In contrast, \pkg{mgcv} excels
 at providing highly-optimized algorithms for general smooth models
 \citep{bamlss:Wood+Pya+Saefken:2016}, including inference,
 as well as the dedicated \fct{bam} function for big data
