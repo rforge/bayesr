@@ -58,7 +58,7 @@ stabsel <- function(formula, data, family = "gaussian",
       psel <- psel[!sapply(psel, is.null)]
       if(length(psel) < 1)
         stop("parallel stability selection failed, please debug in sequential mode!")
-      stabselection <- sapply(psel, function(x) { x$sel })
+      stabselection <- unlist(sapply(psel, function(x) { x$sel }))
       formula <- psel[[1L]]$formula
       environment(formula) <- NULL
       family <- psel[[1L]]$family
@@ -76,8 +76,6 @@ stabsel <- function(formula, data, family = "gaussian",
       environment(formula) <- NULL
       family  <- xx$family
     }
-
-save(stabselection, file = "~/stabselection.rda")
 
     ## --- Re-build formula ---
     tabsel <- sort(table(stabselection), decreasing = FALSE)
