@@ -348,6 +348,30 @@ of the reviewers are highlighted in italics, with our responses directly below.
   illustrative and one gets a good impression how completely probabilistic models can be
   estimated in \pkg{bamlss}.
 
+\medskip
+
+\item \emph{The third example in Section 5 it more substantial and very interesting. It
+  demonstrates the power of using boosting within BAMLSS but it misses one important aspect of a
+  distribution regression framework. Modelling the distribution. It fits a rather inadequate
+  distribution to the data.}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{Section 3 described the underpinning theoretical work. Section 4 the \pkg{bamlss}
+  package. There is no conclusion section (and maybe there should be one describing what has been
+  achieved and what the authors would like to achieve in the future.}
+
+  \fixme{Niki}
+
+\medskip
+
+\item \emph{The main smoothers considered are similar to the ones in package \pkg{mgcv}. It was
+  not clear to me whether the functions are straightforward copies of the functions in
+  \pkg{mgcv} or new functions adopting the \pkg{mgcv} notation. Also, how easy is to write a
+  new smother function for \pkg{bamlss}.}
+
 \end{enumerate}
 
 \end{document}
