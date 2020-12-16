@@ -1519,7 +1519,10 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 <<echo=FALSE>>=
 ## Load the data.
 # data("FlashAustria", package = "FlashAustria")
-data("FlashAustriaModel", package = "FlashAustria")
+## data("FlashAustriaModel", package = "FlashAustria")
+
+## FIXME: old model version!
+load("FlashAustriaModel.rda")
 b <- FlashAustriaModel
 
 ## Specify formula.
