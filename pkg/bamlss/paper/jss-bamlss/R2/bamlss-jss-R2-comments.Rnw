@@ -319,7 +319,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   models is not new either. I would suggest that there should be greater acknowledgment
   of this.}
 
-  Yes, of course, that's right, thank you for the important hint. This was definitely not
+  Yes, of course, that's right, thank you for the important comment. This was definitely not
   considered enough in the 1st version of the paper. We have now rewritten the introduction
   accordingly, with more details, and hope the reader will get a more complete picture of
   available implementations.
