@@ -29,14 +29,16 @@ make_formula <- function(x, y, prefix = "s(", suffix = ", bs = 'ps')",
 f <- make_formula(names(d_train), "counts")
 
 if(!file.exists("sel_SItr.rda")) {
-  sel_SItr <- stabsel(f, data = d_train, family = SItr, q = 16, B = 100, thr = .1)
+  sel_SItr <- stabsel(f, data = d_train, family = SItr, q = 16,
+    B = 100L, thr = 0.9, maxit =  400, fraction = 0.25)
   save(sel_SItr, file = "sel_SItr.rda")
 } else {
   load("sel_SItr.rda")
 }
 
 if(!file.exists("sel_ztnbinom.rda")) {
-  sel_ztnbinom <- stabsel(f, data = d_train, family = "ztnbinom", q = 16, B = 100, thr = .1)
+  sel_ztnbinom <- stabsel(f, data = d_train, family = "ztnbinom", q = 16,
+    B = 100L, thr = 0.9, maxit =  400, fraction = 0.25)
   save(sel_ztnbinom, file = "sel_ztnbinom.rda")
 } else {
   load("sel_ztnbinom.rda")
