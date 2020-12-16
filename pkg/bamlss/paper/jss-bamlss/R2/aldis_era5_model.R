@@ -51,7 +51,7 @@ newf2 <- formula(sel_ztnbinom)
 if(!file.exists("b1.rda")) {
   b1 <- bamlss(newf1, data = d_train,        # standard interface
     family = SItr, binning = TRUE,           # general arguments
-    optimizer = opt_boost, maxit = 1000,         # boosting arguments
+    optimizer = opt_boost, maxit = 1000,     # boosting arguments
     thin = 5, burnin = 1000, n.iter = 6000,  # sampler arguments
     init = FALSE, light = TRUE
   )

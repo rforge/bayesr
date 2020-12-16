@@ -332,6 +332,22 @@ of the reviewers are highlighted in italics, with our responses directly below.
   variables the GAMLSS methodology has nothing to add compared to GLM's and GAM's.
   I guess, it can be seen as a gentle introduction to the package.}
 
+  Yes exactly, this is definitely an introductory example to show the reader that familiar commands
+  to estimate for example a GLM can be taken over quasi one to one. That's why we think the section
+  is important and would like to leave it in the article.
+
+\medskip
+
+\item \emph{The second example is the crash helmet data which has been extensively used over the
+  last 35 years (including the authors in their BAMLSS 2018 paper). I am sure that there are more
+  interesting simple data sets than can be used to demonstrate the \pkg{bamlss} package.}
+
+  Yes, we completely agree with you here, so we have now completely replaced the example. We are
+  now using a brand-new data set about weekly mortality rates in Austria. We also estimate a variety
+  of distributional models to obtain the best fitting model. We think the example is much more
+  illustrative and one gets a good impression how completely probabilistic models can be
+  estimated in \pkg{bamlss}.
+
 \end{enumerate}
 
 \end{document}
