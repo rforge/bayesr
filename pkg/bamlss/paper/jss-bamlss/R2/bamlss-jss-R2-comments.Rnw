@@ -403,6 +403,26 @@ of the reviewers are highlighted in italics, with our responses directly below.
   Yes, in the exchanged example we heavily stress this point now and fit models using all
   continuous distributions of the \pkg{gamlss.dist} package.
 
+\medskip
+
+\item \emph{For example in example 3 the distribution used, the zero inflated negative binomial,
+  seems to be inadequate for the training data (see the worm plot at the end of this report).}
+
+\fixme{Thorsten}
+
+\medskip
+
+\item \emph{So I am left with wondering how long I have to spend to implement a new distribution
+  in BAMLSS from the ones existing in GAMLSS? one minute? one hour? one day? one week?}
+
+  We give an example how to implement a new distribution in Appendix B. The time it takes
+  to implement a new distribution heavily depends on the complexity of the density function.
+  However, if all formulas are worked out it should not take longer than 1 hour. If
+  all family functions need to be implemented in C for speed reasons it can for sure take
+  longer, in our experience about 2-3 hours. Transferring a \pkg{gamlss.dist} distribution
+  into a \pkg{bamlss} distribution is done internally. Doing so manually would also take
+  about 1 hour, depending on the complexity for sure.
+
 \end{enumerate}
 
 \end{document}
