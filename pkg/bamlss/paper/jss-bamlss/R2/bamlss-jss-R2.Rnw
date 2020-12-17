@@ -600,41 +600,58 @@ zero in the thousands, i.e., a model for count data will most probable not impro
 \setkeys{Gin}{width=0.7\textwidth}
 <<echo=FALSE, fig=TRUE, width=6, height=5>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
-if(!file.exists("FatDens.rda")) {
+
+f <- list(
+  num   ~ s(week, bs = "cc"),
+  sigma ~ s(week, bs = "cc"),
+  nu    ~ s(week, bs = "cc"),
+  tau   ~ s(week, bs = "cc")
+)
+
+if(!file.exists("Fat1.rda")) {
   families <- gamlss_distributions(type = "continuous")
+
   set.seed(123)
-  ll <- dnum <- list()
+
+  dic <- dnum <- list()
   start <- proc.time()
+
   for(j in names(families)) {
     cat("family", j, "\n")
+
     b <- try(bamlss(num ~ 1, data = fatalities,
-      family = families[[j]](mu.link = "log")),
+      family = families[[j]](mu.link = "log"),
+      optimizer = opt_boost, init = FALSE),
       silent = TRUE)
+
     if(!inherits(b, "try-error")) {
       par <- predict(b, type = "parameter", drop = FALSE)
-      ll[[j]] <- family(b)$loglik(fatalities$num, par)
+      dic[[j]] <- DIC(b)
+      cat(".. .. DIC =", dic[[j]]$DIC, "pd =", dic[[j]]$pd, "\n")
       dnum[[j]] <- family(b)$d(fatalities$num, par)
     }
   }
+
   elapsed <- c(proc.time() - start)[3]
-  save(ll, dnum, elapsed, file = "FatDens.rda")
+
+  save(dic, dnum, elapsed, file = "Fat1.rda")
 } else {
-  load("FatDens.rda")
+  load("Fat1.rda")
 }
-ll <- unlist(ll)
+dic <- sapply(dic, function(x) { x$DIC })
 dnum <- do.call("cbind", dnum)
-i <- order(ll, decreasing = TRUE)
+i <- order(dic, decreasing = FALSE)
 dnum <- dnum[, i][, 1:10]
-ll <- ll[i][1:10]
+dic <- dic[i][1:10]
 hist(fatalities$num, breaks = "Scott", freq = FALSE,
   main = "", xlab = "#Fatalities", ylim = c(0, max(dnum)))
 i <- order(fatalities$num)
 col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
 matplot(fatalities$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(names(ll), ": ", round(ll, 2)),
+legend("topright", paste0(names(dic), ": ", round(dic, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
-  title = "Family & log-likelihood")
+  title = "Family & DIC")
 @
 \caption{\label{fig:fathist} Fatalities data in Austria (2000-2020), histogram and
   fitted distributions.}
@@ -683,14 +700,14 @@ d20 <- subset(fatalities, year > 2019)
 A full Bayesian semi-parametric distributional regression model using the
 \fct{SEP4} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
-if(!file.exists("FatModel.rda")) {
+if(!file.exists("FatModels.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = SEP4,##(mu.link = "log"),
+  b <- bamlss(f, data = d19, family = SEP4(mu.link = "log"),
     optimizer = opt_boost, sampler = sam_GMCMC,
     n.iter = 12000, burnin = 2000, thin = 10)
-  save(b, file = "FatModel.rda")
+  save(b, file = "FatModels.rda")
 } else {
-  load("FatModel.rda")
+  load("FatModels.rda")
 }
 @
 <<eval=FALSE>>=

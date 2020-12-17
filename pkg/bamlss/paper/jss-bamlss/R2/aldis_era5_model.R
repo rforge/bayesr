@@ -12,6 +12,9 @@ data("FlashAustria", package = "FlashAustria")
 ## --- generate zero truncated Sichel distribution ---
 SItr <- trun(0, family = "SI", local = FALSE)
 
+## --- generate zero truncated beta negative binomial ---
+SIbnb <- trun(0, family = "SI", local = FALSE)
+
 ## --- helper function to build formula ---
 make_formula <- function(x, y, prefix = "s(", suffix = ", bs = 'ps')",
                          env = parent.frame(), k = 3) {
