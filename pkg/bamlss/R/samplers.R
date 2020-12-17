@@ -129,7 +129,9 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
   }
   class(theta) <- c("gmcmc.theta", "list")
 
-  plot <- !is.null(list(...)$plot)
+  plot <- list(...)$plot
+  if(is.null(plot))
+    plot <- FALSE
 
   parse_input <- function(input = NULL, default, type) {
     ninput <- deparse(substitute(input), backtick = TRUE, width.cutoff = 500)

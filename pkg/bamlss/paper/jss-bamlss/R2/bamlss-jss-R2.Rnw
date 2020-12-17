@@ -616,6 +616,7 @@ if(!file.exists("Fat1.rda")) {
   dic <- dnum <- list()
   start <- proc.time()
 
+
   for(j in names(families)) {
     cat("family", j, "\n")
 

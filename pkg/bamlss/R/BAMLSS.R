@@ -326,7 +326,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         sid <- NULL
       if(!is.null(sid) | !is.null(fterms)) {
         sterms <- sterm_labels <- attr(tx, "term.labels")[sid]
-        sterms <- lapply(sterms, function(x) { eval(parse(text = x)) })
+        sterms <- lapply(sterms, function(x) { print(x); eval(parse(text = x)) })
         nst <- NULL
         for(j in seq_along(sterms)) {
           sl <- sterms[[j]]$label
