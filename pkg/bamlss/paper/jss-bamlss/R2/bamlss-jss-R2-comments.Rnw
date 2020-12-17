@@ -363,7 +363,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   package. There is no conclusion section (and maybe there should be one describing what has been
   achieved and what the authors would like to achieve in the future.}
 
-  \fixme{Niki}
+  Yes, you are absolutely right, we have now added a conclusion section.
 
 \medskip
 
@@ -371,6 +371,37 @@ of the reviewers are highlighted in italics, with our responses directly below.
   not clear to me whether the functions are straightforward copies of the functions in
   \pkg{mgcv} or new functions adopting the \pkg{mgcv} notation. Also, how easy is to write a
   new smother function for \pkg{bamlss}.}
+
+  The smoothers are imports from package \pkg{mgcv}, which \pkg{bamlss} depends on. We use the
+  \pkg{mgcv} infrastructures to set up design and penalty matrices, e.g., using the generic
+  \fct{smooth.construct}. We now describe this more explicitly in several places in the text:
+
+  "As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
+  package \pkg{mgcv} (Wood 2019) infrastructures, i.e., for setting up the design
+  and penalty matrices for smooth terms the \pkg{mgcv} generic \fct{smooth.construct} or 
+  \fct{smoothCon} is called."
+
+  "\dots again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
+  \citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic
+  cubic regression spline."
+
+  "This way, it is also possible to incorporate user defined model terms, since the
+  \pkg{mgcv} smooth term constructor functions are based on the generic
+  \fct{smooth.construct} method, for which new classes can be added (see also the
+  \pkg{mgcv} manual)."
+
+  "\dots and \fct{smooth.construct} processing of the \pkg{mgcv} package to setup design
+  and penalty matrices for unspecified smooth function estimation \dots"
+
+\medskip
+
+\item \emph{There are about 25 different distributions in the package. Some of them are
+  very important, but the list falls short of the variety of univariate distributions
+  existing in the \pkg{gamlss.dist} package. The authors claim that all the GAMLSS
+  distributions can be fitted in \pkg{bamlss} but unfortunately they give no example of doing so.}
+
+  Yes, in the exchanged example we heavily stress this point now and fit models using all
+  continuous distributions of the \pkg{gamlss.dist} package.
 
 \end{enumerate}
 

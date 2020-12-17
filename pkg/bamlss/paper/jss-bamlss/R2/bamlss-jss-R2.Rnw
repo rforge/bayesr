@@ -414,8 +414,11 @@ logit model of Section~\ref{sec:logitmodel}, however, in this example we use
 regression splines to capture the nonlinear effect variable \code{age}.
 
 As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
-package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures. To estimate a spline model instead of
-a polynomial model for variable \code{age} the model formula only needs to be slightly adapted
+package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures, i.e., for setting up the design
+and penalty matrices for smooth terms the \pkg{mgcv} generic \fct{smooth.construct} or 
+\fct{smoothCon} is called.
+To estimate a spline model instead of a polynomial model for variable \code{age} the model
+formula only needs to be slightly adapted
 <<>>=
 f <- participation ~ income + education +
   youngkids + oldkids + foreign + s(age, k = 10)
@@ -1865,6 +1868,10 @@ by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
 2001-09-16 one can see that the probability on the downwind side of the
 Alps has increased.
 
+
+\subsection{Conclusion}
+
+\fixme{We need a conclusion!}
 
 \section*{Acknowledgments}
 
