@@ -427,14 +427,21 @@ print(xt, include.rownames = FALSE)
 \item \emph{So I am left with wondering how long I have to spend to implement a new distribution
   in BAMLSS from the ones existing in GAMLSS? one minute? one hour? one day? one week?}
 
-  We give an example how to implement a new distribution in Appendix B. The time it takes
-  to implement a new distribution heavily depends on the complexity of the density function.
-  However, if all formulas are worked out it should not take longer than 1 hour. If
-  all family functions need to be implemented in C for speed reasons it can for sure take
-  longer, in our experience about 2-3 hours. Transferring a \pkg{gamlss.dist} distribution
-  into a \pkg{bamlss} distribution is done internally. Doing so manually would also take
-  about 1 hour, depending on the complexity for sure. We now added more information
-  in Section~4.2.
+  Very good point. This should be really clear to the reader! You can use families/distributions
+  from GAMLSS instantaeously! You pass the GAMLSS family as it is into the bamlss model call
+  as family argument. To make this clear to the reader, we now use GAMLSS families within
+  some of the examples presented in the paper.
+
+  Further, we give an example how to implement a new distribution from scratch in Appendix B.
+  The time it takes to implement a new distribution heavily depends on the complexity of
+  the density function and its derivatives.
+
+%%   However, if all formulas are worked out it should not take longer than 1 hour. If
+%%   all family functions need to be implemented in C for speed reasons it can for sure take
+%%   longer, in our experience about 2-3 hours. Transferring a \pkg{gamlss.dist} distribution
+%%   into a \pkg{bamlss} distribution is done internally. Doing so manually would also take
+%%   about 1 hour, depending on the complexity for sure. We now added more information
+%%   in Section~4.2.
 
 \end{enumerate}
 
