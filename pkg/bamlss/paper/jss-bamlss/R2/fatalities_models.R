@@ -57,6 +57,6 @@ parallel_fun <- function(j) {
 }
 
 ## Estimate models.
-res <- mclapply(names(families)[1:2], parallel_fun, mc.cores = 2)##length(families))
+res <- mclapply(names(families), parallel_fun, mc.cores = length(families))
 save(res, file = "fatalities_models.rda")
 
