@@ -1590,15 +1590,14 @@ distribution.
 
 The zero-truncated negative binomial distribution is implemented as
 \code{ztnbinom_bamlss()} within \pkg{bamlss}.  In order to specify smooth terms
-form both distributional parameter, the formula has to be a \code{list}.
-The first element specifies terms for the response \code{counts}, which is named $\mu$ in the
-\pkg{bamlss} familiy object.
-The second element specifies the formula for parameter $\theta$. Hence well known
-for their sampling properties, we are
-applying P-splines \citep{bamlss:Eilers+Marx:1996} for all terms. Specifying
-smooth terms within \pkg{bamlss} formulae builds on the \pkg{mgcv} infrastructure
-\citep{bamlss:Wood:2019} provided by \code{s()}, which leads to the following
-specification of the model (formula):
+form both distributional parameter, the formula has to be a \code{list}.  The
+first element specifies terms for the response \code{counts}, which is named
+$\mu$ in the \pkg{bamlss} familiy object.  The second element specifies the
+formula for parameter $\theta$.  We adopt P-splines
+\citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
+properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
+\pkg{mgcv} infrastructure \citep{bamlss:Wood:2019} provided by \code{s()},
+which leads to the following specification of the model (formula):
 %
 <<eval=FALSE>>=
 f <- list(

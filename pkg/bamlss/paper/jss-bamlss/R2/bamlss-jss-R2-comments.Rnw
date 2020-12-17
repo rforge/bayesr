@@ -267,7 +267,15 @@ of the reviewers are highlighted in italics, with our responses directly below.
 \item \emph{pg 23 to make the example more interesting, it would make sense providing a brief 
   description of the variables contained in the \code{FlashAustria} data set.}
 
-  \fixme{Thorsten}
+  We worked over this example, and give now a descibtion of what the variables mean as table and
+  a why we included them for modelling lightning counts in the text.
+  
+<<para-table, echo=FALSE, results=tex>>=
+xt <- xtable::xtable(read.csv2("para-table.csv"),
+	align = c("l", "p{3cm}", "p{12cm}")
+)
+print(xt, include.rownames = FALSE)
+@
 
 \medskip
 
@@ -277,7 +285,9 @@ of the reviewers are highlighted in italics, with our responses directly below.
   purpose of reconstructing lightning events before 2010 (is this an useful thing to do in practice? 
   I guess so, but the text does not say anything about it).}
 
-  \fixme{Thorsten}
+  One---and for us the strongest---motivation is to have data on hand that allows to
+  investigate wheather lightning events are strongly influenced by climate change that
+  took place between 1950--2020. We added some sentences to the text.
 
 \medskip
 
@@ -286,7 +296,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   terms." Please rephrase the second sentence, which is quite unclear (e.g., "We adopt P-splines
   (Eilers and Marx 1996), which are well known for their sampling properties.").}
 
-  \fixme{Thorsten}
+  Rephrased.
 
 \medskip
 

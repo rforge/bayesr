@@ -1,0 +1,6 @@
+Abbreviation;Description
+hcc;High cloud cover. The proportion of a grid box covered by cloud occurring in the high levels of the troposhere (approx. 6 km and above).
+str;Surface net thermal radiation. Thermal radiation refers to radiation emitted by the atmoshere, clouds and the surface of the Earth. str is the difference between downward and upward thermal radiation at the surface of the Earth. The units are joules per square metre as the radiation is accumulated over a period of one hour.
+tciw;Total column cloud ice water. The amount of ice contained within clouds in a column extending from the surface of the Earth to the top of the atmosphere.
+q_prof_PC1;This variable has been derived from the vertical profile of specific humidity (labelled q at the ECMWF) by principal component analysis. This is the first principal component.
+sqrt_cape;The square root of convective available potential energy. This is an indication of the (in)stability of the atmosphere.
