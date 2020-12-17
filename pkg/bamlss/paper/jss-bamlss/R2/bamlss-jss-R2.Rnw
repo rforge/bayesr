@@ -590,7 +590,7 @@ estimated quantiles with the cases in 2020, which will give insights into the ex
 mortality of the COVID-19 pandemic \citep{bamlss:Leon:2020}.
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
-data at hand. Therefore, we all families as implemented in the \pkg{gamlss.dist}
+data at hand. Therefore, we use all families as implemented in the \pkg{gamlss.dist}
 package \citep{bamlss:gamlss.dist} for continuous responses and compare the model fits using the
 log-likelihood (the complete \proglang{R}-code is available in the supplements). Note that we do not
 use discrete distributions in this example because the number of fatalities is far away from
