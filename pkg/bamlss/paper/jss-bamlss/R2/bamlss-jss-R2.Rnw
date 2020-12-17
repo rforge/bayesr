@@ -1441,6 +1441,11 @@ Optionally, the \code{"family.bamlss"} object can be extended by functions for
 which can help to speed up optimization, or be convenient for
 predictions and simulations.
 
+When all formulas for a family are worked out, it usually takes about an hour to create a new
+family object. Of course, this also depends on the complexity of the density function. With some
+families it can be meaningful for speed reasons to port the functions for example to \proglang{C}.
+In our experience, programming then takes only slightly longer, about 2 to 3 hours.
+
 For a list of all implemented families, please see the documentation of \code{?bamlss.family}.
 
 \subsection{Estimation engines} \label{sec:engines}
@@ -1451,7 +1456,10 @@ which contains all the necessary model and penalty matrices, and a \code{y} argu
 response (univariate or multivariate). In addition, an estimation engine usually has a \code{family}
 argument, which specifies the model to be estimated. However, this is not a mandatory
 argument, i.e., one could write an estimation function that is designed for one specific
-problem, only.
+problem, only. As mentioned at the beginning of Section~\ref{sec:package}, there is naming
+convention, optimizer functions start with prefix \code{opt\_*} and sampler functions with
+\code{sam\_*}. The naming convention is not mandatory, but it gives the user a better overview of
+the many functions of the package.
 
 The modeling setup is best explained by looking at the main estimation engines provided by
 \pkg{bamlss}. The default optimizer using the \fct{bamlss} wrapper function is \fct{opt\_bfit}, which is a
@@ -1544,7 +1552,7 @@ f <- list(
 %
 <<>>=
 data("FlashAustria", package = "FlashAustria")
-head(FlashAustriaTrain)
+head(FlashAustriaTrain)[, 1:7]  
 nrow(FlashAustriaTrain)
 @
 %
