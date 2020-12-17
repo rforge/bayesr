@@ -1,96 +1,63 @@
-## --- setup ---
-set.seed(111)
+## Set the seed for reproducibility. 
+set.seed(123)
 
-## --- libraries ---
+## Required packages.
 library("bamlss")
 library("gamlss.dist")
 library("gamlss.tr")
 
-## --- data ---
+## Load the data.
 data("FlashAustria", package = "FlashAustria")
 
-## --- generate zero truncated Sichel distribution ---
-SItr <- trun(0, family = "SI", local = FALSE)
+## Generate zero truncated Sichel distribution.
+ztSI <- trun(0, family = "SI", local = FALSE)
 
-## --- generate zero truncated beta negative binomial ---
-SIbnb <- trun(0, family = "SI", local = FALSE)
+## Generate zero truncated beta negative binomial.
+ztBNB <- trun(0, family = "BNB", local = FALSE)
 
-## --- helper function to build formula ---
-make_formula <- function(x, y, prefix = "s(", suffix = ", bs = 'ps')",
-                         env = parent.frame(), k = 3) {
-  x <- x[x != y]
-  x <- paste0(prefix, x, suffix)
-  x <- paste0(x, collapse = " + ")
-  f <- as.formula(paste("~", x))
-  f <- c(list(update(f, substitute(a ~ ., list(a = as.name(y))))),
-    rep(list(f), k - 1))
-  environment(f) <- env
-  f
-}
+## Model formula, up to four parameters.
+f <- list(
+  counts ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1)
+)
 
-## --- stability selection ---
-f <- make_formula(names(FlashAustriaTrain), "counts")
+## Estimate models.
+b_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
+  family = "ztnbinom", binning = TRUE,            ## General arguments.
+  optimizer = opt_boost, maxit = 1000,            ## Boosting arguments.
+  thin = 5, burnin = 1000, n.iter = 6000,         ## Sampler arguments.
+  light = TRUE)
 
-if(!file.exists("sel_SItr.rda")) {
-  sel_SItr <- stabsel(f, data = FlashAustriaTrain, family = SItr,
-    B = 100L, thr = 0.9, maxit =  400, fraction = 0.25, cores = 50)
-  save(sel_SItr, file = "sel_SItr.rda")
-} else {
-  load("sel_SItr.rda")
-}
+b_ztSI <- bamlss(f, data = FlashAustriaTrain,
+  family = ztSI, binning = TRUE,
+  optimizer = opt_boost, maxit = 1000,
+  thin = 5, burnin = 1000, n.iter = 6000,
+  light = TRUE)
 
-if(!file.exists("sel_ztnbinom.rda")) {
-  sel_ztnbinom <- stabsel(f, data = FlashAustriaTrain, family = "ztnbinom",
-    B = 100L, thr = 0.9, maxit =  400, fraction = 0.25, cores = 50)
-  save(sel_ztnbinom, file = "sel_ztnbinom.rda")
-} else {
-  load("sel_ztnbinom.rda")
-}
+b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
+  family = ztBNB, binning = TRUE,
+  optimizer = opt_boost, maxit = 1000,
+  thin = 5, burnin = 1000, n.iter = 6000,
+  light = TRUE)
 
-## --- fit selected models ---
-newf1 <- formula(sel_SItr)
-newf2 <- formula(sel_ztnbinom)
+save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
 
-if(!file.exists("b1.rda")) {
-  b1 <- bamlss(newf1, data = FlashAustriaTrain,  # standard interface
-    family = SItr, binning = TRUE,               # general arguments
-    optimizer = opt_boost, maxit = 1000,         # boosting arguments
-    thin = 5, burnin = 1000, n.iter = 6000,      # sampler arguments
-    init = FALSE, light = TRUE
-  )
+### --- predictions ---
+#fit1 <- predict(b1, newdata = d_eval, type = "parameter")
+#fit2 <- predict(b2, newdata = d_eval, type = "parameter")
 
-  save(b1, file = "b1.rda")
-} else {
-  load("b1.rda")
-}
+#family(b1)$loglik(d_eval$counts, fit1)
+#family(b2)$loglik(d_eval$counts, fit2)
 
-if(!file.exists("b2.rda")) {
-  b2 <- bamlss(newf2, data = FlashAustriaTrain,
-    family = "ztnbinom", binning = TRUE,
-    optimizer = opt_boost, maxit = 1000,
-    thin = 5, burnin = 1000, n.iter = 6000,
-    init = FALSE, light = TRUE
-  )
+#e1t <- residuals(b1, newdata = FlashAustriaTrain)
+#e2t <- residuals(b2, newdata = FlashAustriaTrain)
 
-  save(b2, file = "b2.rda")
-} else {
-  load("b2.rda")
-}
+#e1e <- residuals(b1, newdata = FlashAustriaEval)
+#e2e <- residuals(b2, newdata = FlashAustriaEval)
 
-## --- predictions ---
-fit1 <- predict(b1, newdata = d_eval, type = "parameter")
-fit2 <- predict(b2, newdata = d_eval, type = "parameter")
-
-family(b1)$loglik(d_eval$counts, fit1)
-family(b2)$loglik(d_eval$counts, fit2)
-
-e1t <- residuals(b1, newdata = FlashAustriaTrain)
-e2t <- residuals(b2, newdata = FlashAustriaTrain)
-
-e1e <- residuals(b1, newdata = FlashAustriaEval)
-e2e <- residuals(b2, newdata = FlashAustriaEval)
-
-par(mfrow = c(1, 2))
-plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
-plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
+#par(mfrow = c(1, 2))
+#plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
+#plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
 

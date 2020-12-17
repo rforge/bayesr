@@ -601,56 +601,45 @@ zero in the thousands, i.e., a model for count data will most probable not impro
 <<echo=FALSE, fig=TRUE, width=6, height=5>>=
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 
-f <- list(
-  num   ~ s(week, bs = "cc"),
-  sigma ~ s(week, bs = "cc"),
-  nu    ~ s(week, bs = "cc"),
-  tau   ~ s(week, bs = "cc")
-)
-
-if(!file.exists("Fat1.rda")) {
-  families <- gamlss_distributions(type = "continuous")
-
-  set.seed(123)
-
-  dic <- dnum <- list()
-  start <- proc.time()
-
-
-  for(j in names(families)) {
-    cat("family", j, "\n")
-
-    b <- try(bamlss(num ~ 1, data = fatalities,
-      family = families[[j]](mu.link = "log"),
-      optimizer = opt_boost, init = FALSE),
-      silent = TRUE)
-
-    if(!inherits(b, "try-error")) {
-      par <- predict(b, type = "parameter", drop = FALSE)
-      dic[[j]] <- DIC(b)
-      cat(".. .. DIC =", dic[[j]]$DIC, "pd =", dic[[j]]$pd, "\n")
-      dnum[[j]] <- family(b)$d(fatalities$num, par)
-    }
-  }
-
-  elapsed <- c(proc.time() - start)[3]
-
-  save(dic, dnum, elapsed, file = "Fat1.rda")
+if(!file.exists("fatalities_models.rda")) {
+  source("fatalities_models.R")
 } else {
-  load("Fat1.rda")
+  load("fatalities_models.rda")
 }
-dic <- sapply(dic, function(x) { x$DIC })
+
+dic <- lapply(res, function(x) {
+  dic1 <- x$dic1$DIC
+  dic2 <- x$dic2$DIC
+  if(is.null(dic1))
+    dic1 <- NA
+  if(is.null(dic2))
+    dic2 <- NA
+  d <- data.frame("distribution" = x$distribution, "dic1" = dic1, "dic2" = dic2)
+  return(d)
+})
+
+dic <- do.call("rbind", dic)
+dic <- na.omit(dic)
+dic <- dic[dic$dic1 != 0, ]
+dic <- dic[dic$dic2 != 0, ]
+dic <- dic[order(dic$dic2), ]
+
+dn <- as.character(dic$distribution)[1:10]
+dnum <- list()
+for(i in seq_along(res)) {
+  if(res[[i]]$distribution %in% dn)
+    dnum[[as.character(res[[i]]$distribution)]] <- res[[i]]$dnum
+}
 dnum <- do.call("cbind", dnum)
-i <- order(dic, decreasing = FALSE)
-dnum <- dnum[, i][, 1:10]
-dic <- dic[i][1:10]
+dnum <- dnum[, dn]
+
 hist(fatalities$num, breaks = "Scott", freq = FALSE,
-  main = "", xlab = "#Fatalities", ylim = c(0, max(dnum)))
+  main = "", xlab = "#Fatalities", ylim = c(0, max(dnum, na.rm = TRUE)))
 i <- order(fatalities$num)
 col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
 matplot(fatalities$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(names(dic), ": ", round(dic, 2)),
+legend("topright", paste0(dn, ": ", round(dic$dic2[1:10], 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & DIC")
 @
@@ -703,7 +692,7 @@ A full Bayesian semi-parametric distributional regression model using the
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModels.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = SEP4(mu.link = "log"),
+  b <- bamlss(f, data = d19, family = ST3C(mu.link = "log"),
     optimizer = opt_boost, sampler = sam_GMCMC,
     n.iter = 12000, burnin = 2000, thin = 10)
   save(b, file = "FatModels.rda")
