@@ -314,7 +314,9 @@ print(xt, include.rownames = FALSE)
   38." but from Figure~7 it seems that \code{s(sqrt\_cape).mu} has the highest contribution, while
   \code{s(sqrt\_lsp).theta} does not appear in the plot.}
 
-  \fixme{Thorsten}
+  Albeit its small contribution we decided to rather show \code{s(sqrt\_lsp).theta} as this
+  term acts on the parameter $\theta$ of the distribution. We now mention this in the text
+  in more detail.
 
 \end{enumerate}
 
