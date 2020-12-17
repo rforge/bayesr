@@ -579,14 +579,15 @@ The data is provided in the \pkg{bamlss} package and can be loaded with
 data("fatalities", package = "bamlss")
 @
 The data set contains information on the number of fatalities (variable \code{num}) and
-the year and week of recording (variables \code{year} and \code{week}). The aim of this
-analysis is to investigate excess mortality to get a better picture of the scale of the COVID-19
-pandemic \citep{bamlss:Leon:2020} \fixme{Thorsten: besser generell excess mortality beschreiben, e.g.,
-durch Naturkatastrophen etc.}.
+the year and week of recording (variables \code{year} and \code{week}). The motivation
+for this analysis is to model a reference mortality, which allows one to descibe
+the excess mortabilty caused by exceptional events such as pandemics \citep{bamlss:Leon:2020} or
+natural catastrophes \citep{fouillet2008}.
 Excess mortality refers to mortality in excess of what would be
-expected based on the non-crisis mortality rate in the population of interest. Therefore,
+expected based on the non-crisis mortality rate in the population of interest. Here,
 we model the long-term seasonal trend of fatality numbers before the crisis and compare
-estimated quantiles with the cases in 2020.
+estimated quantiles with the cases in 2020, which will give insights into the excess
+mortality of the COVID-19 pandemic \citep{bamlss:Leon:2020}.
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
 data at hand. Therefore, we all families as implemented in the \pkg{gamlss.dist}
@@ -638,14 +639,15 @@ legend("topright", paste0(names(ll), ": ", round(ll, 2)),
 \caption{\label{fig:fathist} Fatalities data in Austria (2000-2020), histogram and
   fitted distributions.}
 \end{figure}
-The histogram of the number of fatalities together with the 10 best fitting densities and 
-corresponding log-likelihoods is shown in
-Figure~\ref{fig:fathist}. One of the most flexible distributions of the \pkg{gamlss.dist} package,
-the four parameter skew power exponential type 4 distribution (family \fct{SEP4},
-\citealp{bamlss:DiCiccio:2004}), has the best fit
-to the data (though only by a small difference). Therefore, we use the \fct{SEP4} family function
-and estimate a Bayesian model that takes into account the cyclical pattern of the year, in
-winter there are usually quite a lot of flu and similar illnesses that lead to a higher mortality 
+The histogram of the number of fatalities together with the 10 best fitting
+densities and corresponding log-likelihoods is shown in
+Figure~\ref{fig:fathist}. One of the most flexible distributions of the
+\pkg{gamlss.dist} package, the four parameter skew power exponential type 4
+distribution (family \fct{SEP4}, \citealp{bamlss:DiCiccio:2004}), has the best
+fit to the data (though only by a small difference). Therefore, we use the
+\fct{SEP4} family function and estimate a Bayesian model that takes into
+account the cyclical pattern over the year, in winter there are usually quite a
+lot of influenze and other viral infections that lead to a higher mortality
 rate. The model is specified with
 $$
 \texttt{num} \sim SEP(\log(\mu) = f_{\mu}(\texttt{week}),\,
@@ -813,12 +815,16 @@ grid()
   to week 46, red points and line. Data before 2020 is shown in light gray in the
   background.}
 \end{figure}
-The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals the seasonal
-variation of fatalities. In winter there is a clear peak, but also in the summer there is
-a visible increase, which is probably due to particularly hot summer months, which lead to greater 
-cardiovascular stress. The mortality rate from beginning of 2020 to week 46 is plotted in red and 
-clearly indicates that this is much higher than the long-term median in the spring and from about 
-week 40 onward, and also well above the estimated 95\% quantile, respectively.
+The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals
+the seasonal variation of fatalities. The median reveals a clear annual cycle
+with a higher number of fatalities in winter. The skewness of the distribution
+is also very dominant in winter.  However, also in the summer months there is a
+visible increase in the upper quntile, which is probably due to particularly
+heat waves leading to greater cardiovascular stress \citep{fouillet2008}. The
+mortality rate from beginning of 2020 to week 46 is plotted in red and clearly
+indicates that this is much higher than the long-term median in the spring and
+from about week 40 onward, and also well above the estimated 95\% quantile,
+respectively.
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
