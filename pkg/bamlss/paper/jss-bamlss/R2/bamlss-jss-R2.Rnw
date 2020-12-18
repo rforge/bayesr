@@ -569,12 +569,10 @@ in the right panel of Figure~\ref{fig:logit_effects}.
 
 \subsection{Distributional model} \label{sec:distmodel}
 
-In this example we will now extend the framework and estimate a complete distributional regression
+In this example we will now extend the framework and estimate a distributional regression
 model using data on fatalities in Austria. The data is taken from the Eurostat data base
 (\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from 2000 to 46
-weeks in 2020.
-
-The data is provided in the \pkg{bamlss} package and can be loaded with
+weeks in 2020. The data is provided in the \pkg{bamlss} package and can be loaded with
 <<>>=
 data("fatalities", package = "bamlss")
 @
@@ -655,22 +653,16 @@ The histogram of the number of fatalities together with the fitted
 densities and corresponding DIC values is shown in
 Figure~\ref{fig:fathist}. One of the most flexible distributions of the
 \pkg{gamlss.dist} package, the four parameter Box-Cox t
-distribution \citep{bamlss:DiCiccio:2004}, has the best
-fit to the data (though only by a small difference). Hence, with some certainty one of the
-chosen distribution models will have a fairly good model fit in further analysis.
+distribution, has a quite good fit and the lowest DIC (though only
+by a small difference). Hence, with some certainty one of the chosen distribution models will
+have a fairly good model fit in further analysis.
 
-In the next step estimate a Bayesian models that take into
+In the next step we estimate Bayesian models that take into
 account the cyclical pattern over the year, in winter there are usually quite a
 lot of influenze and other viral infections that lead to a higher mortality
-rate. The models are specified with
-$$
-\texttt{num} \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = f_{1}(\texttt{week}), \,
-  h_{2}(\theta_{2}) = f_{1}(\texttt{week}), \dots, \,\, h_{4}(\theta_{4}) =
-  f_{4}(\texttt{week})\right)
-$$
-where functions $f_{j}( \cdot )$ are unspecified smooth functions, which are estimated using
-regression splines. The log-link for parameter $\mu$, $\sigma$ and $\tau$ ensures positivity.
-We can use the following model formula for estimation
+rate. The models are estimated using $\eta_k = f_{k}(\texttt{week})$ for each parameter
+of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smooth functions,
+which are estimated using regression splines. We can use the following model formula for estimation
 <<>>=
 f <- list(
   num   ~ s(week, bs = "cc", k = 40),
@@ -683,13 +675,35 @@ again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} packa
 \citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic cubic
 regression spline.
 Note that model formulae are provided as lists of formulae, i.e., each list entry
-represents one parameter of the response distribution. Moreover, note that all smooth
+represents one parameter of the response distribution. Since the maximum number of
+parameters of the selected distributions is 4, we supply 4 formulae. Internally, \pkg{bamlss}
+only processes the relevant formulae depending on the family. The \pkg{gamlss.dist} package
+has a naming convention for the distributional parameters, which is adopted in this example.
+However, the user can also drop the parameter names on the left hand side of the formulae
+(but not the response \code{num}). Moreover, note that all smooth
 terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
 constructor functions are based on the generic \fct{smooth.construct} method, for which
 new classes can be added (see also the \pkg{mgcv} manual).
+The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
+\begin{table}[h!]
+\centering
+\begin{tabular}{lc}
+Family & DIC \\ 
+\hline
+\fct{NO}   & 13100.14 \\ 
+\fct{GA}   & 13040.11 \\ 
+\fct{JSU}  & 12875.46 \\ 
+\fct{BCCG} & 12872.20 \\ 
+\fct{BCT}  & 12869.12 \\ 
+\fct{BCPE} & \textbf{12865.08} \\ 
+\hline
+\end{tabular}
+\caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
+\end{table}
+Here, the four parameter \fct{BCPE} model has the lowest DIC.
 A full Bayesian semi-parametric distributional regression model using the
-\fct{SEP4} family of the \pkg{gamlss.dist} package can be estimated with
+\fct{BCPE} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
@@ -704,15 +718,11 @@ if(!file.exists("FatModel.rda")) {
 library("gamlss.dist")
 set.seed(456)
 b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
-  optimizer = opt_boost, sampler = sam_GMCMC,
   n.iter = 12000, burnin = 2000, thin = 10)
 @
-Here, we use the gradient boosting optimizer function \fct{opt\_boost} to find suitable
-starting values for the default MCMC sampler function \fct{sam\_GMCMC}. The Boosting Optimizer runs 
-more stable in many cases and is of great advantage especially for very flexible distributions.
-For the MCMC sampler we use 12000 iterations and withdraw the first 2000 samples and only save
-every 10th sample. After the estimation algorithms are finished, the estimated effects can be
-visualized instantly using the plotting method.
+In this example we use for the MCMC sampler 12000 iterations and withdraw the first 2000 samples
+and only save every 10th sample. After the estimation algorithms are finished, the estimated
+effects can be visualized instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma", "nu", "tau"))
 @
@@ -844,7 +854,7 @@ however, please note that model classes like, e.g., GLMs and GAMs or even surviv
 \citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}
 are special cases in this setup.
 
-\subsection{Model structure}
+\subsection{Model structure} \label{sec:mstruct}
 
 Within the framework of GAMLSS or distributional regression models
 all parameters of the response distribution can be modeled by
@@ -1580,16 +1590,14 @@ this will increase our knowledge about physical proceses leading to such
 events. On the other hand this will enable to quantify the development of these
 extreme short-term events under the light of a changing climate \citep{westra2014}.
 %
-\begin{tabular}
 <<para-table, echo=FALSE, results=tex>>=
 xt <- xtable::xtable(read.csv2("para-table.csv"),
 	caption = "Describtions of the parameters taken directly or derived from ERA5.",
 	label = "tab:ecmwf",
     align = c("l", "p{3cm}", "p{12cm}")
 )
-print(xt, include.rownames = FALSE)
+print(xt, include.rownames = FALSE, floating = FALSE)
 @
-\end{tabular}
 %
 The parameters taken directly or derived from ERA5 for this study is only a
 small subset of parameters available \citep{era5}. It encloses variables that
@@ -1847,12 +1855,14 @@ FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 
 library("ggplot2")
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
-ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
-  geom_sf(data = world, col = "white", fill = NA) +
-  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-  facet_wrap(~time, nrow = 2) + theme_minimal() +
-  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+
+plot(FlashAustriaCase["P10"]) ## FIXME!
+## ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+##   scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+##   geom_sf(data = world, col = "white", fill = NA) +
+##   coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+##   facet_wrap(~time, nrow = 2) + theme_minimal() +
+##   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 @
 \caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
 September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
