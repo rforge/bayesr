@@ -1572,10 +1572,16 @@ nrow(FlashAustriaTrain)
 @
 %
 The motivation for this application is as follows: Lightning counts are not
-modeled within the atmospheric reanalyses. Lightning observations are only
-available for the period 2010--2018. With a statistical model on hand one could
+modeled within the atmospheric reanalyses, as their spatial resolution is too
+coarse for resolving convective events that lead to lightning discharges.
+Homogeneous lightning observations are only available for the period in the
+order of a decade, here 2010--2018.  With a statistical model on hand one could
 predict lightning counts for the time before 2010 and thus analyze lightning
-events in the past for which no observations are available.
+events in the past for which no observations are available. On the one hand
+this will increase our knowledge about physical proceses leading to such
+events. On the other hand this will enable to quantify the development of these
+extreme short-term events under the light of a changing climate
+\citep{westra2014}.
 
 The response of our statistical model are positive counts, with a mean of
 \Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of

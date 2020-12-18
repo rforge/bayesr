@@ -367,7 +367,13 @@ print(xt, include.rownames = FALSE)
   distribution regression framework. Modelling the distribution. It fits a rather inadequate
   distribution to the data.}
 
-  \fixme{Thorsten}
+  We admit that the zero-truncated negative binomial might not be the best fitting
+  distribution. However, it fits reasonably well. Further, we want to note that the
+  true dirstribution of the data is extremly skewed, and finding a proper fit is
+  challenging as each term only contributes little to the whole picture.
+  During the revision we continued testing distributions, i.e., the Sichel \code{SI()} and the
+  beta negative binomial \code{NBN()} both from \pkg{gamlss.dist} and both zero-truncated using
+  \code{trun()} from \pkg{gamlss.tr}. The results in the paper now consider these tests.
 
 \medskip
 
