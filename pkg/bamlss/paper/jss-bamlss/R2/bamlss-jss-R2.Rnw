@@ -612,19 +612,12 @@ if(!file.exists("fatalities_models.rda")) {
 dic <- lapply(res, function(x) {
   dic1 <- x$dic1$DIC
   dic2 <- x$dic2$DIC
-  if(is.null(dic1))
-    dic1 <- NA
-  if(is.null(dic2))
-    dic2 <- NA
   d <- data.frame("distribution" = x$distribution, "dic1" = dic1, "dic2" = dic2)
   return(d)
 })
 
 dic <- do.call("rbind", dic)
-dic <- na.omit(dic)
-dic <- dic[dic$dic1 != 0, ]
-dic <- dic[dic$dic2 != 0, ]
-dic <- dic[order(dic$dic2), ]
+dic <- dic[order(dic$dic1), ]
 
 dn <- as.character(dic$distribution)
 dnum <- list()
@@ -641,7 +634,7 @@ i <- order(fatalities$num)
 col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
 matplot(fatalities$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(dn, ": ", round(dic$dic2, 2)),
+legend("topright", paste0(dn, ": ", round(dic$dic1, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & DIC")
 @
@@ -694,9 +687,8 @@ A full Bayesian semi-parametric distributional regression model using the
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = ST3C(mu.link = "log"),
-    optimizer = opt_boost, sampler = sam_GMCMC,
-    n.iter = 2000000, burnin = 100000, thin = 1900)
+  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
+    n.iter = 12000, burnin = 2000, thin = 10)
   save(b, file = "FatModel.rda")
 } else {
   load("FatModel.rda")
