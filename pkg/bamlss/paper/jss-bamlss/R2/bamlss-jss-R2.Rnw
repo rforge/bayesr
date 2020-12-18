@@ -720,7 +720,8 @@ set.seed(456)
 b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
   n.iter = 12000, burnin = 2000, thin = 10)
 @
-In this example we use for the MCMC sampler 12000 iterations and withdraw the first 2000 samples
+Note that we assign the log-link for parameter $\mu$ to ensure positivity. 
+In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples
 and only save every 10th sample. After the estimation algorithms are finished, the estimated
 effects can be visualized instantly using the plotting method.
 <<eval=FALSE>>=
@@ -749,15 +750,14 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "tau", spar = FALSE)
 @
 \caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on parameter
-  $\mu$, $\sigma$, $\nu$ and $\tau$ of the skew power exponential type 4 model. The grey
+  $\mu$, $\sigma$, $\nu$ and $\tau$ of the Box-Cox power exponential model. The grey
   shaded areas represent 95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
-relationship for parameter $\mu$ and $\tau$. The \code{week} effect on parameter $\nu$
-seems to be zero, since the estimated smooth function does not significantly deviate from the
-zero horizontal line, i.e., an intercept only term might be sufficient for parameter $\tau$.
-Similarly, for parameter $\sigma$, the effect is not particularly pronounced, so a linear term or
-a pure intercept model might suffice.
+relationship for all parameters, however, 95\% credible intervals for parameter $\nu$
+and $\tau$ are larger such that the effects to not cross the horizontal zero line
+significantly, i.e., a simple intercept only specification for these parameters might be
+sufficient.
 
 For judging how well the model fits to the data the user can inspect randomized quantile
 residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
