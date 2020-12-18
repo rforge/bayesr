@@ -590,9 +590,11 @@ estimated quantiles with the cases in 2020, which will give insights into the ex
 mortality of the COVID-19 pandemic \citep{bamlss:Leon:2020}.
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
-data at hand. Therefore, we use all families as implemented in the \pkg{gamlss.dist}
-package \citep{bamlss:gamlss.dist} for continuous responses and compare the model fits using the
-log-likelihood (the complete \proglang{R}-code is available in the supplements). Note that we do not
+data at hand. Since there are a number of candidate distributions and the complexity of the data
+set and the model in terms of the predictor is relatively low, we use all families for
+continuous responses as implemented in the \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist} and 
+compare the model fits using the deviance information criterion (DIC, the complete
+\proglang{R}-code is available in the supplements). Note that we do not
 use discrete distributions in this example because the number of fatalities is far away from
 zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.
 \begin{figure}[!ht]
@@ -666,10 +668,10 @@ regression splines. The log-link for parameter $\mu$, $\sigma$ and $\tau$ ensure
 We can use the following model formula for estimation
 <<>>=
 f <- list(
-  num   ~ s(week, bs = "cc"),
-  sigma ~ s(week, bs = "cc"),
-  nu    ~ s(week, bs = "cc"),
-  tau   ~ s(week, bs = "cc")
+  num   ~ s(week, bs = "cc", k = 40),
+  sigma ~ s(week, bs = "cc", k = 40),
+  nu    ~ s(week, bs = "cc", k = 40),
+  tau   ~ s(week, bs = "cc", k = 40)
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
@@ -690,14 +692,14 @@ d20 <- subset(fatalities, year > 2019)
 A full Bayesian semi-parametric distributional regression model using the
 \fct{SEP4} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
-if(!file.exists("FatModels.rda")) {
+if(!file.exists("FatModel.rda")) {
   set.seed(456)
   b <- bamlss(f, data = d19, family = ST3C(mu.link = "log"),
     optimizer = opt_boost, sampler = sam_GMCMC,
-    n.iter = 12000, burnin = 2000, thin = 10)
-  save(b, file = "FatModels.rda")
+    n.iter = 2000000, burnin = 100000, thin = 1900)
+  save(b, file = "FatModel.rda")
 } else {
-  load("FatModels.rda")
+  load("FatModel.rda")
 }
 @
 <<eval=FALSE>>=
