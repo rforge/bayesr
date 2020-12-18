@@ -1770,10 +1770,11 @@ Higher values of \code{sqrt_lsp} lead to smaller $\theta$, which increases the
 variance of the distribution.
 
 Before applying the model, i.e., predicting lightning cases before 2010, we
-check the marginal calibration of the distribution by hanging rootogram, a tool
-popular for the evaluation of count data regression models
-\citep{kleiber2016visualizing}. First we predict the distributional parameter
-on out-of-sample data \code{FlashAustriaEval} for which lightning
+check the marginal calibration of the distribution. This is commonly done by
+displaying a qq-plot or a worm plot \citep{bamlss:Buuren+Miranda:2001}.  For
+evaluating count data regression model the hanging rootogram serves as popular
+tool \citep{kleiber2016visualizing}. First we predict the distributional
+parameter on out-of-sample data \code{FlashAustriaEval} for which lightning
 observations are on hand
 %
 <<>>=
