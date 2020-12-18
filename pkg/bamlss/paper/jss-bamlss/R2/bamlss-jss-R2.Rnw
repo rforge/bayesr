@@ -689,6 +689,7 @@ The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
 \begin{table}[h!]
 \centering
 \begin{tabular}{lc}
+\hline
 Family & DIC \\ 
 \hline
 \fct{NO}   & 13100.14 \\ 
@@ -764,11 +765,11 @@ residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
 <<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid", "wp"), c95 = TRUE)
+plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
 @
 \begin{figure}[!ht]
 \centering
-\setkeys{Gin}{width=0.3\textwidth}
+\setkeys{Gin}{width=0.4\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
@@ -776,10 +777,6 @@ plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
-@
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "wp", spar = FALSE, c95 = TRUE)
 @
 \caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
   intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
@@ -1594,6 +1591,8 @@ this will increase our knowledge about physical proceses leading to such
 events. On the other hand this will enable to quantify the development of these
 extreme short-term events under the light of a changing climate \citep{westra2014}.
 %
+\begin{table}[ht!]
+\centering
 <<para-table, echo=FALSE, results=tex>>=
 xt <- xtable::xtable(read.csv2("para-table.csv"),
 	caption = "Describtions of the parameters taken directly or derived from ERA5.",
@@ -1602,12 +1601,15 @@ xt <- xtable::xtable(read.csv2("para-table.csv"),
 )
 print(xt, include.rownames = FALSE, floating = FALSE)
 @
+\caption{\label{tab:desc} Description of selected ERA5 parameters.}
+\end{table}
 %
-The parameters taken directly or derived from ERA5 for this study is only a
+The parameters are taken directly or derived from ERA5 for this study is only a
 small subset of parameters available \citep{era5}. It encloses variables that
-are well known to be good canditates for predicting or explaining convective
+are well known to be good candidates for predicting or explaining convective
 event that also lead to lightning discharges
-\citep[e.g.,][]{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.
+\citep[e.g.,][]{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}, in Table~\ref{tab:desc} a
+description is provided.
 
 The response of our statistical model are positive counts, with a mean of
 \Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of
