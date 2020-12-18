@@ -626,7 +626,7 @@ dic <- dic[dic$dic1 != 0, ]
 dic <- dic[dic$dic2 != 0, ]
 dic <- dic[order(dic$dic2), ]
 
-dn <- as.character(dic$distribution)[1:10]
+dn <- as.character(dic$distribution)
 dnum <- list()
 for(i in seq_along(res)) {
   if(res[[i]]$distribution %in% dn)
@@ -641,7 +641,7 @@ i <- order(fatalities$num)
 col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
 matplot(fatalities$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(dn, ": ", round(dic$dic2[1:10], 2)),
+legend("topright", paste0(dn, ": ", round(dic$dic2, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & DIC")
 @
