@@ -580,7 +580,7 @@ data("fatalities", package = "bamlss")
 @
 The data set contains information on the number of fatalities (variable \code{num}) and
 the year and week of recording (variables \code{year} and \code{week}). The motivation
-for this analysis is to model a reference mortality, which allows one to descibe
+for this analysis is to model a reference mortality, which allows one to describe
 the excess mortabilty caused by exceptional events such as pandemics \citep{bamlss:Leon:2020} or
 natural catastrophes \citep{fouillet2008}.
 Excess mortality refers to mortality in excess of what would be
@@ -588,13 +588,23 @@ expected based on the non-crisis mortality rate in the population of interest. H
 we model the long-term seasonal trend of fatality numbers before the crisis and compare
 estimated quantiles with the cases in 2020, which will give insights into the excess
 mortality of the COVID-19 pandemic \citep{bamlss:Leon:2020}.
+Therefore, we subset the data set before 2020 for estimation and use the 2020 data for comparison
+<<eval=TRUE,echo=TRUE>>=
+d19 <- subset(fatalities, year < 2020)
+d20 <- subset(fatalities, year > 2019)
+@
 
 To find a well-calibrated model, the first step is to look for a suitable distribution for the
-data at hand. Since there are a number of candidate distributions and the complexity of the data
-set and the model in terms of the predictor is relatively low, we use all families for
-continuous responses as implemented in the \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist} and 
-compare the model fits using the deviance information criterion (DIC, the complete
-\proglang{R}-code is available in the supplements). Note that we do not
+data at hand. The \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist} provides a number
+of distributions which can also be used for estimation in \pkg{bamlss}. In this example, we consider
+6 distributions with different number of parameters, from 2 to 4. In detail these are the
+normal distribution (family \fct{NO}), gamma distribution (family \fct{GA}), Box-Cox t
+distribution (family \fct{BCT}), Johnson's Su distribution (family \fct{JSU}),
+Box-Cox power exponential distribution (family \fct{BCPE}) and the Box-Cox Cole and
+Green distribution (family \fct{BCCG}). First, we only estimate the distributional parameters
+without covariates, to get a first impression which distribution fits well. We compare visually
+as well as by the deviance information criterion (DIC, the complete \proglang{R}-code is
+available in the supplements). Note that we do not
 use discrete distributions in this example because the number of fatalities is far away from
 zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.
 \begin{figure}[!ht]
@@ -617,7 +627,7 @@ dic <- lapply(res, function(x) {
 })
 
 dic <- do.call("rbind", dic)
-dic <- dic[order(dic$dic1), ]
+dic <- dic[order(dic$dic1, decreasing = TRUE), ]
 
 dn <- as.character(dic$distribution)
 dnum <- list()
@@ -628,33 +638,35 @@ for(i in seq_along(res)) {
 dnum <- do.call("cbind", dnum)
 dnum <- dnum[, dn]
 
-hist(fatalities$num, breaks = "Scott", freq = FALSE,
+hist(d19$num, breaks = "Scott", freq = FALSE,
   main = "", xlab = "#Fatalities", ylim = c(0, max(dnum, na.rm = TRUE)))
-i <- order(fatalities$num)
+i <- order(d19$num)
 col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
-matplot(fatalities$num[i], dnum[i, ], type = "l",
+matplot(d19$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
 legend("topright", paste0(dn, ": ", round(dic$dic1, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & DIC")
 @
-\caption{\label{fig:fathist} Fatalities data in Austria (2000-2020), histogram and
+\caption{\label{fig:fathist} Fatalities data in Austria (2000-2019), histogram and
   fitted distributions.}
 \end{figure}
-The histogram of the number of fatalities together with the 10 best fitting
-densities and corresponding log-likelihoods is shown in
+The histogram of the number of fatalities together with the fitted
+densities and corresponding DIC values is shown in
 Figure~\ref{fig:fathist}. One of the most flexible distributions of the
-\pkg{gamlss.dist} package, the four parameter skew power exponential type 4
-distribution (family \fct{SEP4}, \citealp{bamlss:DiCiccio:2004}), has the best
-fit to the data (though only by a small difference). Therefore, we use the
-\fct{SEP4} family function and estimate a Bayesian model that takes into
+\pkg{gamlss.dist} package, the four parameter Box-Cox t
+distribution \citep{bamlss:DiCiccio:2004}, has the best
+fit to the data (though only by a small difference). Hence, with some certainty one of the
+chosen distribution models will have a fairly good model fit in further analysis.
+
+In the next step estimate a Bayesian models that take into
 account the cyclical pattern over the year, in winter there are usually quite a
 lot of influenze and other viral infections that lead to a higher mortality
-rate. The model is specified with
+rate. The models are specified with
 $$
-\texttt{num} \sim SEP(\log(\mu) = f_{\mu}(\texttt{week}),\,
-  \log(\sigma) = f_{\sigma}(\texttt{week}),\, \nu = f_{\nu}(\texttt{week}),\,
-  \log(\tau) = f_{\tau}(\texttt{week}))
+\texttt{num} \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = f_{1}(\texttt{week}), \,
+  h_{2}(\theta_{2}) = f_{1}(\texttt{week}), \dots, \,\, h_{4}(\theta_{4}) =
+  f_{4}(\texttt{week})\right)
 $$
 where functions $f_{j}( \cdot )$ are unspecified smooth functions, which are estimated using
 regression splines. The log-link for parameter $\mu$, $\sigma$ and $\tau$ ensures positivity.
@@ -676,12 +688,6 @@ terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
 constructor functions are based on the generic \fct{smooth.construct} method, for which
 new classes can be added (see also the \pkg{mgcv} manual).
-As mentioned above we subset the data set before 2020 for estimating the model and
-use the 2020 data for comparison
-<<eval=TRUE,echo=TRUE>>=
-d19 <- subset(fatalities, year < 2020)
-d20 <- subset(fatalities, year > 2019)
-@
 A full Bayesian semi-parametric distributional regression model using the
 \fct{SEP4} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
@@ -697,7 +703,7 @@ if(!file.exists("FatModel.rda")) {
 <<eval=FALSE>>=
 library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, data = d19, family = SEP4(mu.link = "log"),
+b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
   optimizer = opt_boost, sampler = sam_GMCMC,
   n.iter = 12000, burnin = 2000, thin = 10)
 @
