@@ -1572,8 +1572,24 @@ predict lightning counts for the time before 2010 and thus analyze lightning
 events in the past for which no observations are available. On the one hand
 this will increase our knowledge about physical proceses leading to such
 events. On the other hand this will enable to quantify the development of these
-extreme short-term events under the light of a changing climate
-\citep{westra2014}.
+extreme short-term events under the light of a changing climate \citep{westra2014}.
+%
+\begin{tabular}
+<<para-table, echo=FALSE, results=tex>>=
+xt <- xtable::xtable(read.csv2("para-table.csv"),
+	caption = "Describtions of the parameters taken directly or derived from ERA5.",
+	label = "tab:ecmwf",
+    align = c("l", "p{3cm}", "p{12cm}")
+)
+print(xt, include.rownames = FALSE)
+@
+\end{tabular}
+%
+The parameters taken directly or derived from ERA5 for this study is only a
+small subset of parameters available \citep{era5}. It encloses variables that
+are well known to be good canditates for predicting or explaining convective
+event that also lead to lightning discharges
+\citep[e.g.,][]{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.
 
 The response of our statistical model are positive counts, with a mean of
 \Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of
@@ -1586,7 +1602,7 @@ expectation of the underlying untruncated negative binomial, and $\theta$
 modifies the variance of the untruncated negative binomial by
 $\mathrm{VAR}(\tilde{Y}) = \mu + \mu^2/\theta$, where $\tilde{Y}$ is a latent
 random variable following the underlying untruncated negative binomial
-distribution.
+distribution. \fixme{Discuss other extremely skewed count data distributions.}
 
 The zero-truncated negative binomial distribution is implemented as
 \code{ztnbinom_bamlss()} within \pkg{bamlss}.  In order to specify smooth terms
