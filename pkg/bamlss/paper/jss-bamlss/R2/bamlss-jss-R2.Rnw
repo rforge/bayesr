@@ -764,11 +764,11 @@ residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
 <<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
+plot(b, which = c("hist-resid", "qq-resid", "wp"), c95 = TRUE)
 @
 \begin{figure}[!ht]
 \centering
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.3\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
@@ -776,6 +776,10 @@ plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "wp", spar = FALSE, c95 = TRUE)
 @
 \caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
   intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
