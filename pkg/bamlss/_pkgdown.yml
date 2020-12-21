@@ -120,6 +120,7 @@ reference:
     - '`continue`'
     - '`cox_bamlss`'
     - '`cox_predict`'
+    - '`CRPS`'
     - '`dl.bamlss`'
     - '`gamlss_distributions`'
     - '`family.bamlss`'
