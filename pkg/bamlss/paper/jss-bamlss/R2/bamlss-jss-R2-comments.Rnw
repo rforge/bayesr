@@ -449,6 +449,31 @@ print(xt, include.rownames = FALSE)
 %%   about 1 hour, depending on the complexity for sure. We now added more information
 %%   in Section~4.2.
 
+\medskip
+
+\item \emph{Within their approach, the selection of prior distributions is rather played down,
+  which does not distract from the problem of finding an adequate model for the data.
+  But how sensitive are the results to changing the prior distributions used?}
+
+\fixme{Nadja}
+
+\item \emph{In all three examples there is no distribution modelling. I can understand this in
+  the first example, but why accept the normal distribution and zero inflated negative
+  binomial distributions without considering alternatives?}
+
+  Yes exactly, as mentioned above we have completely replaced the moto cycle example and extended the 
+  flash example accordingly.
+
+\item \emph{I do not like '(and beyond)' in the title. What is beyond "Flexible Bayesian
+  Regression"?. I understand that there are trying to say beyond univariate regression but
+  I think this is rather irrelevant here. "\pkg{bamlss}: A Lego Toolbox for Flexible
+  Bayesian Regression" will do.}
+
+  Well, the reason why '(and beyond)' is in the title is that the package does not only stand for 
+  Bayesian regression, but other concepts can easily be used, for example gradient boosting. We would 
+  therefore be reluctant to take '(and beyond)' out of the title, especially since it is also part of 
+  the title from the Umlauf (2018) paper.
+
 \end{enumerate}
 
 \end{document}
