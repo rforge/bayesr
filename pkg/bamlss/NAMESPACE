@@ -221,7 +221,8 @@ export(
   "response_name",
   "smooth_check",
   "engines",
-  "gamlss_distributions"
+  "gamlss_distributions",
+  "CRPS"
 )
 
 S3method("plot", "bamlss")

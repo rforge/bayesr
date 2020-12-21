@@ -11084,3 +11084,33 @@ engines <- function(family, ...)
   return(as.data.frame(tab))
 }
 
+
+CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ...) {
+  yname <- response_name(object)
+  fam <- family(object)
+  if(is.null(fam$p))
+    stop("no p() function in family object!")
+  if(is.null(newdata))
+    newdata <- model.frame(object)
+  par <- as.data.frame(predict(object, newdata = newdata, type = "parameter", drop = FALSE))
+  crps <- FUN(.CRPS(newdata[[yname]], par, fam, interval), ...)
+  return(crps)
+}
+
+.CRPS <- function(y, par, family, interval = c(-Inf, Inf)) {
+  if(is.function(family))
+    family <- family()
+  if(inherits(family, "gamlss.family"))
+    family <- tF(family)
+  family <- complete.bamlss.family(family)
+  n <- length(y)
+  crps <- rep(0, n)
+  for(i in 1:n) {
+    foo <- function(x) {
+      (family$p(x, par[i, , drop = FALSE]) - 1 * (x >= y[i]))^2
+    }
+    crps[i] <- integrate(foo, lower = interval[1L], upper = interval[2L])$value
+  }
+  return(crps)
+}
+

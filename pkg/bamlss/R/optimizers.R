@@ -3983,6 +3983,9 @@ opt_lasso <- function(x, y, start = NULL, adaptive = TRUE,
     x <- bamlss.engine.setup(x, update = bfit_iwls, ...)
   
   start2 <- start
+
+  if(lower < 1e-20)
+    lower <- 1e-20
   
   lambdas <- if(is.null(lambda)) {
     exp(seq(log(upper), log(lower), length = nlambda))

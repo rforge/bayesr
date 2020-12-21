@@ -457,12 +457,16 @@ print(xt, include.rownames = FALSE)
 
 \fixme{Nadja}
 
+\medskip
+
 \item \emph{In all three examples there is no distribution modelling. I can understand this in
   the first example, but why accept the normal distribution and zero inflated negative
   binomial distributions without considering alternatives?}
 
   Yes exactly, as mentioned above we have completely replaced the moto cycle example and extended the 
   flash example accordingly.
+
+\medskip
 
 \item \emph{I do not like '(and beyond)' in the title. What is beyond "Flexible Bayesian
   Regression"?. I understand that there are trying to say beyond univariate regression but
@@ -473,6 +477,83 @@ print(xt, include.rownames = FALSE)
   Bayesian regression, but other concepts can easily be used, for example gradient boosting. We would 
   therefore be reluctant to take '(and beyond)' out of the title, especially since it is also part of 
   the title from the Umlauf (2018) paper.
+
+\medskip
+
+\item \emph{page 2 l 17 "\pkg{gamlss} family of packages (Stasinopoulos and Rigby 2007)" maybe
+  should be replaced with "\pkg{gamlss} family of packages (Stasinopoulos et al. 2017 and Rigby
+  et al. 2019)"}
+
+  Fixed.
+
+\medskip
+
+\item \emph{page 2 l 19 "However, for complex predictor structures and response distributions
+  beyond the exponential family, estimation may be challenging or subject to numerical
+  instabilities."}
+
+  Yes you are right, the sentence is quite ambiguous and we have now completely reworded the
+  paragraph.
+
+\medskip
+
+\item \emph{page 5 line 11 "AICc = 1033.737" and "logLik = -508.7851" both consistent with
+  glm and gam results but AIC of model b is 1042.228. I would like to know how the AIC
+  is calculated.}
+
+  Thank you for pointing this out. The \code{AICc} reported in the summary is the corrected AIC,
+  which is different from the default \fct{AIC} method based on \fct{logLik}. We have now adapted
+  the text accordingly with more information.
+
+\medskip
+
+\item \emph{page 5 line 5 "by the upstream backfitting algorithm". Nothing to backfit here
+  just IWLS.}
+
+  Thank you, fixed.
+
+\medskip
+
+\item \emph{page 6 line 5 "As mentioned above, the user could also increase the number iterations
+  and the burnin-phase, as well as adapt the thinning parameter, to make the significant
+  bar at lag one disappear." Maybe you should show the argument here to make it easier
+  for the user.}
+
+  Yes, thank you. We now show the arguments in the \fct{bamlss} call and also at this
+  position in text.
+
+\medskip
+
+\item \emph{page 7 line 10 "heavily builds upon the R package \pkg{mgcv}" How?}
+
+  Mainly through the \fct{smooth.construct} and \fct{smoothCon} methods. We now note the dependency
+  more explicitly in several places in the text.
+
+\medskip
+
+\item \emph{page 10 l 3 I was wondering whether using the simple AIC would have shown the
+  upward trend in the beginning}
+
+  Yes. We changed the criterion to AIC in this example and mention the BIC, so that it is more
+  consistent with the previous example.
+
+\medskip
+
+\item \emph{page 10 l 9 Not again the Silverman (1985) example! This is also used by the
+  authors in their 2018 paper.}
+
+  Yes. As mentioned above, the example is exchanged now.
+
+\medskip
+
+\item \emph{page 11 l -8 "seem to be less appropriate". In fact a worm plot appears to show
+  that the residuals are OK even in those values.}
+
+  As above, the example is exchanged now.
+
+\medskip
+
+\item \emph{page 12 l4 Maybe a small example of the use of CRPS will help.}
 
 \end{enumerate}
 

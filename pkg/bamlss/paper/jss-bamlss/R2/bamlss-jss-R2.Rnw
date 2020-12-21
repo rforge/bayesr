@@ -278,10 +278,12 @@ set.seed(123)
 @
 The model is estimated by
 <<eval=FALSE>>=
-b <- bamlss(f, family = "binomial", data = SwissLabor)
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  n.iter = 1200, burnin = 200, thin = 1)
 @
-Note that the default number of iterations for the MCMC sampler is 1200, the burnin-phase is 200 and
-thinning is 1. The reason is that during the modeling process, users usually want to obtain first
+Note that the default number of iterations (\code{n.iter}) for the MCMC sampler is 1200, the
+burnin-phase \code{burnin} is 200 and thinning (\code{thin}) is 1. The reason is that during the
+modeling process, users usually want to obtain first
 results rather quickly. Afterwards, if a final model is estimated the number of iterations of the
 sampler is usually set much higher to get close to i.i.d.\ samples from the posterior distribution.
 To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
@@ -305,8 +307,11 @@ In addition, the acceptance probabilities \code{alpha} are reported, i.e., the a
 probability of the sample candidate based on the proposal and the posterior distribution which is 
 calculated in each iteration, indicating proper behavior of the MCMC algorithm.
 The column \code{parameters} shows respective posterior mode estimates of the regression
-coefficients, which are calculated by the upstream backfitting algorithm (note that the column
+coefficients, which are calculated by the upstream optimizer algorithm (note that the column
 is named parameters, because optimizer functions can in principle return any type of parameters).
+Besides, more results from the optimizer are reported at the very end of the output:
+the corrected AIC (\code{AICc}, \citealp{bamlss:aic1, bamlss:aic2}), the equivalent degrees of freedom
+(\code{edf}), the log-likelihood (\code{logLik}), etc.
 Before proceeding the analysis, users usually perform additional convergence checks of the
 MCMC chains by looking at traceplots and auto-correlation (besides acceptance probabilities).
 <<eval=FALSE>>=
@@ -332,7 +337,7 @@ the intercept and the maximum auto-correlation calculated as the maximum for eac
 parameters suggest close to i.i.d.\ samples from the posterior distribution.
 As mentioned above, the
 user could also increase the number iterations and the burnin-phase, as well as adapt the thinning
-parameter, to make the significant bar at lag one disappear.
+parameter (arguments \code{n.iter}, \code{burnin} and \code{thin}), to make the significant bar at lag one disappear.
 Note that the function call would compute all trace- and auto-correlation plots, however,
 for convenience we only show plots for the intercept. In addition, samples can also be
 extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},
@@ -416,7 +421,7 @@ regression splines to capture the nonlinear effect variable \code{age}.
 As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
 package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures, i.e., for setting up the design
 and penalty matrices for smooth terms the \pkg{mgcv} generic \fct{smooth.construct} or 
-\fct{smoothCon} is called.
+\fct{smoothCon} is called (see also Section~\ref{sec:package}).
 To estimate a spline model instead of a polynomial model for variable \code{age} the model
 formula only needs to be slightly adapted
 <<>>=
@@ -471,7 +476,7 @@ if(!file.exists("SwissLaborModel-lasso.rda")) {
     
   b <- bamlss(f, family = "binomial", data = SwissLabor,
     optimizer = opt_lasso, sampler = FALSE, upper = exp(5), lower = 1,
-    criterion = "BIC")
+    criterion = "AIC")
 
   save(b, file = "SwissLaborModel-lasso.rda")
 } else {
@@ -482,7 +487,7 @@ if(!file.exists("SwissLaborModel-lasso.rda")) {
 Besides the supported infrastructures from the \pkg{mgcv} package, it is also possible to
 implement completely new model terms that may follow different setups compared to the basis
 functions approach (see also Appendix~\ref{appendix:specialterms} for an example using growth curves).
-Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
+Moreover, using \pkg{ba mlss}, estimation engines can also be exchanged. To give
 an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
 a fused lasso algorithm (see also Section~\ref{sec:application} for a complex example using gradient
 boosting optimization).
@@ -509,9 +514,10 @@ function in the \fct{bamlss} wrapper function call needs to exchanged
 <<eval=FALSE>>=
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   optimizer = opt_lasso, sampler = FALSE,
-  criterion = "BIC", upper = exp(5), lower = 1)
+  criterion = "AIC", upper = exp(5), lower = 1)
 @
-The optimum shrinkage parameter $\lambda$ is selected by the BIC. Arguments \code{upper} and
+The optimum shrinkage parameter $\lambda$ is selected by the AIC (another option is
+\code{criterion = "BIC"}). Arguments \code{upper} and
 \code{lower} determine the search interval of $\lambda$, per default \code{nlambda = 100} values
 are generated.
 Note that no MCMC sampling is used after the \fct{opt\_lasso} estimation engine is applied,
@@ -537,22 +543,22 @@ plot2d(page ~ age, data = SwissLabor, rug = TRUE, lwd = 2,
   ylab = expression(paste("Effect on Logi", t^-1, (pi))))
 mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
 @
-\caption{\label{fig:lasso} Left panel, BIC curve with optimum shrinkage parameter $\lambda$
+\caption{\label{fig:lasso} Left panel, AIC curve with optimum shrinkage parameter $\lambda$
   of the lasso example model. The middle panel shows the corresponding coefficient paths for
   variable \code{cage}. The right panel displays the respective estimated effect.}
 \end{figure}
 
-The BIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
+The AIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
 be visualized with
 <<eval=FALSE>>=
 pathplot(b)
 @
-Figure~\ref{fig:lasso} shows the BIC curve and coefficient paths for \code{cage}. The BIC curve assumes a clear minimum at the vertical
-gray dashed line. The coefficient paths obviously depict that the algorithm can either shrink
-categories out of the model (shrink to zero), or even fuses them. In the right panel of
-Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
+Figure~\ref{fig:lasso} shows the AIC curve and coefficient paths for \code{cage}. The AIC curve
+assumes a minimum at the vertical gray dashed line. The coefficient paths obviously depict that
+the algorithm can either shrink categories out of the model (shrink to zero), or even fuses them.
+In the right panel of Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
 \code{age} is shown. The effect is computed by predicting without
-intercept using the optimum stopping iteration, which is selected by BIC and can be extracted with
+intercept using the optimum stopping iteration, which is selected by AIC and can be extracted with
 function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
 the \code{mstop} argument.
 <<eval=FALSE>>=
@@ -563,9 +569,8 @@ The figure is then created using the untransformed original covariate on the x-a
 <<eval=FALSE>>=
 plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 @
-Using the fused lasso estimation some nonlinearities can be identified again, however, the
-BIC criterion seems to shrink out the positive effects that are shown for the spline estimate
-in the right panel of Figure~\ref{fig:logit_effects}.
+Using the fused lasso estimation nonlinearities can be identified again, similar to the
+spline based estimate in the right panel of Figure~\ref{fig:logit_effects}.
 
 \subsection{Distributional model} \label{sec:distmodel}
 
