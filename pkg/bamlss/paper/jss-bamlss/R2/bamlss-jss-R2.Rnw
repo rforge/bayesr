@@ -1968,11 +1968,17 @@ CRPS <- function(object, newdata = NULL) {
   n <- nrow(newdata)
   crps <- rep(0, n)
   par <- as.data.frame(predict(object, newdata = newdata, type = "parameter"))
+  y <- newdata[[yname]]
   for(i in 1:n) {
-    foo <- function(y) {
-      (fam$p(y, par[i, , drop = FALSE]) - 1 * (y >= newdata[[yname]][i]))^2
+    foo1 <- function(x) {
+      fam$p(x, par[i, , drop = FALSE])^2
     }
-    crps[i] <- integrate(foo, -Inf, Inf)$value
+    foo2 <- function(x) {
+      (fam$p(x, par[i, , drop = FALSE]) - 1)^2
+    }
+    int1 <- integrate(foo1, -Inf, y[i])$value
+    int2 <- integrate(foo2, y[i], Inf)$value
+    crps[i] <- int1 + int2
   }
   return(crps)
 }

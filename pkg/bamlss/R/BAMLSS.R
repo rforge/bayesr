@@ -11106,10 +11106,15 @@ CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ..
   n <- length(y)
   crps <- rep(0, n)
   for(i in 1:n) {
-    foo <- function(x) {
-      (family$p(x, par[i, , drop = FALSE]) - 1 * (x >= y[i]))^2
+    foo1 <- function(x) {
+      family$p(x, par[i, , drop = FALSE])^2
     }
-    crps[i] <- integrate(foo, lower = interval[1L], upper = interval[2L])$value
+    foo2 <- function(x) {
+      (family$p(x, par[i, , drop = FALSE]) - 1)^2
+    }
+    int1 <- integrate(foo1, lower = interval[1L], upper = y[i])$value
+    int2 <- integrate(foo2, lower = y[i], upper = interval[2L])$value
+    crps[i] <- int1 + int2
   }
   return(crps)
 }
