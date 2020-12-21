@@ -11093,7 +11093,7 @@ CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ..
   if(is.null(newdata))
     newdata <- model.frame(object)
   par <- as.data.frame(predict(object, newdata = newdata, type = "parameter", drop = FALSE))
-  crps <- FUN(if(is.null(fam$crps)) {
+  crps <- if(is.null(fam$crps)) {
     .CRPS(newdata[[yname]], par, fam, interval)
   } else {
     fam$crps(newdata[[yname]], par)
