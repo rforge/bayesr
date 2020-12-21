@@ -1556,7 +1556,7 @@ discharges---detected by the Austrian Lightning Detection and Information System
 The lightning observations are available for the period 2010--2018.
 The reanalysis data comes from the fifth generation of the ECMWF (European
 Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
-global climate \citep{era5}. ERA5 provides a globally complete and consistent
+global climate \citep{era5b}. ERA5 provides a globally complete and consistent
 pseudo-observations of the atmosphere using the laws of physics. The horizontal
 resolution is approx.\ $32~km$, while the temporal resolution is hourly and covers the years
 from 1979 to present.
@@ -1613,7 +1613,7 @@ print(xt, include.rownames = FALSE, floating = FALSE)
 \end{table}
 %
 The parameters are taken directly or derived from ERA5 for this study is only a
-small subset of parameters available \citep{era5}. It encloses variables that
+small subset of parameters available \citep{era5b}. It encloses variables that
 are well known to be good candidates for predicting or explaining convective
 event that also lead to lightning discharges
 \citep[e.g.,][]{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}, in Table~\ref{tab:desc} a
