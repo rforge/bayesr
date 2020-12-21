@@ -624,9 +624,11 @@ if(!file.exists("fatalities_models.rda")) {
 }
 
 dic <- lapply(res, function(x) {
-  dic1 <- x$dic1$DIC
-  dic2 <- x$dic2$DIC
-  d <- data.frame("distribution" = x$distribution, "dic1" = dic1, "dic2" = dic2)
+  d <- data.frame(
+    "distribution" = x$distribution,
+    "dic1" = x$dic1$DIC, "dic2" = x$dic2$DIC,
+    "crps1" = x$crps1, "crps2" = x$crps2
+  )
   return(d)
 })
 
@@ -698,12 +700,12 @@ The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
 \hline
 Family & DIC \\ 
 \hline
-\fct{NO}   & 13100.14 \\ 
-\fct{GA}   & 13040.11 \\ 
-\fct{JSU}  & 12875.46 \\ 
-\fct{BCCG} & 12872.20 \\ 
-\fct{BCT}  & 12869.12 \\ 
-\fct{BCPE} & \textbf{12865.08} \\
+\fct{NO} 12289.34 51.39274
+\fct{GA} 12257.82 51.22522
+\fct{JSU} 12194.46 50.87003
+\fct{BCPE} 12188.77 50.78029
+\fct{BCCG} 12188.27 50.81109
+\fct{BCT} 12186.60 50.80115
 \hline
 \end{tabular}
 \caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}

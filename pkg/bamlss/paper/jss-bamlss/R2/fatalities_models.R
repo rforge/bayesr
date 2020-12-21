@@ -56,6 +56,7 @@ parallel_fun <- function(j) {
 families <- c("NO", "GA", "BCT", "JSU", "BCPE", "BCCG")
 
 ## Estimate models.
+set.seed(123)
 res <- mclapply(families, parallel_fun, mc.cores = length(families))
 
 ## Save results.
