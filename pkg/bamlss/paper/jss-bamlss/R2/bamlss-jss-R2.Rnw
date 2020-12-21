@@ -697,7 +697,7 @@ Family & DIC \\
 \fct{JSU}  & 12875.46 \\ 
 \fct{BCCG} & 12872.20 \\ 
 \fct{BCT}  & 12869.12 \\ 
-\fct{BCPE} & \textbf{12865.08} \\ 
+\fct{BCPE} & \textbf{12865.08} \\
 \hline
 \end{tabular}
 \caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
