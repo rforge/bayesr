@@ -135,7 +135,7 @@ in some implementations, Bayesian and frequentist, there is not only the possibi
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. The following is a list
 of the best known packages for regression models in the \proglang{R} ecosystem, whose
-implementations are des igned to be extremely flexible.
+implementations are designed to be extremely flexible.
 %
 \begin{itemize}
 
@@ -145,7 +145,8 @@ and also the \pkg{gamlss} family of packages \citep{gamlss:book1, gamlss:book2}
 and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
 of a wide range of response distributions. While \pkg{VGAM} is restrictive with respect to the
 integration of flexible model terms, the \pkg{gamlss} package also
-supports (user-defined) smooth additive terms, however, inference is mainly supported only
+supports (user-defined) smooth additive terms of general type (e.g., neural networks and
+regression trees), however, inference is mainly supported only
 for linear model terms. In contrast, \pkg{mgcv} excels
 at providing highly-optimized algorithms for general smooth models
 \citep{bamlss:Wood+Pya+Saefken:2016}, including inference,
@@ -893,11 +894,11 @@ $f_{jk}( \cdot )$.
 
 Usually, functions $f_{jk}( \cdot )$ are based on a basis function approach, where $\eta_k$ then
 is a typical GAM-type or so-called structured additive predictor
-(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}). \citet{bamlss:Umlauf+Klein+Zeileis:2018}
-relax this assumption and let $f_{jk}(\cdot)$ be an unspecified composition of covariate data
-and regression coefficients. For example, functions $f_{jk}(\cdot)$ could also represent nonlinear
-growth curves, a regression tree, a neural network or lasso-penalized model terms as shown
-in Section~\ref{sec:flexm}.
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}). Similar to \citet{gamlss:book1},
+\citet{bamlss:Umlauf+Klein+Zeileis:2018} relax this assumption and let $f_{jk}(\cdot)$ be an
+unspecified composition of covariate data and regression coefficients. For example, functions
+$f_{jk}(\cdot)$ could also represent nonlinear growth curves, a regression tree, a neural network or
+lasso-penalized model terms as shown in Section~\ref{sec:flexm}.
 
 For full Bayesian inference, priors need to be assigned to the regression coefficients
 $\boldsymbol{\beta}_{jk}$. To be as flexible as possible, \citet{bamlss:Umlauf+Klein+Zeileis:2018}
@@ -909,7 +910,9 @@ $\boldsymbol{\tau} =
 (\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
 \boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
 the vector of all assigned hyper-parameters, e.g., representing smoothing variances (shrinkage parameters).
-Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all prior specifications. In most
+Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all fixed prior specifications, i.e., for
+GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds the so-called penalty matrices,
+amongst others. In most
 situations the prior $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$
 is based on a multivariate normal kernel for $\boldsymbol{\beta}_{jk}$ and on inverse gamma
 distributions for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$,
@@ -946,8 +949,8 @@ can be quite complex, \citet{bamlss:Umlauf+Klein+Zeileis:2018} show that there a
 of similarities between optimization and sampling concepts. Fortunately, and albeit the different
 model term complexity, algorithms for posterior mode and
 mean estimation can be summarized into a partitioned updating scheme with
-separate updating equations using leapfrog or zigzag iteration \citep{bamlss:Smyth:1996}, e.g.,
-with updating equations
+separate updating equations using leapfrog or zigzag iteration
+\citep{bamlss:Aitkin:1987, bamlss:Smyth:1996}, e.g., with updating equations
 \begin{equation} \label{eqn:blockblockupdate}
 (\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
   U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}; \, \cdot \,) \qquad
