@@ -437,7 +437,7 @@ Abbreviation & Description \\ \hline
 \item \emph{For example in example 3 the distribution used, the zero inflated negative binomial,
   seems to be inadequate for the training data (see the worm plot at the end of this report).}
 
-\fixme{Thorsten}
+  \fixme{Thorsten}
 
 \medskip
 
@@ -607,7 +607,7 @@ Abbreviation & Description \\ \hline
 \item \emph{page 13, l 4 I am assuming that the priors are trying to be uninformative. How
   uninformative are they?}
 
-\fixme{Nadja}
+  \fixme{Nadja}
 
 \medskip
 
@@ -616,7 +616,7 @@ Abbreviation & Description \\ \hline
   problems mentioned here. Their work and GAMLSS based solutions to the problems
   are well documented in Rigby et al. (2019).}
 
-\fixme{Nadja}
+  \fixme{Nadja}
 
 \medskip
 
@@ -706,7 +706,7 @@ Abbreviation & Description \\ \hline
 
 \item \emph{page 30 l 14 I think you need conclusions here.}
 
-    Yes, absolutely, we have now added a conclusion section.
+  Yes, absolutely, we have now added a conclusion section.
 
 \end{enumerate}
 
