@@ -623,6 +623,8 @@ if(!file.exists("fatalities_models.rda")) {
   load("fatalities_models.rda")
 }
 
+names(res) <- sapply(res, function(x) x$distribution)
+
 dic <- lapply(res, function(x) {
   d <- data.frame(
     "distribution" = x$distribution,
@@ -668,7 +670,7 @@ have a fairly good model fit in further analysis.
 In the next step we estimate Bayesian models that take into
 account the cyclical pattern over the year, in winter there are usually quite a
 lot of influenze and other viral infections that lead to a higher mortality
-rate. The models are estimated using $\eta_k = f_{k}(\texttt{week})$ for each parameter
+rate. The models are estimated using the predictor $\eta_k = f_{k}(\texttt{week})$ for each parameter
 of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smooth functions,
 which are estimated using regression splines. We can use the following model formula for estimation
 <<>>=
@@ -693,30 +695,12 @@ terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
 constructor functions are based on the generic \fct{smooth.construct} method, for which
 new classes can be added (see also the \pkg{mgcv} manual).
-The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
-\begin{table}[h!]
-\centering
-\begin{tabular}{lcc}
-\hline
-Family & DIC & CRPS\\ 
-\hline
-\fct{NO} & 12289.34  & 51.39274 \\
-\fct{GA} & 12257.82  & 51.22522 \\
-\fct{JSU} & 12194.46  & 50.87003 \\
-\fct{BCPE} & 12188.77  & 50.78029 \\
-\fct{BCCG} & 12188.27  & 50.81109 \\
-\fct{BCT} & 12186.60  & 50.80115 \\
-\hline
-\end{tabular}
-\caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
-\end{table}
-Here, the four parameter \fct{BCPE} model has the lowest DIC.
-A full Bayesian semi-parametric distributional regression model using the
+For example, a full Bayesian semi-parametric distributional regression model using the
 \fct{BCPE} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
+  b <- bamlss(f, data = d19, family = JSU(mu.link = "log"),
     n.iter = 12000, burnin = 2000, thin = 10)
   save(b, file = "FatModel.rda")
 } else {
@@ -726,12 +710,34 @@ if(!file.exists("FatModel.rda")) {
 <<eval=FALSE>>=
 library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
+b <- bamlss(f, data = d19, family = JSU(mu.link = "log"),
   n.iter = 12000, burnin = 2000, thin = 10)
 @
 Note that we assign the log-link for parameter $\mu$ to ensure positivity. 
 In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples
-and only save every 10th sample. After the estimation algorithms are finished, the estimated
+and only save every 10th sample.
+
+
+The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\hline
+Family & DIC & CRPS\\ 
+\hline
+\fct{NO}   & 12289.02 & 51.40 \\
+\fct{GA}   & 12257.79 & 51.23 \\
+\fct{BCT}  & 12190.00 & 50.82 \\
+\fct{BCCG} & 12189.11 & 50.81 \\
+\fct{BCPE} & 12188.17 & \textbf{50.78} \\
+\fct{JSU}  & \textbf{11350.47} & 50.80 \\
+\hline
+\end{tabular}
+\caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
+\end{table}
+Here, the four parameter \fct{JSU} model has the lowest DIC.
+
+After the estimation algorithms are finished, the estimated
 effects can be visualized instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma", "nu", "tau"))

@@ -11,10 +11,10 @@ d19 <- subset(fatalities, year < 2020)
 
 ## Full model formula.
 f <- list(
-  num   ~ s(week, bs = "cc"),
-  sigma ~ s(week, bs = "cc"),
-  nu    ~ s(week, bs = "cc"),
-  tau   ~ s(week, bs = "cc")
+  num   ~ s(week, bs = "cc", k = 40),
+  sigma ~ s(week, bs = "cc", k = 40),
+  nu    ~ s(week, bs = "cc", k = 40),
+  tau   ~ s(week, bs = "cc", k = 40)
 )
 
 ## Setup function to run in parallel.
@@ -23,9 +23,11 @@ parallel_fun <- function(j) {
 
   fam <- get(j)
 
+  set.seed(123)
   b1 <- bamlss(num ~ 1, data = d19, family = fam(mu.link = "log"),
     n.iter = 12000, burnin = 2000, thin = 10)
 
+  set.seed(456)
   b2 <- bamlss(f, data = d19, family = fam(mu.link = "log"),
     n.iter = 12000, burnin = 2000, thin = 10)
 
@@ -56,7 +58,6 @@ parallel_fun <- function(j) {
 families <- c("NO", "GA", "BCT", "JSU", "BCPE", "BCCG")
 
 ## Estimate models.
-set.seed(123)
 res <- mclapply(families, parallel_fun, mc.cores = length(families))
 
 ## Save results.

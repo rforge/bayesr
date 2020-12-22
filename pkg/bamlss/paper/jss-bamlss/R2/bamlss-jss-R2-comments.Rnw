@@ -455,7 +455,16 @@ print(xt, include.rownames = FALSE)
   which does not distract from the problem of finding an adequate model for the data.
   But how sensitive are the results to changing the prior distributions used?}
 
-\fixme{Nadja}
+  This is a very good and reasonable question! Indeed the aspect on prior 
+  sensitivity and choice was investigated in the context of distributional 
+  regression and in general depends on your prior choices and the data at hand. 
+  In general, in situations with weak signals and large noise it can be 
+  advisable to carefully elicit priors as proposed and shown in several 
+  simulation studies in Klein and Kneib (2016), Bayesian Analysis.
+  For the special cases of inverse gamma priors or flat priors on the variances, 
+  Klein, Kneib and Lang (2015), JASA have a large amount of further simulations 
+  and checks also for real data. All the details can be found in the supplement 
+  therein. As a result the software proposed default values.
 
 \medskip
 
