@@ -1988,6 +1988,9 @@ of the \proglang{R} package \pkg{VGAM}.
 
 \section*{Acknowledgments}
 
+We thank two anonymous reviewers for critically reading the manuscript and suggesting
+substantial improvements.
+
 Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)
 
 \bibliography{bamlss}
