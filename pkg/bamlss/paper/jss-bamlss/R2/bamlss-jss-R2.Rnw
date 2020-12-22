@@ -1977,7 +1977,7 @@ Alps has increased.
 \subsection{Conclusion}
 
 The \proglang{R} package \pkg{bamlss} is a very comprehensive software to estimate Bayesian 
-distribution regression models. The package is primarily based on the typical \proglang{R}
+distributional regression models. The package is primarily based on the typical \proglang{R}
 ``look \& feel'', which makes it easy to get started with the package. Furthermore, \pkg{bamlss}
 is a modular ``Lego toolbox'', so that users who are interested in extensions can easily write
 new families, optimizers or sampling functions.
