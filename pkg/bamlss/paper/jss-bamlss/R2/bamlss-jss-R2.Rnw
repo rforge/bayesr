@@ -1985,8 +1985,8 @@ elaborate data processing infrastructures and extractor functions are completely
 the package.
 Several examples illustrate the functionality of the package. For the future it is planned to 
 provide algorithms for Gigadata, a topic that the package so far treats only very superficially.
-In addition, it is planned to expand the family infrastructure to support, for example, families
-of the \proglang{R} package \pkg{VGAM}.
+In addition, it is planned to expand the family infrastructure to support families from other
+\proglang{R} packages more easily.
 
 \section*{Acknowledgments}
 
