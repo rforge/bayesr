@@ -675,10 +675,10 @@ of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smoo
 which are estimated using regression splines. We can use the following model formula for estimation
 <<>>=
 f <- list(
-  num   ~ s(week, bs = "cc", k = 40),
-  sigma ~ s(week, bs = "cc", k = 40),
-  nu    ~ s(week, bs = "cc", k = 40),
-  tau   ~ s(week, bs = "cc", k = 40)
+  num   ~ s(week, bs = "cc"),
+  sigma ~ s(week, bs = "cc"),
+  nu    ~ s(week, bs = "cc"),
+  tau   ~ s(week, bs = "cc")
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
@@ -725,12 +725,13 @@ The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
 \hline
 Family & DIC & CRPS\\ 
 \hline
-\fct{NO}   & 12289.02 & 51.40 \\
-\fct{GA}   & 12257.79 & 51.23 \\
-\fct{BCT}  & 12190.00 & 50.82 \\
-\fct{BCCG} & 12189.11 & 50.81 \\
-\fct{BCPE} & 12188.17 & \textbf{50.78} \\
-\fct{JSU}  & \textbf{11350.47} & 50.80 \\
+\fct{NO}   & 12289.582 & 51.39974
+\fct{GA}   & 12258.501 & 51.22791
+\fct{BCT}  & 12202.326 & 50.83966
+\fct{BCPE} & 12189.379 & 50.78673
+\fct{BCCG} & 12188.076 & 50.81369
+\fct{JSU}  & \textbf{9390.927} & \textbf{50.77544}
+
 \hline
 \end{tabular}
 \caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}

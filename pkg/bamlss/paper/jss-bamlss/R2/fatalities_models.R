@@ -11,10 +11,10 @@ d19 <- subset(fatalities, year < 2020)
 
 ## Full model formula.
 f <- list(
-  num   ~ s(week, bs = "cc", k = 40),
-  sigma ~ s(week, bs = "cc", k = 40),
-  nu    ~ s(week, bs = "cc", k = 40),
-  tau   ~ s(week, bs = "cc", k = 40)
+  num   ~ s(week, bs = "cc"),
+  sigma ~ s(week, bs = "cc"),
+  nu    ~ s(week, bs = "cc"),
+  tau   ~ s(week, bs = "cc")
 )
 
 ## Setup function to run in parallel.
@@ -55,7 +55,7 @@ parallel_fun <- function(j) {
 }
 
 ## Families.
-families <- c("NO", "GA", "BCT", "JSU", "BCPE", "BCCG")
+families <- c("NO", "GA", "GG", "BCT", "BCPE", "BCCG")
 
 ## Estimate models.
 res <- mclapply(families, parallel_fun, mc.cores = length(families))
