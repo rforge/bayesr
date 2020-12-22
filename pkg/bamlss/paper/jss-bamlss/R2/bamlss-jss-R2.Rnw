@@ -47,7 +47,8 @@
 \Abstract{
   Over the last decades, the challenges in applied regression and in predictive modeling have
   been changing considerably: (1)~More flexible model specifications are needed as big(ger) data
-  become available, facilitated by more powerful computing infrastructure. (2)~Full probabilistic modeling
+  become available, facilitated by more powerful computing infrastructure.
+  (2)~Full probabilistic modeling
   rather than predicting just means or expectations is crucial in many applications.
   (3)~Interest in Bayesian inference has been increasing both as an appealing framework for
   regularizing or penalizing model estimation as well as a natural alternative to classical
@@ -1338,7 +1339,9 @@ Note that the \pkg{bamlss} package uses special \code{family} objects, that can 
 a character without the \code{"\_bamlss"} extension of the \pkg{bamlss} family name (see the manual
 \code{?bamlss.family} for a list of available families), or the family function itself.
 In addition, all families of the \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2019} and
-\pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported.
+\pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported, i.e., there is a transformer 
+function that reads all necessary components and then transfers them into a family object for
+\pkg{bamlss}.
 
 The returned object, a named list of class \code{"bamlss.frame"}, can be employed with the model
 fitting engines listed in Table~\ref{tab:functions}. The most important elements used for
@@ -1443,8 +1446,9 @@ Name of element & Value \\ \hline
 \code{family} & Character string with the name of the family. \\
 \code{names} & Vector of character strings with the names of the parameters. \\
 \code{links} & Vector of character strings with the names of the link functions \\
-\code{d} & A function returning the density with arguments \code{y}, \code{par},
-  \code{log = FALSE} (see below). \\
+\code{d} & A function returning the density with arguments \code{d(y, par, log = FALSE)}
+  (see below). \\
+\code{p} & The cumulative distribution function \code{p(y, par, ...)}. \\
 \code{score} & A list with functions (one for each parameter) returning the first derivatives of
   the log-likelihood w.r.t.\ predictors. \\
 \code{hess} & A list with functions (one for each parameter) returning the negative second
@@ -1487,7 +1491,6 @@ distribution. The example implementation is shown in Appendix~\ref{appendix:fami
 
 Optionally, the \code{"family.bamlss"} object can be extended by functions for
 \begin{itemize}
-\item the cumulative distribution function \code{p(y, par, ...)},
 \item the quantile function (the inverse cdf) \code{q(p, par)},
 \item a random number generator \code{r(n, par)},
 \item the log-likelihood \code{loglik(y, par)},
@@ -1627,15 +1630,24 @@ extreme short-term events under the light of a changing climate \citep{westra201
 %
 \begin{table}[ht!]
 \centering
-<<para-table, echo=FALSE, results=tex>>=
-xt <- xtable::xtable(read.csv2("para-table.csv"),
-	caption = "Describtions of the parameters taken directly or derived from ERA5.",
-	label = "tab:ecmwf",
-    align = c("l", "p{3cm}", "p{12cm}")
-)
-print(xt, include.rownames = FALSE, floating = FALSE)
-@
-\caption{\label{tab:desc} Description of selected ERA5 parameters.}
+\begin{tabular}{p{2.5cm}p{11.5cm}}
+\hline
+Abbreviation & Description \\ \hline
+\code{hcc} & High cloud cover. The proportion of a grid box covered by cloud
+             occurring in the high levels of the troposhere (approx. 6 km and above). \\ 
+\code{str} & Surface net thermal radiation. Thermal radiation refers to radiation emitted by the 
+             atmoshere, clouds and the surface of the Earth. str is the difference between downward 
+             and upward thermal radiation at the surface of the Earth. The units are joules per 
+             square metre as the radiation is accumulated over a period of one hour. \\ 
+\code{tciw} & Total column cloud ice water. The amount of ice contained within clouds in a column 
+              extending from the surface of the Earth to the top of the atmosphere. \\ 
+\code{q\_prof\_PC1} & This variable has been derived from the vertical profile of specific humidity 
+                      (labelled q at the ECMWF) by principal component analysis. This is the first 
+                      principal component. \\ 
+\code{sqrt\_cape} & The square root of convective available potential energy. This is an indication 
+                    of the (in)stability of the atmosphere. \\ \hline
+\end{tabular}
+\caption{\label{tab:desc} Describtions of the parameters taken directly or derived from ERA5.}
 \end{table}
 %
 The parameters are taken directly or derived from ERA5 for this study is only a
@@ -1964,7 +1976,15 @@ Alps has increased.
 
 \subsection{Conclusion}
 
-\fixme{We need a conclusion!}
+The \proglang{R} package \pkg{bamlss} is a very comprehensive software to estimate Bayesian 
+distribution regression models. The package is primarily based on the typical \proglang{R}
+``look \& feel'', which makes it easy to get started with the package. Furthermore, \pkg{bamlss}
+is a modular ``Lego toolbox'', so that users who are interested in extensions can easily write
+new families, optimizers or sampling functions.
+Several examples illustrate the functionality of the package. For the future it is planned to 
+provide algorithms for Gigadata, a topic that the package so far treats only very superficially.
+In addition, it is planned to expand the family infrastructure to support, for example, families
+of the \proglang{R} package \pkg{VGAM}.
 
 \section*{Acknowledgments}
 

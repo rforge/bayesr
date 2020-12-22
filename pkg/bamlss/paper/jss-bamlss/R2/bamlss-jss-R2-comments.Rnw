@@ -270,12 +270,23 @@ of the reviewers are highlighted in italics, with our responses directly below.
   We worked over this example, and give now a descibtion of what the variables mean as table and
   a why we included them for modelling lightning counts in the text.
   
-<<para-table, echo=FALSE, results=tex>>=
-xt <- xtable::xtable(read.csv2("para-table.csv"),
-	align = c("l", "p{3cm}", "p{12cm}")
-)
-print(xt, include.rownames = FALSE)
-@
+\begin{tabular}{p{2.5cm}p{11cm}}
+\hline
+Abbreviation & Description \\ \hline
+\code{hcc} & High cloud cover. The proportion of a grid box covered by cloud
+             occurring in the high levels of the troposhere (approx. 6 km and above). \\ 
+\code{str} & Surface net thermal radiation. Thermal radiation refers to radiation emitted by the 
+             atmoshere, clouds and the surface of the Earth. str is the difference between downward 
+             and upward thermal radiation at the surface of the Earth. The units are joules per 
+             square metre as the radiation is accumulated over a period of one hour. \\ 
+\code{tciw} & Total column cloud ice water. The amount of ice contained within clouds in a column 
+              extending from the surface of the Earth to the top of the atmosphere. \\ 
+\code{q\_prof\_PC1} & This variable has been derived from the vertical profile of specific humidity 
+                      (labelled q at the ECMWF) by principal component analysis. This is the first 
+                      principal component. \\ 
+\code{sqrt\_cape} & The square root of convective available potential energy. This is an indication 
+                    of the (in)stability of the atmosphere. \\ \hline
+\end{tabular}
 
 \medskip
 
@@ -477,7 +488,8 @@ print(xt, include.rownames = FALSE)
 
 \medskip
 
-\item \emph{I do not like '(and beyond)' in the title. What is beyond "Flexible Bayesian
+\item \label{itm:beyond} \emph{I do not like '(and beyond)' in the title. What is
+  beyond "Flexible Bayesian
   Regression"?. I understand that there are trying to say beyond univariate regression but
   I think this is rather irrelevant here. "\pkg{bamlss}: A Lego Toolbox for Flexible
   Bayesian Regression" will do.}
@@ -631,6 +643,70 @@ print(xt, include.rownames = FALSE)
   These two terms are often misleadingly equated, but we mean equivalent degrees of freedom. See
   also \citet{bamlss:Janson:2015}. We have now expanded the text accordingly to describe exactly
   what is meant by EDF.
+
+\medskip
+
+\item \emph{page 15 l 6 "flexible Bayesian regression models (and beyond)." What is beyond
+  Bayesian regression models?}
+
+  Please see the answer in \ref{itm:beyond}.
+
+\medskip
+
+\item \emph{page 18 l -7 "In addition, all families of the \pkg{gamlss} (Stasinopoulos and
+  Rigby 2019a) and \pkg{gamlss.dist} (Stasinopoulos and Rigby 2019b) package are supported."
+  How this can be done?}
+
+  There is a transformer function that reads all necessary components and then transfers them
+  into a family object for \pkg{bamlss}. We mention this in the text now.
+
+\medskip
+
+\item \emph{page 20 l 18 "However, commonly used distributions are already implemented in
+  \pkg{bamlss}; and the ones from the \pkg{gamlss} package can also be accessed through the
+  \pkg{bamlss} package." Again as above how?}
+
+  Please see the answer above.
+
+\medskip
+
+\item \emph{page 21 table 3 Surely you need also the "p" function for the quantile residuals.}
+
+  Absolutely. In \pkg{bamlss}, for estimation the function is not mandatory, therefore we initially
+  did not add the function to the table. As quantile residuals are very important for
+  model diagnostics, we now added the \code{p()} function.
+
+\medskip
+
+\item \emph{page 21 l 12 What happens for distributions for which the expectation of the
+  second derivative is intractable or does not exist?}
+
+  \fixme{Nadja}
+
+\medskip
+
+\item \emph{page 24 l 6 "In order to capture the truncation of the data and its overdispersion we
+  employ a zero-truncated negative binomial distribution (Cameron and Trivedi 2013),
+  which is specified by two parameters $\mu > 0$ and $\theta > 0$." I understand the zero
+  truncation part and that negative binomial as a starting point but there is no statistical
+  modelling here. For example, the truncated Sichel distribution fits lot better to the
+  data than the truncated negative binomial as it demonstrated by the worm plots
+  displaying both models in Figure 1.}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{page 27 l 9 It appears that something is wrong here \code{max(fit\$mu) [1] 2.231437e+14}.
+  Please check the fitted values for both $\mu$ and $\theta$.}
+
+  \fixme{Thorsten}
+
+\medskip
+
+\item \emph{page 30 l 14 I think you need conclusions here.}
+
+    Yes, absolutely, we have now added a conclusion section.
 
 \end{enumerate}
 
