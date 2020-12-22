@@ -400,7 +400,7 @@ print(xt, include.rownames = FALSE)
   \fct{smoothCon} is called."
 
   "\dots again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
-  \citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic
+  (Wood 2019) and \code{bs = "cc"} specifies a penalized cyclic
   cubic regression spline."
 
   "This way, it is also possible to incorporate user defined model terms, since the
@@ -564,6 +564,10 @@ print(xt, include.rownames = FALSE)
 
 \item \emph{page 12 l4 Maybe a small example of the use of CRPS will help.}
 
+  Yes, absolutely. We added an example in Section 2.3 now. Moreover, we have removed the
+  Appendix Section~A. and implemented a more flexible version of the \fct{CRPS} function in
+  \pkg{bamlss}.
+
 \medskip
 
 \item \emph{page 12 l -10 "Umlauf et al. (2018) relax this assumption and let $f_{jk}( \cdot )$ be
@@ -611,7 +615,26 @@ print(xt, include.rownames = FALSE)
 
   Thank you, we added the reference now.
 
+\medskip
+
+\item \emph{It was Rigby and Stasinopoulos (2005) Appendix C that showed that the
+  zigzaging equation (4) applied over the parameters leads to the maximisation of the
+  posterior mode. This is a rather crucial point to omit.}
+
+  Thank you for the extremely important objection, that was not intended. We will now write it
+  there explicitly.
+
+\medskip
+
+\item \emph{page 14 l 16 Please define EDF. Is it, equivalent or effective, degrees of freedom?}
+
+  These two terms are often misleadingly equated, but we mean equivalent degrees of freedom. See
+  also \citet{bamlss:Janson:2015}. We have now expanded the text accordingly to describe exactly
+  what is meant by EDF.
+
 \end{enumerate}
+
+\bibliography{bamlss}
 
 \end{document}
 

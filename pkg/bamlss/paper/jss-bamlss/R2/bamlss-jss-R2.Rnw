@@ -602,11 +602,11 @@ To find a well-calibrated model, the first step is to look for a suitable distri
 data at hand. The \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist} provides a number
 of distributions which can also be used for estimation in \pkg{bamlss}. In this example, we consider
 6 distributions with different number of parameters, from 2 to 4. In detail these are the
-normal distribution (family \fct{NO}), gamma distribution (family \fct{GA}), Box-Cox t
-distribution (family \fct{BCT}), Johnson's Su distribution (family \fct{JSU}),
-Box-Cox power exponential distribution (family \fct{BCPE}) and the Box-Cox Cole and
+normal distribution (family \fct{NO}), gamma and generalized gamma distribution (family \fct{GA}
+and \fct{GG}), Box-Cox t distribution (family \fct{BCT}), Box-Cox power exponential
+distribution (family \fct{BCPE}) and the Box-Cox Cole and
 Green distribution (family \fct{BCCG}). First, we only estimate the distributional parameters
-without covariates, to get a first impression which distribution fits well. We compare visually
+without covariates, to get a first idea which distribution fits well. We compare visually
 as well as by the deviance information criterion (DIC, the complete \proglang{R}-code is
 available in the supplements). Note that we do not
 use discrete distributions in this example because the number of fatalities is far away from
@@ -667,18 +667,18 @@ distribution, has a quite good fit and the lowest DIC (though only
 by a small difference). Hence, with some certainty one of the chosen distribution models will
 have a fairly good model fit in further analysis.
 
-In the next step we estimate Bayesian models that take into
-account the cyclical pattern over the year, in winter there are usually quite a
-lot of influenze and other viral infections that lead to a higher mortality
-rate. The models are estimated using the predictor $\eta_k = f_{k}(\texttt{week})$ for each parameter
+In the next step, we estimate Bayesian models that take into account the cyclical pattern over
+the year. In winter, there are usually quite a lot of influenza and other viral infections,
+which lead to a higher mortality rate. The models are estimated using the predictor
+$\eta_k = f_{k} (\texttt{week})$ for each parameter
 of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smooth functions,
 which are estimated using regression splines. We can use the following model formula for estimation
 <<>>=
 f <- list(
-  num   ~ s(week, bs = "cc"),
-  sigma ~ s(week, bs = "cc"),
-  nu    ~ s(week, bs = "cc"),
-  tau   ~ s(week, bs = "cc")
+  num   ~ s(week, bs = "cc", k = 20),
+  sigma ~ s(week, bs = "cc", k = 20),
+  nu    ~ s(week, bs = "cc", k = 20),
+  tau   ~ s(week, bs = "cc", k = 20)
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
@@ -700,7 +700,7 @@ For example, a full Bayesian semi-parametric distributional regression model usi
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = JSU(mu.link = "log"),
+  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
     n.iter = 12000, burnin = 2000, thin = 10)
   save(b, file = "FatModel.rda")
 } else {
@@ -710,36 +710,48 @@ if(!file.exists("FatModel.rda")) {
 <<eval=FALSE>>=
 library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, data = d19, family = JSU(mu.link = "log"),
+b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
   n.iter = 12000, burnin = 2000, thin = 10)
 @
 Note that we assign the log-link for parameter $\mu$ to ensure positivity. 
 In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples
-and only save every 10th sample.
+and only save every 10th sample. We did the same estimation step analogously with the
+other distributions.
 
+In addition to the DIC, there is also the continuous rank probability score (CRPS) to investigate 
+the goodness of fit of the distribution. The \proglang{R} package \pkg{scoringRules} 
+\citep{bamlss:Jordan+Krueger+Lerch:2018} provides tools for model calibration checks using the CRPS.
+Since the number of candidate distributions can be quite large, it might happen that the CRPS
+for some distributions is not implemented. In this case, the user can resort to a numerical 
+approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package
+<<>>=
+CRPS(b)
+@
 
-The values of the DIC for the 6 models are given in Table~\ref{tab:DIC}.
+The values of the DIC and CRPS for the 6 models are given in Table~\ref{tab:DIC}.
 \begin{table}[h!]
 \centering
 \begin{tabular}{lcc}
 \hline
 Family & DIC & CRPS\\ 
 \hline
-\fct{NO}   & 12289.582 & 51.39974
-\fct{GA}   & 12258.501 & 51.22791
-\fct{BCT}  & 12202.326 & 50.83966
-\fct{BCPE} & 12189.379 & 50.78673
-\fct{BCCG} & 12188.076 & 50.81369
-\fct{JSU}  & \textbf{9390.927} & \textbf{50.77544}
-
+\fct{NO}   & 12291.75 & 51.28 \\
+\fct{GA}   & 12261.06 & 51.11 \\
+\fct{GG}   & 12248.10 & 51.03 \\
+\fct{BCT}  & 12215.85 & 50.69 \\
+\fct{BCCG} & 12190.41 & 50.67 \\
+\fct{BCPE} & \textbf{12188.30} & \textbf{50.61} \\
 \hline
 \end{tabular}
 \caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
 \end{table}
-Here, the four parameter \fct{JSU} model has the lowest DIC.
+Here, the four parameter \fct{BCPE} model has the lowest DIC and CRPS, therefore, we
+examine this model in more detail in the rest of the analysis. However, the differences
+are quite small, i.e., the final results of the three very flexible families \fct{BCT}, \fct{BCCG} 
+and \fct{BCPE} are expected to be quite similar.
 
-After the estimation algorithms are finished, the estimated
-effects can be visualized instantly using the plotting method.
+After the estimation algorithms are finished, the estimated effects, e.g., for the \fct{BCPE} 
+model, can be visualized instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma", "nu", "tau"))
 @
@@ -771,7 +783,7 @@ plot(b, model = "tau", spar = FALSE)
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
 relationship for all parameters, however, 95\% credible intervals for parameter $\nu$
-and $\tau$ are larger such that the effects to not cross the horizontal zero line
+and $\tau$ are larger such that the effects do not cross the horizontal zero line
 significantly, i.e., a simple intercept only specification for these parameters might be
 sufficient.
 
@@ -830,7 +842,7 @@ grid()
 \begin{figure}[!ht]
 \centering
 \setkeys{Gin}{width=0.7\textwidth}
-<<echo=FALSE, fig=TRUE, height=5, width=6>>=
+<<echo=FALSE, fig=TRUE, height=6, width=6>>=
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 par(mar = c(4.1, 4.1, 0.1, 0.1))
@@ -852,7 +864,7 @@ The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals
 the seasonal variation of fatalities. The median reveals a clear annual cycle
 with a higher number of fatalities in winter. The skewness of the distribution
 is also very dominant in winter.  However, also in the summer months there is a
-visible increase in the upper quntile, which is probably due to particularly
+visible increase in the upper quantile, which is probably due to particular
 heat waves leading to greater cardiovascular stress \citep{fouillet2008}. The
 mortality rate from beginning of 2020 to week 46 is plotted in red and clearly
 indicates that this is much higher than the long-term median in the spring and
@@ -968,9 +980,9 @@ separate updating equations using leapfrog or zigzag iteration
 where function $U_{jk}( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson
 step or for getting the next step in an MCMC simulation, a.o.
 
-Using a basis function approach, i.e., each function $f_{jk}( \cdot )$ can be represented by a
-linear combination of a design matrix and regression coefficients, the updating functions
-$U_{jk}( \cdot )$ for posterior mode (frequentist penalized likelihood) estimation or MCMC for
+\citet{bamlss:Rigby+Stasinopoulos:2005} showed that using a basis function approach, i.e.,
+each function $f_{jk}( \cdot )$ can be represented by a linear combination of a design matrix and
+regression coefficients, the updating functions $U_{jk}( \cdot )$ for posterior mode (frequentist penalized likelihood) estimation for
 $\boldsymbol{\beta}_{jk}$ share an iteratively
 weighted least squares updating step (IWLS,~\citealp{bamlss:Gamerman:1997})
 \begin{equation} \label{eqn:blockbackfit}
@@ -981,7 +993,9 @@ weighted least squares updating step (IWLS,~\citealp{bamlss:Gamerman:1997})
       \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}),
 \end{equation}
 with weight matrices $\mathbf{W}_{kk}$ and working responses $\mathbf{z}_k$, similarly to the
-well-known IWLS updating scheme for generalized linear models (GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}).
+well-known IWLS updating scheme for generalized linear models (GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}). In the same way, approximate full conditionals
+$\pi(\boldsymbol{\beta}_{jk} | \cdot)$ for MCMC are constructed with this
+updating step \citep{bamlss:Gamerman:1997, bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib:2016b}.
 The matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are derivative matrices of the priors
 $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ w.r.t.\ the
 regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for $f_{jk}( \cdot )$
@@ -995,7 +1009,7 @@ $$
   \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}; \, \cdot \,\right),
 $$
 i.e., theoretically any updating function applied to the ``partial residuals''
-$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. (For detailed derivations see
+$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. (For detailed derivations see also
 \citealp{bamlss:Umlauf+Klein+Zeileis:2018}.)
 
 The great advantage of this modular architecture is, that the concept does not limit to modeling
@@ -1020,7 +1034,10 @@ number of candidate models. The following lists commonly used tools:
 \item \emph{Information criteria} can be used to compare different model specifications.  
   For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
   AIC, as well as the Bayesian information criterion (BIC), can be used. Estimation of model
-  complexity is based on the so-called equivalent degrees of freedom (EDF). 
+  complexity is based on the so-called equivalent degrees of freedom (EDF), i.e., for each
+  model term the trace of the smoother matrix is computed (see, e.g.,
+  \citealp{bamlss:Hastie+Tibshirani:1990}) is computed and the total degrees of freedom
+  are approximated by the sum over all distributional parameters and model terms.
 
   For MCMC based estimation, model choice mainly relies on the deviance information criterion
   (DIC, \citealp{SpiBesCarLin2002}) and the widely applicable information criterion
@@ -1958,44 +1975,6 @@ Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant
 \newpage
 
 \begin{appendix}
-
-\section[Custom CRPS() function]{Custom \fct{CRPS} function}
-\label{appendix:crps}
-
-The \proglang{R} package \pkg{scoringRules} \citep{bamlss:Jordan+Krueger+Lerch:2018} provides
-tools for model calibration checks. A commonly used measure is the CRPS. Since the number of
-candidate distributions in BAMLSS is quite large, it can happen that the CRPS for some
-distributions is not implemented. In such a case the reader can implement the CRPS using
-numerical integration. The following \proglang{R} code implements the \fct{CRPS} to be used with
-\pkg{bamlss} and a numeric response, e.g., which can be used with the motorcycle accident model
-presented in Section~\ref{sec:distmodel}.
-<<>>=
-CRPS <- function(object, newdata = NULL) {
-  yname <- response_name(object)
-  fam <- family(object)
-  if(is.null(fam$p))
-    stop("no p() function in family object!")
-  if(is.null(newdata))
-    newdata <- model.frame(object)
-  n <- nrow(newdata)
-  crps <- rep(0, n)
-  par <- as.data.frame(predict(object, newdata = newdata, type = "parameter"))
-  y <- newdata[[yname]]
-  for(i in 1:n) {
-    foo1 <- function(x) {
-      fam$p(x, par[i, , drop = FALSE])^2
-    }
-    foo2 <- function(x) {
-      (fam$p(x, par[i, , drop = FALSE]) - 1)^2
-    }
-    int1 <- integrate(foo1, -Inf, y[i])$value
-    int2 <- integrate(foo2, y[i], Inf)$value
-    crps[i] <- int1 + int2
-  }
-  return(crps)
-}
-@
-
 
 \section[Gaussian family object]{Gaussian family object} \label{appendix:families}
 

@@ -11,10 +11,10 @@ d19 <- subset(fatalities, year < 2020)
 
 ## Full model formula.
 f <- list(
-  num   ~ s(week, bs = "cc"),
-  sigma ~ s(week, bs = "cc"),
-  nu    ~ s(week, bs = "cc"),
-  tau   ~ s(week, bs = "cc")
+  num   ~ s(week, bs = "cc", k = 20),
+  sigma ~ s(week, bs = "cc", k = 20),
+  nu    ~ s(week, bs = "cc", k = 20),
+  tau   ~ s(week, bs = "cc", k = 20)
 )
 
 ## Setup function to run in parallel.

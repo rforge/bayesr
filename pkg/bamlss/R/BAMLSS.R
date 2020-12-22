@@ -11088,11 +11088,26 @@ engines <- function(family, ...)
 CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ...) {
   yname <- response_name(object)
   fam <- family(object)
+  if(!is.null(fam$type)) {
+    if(tolower(fam$type) != "continuous")
+      stop("CRPS only for continuous responses!")
+  }
   if(is.null(fam$p))
     stop("no p() function in family object!")
   if(is.null(newdata))
     newdata <- model.frame(object)
   par <- as.data.frame(predict(object, newdata = newdata, type = "parameter", drop = FALSE))
+  if(!is.null(fam$valid.response)) {
+    vd <- rep(NA, 2)
+    ty <- c(-0.0001, 0.0001)
+    for(i in seq_along(ty)) {
+      vd[i] <- fam$valid.response(ty[i])
+    }
+    if(!vd[1L])
+      interval[1L] <- 1e-20
+    if(!vd[2L])
+      interval[2L] <- -1e-20
+  }
   crps <- if(is.null(fam$crps)) {
     .CRPS(newdata[[yname]], par, fam, interval)
   } else {
