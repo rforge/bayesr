@@ -47,17 +47,21 @@ save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
 ### --- predictions ---
 fit1 <- predict(b_ztnbinom, newdata = FlashAustriaEval, type = "parameter")
 fit2 <- predict(b_ztSI, newdata = FlashAustriaEval, type = "parameter")
+fit3 <- predict(b_ztBNB, newdata = FlashAustriaEval, type = "parameter")
 
 family(b_ztnbinom)$loglik(FlashAustriaEval$counts, fit1)
 family(b_ztSI)$loglik(FlashAustriaEval$counts, fit2)
+family(b_ztBNB)$loglik(FlashAustriaEval$counts, fit3)
 
 e1t <- residuals(b_ztnbinom, newdata = FlashAustriaTrain)
 e2t <- residuals(b_ztSI, newdata = FlashAustriaTrain)
+e3t <- residuals(b_ztBNB, newdata = FlashAustriaTrain)
 
 e1e <- residuals(b_ztnbinom, newdata = FlashAustriaEval)
 e2e <- residuals(b_ztSI, newdata = FlashAustriaEval)
+e3e <- residuals(b_ztBNB, newdata = FlashAustriaEval)
 
 par(mfrow = c(1, 2))
-plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
-plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
+plot(c("SItr" = e1t, "ztnbinom" = e2t, "BNB" = e3t), which = "wp", main = "Training", pos = "top")
+plot(c("SItr" = e1e, "ztnbinom" = e2e, "BNB" = e3e), which = "wp", main = "Testing", pos = "top")
 
