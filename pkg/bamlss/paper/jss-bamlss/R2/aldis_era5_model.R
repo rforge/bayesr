@@ -1,6 +1,3 @@
-## Set the seed for reproducibility. 
-set.seed(123)
-
 ## Required packages.
 library("bamlss")
 library("gamlss.dist")
@@ -24,18 +21,21 @@ f <- list(
 )
 
 ## Estimate models.
+set.seed(123)
 b_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
   family = "ztnbinom", binning = TRUE,            ## General arguments.
   optimizer = opt_boost, maxit = 1000,            ## Boosting arguments.
   thin = 5, burnin = 1000, n.iter = 6000,         ## Sampler arguments.
   light = TRUE)
 
+set.seed(123)
 b_ztSI <- bamlss(f, data = FlashAustriaTrain,
   family = ztSI, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
   thin = 5, burnin = 1000, n.iter = 6000,
   light = TRUE)
 
+set.seed(123)
 b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   family = ztBNB, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
@@ -45,19 +45,19 @@ b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
 save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
 
 ### --- predictions ---
-#fit1 <- predict(b1, newdata = d_eval, type = "parameter")
-#fit2 <- predict(b2, newdata = d_eval, type = "parameter")
+fit1 <- predict(b_ztnbinom, newdata = FlashAustriaEval, type = "parameter")
+fit2 <- predict(b_ztSI, newdata = FlashAustriaEval, type = "parameter")
 
-#family(b1)$loglik(d_eval$counts, fit1)
-#family(b2)$loglik(d_eval$counts, fit2)
+family(b_ztnbinom)$loglik(FlashAustriaEval$counts, fit1)
+family(b_ztSI)$loglik(FlashAustriaEval$counts, fit2)
 
-#e1t <- residuals(b1, newdata = FlashAustriaTrain)
-#e2t <- residuals(b2, newdata = FlashAustriaTrain)
+e1t <- residuals(b_ztnbinom, newdata = FlashAustriaTrain)
+e2t <- residuals(b_ztSI, newdata = FlashAustriaTrain)
 
-#e1e <- residuals(b1, newdata = FlashAustriaEval)
-#e2e <- residuals(b2, newdata = FlashAustriaEval)
+e1e <- residuals(b_ztnbinom, newdata = FlashAustriaEval)
+e2e <- residuals(b_ztSI, newdata = FlashAustriaEval)
 
-#par(mfrow = c(1, 2))
-#plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
-#plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
+par(mfrow = c(1, 2))
+plot(c("SItr" = e1t, "ztnbinom" = e2t), which = "wp", main = "Training", pos = "top")
+plot(c("SItr" = e1e, "ztnbinom" = e2e), which = "wp", main = "Testing", pos = "top")
 
