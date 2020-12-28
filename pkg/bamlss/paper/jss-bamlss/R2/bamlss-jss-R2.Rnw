@@ -1600,6 +1600,7 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 
 ## FIXME: old model version!
 load("FlashAustriaModel.rda")
+b <- flash_model_ztBNB
 
 ### ## Specify formula.
 ### f <- list(
@@ -1678,26 +1679,46 @@ skewed count data are zero truncated versions of the Sichel and the beta negativ
 binomial.
 
 The zero-truncated negative binomial distribution is implemented as
-\code{ztnbinom_bamlss()} within \pkg{bamlss}.  In order to specify smooth terms
-form both distributional parameter, the formula has to be a \code{list}.  The
-first element specifies terms for the response \code{counts}, which is named
-$\mu$ in the \pkg{bamlss} familiy object.  The second element specifies the
-formula for parameter $\theta$.  We adopt P-splines
-\citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
-properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
-\pkg{mgcv} infrastructure \citep{bamlss:Wood:2019} provided by \code{s()},
-which leads to the following specification of the model (formula):
+\code{ztnbinom_bamlss()} within \pkg{bamlss}.  Implementations of the Sichel
+\code{SI()} and the beta negative binomial \code{BNB()} are available within
+\pkg{gamlss.dist}.  Using \code{trun()} from \pkg{gamlss.tr} zero truncated
+versions of the two GAMLSS families can be generated that can instantenously be
+pluged into the \code{family} argument of the \code{bamlss()} model call.
+
+<<>>=
+library("gamlss.dist")
+library("gamlss.tr")
+ztSI <- trun(0, family = "SI", local = FALSE)
+ztBNB <- trun(0, family = "BNB", local = FALSE)
+@
+
+In the following we illustrate how to set up and model the lightning counts with one
+of the three distributions,
+the zero truncated beta negative binomial.
+To specify smooth terms for all four distributional parameter,
+we set up a \code{list} of formulas with length four:
 %
 <<eval=FALSE>>=
 f <- list(
-  counts ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1)
+  counts ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps")
 )
 @
 %
-Now we have all ingredients on hand to feed the standard interface for
+Here, we adopt P-splines
+\citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
+properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
+\pkg{mgcv} infrastructure \citep{bamlss:Wood:2019} provided by \code{s()}.
+
+Now, we have all ingredients on hand to feed the standard interface for
 statistical models in \proglang{R}: A formula \code{f}, a family
-\code{ztnbinom_bamlss()}, and a data set \code{FlashAustriaTrain}. Within the
+\code{ztBNB}, and a data set \code{FlashAustriaTrain}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
 optimizer and the sampler. We choose the gradient boosting optimizer
 \code{opt\_boost()} in order to find initial values for the default sampler
@@ -1712,21 +1733,22 @@ end:
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(111)
-R> b <- bamlss(f, family = "ztnbinom", data = FlashAustriaTrain,
+R> b <- bamlss(f, family = ztBNB, data = FlashAustriaTrain,
 +    optimizer = opt_boost, maxit = 1000,     ## Boosting arguments.
 +    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
 \end{Sinput}
 \begin{Soutput}
-logLik -36930.0 eps 0.0003 iteration 1000 qsel 7
-elapsed time:  5.31min
+TODO: Output from Goettingen run?!
+logLik -XXXXX.0 eps 0.0003 iteration 1000 qsel 7
+elapsed time:  X.XXmin
 Starting the sampler...
-|********************| 100%  0.00sec 27.76min
+|********************| 100%  0.00sec XX.XXmin
 \end{Soutput}
 \end{Schunk}
 %
-The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
+\fixme{The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
 on which the boosting took about 5.3~minutes and the MCMC sampling took about
-27.8~minutes. As a first diagnostic we check the log-likelihood contributions of the
+27.8~minutes.} As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 %
 <<eval=FALSE>>=
