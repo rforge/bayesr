@@ -14,10 +14,10 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 
 ## Model formula, up to four parameters.
 f <- list(
-  counts ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1)
+  counts ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") + s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") + s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") + s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") + s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps")
 )
 
 ## Estimate models.
