@@ -1723,7 +1723,7 @@ optimizer and the sampler. We choose the gradient boosting optimizer
 finding regression coefficients that serve as initial values for a MCMC sampler
 \citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.  We set the number of iteration
 to $1000$. For the sampling we allow another $1000$ iterations as burn-in
-phase, and apply a thihttps://r-spatial.github.io/sf/#ubuntunning of the resulting chain of $5$.  Running
+phase, and apply a thinning of the resulting chain of $5$.  Running
 \code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples in the
 end:
 %
@@ -1962,7 +1962,7 @@ plot(FlashAustriaCase["P10"]) ## FIXME!
 #  geom_sf(data = world, col = "white", fill = NA) +
 #  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
 #  facet_wrap(~time, nrow = 2) + theme_minimal() +
-#  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 @
 \caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
 September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
