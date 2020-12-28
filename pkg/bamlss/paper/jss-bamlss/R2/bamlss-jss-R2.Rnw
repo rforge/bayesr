@@ -1820,7 +1820,7 @@ consecutive samples.
 \centering
 <<echo=FALSE, fig=TRUE>>=
 b2 <- b
-b2$samples[[3]] <- b2$samples[[3]][, grep("s(sqrt_cape)", colnames(b2$samples[[3]]), fixed = TRUE)][, 1:2]
+b2$samples[[1]] <- b2$samples[[1]][, grep("s(sqrt_cape)", colnames(b2$samples[[1]]), fixed = TRUE)][, 1:2]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
