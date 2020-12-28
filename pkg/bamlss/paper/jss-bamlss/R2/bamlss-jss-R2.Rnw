@@ -1755,19 +1755,33 @@ for objects of class \code{bamlss.residuals} and can be select via the \code{whi
 argument of the plot method for these objects:
 %
 %% TODO: * document c.bamlss.residuals, * ylim for "WP", * default for newdata
-<<>>=
+<<eval=FALSE>>=
+resids <- c(
+  "ztnbinom" = residuals(flash_model_ztnbinom),
+  "ztSI"     = residuals(flash_model_ztSI),
+  "ztBNB"    = residuals(flash_model_ztBNB)
+)
+plot(resids, which = "wp", main = "In sample worm plots") 
+@
+\setkeys{Gin}{width=.7\textwidth}
+\begin{figure}[t!]
+\centering
+<<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
 	"ztSI"     = residuals(flash_model_ztSI    , newdata = FlashAustriaTrain),
 	"ztBNB"    = residuals(flash_model_ztBNB   , newdata = FlashAustriaTrain)
 )
-@
 plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3")) 
+@
+\caption{Worm plot of the three distributional models.}
+\label{fig:appworm}
+\end{figure}
 %
-Though, the worm plots reveal different tail behaviour of the distributions---
-\code{ztSI} and \code{ztnbinom} underestimate the mass of the tail and \code{ztBNB}
-slightly overestimates the tail---the distributional model based on the zero
-truncated beta negative binomial exhibits the best overall calibration.
+Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behaviour
+of the distributions---\code{ztSI} and \code{ztnbinom} underestimate the mass of
+the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
+based on the zero truncated beta negative binomial exhibits the best overall calibration.
 Thus, from now on we focus on analyzing this model.
 As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
