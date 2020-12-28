@@ -34,15 +34,11 @@ as polygons.
 
 \describe{
   \item{counts}{ALDIS counts of cloud-to-ground lightning discharges.}
-  \item{d2m}{2m dewpoint temperature.}
-  \item{q_prof_PC1}{First principal component of the vertical profile of specific humidity.}
-  \item{cswc_prof_PC4}{Fourth principal component of the vertical profile of
-                       specific snow water content.}
-  \item{t_prof_PC1}{First principal component of the vertical profile of temperature.}
-  \item{v_prof_PC2}{Second principal component of the vertical profile of v
-                    component of wind.}
-  \item{sqrt_cape}{Square root of convective available potential energy.}
-  \item{sqrt_lsp}{Square root of large scale precipitation.}
+  \item{hcc}{High cloud cover. The proportion of a grid box covered by cloud occurring in the high levels of the troposhere (approx. 6 km and above).}
+  \item{str}{Surface net thermal radiation. Thermal radiation refers to radiation emitted by the atmoshere, clouds and the surface of the Earth. str is the difference between downward and upward thermal radiation at the surface of the Earth. The units are joules per square metre as the radiation is accumulated over a period of one hour.}
+  \item{tciw}{Total column cloud ice water. The amount of ice contained within clouds in a column extending from the surface of the Earth to the top of the atmosphere.}
+  \item{q_prof_PC1}{This variable has been derived from the vertical profile of specific humidity (labelled q at the ECMWF) by principal component analysis. This is the first principal component.}
+  \item{sqrt_cape}{The square root of convective available potential energy. This is an indication of the (in)stability of the atmosphere.}
 }
 }
 

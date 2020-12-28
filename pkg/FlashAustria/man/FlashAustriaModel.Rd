@@ -1,5 +1,8 @@
 \name{FlashAustriaModel}
 \alias{FlashAustriaModel}
+\alias{flash_model_ztBNB}
+\alias{flash_model_ztnbinom}
+\alias{flash_model_ztSI}
 
 \title{Fitted Distributional Regression Model Object (bamlss)}
 
@@ -20,34 +23,64 @@ Journal of Computational and Graphical Statistics, 27(3), 612--627.
 \doi{10.1080/10618600.2017.1407325}
 }
 
-\examples{
+\examples{\donttest{
 ## Visualization of fitted model
-if(require("bamlss")) {
-data("FlashAustriaModel", package = "FlashAustria")
-plot(FlashAustriaModel)
+if(require("bamlss") && require("gamlss.dist") && require("gamlss.tr")) {
+  data("FlashAustriaModel", package = "FlashAustria")
+  plot(flash_model_ztSI)
 }
 
 ## Replication code:
 \dontrun{
-## Learning data
+## Required packages.
+library("bamlss")
+library("gamlss.dist")
+library("gamlss.tr")
+
+## Load the data.
 data("FlashAustria", package = "FlashAustria")
 
-## Model formula
+## Generate zero truncated Sichel distribution.
+ztSI <- trun(0, family = "SI", local = FALSE)
+
+## Generate zero truncated beta negative binomial.
+ztBNB <- trun(0, family = "BNB", local = FALSE)
+
+## Model formula, up to four parameters.
 f <- list(
-  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
-    s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
-    s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
-  theta ~ s(sqrt_lsp, bs = "ps")
+  counts ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
+         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1)
 )
 
-## Model fitting using boosting with subsequent MCMC sampling
-set.seed(111)
-FlashAustriaModel <- bamlss(f,
-  family = "ztnbinom", data = FlashAustriaTrain,
-  optimizer = boost, maxit = 1000,
-  thin = 5, burnin = 1000, n.iter = 6000)
+## Estimate models.
+set.seed(123)
+flash_model_ztnbinom <- bamlss(f,
+  data = FlashAustriaTrain,                       
+  family = "ztnbinom", binning = TRUE,            
+  optimizer = opt_boost, maxit = 1000,            
+  thin = 5, burnin = 1000, n.iter = 6000,         
+  light = TRUE)
+
+set.seed(123)
+flash_model_ztSI <- bamlss(f,
+  data = FlashAustriaTrain,
+  family = ztSI, binning = TRUE,
+  optimizer = opt_boost, maxit = 1000,
+  thin = 5, burnin = 1000, n.iter = 6000,
+  light = TRUE)
+
+set.seed(123)
+flash_model_ztBNB <- bamlss(f,
+  data = FlashAustriaTrain,
+  family = ztBNB, binning = TRUE,
+  optimizer = opt_boost, maxit = 1000,
+  thin = 5, burnin = 1000, n.iter = 6000,
+  light = TRUE)
 }
-}
+
+}}
 
 \keyword{datasets}
 

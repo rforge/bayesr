@@ -1585,7 +1585,7 @@ discharges---detected by the Austrian Lightning Detection and Information System
 The lightning observations are available for the period 2010--2018.
 The reanalysis data comes from the fifth generation of the ECMWF (European
 Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
-global climate \citep{era5b}. ERA5 provides a globally complete and consistent
+global climate \citep{era5a, era5b}. ERA5 provides a globally complete and consistent
 pseudo-observations of the atmosphere using the laws of physics. The horizontal
 resolution is approx.\ $32~km$, while the temporal resolution is hourly and covers the years
 from 1979 to present.
@@ -1602,13 +1602,13 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 load("FlashAustriaModel.rda")
 b <- FlashAustriaModel
 
-## Specify formula.
-f <- list(
-  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
-    s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
-    s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
-  theta ~ s(sqrt_lsp, bs = "ps")
-)
+### ## Specify formula.
+### f <- list(
+###   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+###     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+###     s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
+###   theta ~ s(sqrt_lsp, bs = "ps")
+### )
 @
 %
 <<>>=
