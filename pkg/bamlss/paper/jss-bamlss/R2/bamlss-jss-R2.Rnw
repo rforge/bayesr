@@ -2010,6 +2010,7 @@ grid box.}
 %%% %
 %%% The rootogram reveals reasonable calibration of the model though it is slightly
 %%% underestimating the number of events with a single lightning discharge.
+
 Now given good calibration of the count data distribution,
 good convergence and sample characteristics of the gradient
 boosting optimizer and MCMC sampler, and physically interpretable effects,
@@ -2020,7 +2021,7 @@ Northern side of the Alps on 2001-09-15 and 2001-09-16.
 The case data \code{FlashAustriaCase} contains additional columns containing
 time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
-observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
+observing 10 or more flashes within a grid box conditioned on thunderstorm activity,
 by applying the cumulative distribution function \code{...$p} of the family
 which can be extracted from the fitted model using \code{family()}.
 The family contains functions to map the predictors to the parameter
