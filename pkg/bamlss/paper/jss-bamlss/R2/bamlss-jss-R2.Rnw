@@ -1632,24 +1632,25 @@ extreme short-term events under the light of a changing climate \citep{westra201
 \hline
 Abbreviation & Description \\ \hline
 \code{hcc} & High cloud cover. The proportion of a grid box covered by cloud
-             occurring in the high levels of the troposhere (approx. 6 km and above). \\ 
+             occurring in the high levels of the troposphere (approx.~$6km$ and above). \\ 
 \code{str} & Surface net thermal radiation. Thermal radiation refers to radiation emitted by the 
-             atmoshere, clouds and the surface of the Earth. str is the difference between downward 
+             atmosphere, clouds and the surface of the Earth. \code{str} is the
+             difference between downward 
              and upward thermal radiation at the surface of the Earth. The units are joules per 
              square metre as the radiation is accumulated over a period of one hour. \\ 
 \code{tciw} & Total column cloud ice water. The amount of ice contained within clouds in a column 
-              extending from the surface of the Earth to the top of the atmosphere. \\ 
+             extending from the surface of the Earth to the top of the atmosphere. \\ 
 \code{q\_prof\_PC1} & This variable has been derived from the vertical profile of specific humidity 
-                      (labelled q at the ECMWF) by principal component analysis. This is the first 
-                      principal component. \\ 
+             (labelled \code{q} at the ECMWF) by principal component analysis. This is the first 
+             principal component. \\ 
 \code{sqrt\_cape} & The square root of convective available potential energy. This is an indication 
-                    of the (in)stability of the atmosphere. \\ \hline
+             of the (in)stability of the atmosphere. \\ \hline
 \end{tabular}
 \caption{\label{tab:desc} Describtions of the parameters taken directly or derived from ERA5.}
 \end{table}
 %
-The parameters are taken directly or derived from ERA5 for this study is only a
-small subset of parameters available \citep{era5a, era5b}. It encloses variables that
+The parameters are taken directly or are derived from ERA5. For this study  only a
+small subset of parameters is on hand \citep{era5a, era5b}. It encloses variables that
 are well known for being good candidates for predicting or explaining convective
 event that also lead to lightning discharges
 \citep[e.g.,][]{bamlss:Simon+Fabsic+Mayr+Umlauf+Zeileis:2018}, in Table~\ref{tab:desc} a
@@ -1659,7 +1660,7 @@ The response of our statistical model are positive counts, with a mean of
 \Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of
 \Sexpr{round(var(FlashAustriaTrain$counts), 2)}. Thus, we are facing a
 truncated count data distribution which is highly
-overdispersive\citep{cameron2013count}.
+overdispersive \citep{cameron2013count}.
 \citet{bamlss:Simon+Mayr+Umlauf+Zeileis:2019} employed a
 zero-truncated negative binomial distribution, which
 is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
@@ -1672,16 +1673,16 @@ distribution.
 The spatial and temporal scale of aggregation of the lightning discharges here differs
 from the one in \citet{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. Therefore it is worth testing
 the zero-truncated negative binomial against other distributions that can capture the
-truncation of the data and its overdispersion. Two of these distributions for extremely
-skewed count data are zero truncated versions of the Sichel and the beta negative 
+truncation of the count data and its overdispersion. Two of these distributions for extremely
+skewed count data are zero-truncated versions of the Sichel and the beta negative 
 binomial.
 
 The zero-truncated negative binomial distribution is implemented as
 \code{ztnbinom_bamlss()} within \pkg{bamlss}.  Implementations of the Sichel
 \code{SI()} and the beta negative binomial \code{BNB()} are available within
-\pkg{gamlss.dist}.  Using \code{trun()} from \pkg{gamlss.tr} zero truncated
-versions of the two GAMLSS families can be generated that can instantenously be
-pluged into the \code{family} argument of the \code{bamlss()} model call.
+\pkg{gamlss.dist}.  Using \code{trun()} from \pkg{gamlss.tr} zero-truncated
+versions of the two GAMLSS families can be generated that can instantaneously be
+plugged into the \code{family} argument of the \code{bamlss()} model call.
 
 <<>>=
 library("gamlss.dist")
@@ -1692,7 +1693,7 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 
 In the following we illustrate how to set up and model the lightning counts with one
 of the three distributions,
-the zero truncated beta negative binomial.
+the zero-truncated beta negative binomial.
 To specify smooth terms for all three distributional parameter $\mu$, $\sigma$ and $\nu$,
 we set up a \code{list} of formulas with length three:
 %
@@ -1728,7 +1729,7 @@ end:
 %
 \begin{Schunk}
 \begin{Sinput}
-R> set.seed(111)
+R> set.seed(123)
 R> flash_model_ztBNB <- bamlss(f, family = ztBNB, data = FlashAustriaTrain,
 +    optimizer = opt_boost, maxit = 1000,     ## Boosting arguments.
 +    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
@@ -1746,8 +1747,8 @@ Starting the sampler...
 on which the boosting took about 5.3~minutes and the MCMC sampling took about
 27.8~minutes.}
 
-Analoguous models have been fitted for the two other distributions, zero truncated
-negative binomial \code{flash_model_ztnbinom} and zero truncated Sichel \code{flash_model_ztSI}.
+Analogous models have been fitted for the two other distributions, zero-truncated
+negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSI}.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemnted within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be select via the \code{which}
@@ -1780,7 +1781,7 @@ plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "D
 Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behaviour
 of the distributions---\code{ztSI} and \code{ztnbinom} underestimate the mass of
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
-based on the zero truncated beta negative binomial exhibits the best overall calibration.
+based on the zero-truncated beta negative binomial exhibits the best overall calibration.
 Thus, from now on we focus on analyzing this model.
 As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
@@ -1825,7 +1826,7 @@ plot(flash_model_ztBNB,
 )
 @
 %
-Figure \ref{fig:apptrace} shows the traces and the auto-correlation functions
+Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
 for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
