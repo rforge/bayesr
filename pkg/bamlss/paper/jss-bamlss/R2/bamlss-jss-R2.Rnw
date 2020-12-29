@@ -1751,7 +1751,7 @@ Analogous models have been fitted for the two other distributions, zero-truncate
 negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSI}.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemnted within \pkg{bamlss}
-for objects of class \code{bamlss.residuals} and can be select via the \code{which}
+for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
 argument of the plot method for these objects:
 %
 %% TODO: * document c.bamlss.residuals, * ylim for "WP", * default for newdata
@@ -1804,9 +1804,9 @@ gradient boosting.}
 %
 After 1000~iterations the term \code{s(sqrt_cape).nu} has the highest contribution
 to the log-likelihood with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])} %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$nu["s(sqrt_cape)",2])} %
 followed by \code{s(q_prof_PC1).nu} with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$nu["s(q_prof_PC1)",2])}.
 These two terms as well as all other terms with a strong contribution
 act on the distributional parameter \code{nu}. The contributions for the terms of the
 other distributional parameters seems negligible.
@@ -1826,7 +1826,7 @@ plot(flash_model_ztBNB,
 )
 @
 %
-Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
+\fixme{Interpret samples!} Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
 for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
@@ -1856,8 +1856,10 @@ can go further and investigate the estimated effects. The boosting summary
 Looking at these effects illustrate how the atmospheric parameters
 of the reanalyses are related to lightning events (Figure~\ref{fig:appeffect}),
 and thus help to understand the physics associated with lightning events.
-The effects are presented on the scale of the linear predictor, i.e., the
-log scale.
+The effects are presented on the scale of the linear predictor of the
+distributional parameter $\nu$, i.e., the log scale. A smaller
+$\log(\nu)$ would result in a higher variance of the count data distribution
+and thus a heavier tail.
 %
 <<fig=FALSE, eval=FALSE>>=
 plot(flash_model_ztBNB,
@@ -1884,21 +1886,22 @@ from the model \code{nu}. Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
 %
-\fixme{Adapt following paragraph!!!}
-\code{s(sqrt_cape)} reveals a monotonic increasing shape. In the
-range from $0$--$30$ the effect increases linearly with small credible intervals.
-For higher values the effect flattens and shows large credible intervals which are
-associated with the small amount of data in that range. Physically the shape of the
-effect is meaningful as more convective available potential energy has the
-potential to lead to heavier lightning events.
-\code{s(q_prof_PC1)} reveals areas of large credible intervals at the left and
-right bounds of the range due to small amount of data. In the mid-range an
-increasing effect is identified. As \code{q_prof_PC1} is the leading principal
-component of the vertical profile of specific humidity, one has to consider the
-corresponding spatial mode (not shown) for interpretation: Higher values of
-\code{q_prof_PC1} are linked to more moisture in the lower atmosphere,
-which is also available as a source of \emph{latent energy}, i.e., energy that
-becomes free when water transfers from the gas to the liquid phase.
+\code{s(sqrt_cape)} reveals a monotonic---basically linear---decreasing shape.
+This means a higher \textit{convective available potential energy} (CAPE)
+decreases $\log(\nu)$, which increases the dispersion of the distribution and
+thus is associated with higher probabilities for events with high counts.
+Physically the shape of the effect is meaningful as more convective available
+potential energy has the potential to lead to heavier lightning events.
+\code{s(q_prof_PC1)} shows a clear linear increase.
+As \code{q_prof_PC1} is the leading principal component of the vertical profile
+of specific humidity, one has to consider the corresponding spatial mode (not
+shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
+more moisture in the lower atmosphere (below 850~hPa) and less moisture in the
+mid atmosphere (between 850~hPa and 600~hPa).  Thus smaller values of the
+principal component mean that more moisture is available in the mid atmosphere,
+which a source of \emph{latent energy}, energy that becomes free when water
+transfers from the gas to the liquid phase. This energy supports the occurrence
+of deep convection and thus of heavy lightning events.
 %%% 
 %%% Finally it is interesting to look at the effect acting on the link scale of
 %%% the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Figure~\ref{fig:appeffect}).
@@ -1907,75 +1910,76 @@ becomes free when water transfers from the gas to the liquid phase.
 %%% not related to strong lightning events. The effect shows following relationship:
 %%% Higher values of \code{sqrt_lsp} lead to smaller $\theta$, which increases the
 %%% variance of the distribution.
-
-Before applying the model, i.e., predicting lightning cases before 2010, we
-check the marginal calibration of the distribution. This is commonly done by
-displaying a qq-plot or a worm plot \citep{bamlss:Buuren+Miranda:2001}.  For
-evaluating count data regression model the hanging rootogram serves as popular
-tool \citep{kleiber2016visualizing}. First we predict the distributional
-parameter on out-of-sample data \code{FlashAustriaEval} for which lightning
-observations are on hand
 %
-<<>>=
-fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
-str(fit)
-@
+%%% Before applying the model, i.e., predicting lightning cases before 2010, we
+%%% check the marginal calibration of the distribution. This is commonly done by
+%%% displaying a qq-plot or a worm plot \citep{bamlss:Buuren+Miranda:2001}.  For
+%%% evaluating count data regression model the hanging rootogram serves as popular
+%%% tool \citep{kleiber2016visualizing}. First we predict the distributional
+%%% parameter on out-of-sample data \code{FlashAustriaEval} for which lightning
+%%% observations are on hand
+%%% %
+%%% <<>>=
+%%% fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
+%%% str(fit)
+%%% @
+%%% %
+%%% \code{predict()} returns a \code{list}, of which each element is named
+%%% as a distributional parameter and contains by default a vector of
+%%% predictions. Each prediction is the average of the predictions obtained
+%%% by all MCMC samples. The resulting \code{list} can be used to
+%%% derive further quantities by employing the functions of the \pkg{bamlss}
+%%% family that can be extracted using \code{family()},
+%%% %
+%%% <<>>=
+%%% fam <- family(b)
+%%% fam
+%%% @
+%%% %
+%%% The family contains functions to map the predictors to the parameter
+%%% scale, density, cumulative distribution function, log-likelihood, and
+%%% scores and Hessian. We apply the density to compute the expected
+%%% frequencies of the positive counts. The function \code{...$d()} takes the
+%%% quantile as first argument, and the \code{list} with the parameters,
+%%% as returned by \code{predict()}, as a second argument. The expected frequencies can then be computed
+%%% by
+%%% %
+%%% <<>>=
+%%% expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
+%%% @
+%%% %
+%%% In order to plot the rootogram, we have to name the vector and
+%%% coerce it to an object of class \code{table}. The verifying
+%%% observed frequencies can be directly obtained by \code{table}.
+%%% %
+%%% <<>>=
+%%% names(expect) <- 1:50
+%%% expect <- as.table(expect)
+%%% obsrvd <- table(FlashAustriaEval$counts)[1:50]
+%%% @
+%%% 
+%%% \begin{figure}[p!]
+%%% \setkeys{Gin}{width=.7\textwidth}
+%%% \centering
+%%% <<fig=TRUE, height=5, width=6, echo=FALSE>>=
+%%% par(mar = c(4.1, 4.1, 3.1, 0.1))
+%%% library("countreg")
+%%% rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
+%%% @
+%%% \caption{Hanging rootogram for evaluating calibration of count data model
+%%% on out-of-sample data. Red line indicates the expected frequencies on the
+%%% square root scale. Gray bars indicate observed frequencies on square root
+%%% scale hanging from the red line.}
+%%% \label{fig:approoto}
+%%% \end{figure}
 %
-\code{predict()} returns a \code{list}, of which each element is named
-as a distributional parameter and contains by default a vector of
-predictions. Each prediction is the average of the predictions obtained
-by all MCMC samples. The resulting \code{list} can be used to
-derive further quantities by employing the functions of the \pkg{bamlss}
-family that can be extracted using \code{family()},
-%
-<<>>=
-fam <- family(b)
-fam
-@
-%
-The family contains functions to map the predictors to the parameter
-scale, density, cumulative distribution function, log-likelihood, and
-scores and Hessian. We apply the density to compute the expected
-frequencies of the positive counts. The function \code{...$d()} takes the
-quantile as first argument, and the \code{list} with the parameters,
-as returned by \code{predict()}, as a second argument. The expected frequencies can then be computed
-by
-%
-<<>>=
-expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
-@
-%
-In order to plot the rootogram, we have to name the vector and
-coerce it to an object of class \code{table}. The verifying
-observed frequencies can be directly obtained by \code{table}.
-%
-<<>>=
-names(expect) <- 1:50
-expect <- as.table(expect)
-obsrvd <- table(FlashAustriaEval$counts)[1:50]
-@
-
-\begin{figure}[p!]
-\setkeys{Gin}{width=.7\textwidth}
-\centering
-<<fig=TRUE, height=5, width=6, echo=FALSE>>=
-par(mar = c(4.1, 4.1, 3.1, 0.1))
-library("countreg")
-rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
-@
-\caption{Hanging rootogram for evaluating calibration of count data model
-on out-of-sample data. Red line indicates the expected frequencies on the
-square root scale. Gray bars indicate observed frequencies on square root
-scale hanging from the red line.}
-\label{fig:approoto}
-\end{figure}
-
-\begin{figure}[p!]
+\begin{figure}
 \setkeys{Gin}{width=0.8\textwidth}
 \centering
 <<fig=TRUE, echo=FALSE, width=7, height=5, png=TRUE, pdf=FALSE>>=
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(b)
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 
 library("ggplot2")
@@ -1994,21 +1998,22 @@ September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
 13~UTC, i.e., the probability of having observed $10$ or more counts within one
 grid box.}
 \end{figure}
-
-The observed and expected frequencies can be plugged into the
-default method of \code{rootogram} from the \pkg{countreg}
-package \citep{zeileis2008regression}.
 %
-<<eval=FALSE>>=
-library("countreg")
-rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
-@
-%
-The rootogram reveals reasonable calibration of the model though it is slightly
-underestimating the number of events with a single lightning discharge.
-Now given good convergence and sample characteristics of the gradient
-boosting optimizer and MCMC sampler, physically interpretable effects, and
-good out-of-sample calibration, we can take our model and predict a case
+%%% The observed and expected frequencies can be plugged into the
+%%% default method of \code{rootogram} from the \pkg{countreg}
+%%% package \citep{zeileis2008regression}.
+%%% %
+%%% <<eval=FALSE>>=
+%%% library("countreg")
+%%% rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
+%%% @
+%%% %
+%%% The rootogram reveals reasonable calibration of the model though it is slightly
+%%% underestimating the number of events with a single lightning discharge.
+Now given good calibration of the count data distribution,
+good convergence and sample characteristics of the gradient
+boosting optimizer and MCMC sampler, and physically interpretable effects,
+we can take our model and predict a case
 for the period before 2010, for which no lightning data are available.
 The case of interest is a front moving from the West to the East on the
 Northern side of the Alps on 2001-09-15 and 2001-09-16.
@@ -2017,10 +2022,19 @@ time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on a thunderstorm activity,
 by applying the cumulative distribution function \code{...$p} of the family
+which can be extracted from the fitted model using \code{family()}.
+The family contains functions to map the predictors to the parameter
+scale, density, cumulative distribution function, log-likelihood, and
+scores and Hessian. We apply the cdf to compute the probability of
+observing more than 10 flashes in a box and hour given a lightning event.
+The function \code{...$p()} takes the
+quantile as first argument, and the \code{list} with the parameters,
+as returned by \code{predict()}, as a second argument.
 %
-<<>>=
+<<eval=FALSE>>=
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(b)
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 @
 %
@@ -2041,10 +2055,10 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
 %
 The maps are shown in Figure~\ref{fig:appcase} and reveal that the probability for strong
 lightning events increases during 2001-09-15 between 6 and 17~UTC. During night time the front
-occurs, which can be nicely seen at 23~UTC. The propagation of the front is blocked
-by the main Alpine ridge located at $47^\circ~N$. On the subsequent day
-2001-09-16 one can see that the probability on the downwind side of the
-Alps has increased.
+occurs on the north-western corner of the domain, which can be seen at 23~UTC.
+The propagation of the front is blocked by the main Alpine ridge located at
+$47^\circ~N$. On the subsequent day 2001-09-16 one can see that the probability
+on the downwind side of the Alps has increased.
 
 
 \subsection{Conclusion}
