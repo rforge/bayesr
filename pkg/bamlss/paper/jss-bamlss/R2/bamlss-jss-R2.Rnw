@@ -1787,7 +1787,7 @@ As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 %
 <<eval=FALSE>>=
-pathplot(flash_model_ztBNB, which = "loglik.contrib", intercept = FALSE)
+pathplot(flash_model_ztBNB, which = "loglik.contrib")
 @
 %
 \setkeys{Gin}{width=.7\textwidth}
@@ -1795,7 +1795,10 @@ pathplot(flash_model_ztBNB, which = "loglik.contrib", intercept = FALSE)
 \centering
 <<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
-pathplot(b, which = "loglik.contrib", intercept = FALSE, spar = FALSE)
+pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
+missing <- c("s(hcc).nu", "(Intercept).sigma")
+at_missing <- flash_model_ztBNB$model.stats$optimizer$boost_summary$loglik[1000, missing]
+axis(4, at = at_missing + c(2.8), labels = missing, las = 1, tick = FALSE)
 @
 \caption{Contribution to the log-likelihood of individual terms during
 gradient boosting.}
