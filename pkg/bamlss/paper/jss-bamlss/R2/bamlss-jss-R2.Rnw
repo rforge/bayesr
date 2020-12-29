@@ -1610,7 +1610,8 @@ FlashAustriaModel <- b <- flash_model_ztBNB
 %
 <<>>=
 data("FlashAustria", package = "FlashAustria")
-head(FlashAustriaTrain)[, c("counts", "hcc", "str", "tciw", "q_prof_PC1", "sqrt_cape")]  
+head(FlashAustriaTrain)[, c("counts", "hcc", "str", "tciw",
+  "q_prof_PC1", "sqrt_cape")]  
 nrow(FlashAustriaTrain)
 @
 %
@@ -1692,14 +1693,12 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 In the following we illustrate how to set up and model the lightning counts with one
 of the three distributions,
 the zero truncated beta negative binomial.
-To specify smooth terms for all four distributional parameter,
-we set up a \code{list} of formulas with length four:
+To specify smooth terms for all three distributional parameter $\mu$, $\sigma$ and $\nu$,
+we set up a \code{list} of formulas with length three:
 %
 <<eval=FALSE>>=
 f <- list(
   counts ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
            s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
          ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
            s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
@@ -1819,7 +1818,11 @@ The MCMC chains are investigated by looking directly at the traces of the chains
 and with the auto-correlation function of the chains.
 %
 <<fig=FALSE, eval=FALSE>>=
-plot(flash_model_ztBNB, model = "nu", term = "s(sqrt_cape)", which = "samples")
+plot(flash_model_ztBNB,
+  model = "nu",
+  term  = "s(sqrt_cape)",
+  which = "samples"
+)
 @
 %
 Figure \ref{fig:apptrace} shows the traces and the auto-correlation functions
@@ -1856,17 +1859,24 @@ The effects are presented on the scale of the linear predictor, i.e., the
 log scale.
 %
 <<fig=FALSE, eval=FALSE>>=
-plot(flash_model_ztBNB, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"))
+plot(flash_model_ztBNB,
+  model = "nu",
+  term  = c("s(sqrt_cape)", "s(q_prof_PC1)")
+)
 @
 %
 \begin{figure}[t!]
 \centering
 \setkeys{Gin}{width=1\textwidth}
 <<echo=FALSE, fig=TRUE, height=3, width=6, png=TRUE, pdf=FALSE>>=
+## FIXME: plot are vertically displayed, not horizontally !!!
 par(mfrow = c(1, 2))
 plot(b, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
+### plot(b, model = "nu", term = "s(q_prof_PC1)",
+###   ask = FALSE, spar = FALSE,
+###   rug = TRUE, col.rug = "#39393919")
 @
 \caption{Effect of the terms \code{s(sqrt\_cape)} and \code{s(q\_prof\_PC1)}
 from the model \code{nu}. Credible intervals derived from MCMC samples.}
@@ -1970,12 +1980,12 @@ FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 library("ggplot2")
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
-plot(FlashAustriaCase["P10"]) ## FIXME!
-#ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
-#  scale_fill_continuous_sequential("Oslo", rev = TRUE, p1 = .85) +
-#  geom_sf(data = world, col = "white", fill = NA) +
-#  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
-#  facet_wrap(~time, nrow = 2) + theme_minimal() +
+# plot(FlashAustriaCase["P10"]) ## FIXME!
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE, p1 = .85) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+  facet_wrap(~time, nrow = 2) + theme_minimal() +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 @
 \caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
