@@ -7382,7 +7382,7 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         if(!any_s) {
           plot.bamlss(x, which = c("hist-resid", "qq-resid"), ...)
         } else {
-          plot(xres, model = model, term = term, ask = ask, ...)
+          plot(xres, model = model, term = term, ask = ask, spar = spar, ...)
         }
       } else {
         any_s <- any(sapply(names(x$results), function(i) { !is.null(x$results[[i]]$s.effects) } ))
