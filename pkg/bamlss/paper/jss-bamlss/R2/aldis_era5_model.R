@@ -22,24 +22,24 @@ f <- list(
 
 ## Estimate models.
 set.seed(456)
-b_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
-  family = "ztnbinom", binning = TRUE,            ## General arguments.
-  optimizer = opt_boost, maxit = 1000,            ## Boosting arguments.
-  thin = 5, burnin = 1000, n.iter = 6000,         ## Sampler arguments.
+b_ztnbinom <- bamlss(f, data = FlashAustriaTrain,      ## Standard interface.
+  family = "ztnbinom", binning = TRUE,                 ## General arguments.
+  optimizer = opt_boost, maxit = 1000,                 ## Boosting arguments.
+  thin = 10, burnin = 1000, n.iter = 1500, cores = 20, ## Sampler arguments.
   light = TRUE)
 
 set.seed(456)
 b_ztSI <- bamlss(f, data = FlashAustriaTrain,
   family = ztSI, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 5, burnin = 1000, n.iter = 6000,
+  thin = 10, burnin = 1000, n.iter = 1500, cores = 20,
   light = TRUE)
 
 set.seed(456)
 b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   family = ztBNB, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 5, burnin = 1000, n.iter = 6000,
+  thin = 10, burnin = 1000, n.iter = 1500, cores = 20,
   light = TRUE)
 
 save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
