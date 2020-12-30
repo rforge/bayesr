@@ -21,21 +21,21 @@ f <- list(
 )
 
 ## Estimate models.
-set.seed(123)
+set.seed(456)
 b_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
   family = "ztnbinom", binning = TRUE,            ## General arguments.
   optimizer = opt_boost, maxit = 1000,            ## Boosting arguments.
   thin = 5, burnin = 1000, n.iter = 6000,         ## Sampler arguments.
   light = TRUE)
 
-set.seed(123)
+set.seed(456)
 b_ztSI <- bamlss(f, data = FlashAustriaTrain,
   family = ztSI, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
   thin = 5, burnin = 1000, n.iter = 6000,
   light = TRUE)
 
-set.seed(123)
+set.seed(456)
 b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   family = ztBNB, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,

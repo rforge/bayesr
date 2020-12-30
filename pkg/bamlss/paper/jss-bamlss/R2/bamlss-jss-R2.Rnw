@@ -1873,8 +1873,8 @@ plot(flash_model_ztBNB,
 %
 \begin{figure}[t!]
 \centering
-\setkeys{Gin}{width=1\textwidth}
-<<echo=FALSE, fig=TRUE, height=3, width=6, png=TRUE, pdf=FALSE>>=
+\setkeys{Gin}{width=0.8\textwidth}
+<<echo=FALSE, fig=TRUE, height=4.7, width=9, png=TRUE, pdf=FALSE>>=
 ## FIXME: plot are vertically displayed, not horizontally !!!
 par(mfrow = c(1, 2))
 plot(b, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
