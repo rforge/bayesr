@@ -267,8 +267,10 @@ of the reviewers are highlighted in italics, with our responses directly below.
 \item \emph{pg 23 to make the example more interesting, it would make sense providing a brief 
   description of the variables contained in the \code{FlashAustria} data set.}
 
-  We worked over this example, and give now a descibtion of what the variables mean as table and
-  a why we included them for modelling lightning counts in the text.
+  We worked over this example, and give now a description of what the variables mean as table and
+  a why we included them for modelling lightning counts in the text. NB: We adapted the
+  set of explorative variables, as we now test the zero-truncated negative binomial against
+  alternative distributions.
   
 \begin{tabular}{p{2.5cm}p{11cm}}
 \hline
@@ -316,6 +318,9 @@ Abbreviation & Description \\ \hline
   sampler implemented in R or C++?}
 
   \fixme{Niki/Thorsten}
+  Parts of the building blocks in the family (zero-truncated negative binomial) are written in
+  C to speed up computation. However, it is correct that this single abolute number is very
+  informative. Thus, we skip this information.
 
 \medskip
 
@@ -326,8 +331,9 @@ Abbreviation & Description \\ \hline
   \code{s(sqrt\_lsp).theta} does not appear in the plot.}
 
   Albeit its small contribution we decided to rather show \code{s(sqrt\_lsp).theta} as this
-  term acts on the parameter $\theta$ of the distribution. We now mention this in the text
-  in more detail.
+  term acts on the parameter $\theta$ of the distribution. However, in this iteration we fully
+  worked over this example and use a different distribution. We now show only the two most
+  important terms.
 
 \end{enumerate}
 
@@ -437,7 +443,7 @@ Abbreviation & Description \\ \hline
 \item \emph{For example in example 3 the distribution used, the zero inflated negative binomial,
   seems to be inadequate for the training data (see the worm plot at the end of this report).}
 
-  \fixme{Thorsten}
+  We now test 3 different distributions (two coming from GAMLSS) for this example.
 
 \medskip
 
@@ -445,7 +451,7 @@ Abbreviation & Description \\ \hline
   in BAMLSS from the ones existing in GAMLSS? one minute? one hour? one day? one week?}
 
   Very good point. This should be really clear to the reader! You can use families/distributions
-  from GAMLSS instantaeously! You pass the GAMLSS family as it is into the bamlss model call
+  from GAMLSS instantaneously! You pass the GAMLSS family as it is into the bamlss model call
   as family argument. To make this clear to the reader, we now use GAMLSS families within
   some of the examples presented in the paper.
 
@@ -693,14 +699,18 @@ Abbreviation & Description \\ \hline
   data than the truncated negative binomial as it demonstrated by the worm plots
   displaying both models in Figure 1.}
 
-  \fixme{Thorsten}
+  We now test the zero-truncated (zt) negative binomial against the zt Sichel and
+  zt beta negative binomial. We therefore also adapted the set of explorative  variables.
+  The latter shows the most promsing fit---check with
+  worm plot---and is now used for the final model. 
 
 \medskip
 
 \item \emph{page 27 l 9 It appears that something is wrong here \code{max(fit\$mu) [1] 2.231437e+14}.
   Please check the fitted values for both $\mu$ and $\theta$.}
 
-  \fixme{Thorsten}
+  Correct. The old model produced some odd predictions. Now, we present the zero-truncated
+  beta negative binomial and the predictions are stable.
 
 \medskip
 
