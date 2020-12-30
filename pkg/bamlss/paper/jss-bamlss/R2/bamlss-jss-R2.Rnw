@@ -1778,7 +1778,7 @@ plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "D
 \label{fig:appworm}
 \end{figure}
 %
-Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behaviour
+Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behavior
 of the distributions---\code{ztSI} and \code{ztnbinom} underestimate the mass of
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
 based on the zero-truncated beta negative binomial exhibits the best overall calibration.
@@ -1979,6 +1979,9 @@ of deep convection and thus of heavy lightning events.
 \begin{figure}
 \setkeys{Gin}{width=0.8\textwidth}
 \centering
+<<echo=FALSE, eval=TRUE, results=hide>>=
+sf::st_crs(FlashAustriaCase) <- 4326
+@
 <<fig=TRUE, echo=FALSE, width=7, height=5, png=TRUE, pdf=FALSE>>=
 library("sf")
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
