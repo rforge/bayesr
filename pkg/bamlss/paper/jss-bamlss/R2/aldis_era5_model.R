@@ -8,8 +8,6 @@ data("FlashAustria", package = "FlashAustria")
 
 ## Generate zero truncated Sichel distribution.
 ztSI <- trun(0, family = "SI", local = FALSE)
-ztSI <- bamlss:::tF(ztSI)
-ztSI[c("score", "hess")] <- NULL
 
 ## Generate zero truncated beta negative binomial.
 ztBNB <- trun(0, family = "BNB", local = FALSE)
