@@ -8,6 +8,8 @@ data("FlashAustria", package = "FlashAustria")
 
 ## Generate zero truncated Sichel distribution.
 ztSI <- trun(0, family = "SI", local = FALSE)
+ztSI <- bamlss:::tF(ztSI)
+ztSI[c("score", "hess")] <- NULL
 
 ## Generate zero truncated beta negative binomial.
 ztBNB <- trun(0, family = "BNB", local = FALSE)
@@ -22,24 +24,24 @@ f <- list(
 
 ## Estimate models.
 set.seed(456)
-b_ztnbinom <- bamlss(f, data = FlashAustriaTrain,      ## Standard interface.
-  family = "ztnbinom", binning = TRUE,                 ## General arguments.
-  optimizer = opt_boost, maxit = 1000,                 ## Boosting arguments.
-  thin = 10, burnin = 1000, n.iter = 1500, cores = 20, ## Sampler arguments.
+b_ztnbinom <- bamlss(f, data = FlashAustriaTrain,       ## Standard interface.
+  family = "ztnbinom", binning = TRUE,                  ## General arguments.
+  optimizer = opt_boost, maxit = 1000,                  ## Boosting arguments.
+  thin = 50, burnin = 500, n.iter = 1500, cores = 50,   ## Sampler arguments.
   light = TRUE)
 
 set.seed(456)
 b_ztSI <- bamlss(f, data = FlashAustriaTrain,
   family = ztSI, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 10, burnin = 1000, n.iter = 1500, cores = 20,
+  thin = 50, burnin = 500, n.iter = 1500, cores = 50,
   light = TRUE)
 
 set.seed(456)
 b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   family = ztBNB, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 10, burnin = 1000, n.iter = 1500, cores = 20,
+  thin = 50, burnin = 500, n.iter = 1500, cores = 50,
   light = TRUE)
 
 save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
