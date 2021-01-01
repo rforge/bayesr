@@ -7,7 +7,7 @@ library("gamlss.tr")
 data("FlashAustria", package = "FlashAustria")
 
 ## Generate zero truncated Sichel distribution.
-ztSI <- trun(0, family = "SI", local = FALSE)
+ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
 
 ## Generate zero truncated beta negative binomial.
 ztBNB <- trun(0, family = "BNB", local = FALSE)
@@ -29,8 +29,8 @@ b_ztnbinom <- bamlss(f, data = FlashAustriaTrain,       ## Standard interface.
   light = TRUE)
 
 set.seed(456)
-b_ztSI <- bamlss(f, data = FlashAustriaTrain,
-  family = ztSI, binning = TRUE,
+b_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
+  family = ztSICHEL, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
   thin = 50, burnin = 500, n.iter = 1500, cores = 50,
   light = TRUE)
@@ -42,7 +42,7 @@ b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   thin = 50, burnin = 500, n.iter = 1500, cores = 50,
   light = TRUE)
 
-save(b_ztnbinom, b_ztSI, b_ztBNB, file = "flashmodels.rda")
+save(b_ztnbinom, b_ztSICHEL, b_ztBNB, file = "flashmodels.rda")
 
 ### --- predictions ---
 fit1 <- predict(b_ztnbinom, newdata = FlashAustriaEval, type = "parameter")
