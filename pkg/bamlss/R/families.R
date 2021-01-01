@@ -4037,7 +4037,10 @@ tF <- function(x, ...)
     "hess" = hess,
     "d" = function(y, par, log = FALSE, ...) {
        par <- check_range(par)
-       eval(dc)
+       d <- try(eval(dc), silent = TRUE)
+       if(inherits(d, "try-error"))
+         d <- rep(NA, length(par[[1L]]))
+       return(d)
     },
     "p" = if(!inherits(pfun, "try-error")) function(q, par, log = FALSE, ...) {
       par <- check_range(par)

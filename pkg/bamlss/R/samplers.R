@@ -314,9 +314,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
         if(is.list(theta[[i]])) {
           for(j in names(theta[[i]])) {
             ## Get proposed states.
-            state <- propose[[i]][[j]](fun, theta, id = c(i, j),
+            state <- try(propose[[i]][[j]](fun, theta, id = c(i, j),
               prior = priors[[i]][[j]], data = data[[i]][[j]], eta = eta,
-              iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
+              iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...), silent = TRUE)
+
+            if(inherits(state, "try-error")) {
+              state <- list("alpha" = NA)
+            }
 
             ## If accepted, set current state to proposed state.
             accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
@@ -359,9 +363,13 @@ gmcmc <- function(fun, theta, priors = NULL, propose = NULL,
           }
         } else {
           ## Get proposed states.
-          state <- propose[[i]](fun, theta, id = i,
+          state <- try(propose[[i]](fun, theta, id = i,
             prior = priors[[i]], data = data[[i]], eta = eta,
-            iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...)
+            iteration = iter, n.iter = n.iter, burnin = burnin, rho = rho, ...), silent = TRUE)
+
+          if(inherits(state, "try-error")) {
+            state <- list("alpha" = NA)
+          }
 
           ## If accepted, set current state to proposed state.
           accepted <- if(is.na(state$alpha)) FALSE else log(runif(1)) <= state$alpha
