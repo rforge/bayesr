@@ -1687,7 +1687,7 @@ plugged into the \code{family} argument of the \code{bamlss()} model call.
 <<>>=
 library("gamlss.dist")
 library("gamlss.tr")
-ztSI <- trun(0, family = "SI", local = FALSE)
+ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
 ztBNB <- trun(0, family = "BNB", local = FALSE)
 @
 
@@ -1748,7 +1748,7 @@ on which the boosting took about 5.3~minutes and the MCMC sampling took about
 27.8~minutes.}
 
 Analogous models have been fitted for the two other distributions, zero-truncated
-negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSI}.
+negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSICHEL}.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemnted within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
@@ -1758,7 +1758,7 @@ argument of the plot method for these objects:
 <<eval=FALSE>>=
 resids <- c(
   "ztnbinom" = residuals(flash_model_ztnbinom),
-  "ztSI"     = residuals(flash_model_ztSI),
+  "ztSICHEL"     = residuals(flash_model_ztSICHEL),
   "ztBNB"    = residuals(flash_model_ztBNB)
 )
 plot(resids, which = "wp", main = "In sample worm plots") 
@@ -1769,7 +1769,7 @@ plot(resids, which = "wp", main = "In sample worm plots")
 <<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
-	"ztSI"     = residuals(flash_model_ztSI    , newdata = FlashAustriaTrain),
+	"ztSICHEL"     = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain),
 	"ztBNB"    = residuals(flash_model_ztBNB   , newdata = FlashAustriaTrain)
 )
 plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3")) 
@@ -1779,7 +1779,7 @@ plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "D
 \end{figure}
 %
 Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behavior
-of the distributions---\code{ztSI} and \code{ztnbinom} underestimate the mass of
+of the distributions---\code{ztSICHEL} and \code{ztnbinom} underestimate the mass of
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
 based on the zero-truncated beta negative binomial exhibits the best overall calibration.
 Thus, from now on we focus on analyzing this model.
@@ -1875,7 +1875,6 @@ plot(flash_model_ztBNB,
 \centering
 \setkeys{Gin}{width=0.8\textwidth}
 <<echo=FALSE, fig=TRUE, height=4.7, width=9, png=TRUE, pdf=FALSE>>=
-## FIXME: plot are vertically displayed, not horizontally !!!
 par(mfrow = c(1, 2))
 plot(b, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
   ask = FALSE, spar = FALSE,
