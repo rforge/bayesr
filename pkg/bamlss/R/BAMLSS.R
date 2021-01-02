@@ -9830,10 +9830,10 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         xlim <- c(-xlim, xlim)
         ylim <- max(abs(c(d$y, d$ylo, d$yup)))
         ylim <- c(-ylim, ylim)
-        if(!is.null(args$ylim))
-          ylim <- args$ylim
-        if(!is.null(args$xlim))
-          xlim <- args$xlim
+        if(!is.null(args$ylim2))
+          ylim <- args$ylim2
+        if(!is.null(args$xlim2))
+          xlim <- args$xlim2
         z <- seq(xlim[1] - 10, xlim[2] + 10, 0.25)
         p <- pnorm(z)
         se <- (1/dnorm(z)) * (sqrt(p * (1 - p)/length(d$y)))
@@ -9912,7 +9912,13 @@ plot.bamlss.residuals.list <- function(x, ...) {
     pos <- args$pos
     if(is.null(pos))
       pos <- "topleft"
-    legend(pos, names(x), pch = 1, bty = "n", col = col)
+    cex <- args$cex
+    if(is.null(cex))
+      cex <- 1
+    pch <- args$pch
+    if(is.null(pch))
+      pch <- 1
+    legend(pos, names(x), bty = "n", col = col, pch = pch, cex = cex)
   }
   return(invisible(NULL))
 }
