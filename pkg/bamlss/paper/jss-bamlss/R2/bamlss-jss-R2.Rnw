@@ -1597,7 +1597,7 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 ## Load the data.
 data("FlashAustria", package = "FlashAustria")
 data("FlashAustriaModel", package = "FlashAustria")
-FlashAustriaModel <- b <- flash_model_ztBNB
+FlashAustriaModel <- b <- flash_model_ztSICHEL
 
 ### ## Specify formula.
 ### f <- list(
@@ -1715,7 +1715,7 @@ properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
 
 Now, we have all ingredients on hand to feed the standard interface for
 statistical models in \proglang{R}: A formula \code{f}, a family
-\code{ztBNB}, and a data set \code{FlashAustriaTrain}. Within the
+\code{ztSICHEL}, and a data set \code{FlashAustriaTrain}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
 optimizer and the sampler. We choose the gradient boosting optimizer
 \code{opt\_boost()} in order to find initial values for the default sampler
@@ -1729,23 +1729,23 @@ end:
 %
 \begin{Schunk}
 \begin{Sinput}
-R> set.seed(123)
-R> flash_model_ztBNB <- bamlss(f, family = ztBNB, data = FlashAustriaTrain,
-+    optimizer = opt_boost, maxit = 1000,     ## Boosting arguments.
-+    thin = 5, burnin = 1000, n.iter = 6000)  ## Sampler arguments.
+R> set.seed(456)
+R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
++    family = "ztnbinom", binning = TRUE,                      ## General arguments.
++    optimizer = opt_boost, maxit = 1000,                      ## Boosting arguments.
++    thin = 50, burnin = 500, n.iter = 1500, cores = 50,       ## Sampler arguments.
++    light = TRUE)                                             ## Return in light mode.
 \end{Sinput}
 \begin{Soutput}
-TODO: Output from Goettingen run?!
-logLik -XXXXX.0 eps 0.0003 iteration 1000 qsel 7
-elapsed time:  X.XXmin
+logLik -36607.4 eps 0.0003 iteration 1000 qsel 10
+elapsed time: 31.94min
 Starting the sampler...
-|********************| 100%  0.00sec XX.XXmin
+|********************| 100%  0.00sec 210.34min
 \end{Soutput}
 \end{Schunk}
 %
-\fixme{The model was fitted on a single core Intel i7-7700 CPU with 3.60GHz and 16~GB memory,
-on which the boosting took about 5.3~minutes and the MCMC sampling took about
-27.8~minutes.}
+The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
+on which the boosting took about 31.94~minutes and average sampling time about 3.5~hours
 
 Analogous models have been fitted for the two other distributions, zero-truncated
 negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSICHEL}.
@@ -1758,20 +1758,21 @@ argument of the plot method for these objects:
 <<eval=FALSE>>=
 resids <- c(
   "ztnbinom" = residuals(flash_model_ztnbinom),
-  "ztSICHEL"     = residuals(flash_model_ztSICHEL),
-  "ztBNB"    = residuals(flash_model_ztBNB)
+  "ztBNB"    = residuals(flash_model_ztBNB),
+  "ztSICHEL" = residuals(flash_model_ztSICHEL)
 )
 plot(resids, which = "wp", main = "In sample worm plots") 
 @
-\setkeys{Gin}{width=.7\textwidth}
+\setkeys{Gin}{width=.75\textwidth}
 \begin{figure}[t!]
 \centering
-<<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
+<<fig=TRUE, height=5.5, width=6.5, echo=FALSE>>=
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
-	"ztSICHEL"     = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain),
-	"ztBNB"    = residuals(flash_model_ztBNB   , newdata = FlashAustriaTrain)
+	"ztBNB"    = residuals(flash_model_ztBNB, newdata = FlashAustriaTrain),
+	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
+par(mar = c(4.1, 4.1, 4.1, 0.1))
 plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3")) 
 @
 \caption{Worm plot of the three distributional models.}
@@ -1787,17 +1788,17 @@ As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 %
 <<eval=FALSE>>=
-pathplot(flash_model_ztBNB, which = "loglik.contrib")
+pathplot(flash_model_ztSICHEL, which = "loglik.contrib")
 @
 %
-\setkeys{Gin}{width=.7\textwidth}
+\setkeys{Gin}{width=.75\textwidth}
 \begin{figure}[t!]
 \centering
-<<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
+<<fig=TRUE, height=5.5, width=6.5, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
 pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
 missing <- c("s(hcc).nu", "(Intercept).sigma")
-at_missing <- flash_model_ztBNB$model.stats$optimizer$boost_summary$loglik[1000, missing]
+at_missing <- flash_model_ztSICHEL$model.stats$optimizer$boost_summary$loglik[1000, missing]
 axis(4, at = at_missing + c(2.8), labels = missing, las = 1, tick = FALSE)
 @
 \caption{Contribution to the log-likelihood of individual terms during
@@ -1822,8 +1823,8 @@ The MCMC chains are investigated by looking directly at the traces of the chains
 and with the auto-correlation function of the chains.
 %
 <<fig=FALSE, eval=FALSE>>=
-plot(flash_model_ztBNB,
-  model = "nu",
+plot(flash_model_ztSICHEL,
+  model = "mu",
   term  = "s(sqrt_cape)",
   which = "samples"
 )
@@ -1865,8 +1866,8 @@ $\log(\nu)$ would result in a higher variance of the count data distribution
 and thus a heavier tail.
 %
 <<fig=FALSE, eval=FALSE>>=
-plot(flash_model_ztBNB,
-  model = "nu",
+plot(flash_model_ztSICHEL,
+  model = "mu",
   term  = c("s(sqrt_cape)", "s(q_prof_PC1)")
 )
 @
@@ -1876,7 +1877,7 @@ plot(flash_model_ztBNB,
 \setkeys{Gin}{width=0.8\textwidth}
 <<echo=FALSE, fig=TRUE, height=4.7, width=9, png=TRUE, pdf=FALSE>>=
 par(mfrow = c(1, 2))
-plot(b, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
+plot(b, model = "mu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
 ### plot(b, model = "nu", term = "s(q_prof_PC1)",
@@ -1884,7 +1885,7 @@ plot(b, model = "nu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
 ###   rug = TRUE, col.rug = "#39393919")
 @
 \caption{Effect of the terms \code{s(sqrt\_cape)} and \code{s(q\_prof\_PC1)}
-from the model \code{nu}. Credible intervals derived from MCMC samples.}
+from the model \code{mu}. Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
 %
@@ -1990,7 +1991,6 @@ FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 library("ggplot2")
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
-# plot(FlashAustriaCase["P10"]) ## FIXME!
 ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   scale_fill_continuous_sequential("Oslo", rev = TRUE, p1 = .85) +
   geom_sf(data = world, col = "white", fill = NA) +

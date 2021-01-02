@@ -9830,6 +9830,10 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         xlim <- c(-xlim, xlim)
         ylim <- max(abs(c(d$y, d$ylo, d$yup)))
         ylim <- c(-ylim, ylim)
+        if(!is.null(args$ylim))
+          ylim <- args$ylim
+        if(!is.null(args$xlim))
+          xlim <- args$xlim
         z <- seq(xlim[1] - 10, xlim[2] + 10, 0.25)
         p <- pnorm(z)
         se <- (1/dnorm(z)) * (sqrt(p * (1 - p)/length(d$y)))
@@ -9852,12 +9856,13 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           if(is.null(args$main))
             args$main <- paste("Worm plot", if(!is.null(cn[j])) paste(":", cn[j]) else NULL)
           plot(d$x, d$y, ylab = args$ylab, xlab = args$xlab, main = args$main,
-            xlim = xlim, ylim = ylim, col = args$col, pch = args$pch, cex = args$cex)
+            xlim = xlim, ylim = ylim, col = NA, type = "n")
           grid(lty = "solid")
           abline(0, 0, lty = 2, col = "lightgray")
           abline(0, 1e+05, lty = 2, col = "lightgray")
           lines(z, low, lty = 2)
           lines(z, high, lty = 2)
+          points(d$x, d$y, col = args$col, pch = args$pch, cex = args$cex)
         }
         if(!is.null(xlo)) {
           if(is.null(args$ci.col))
