@@ -25,21 +25,21 @@ set.seed(123)
 b_ztnbinom <- bamlss(f, data = FlashAustriaTrain,       ## Standard interface.
   family = "ztnbinom", binning = TRUE,                  ## General arguments.
   optimizer = opt_boost, maxit = 1000,                  ## Boosting arguments.
-  thin = 50, burnin = 2000, n.iter = 2500, cores = 50,  ## Sampler arguments.
+  thin = 50, burnin = 2000, n.iter = 3000, cores = 50,  ## Sampler arguments.
   light = TRUE)
 
 set.seed(123)
 b_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
   family = ztSICHEL, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 50, burnin = 2000, n.iter = 2500, cores = 50,
+  thin = 50, burnin = 2000, n.iter = 3000, cores = 50,
   light = TRUE)
 
 set.seed(123)
 b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   family = ztBNB, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 50, burnin = 2000, n.iter = 2500, cores = 50,
+  thin = 50, burnin = 2000, n.iter = 3000, cores = 50,
   light = TRUE)
 
 save(b_ztnbinom, b_ztSICHEL, b_ztBNB, file = "FlashAustriaModel.rda")
