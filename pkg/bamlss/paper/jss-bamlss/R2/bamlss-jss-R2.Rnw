@@ -1763,17 +1763,17 @@ resids <- c(
 )
 plot(resids, which = "wp", main = "In sample worm plots") 
 @
-\setkeys{Gin}{width=.75\textwidth}
+\setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
 \centering
-<<fig=TRUE, height=5.5, width=6.5, echo=FALSE>>=
+<<fig=TRUE, height=5.5, width=6, echo=FALSE>>=
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
 	"ztBNB"    = residuals(flash_model_ztBNB, newdata = FlashAustriaTrain),
 	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
 par(mar = c(4.1, 4.1, 4.1, 0.1))
-plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3")) 
+plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3"), cex = 0.5) 
 @
 \caption{Worm plot of the three distributional models.}
 \label{fig:appworm}
@@ -1791,10 +1791,10 @@ individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 pathplot(flash_model_ztSICHEL, which = "loglik.contrib")
 @
 %
-\setkeys{Gin}{width=.75\textwidth}
+\setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
 \centering
-<<fig=TRUE, height=5.5, width=6.5, echo=FALSE>>=
+<<fig=TRUE, height=5.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
 pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
 missing <- c("s(hcc).nu", "(Intercept).sigma")
