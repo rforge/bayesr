@@ -1745,7 +1745,7 @@ Starting the sampler...
 \end{Schunk}
 %
 The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
-on which the boosting took about 31.94~minutes and average sampling time about 8.4~hours
+on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours
 
 Analogous models have been fitted for the two other distributions, zero-truncated
 negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSICHEL}.
@@ -1761,7 +1761,7 @@ resids <- c(
   "ztBNB"    = residuals(flash_model_ztBNB),
   "ztSICHEL" = residuals(flash_model_ztSICHEL)
 )
-plot(resids, which = "wp", main = "In sample worm plots") 
+plot(resids, which = "wp", main = "In sample worm plots", ylim2 = c(-0.5, 0.5))
 @
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
@@ -1773,7 +1773,8 @@ resids <- c(
 	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
 par(mar = c(4.1, 4.1, 4.1, 0.1))
-plot(resids, which = "wp", main = "In sample worm plots", col = hcl.colors(3, "Dark 3"), cex = 0.5) 
+plot(resids, which = "wp", main = "In sample worm plots",
+  col = hcl.colors(3, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 @
 \caption{Worm plot of the three distributional models.}
 \label{fig:appworm}

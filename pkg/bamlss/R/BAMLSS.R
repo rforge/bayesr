@@ -9918,7 +9918,10 @@ plot.bamlss.residuals.list <- function(x, ...) {
     pch <- args$pch
     if(is.null(pch))
       pch <- 1
-    legend(pos, names(x), bty = "n", col = col, pch = pch, cex = cex2)
+    bty <- args$bty
+    if(is.null(bty))
+      bty <- "o"
+    legend(pos, names(x), bty = bty, col = col, pch = pch, cex = cex2)
   }
   return(invisible(NULL))
 }
