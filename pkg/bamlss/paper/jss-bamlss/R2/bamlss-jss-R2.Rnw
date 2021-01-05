@@ -1729,7 +1729,7 @@ end:
 %
 \begin{Schunk}
 \begin{Sinput}
-R> set.seed(456)
+R> set.seed(123)
 R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
 +    family = "ztnbinom", binning = TRUE,                      ## General arguments.
 +    optimizer = opt_boost, maxit = 1000,                      ## Boosting arguments.
@@ -1738,14 +1738,14 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain, ## Standard inter
 \end{Sinput}
 \begin{Soutput}
 logLik -36607.4 eps 0.0003 iteration 1000 qsel 10
-elapsed time: 31.94min
+elapsed time: 31.76min
 Starting the sampler...
-|********************| 100%  0.00sec 210.34min
+|********************| 100%  0.00sec 502.15min
 \end{Soutput}
 \end{Schunk}
 %
 The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
-on which the boosting took about 31.94~minutes and average sampling time about 3.5~hours
+on which the boosting took about 31.94~minutes and average sampling time about 8.4~hours
 
 Analogous models have been fitted for the two other distributions, zero-truncated
 negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSICHEL}.
