@@ -45,11 +45,11 @@ b_ztBNB <- bamlss(f, data = FlashAustriaTrain,
 save(b_ztnbinom, b_ztSICHEL, b_ztBNB, file = "FlashAustriaModel.rda")
 
 ## Final model.
-set.seed(456)
+set.seed(123)
 b_ztSICHEL_f <- bamlss(f, data = FlashAustriaTrain,
   family = ztSICHEL, binning = TRUE,
   optimizer = opt_boost, maxit = 1000,
-  thin = 300, burnin = 2000, n.iter = 5000, cores = 100,
+  thin = 200, burnin = 2000, n.iter = 6000, cores = 50,
   light = TRUE)
 
 save(b_ztSICHEL_f, file = "FLashAustiaModel_f.rda")
