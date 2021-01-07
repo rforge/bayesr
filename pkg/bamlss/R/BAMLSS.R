@@ -7259,13 +7259,13 @@ smooth.construct.fdl.smooth.spec <- function(object, data, knots)
 
 traceplot2 <- function(theta, n.plot=100, ylab = "", ...) {
   cuq <- Vectorize(function(n, x) {
-    as.numeric(quantile(x[1:n],c(.025,.5,.975)))
+    as.numeric(quantile(x[1:n], c(.025, .5, .975), na.rm = TRUE))
   }, vectorize.args = "n")
   n.rep <- length(theta)
   plot(1:n.rep, theta, col = "lightgrey", xlab = "Iterations",
     ylab = ylab, type = "l", ...)
   iter <- round(seq(1, n.rep, length = n.plot + 1)[-1])
-  tq <- cuq(iter,theta)
+  tq <- cuq(iter, theta)
   lines(iter, tq[2,])
   lines(iter, tq[1,], lty = 2)
   lines(iter, tq[3,], lty = 2)
@@ -7350,8 +7350,9 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
           traceplot2(samps[, j, drop = FALSE], main = "")
           mtext(paste("Trace of", snames[j]), side = 3, line = 1, font = 2)
           lines(lowess(tx, samps[, j]), col = "red")
+          ##lines(fitted(gam(samps[, j] ~ s(tx,bs="ps"), method = "REML")), col = "red")
           nu <- length(unique(samps[, j, drop = FALSE]))
-          acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = "", ...)
+          acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = "", ..., na.action = na.pass)
           mtext(paste("ACF of", snames[j]), side = 3, line = 1, font = 2)
         }
       } else {

@@ -1,6 +1,6 @@
 Package: FlashAustria
 Version: 0.4-1
-Date: 2020-12-28
+Date: 2021-01-07
 Title: Data and Model for Reanalyzing Flash Counts in Austria
 Authors@R: c(
     person(given = "Thorsten", family = "Simon", role = c("aut", "cre"),
