@@ -1306,8 +1306,8 @@ More specifically, \fct{sam\_GMCMC} accepts proposal functions for each model te
 necessarily have to be the same and can be exchanged, e.g., the core proposal function is
 implemented in \proglang{C} and is additionally optimized for large design and penalty matrices
 such that sampling using very large data sets is possible
-(see \citealp{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014} for details, e.g.,
-using \fct{sam\_JAGS} is only suitable for moderate sized data and low
+(see \citealp{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014} for details on algorithms,
+e.g., using \fct{sam\_JAGS} is only suitable for moderate sized data and low
 complexity model terms). For more details on \fct{sam\_GMCMC} please see the \pkg{bamlss}
 manual.
 
@@ -1686,11 +1686,11 @@ skewed count data are zero-truncated versions of the Sichel and the beta negativ
 binomial.
 
 The zero-truncated negative binomial distribution is implemented as
-\code{ztnbinom_bamlss()} within \pkg{bamlss}.  Implementations of the Sichel
-\code{SICHEL()} and the beta negative binomial \code{BNB()} are available within
-\pkg{gamlss.dist}.  Using \code{trun()} from \pkg{gamlss.tr} zero-truncated
+\fct{ztnbinom\_bamlss} within \pkg{bamlss}.  Implementations of the Sichel
+\fct{SICHEL} and the beta negative binomial \code{BNB()} are available within
+\pkg{gamlss.dist}.  Using \fct{trun} from \pkg{gamlss.tr} zero-truncated
 versions of the two GAMLSS families can be generated that can instantaneously be
-plugged into the \code{family} argument of the \code{bamlss()} model call.
+plugged into the \code{family} argument of the \fct{bamlss} model call.
 
 <<>>=
 library("gamlss.dist")
@@ -1755,6 +1755,8 @@ Starting the sampler...
 %
 The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
 on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours
+(note that sampling time can usually reduced tremendously by implementing the score
+and Hessian functions of the family in \proglang{C} as in \fct{ztnbinom\_bamlss}).
 
 Analogous models have been fitted for the two other distributions, zero-truncated
 negative binomial \code{flash_model_ztnbinom} and zero-truncated beta negative binomial
