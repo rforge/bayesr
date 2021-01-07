@@ -1583,7 +1583,7 @@ The region we focus on are the European Eastern Alps. Cloud-to-ground lightning
 discharges---detected by the Austrian Lightning Detection and Information System
 \citep[ALDIS, ][]{schulz2005}---are counted on grids with a mesh size of $32~km$.
 The lightning observations are available for the period 2010--2018.
-The reanalysis data comes from the fifth generation of the ECMWF (European
+The reanalysis data come from the fifth generation of the ECMWF (European
 Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
 global climate \citep{era5a, era5b}. ERA5 provides a globally complete and consistent
 pseudo-observations of the atmosphere using the laws of physics. The horizontal
@@ -1591,7 +1591,7 @@ resolution is approx.\ $32~km$, while the temporal resolution is hourly and cove
 from 1979 to present.
 In this example application we work only with a small subset of the data, which
 can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
-\citep{FlashAustria}. The data is loaded with
+\citep{FlashAustria}. The data are loaded with
 %
 <<echo=FALSE>>=
 ## Load the data.
@@ -1649,10 +1649,10 @@ Abbreviation & Description \\ \hline
 \caption{\label{tab:desc} Describtions of the parameters taken directly or derived from ERA5.}
 \end{table}
 %
-The parameters are taken directly or are derived from ERA5. For this study  only a
+The covariates are taken directly or are derived from ERA5. For this study  only a
 small subset of parameters is on hand \citep{era5a, era5b}. It encloses variables that
 are well known for being good candidates for predicting or explaining convective
-event that also lead to lightning discharges
+events that also lead to lightning discharges
 \citep[e.g.,][]{bamlss:Simon+Fabsic+Mayr+Umlauf+Zeileis:2018}, in Table~\ref{tab:desc} a
 description of the physical interpretation of the variables is provided.
 
@@ -1693,7 +1693,7 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 
 In the following we illustrate how to set up and model the lightning counts with one
 of the three distributions,
-the zero-truncated beta negative binomial.
+the zero-truncated Sichel.
 To specify smooth terms for all three distributional parameter $\mu$, $\sigma$ and $\nu$,
 we set up a \code{list} of formulas with length three:
 %
@@ -1722,19 +1722,20 @@ optimizer and the sampler. We choose the gradient boosting optimizer
 \code{sam\_GMCMC()}. Gradient boosting proved to offer a very stable method for
 finding regression coefficients that serve as initial values for a MCMC sampler
 \citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.  We set the number of iterations
-to $1000$. For the sampling we allow another $1000$ iterations as burn-in
-phase, and apply a thinning of the resulting chain of $5$.  Running
-\code{n.iter = 6000} iterations in total leads to $1000$ MCMC samples in the
-end:
+to $1000$. For the sampling we allow another $2000$ iterations as burn-in
+phase, and apply a thinning of the resulting chain of $50$.  Running
+\code{n.iter = 3000} iterations over \code{cores = 50} cores leads to $1000$ MCMC samples in the
+end. Finally, we set \code{light = TRUE} to return a lighter object, i.e., the model.frame
+and design and penalty matrices are not stored:
 %
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(123)
-R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
-+    family = "ztnbinom", binning = TRUE,                      ## General arguments.
-+    optimizer = opt_boost, maxit = 1000,                      ## Boosting arguments.
-+    thin = 50, burnin = 500, n.iter = 1500, cores = 50,       ## Sampler arguments.
-+    light = TRUE)                                             ## Return in light mode.
+R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
++    family = "ztnbinom", binning = TRUE,                     
++    optimizer = opt_boost, maxit = 1000,                     
++    thin = 50, burnin = 500, n.iter = 1500, cores = 50,      
++    light = TRUE)                                            
 \end{Sinput}
 \begin{Soutput}
 logLik -36607.4 eps 0.0003 iteration 1000 qsel 10
@@ -1748,7 +1749,8 @@ The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores wit
 on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours
 
 Analogous models have been fitted for the two other distributions, zero-truncated
-negative binomial \code{flash_model_ztnbinom} and zero-truncated Sichel \code{flash_model_ztSICHEL}.
+negative binomial \code{flash_model_ztnbinom} and zero-truncated beta negative binomial
+\code{flash_model_ztBNB}.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemnted within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
@@ -1761,7 +1763,7 @@ resids <- c(
   "ztBNB"    = residuals(flash_model_ztBNB),
   "ztSICHEL" = residuals(flash_model_ztSICHEL)
 )
-plot(resids, which = "wp", main = "In sample worm plots", ylim2 = c(-0.5, 0.5))
+plot(resids, which = "wp", main = "Worm plot")
 @
 \setkeys{Gin}{width=.7\textwidth}
 \begin{figure}[t!]
@@ -1773,17 +1775,17 @@ resids <- c(
 	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
 par(mar = c(4.1, 4.1, 4.1, 0.1))
-plot(resids, which = "wp", main = "In sample worm plots",
+plot(resids, which = "wp", main = "Worm plot",
   col = hcl.colors(3, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 @
-\caption{Worm plot of the three distributional models.}
+\caption{Worm plots for the three distributional models.}
 \label{fig:appworm}
 \end{figure}
 %
 Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behavior
 of the distributions---\code{ztSICHEL} and \code{ztnbinom} underestimate the mass of
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
-based on the zero-truncated beta negative binomial exhibits the best overall calibration.
+based on the zero-truncated Sichel exhibits the best overall calibration.
 Thus, from now on we focus on analyzing this model.
 As a first diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
@@ -1798,23 +1800,24 @@ pathplot(flash_model_ztSICHEL, which = "loglik.contrib")
 <<fig=TRUE, height=5.5, width=6, echo=FALSE>>=
 par(mar = c(4.1, 4.1, 2.1, 9.5))
 pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
-missing <- c("s(hcc).nu", "(Intercept).sigma")
-at_missing <- flash_model_ztSICHEL$model.stats$optimizer$boost_summary$loglik[1000, missing]
-axis(4, at = at_missing + c(2.8), labels = missing, las = 1, tick = FALSE)
+## missing <- c("s(hcc).nu", "(Intercept).sigma")
+## at_missing <- flash_model_ztSICHEL$model.stats$optimizer$boost_summary$loglik[1000, missing]
+## axis(4, at = at_missing + c(2.8), labels = missing, las = 1, tick = FALSE)
 @
 \caption{Contribution to the log-likelihood of individual terms during
 gradient boosting.}
 \label{fig:appboost}
 \end{figure}
 %
-After 1000~iterations the term \code{s(sqrt_cape).nu} has the highest contribution
+After 1000~iterations the term \code{s(q_prof_PC1).mu} has the highest contribution
 to the log-likelihood with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$nu["s(sqrt_cape)",2])} %
-followed by \code{s(q_prof_PC1).nu} with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$nu["s(q_prof_PC1)",2])}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])} %
+followed by \code{s(sqrt_cape).mu} with %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}.
 These two terms as well as all other terms with a strong contribution
-act on the distributional parameter \code{nu}. The contributions for the terms of the
-other distributional parameters seems negligible.
+act on the distributional parameter \code{mu}. The contributions for the terms of the
+parameter \code{nu} play also an important role. The contributions for the terms of the
+distributional parameter \code{sigma} seem negligible.
 The overall message of this diagnostic is that the contributions to the
 log-likelihood at the end of the boosting procedure are very small and that
 the algorithm approached a stable state, which suggest that we retrieve
@@ -1831,13 +1834,13 @@ plot(flash_model_ztSICHEL,
 )
 @
 %
-\fixme{Interpret samples!} Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
+Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
 for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
 reasonable starting values for the sampling. The auto-correlation functions
-reveal that after the thinning hardly any correlation remains between
-consecutive samples.
+reveal quite some auto-correlation after the thinning, which suggests that one
+could increase the sampling efforts.
 
 \begin{figure}[t!]
 \centering
@@ -1854,22 +1857,26 @@ splines from the term \code{s(sqrt\_cape)} of the model \code{nu}.}
 \end{figure}
 
 As these diagnostics suggest that a reasonable initial state for the sampling
-has been found and the samples are independent draws from the posterior, one
+has been found
+%and the samples are independent draws from the posterior
+, one
 can go further and investigate the estimated effects. The boosting summary
-(Figure~\ref{fig:appboost}) revealed that the terms \code{s(sqrt_cape)} and
-\code{s(q_prof_PC1)} had a large contribution for improving the fit. 
+(Figure~\ref{fig:appboost}) revealed that the terms
+\code{s(q_prof_PC1)}
+and
+\code{s(sqrt_cape)}
+had the largest contribution for improving the fit. 
 Looking at these effects illustrate how the atmospheric parameters
 of the reanalyses are related to lightning events (Figure~\ref{fig:appeffect}),
 and thus help to understand the physics associated with lightning events.
 The effects are presented on the scale of the linear predictor of the
-distributional parameter $\nu$, i.e., the log scale. A smaller
-$\log(\nu)$ would result in a higher variance of the count data distribution
-and thus a heavier tail.
+distributional parameter $\mu$, i.e., the log scale. A higher
+$\log(\mu)$ would result in a higher expectation of the count data distribution.
 %
 <<fig=FALSE, eval=FALSE>>=
 plot(flash_model_ztSICHEL,
   model = "mu",
-  term  = c("s(sqrt_cape)", "s(q_prof_PC1)")
+  term  = c("s(q_prof_PC1)", "s(sqrt_cape)")
 )
 @
 %
@@ -1878,25 +1885,19 @@ plot(flash_model_ztSICHEL,
 \setkeys{Gin}{width=0.8\textwidth}
 <<echo=FALSE, fig=TRUE, height=4.7, width=9, png=TRUE, pdf=FALSE>>=
 par(mfrow = c(1, 2))
-plot(b, model = "mu", term = c("s(sqrt_cape)", "s(q_prof_PC1)"),
+plot(b, model = "mu", term = c("s(q_prof_PC1)", "s(sqrt_cape)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
 ### plot(b, model = "nu", term = "s(q_prof_PC1)",
 ###   ask = FALSE, spar = FALSE,
 ###   rug = TRUE, col.rug = "#39393919")
 @
-\caption{Effect of the terms \code{s(sqrt\_cape)} and \code{s(q\_prof\_PC1)}
+\caption{Effect of the terms \code{s(q\_prof\_PC1)} and \code{s(sqrt\_cape)}
 from the model \code{mu}. Credible intervals derived from MCMC samples.}
 \label{fig:appeffect}
 \end{figure}
 %
-\code{s(sqrt_cape)} reveals a monotonic---basically linear---decreasing shape.
-This means a higher \textit{convective available potential energy} (CAPE)
-decreases $\log(\nu)$, which increases the dispersion of the distribution and
-thus is associated with higher probabilities for events with high counts.
-Physically the shape of the effect is meaningful as more convective available
-potential energy has the potential to lead to heavier lightning events.
-\code{s(q_prof_PC1)} shows a clear linear increase.
+\code{s(q_prof_PC1)} shows a clear monotonic decrease.
 As \code{q_prof_PC1} is the leading principal component of the vertical profile
 of specific humidity, one has to consider the corresponding spatial mode (not
 shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
@@ -1906,6 +1907,13 @@ principal component mean that more moisture is available in the mid atmosphere,
 which a source of \emph{latent energy}, energy that becomes free when water
 transfers from the gas to the liquid phase. This energy supports the occurrence
 of deep convection and thus of heavy lightning events.
+%
+\code{s(sqrt_cape)} reveals a monotonic increasing shape.
+This means a higher \textit{convective available potential energy} (CAPE)
+increases $\mu$, which increases the expectation of the distribution and
+thus is associated with higher probabilities for events with high counts.
+Physically the shape of the effect is meaningful as more convective available
+potential energy has the potential to lead to heavier lightning events.
 %%% 
 %%% Finally it is interesting to look at the effect acting on the link scale of
 %%% the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Figure~\ref{fig:appeffect}).
