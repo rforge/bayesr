@@ -590,9 +590,9 @@ the excess mortabilty caused by exceptional events such as pandemics \citep{baml
 natural catastrophes \citep{fouillet2008}.
 Excess mortality refers to mortality in excess of what would be
 expected based on the non-crisis mortality rate in the population of interest. Here,
-we model the long-term seasonal trend of fatality numbers before the crisis and compare
+we model the long-term seasonal trend of fatality numbers before the COVID-19 crisis and compare
 estimated quantiles with the cases in 2020, which will give insights into the excess
-mortality of the COVID-19 pandemic \citep{bamlss:Leon:2020}.
+mortality of the pandemic \citep{bamlss:Leon:2020}.
 Therefore, we subset the data set before 2020 for estimation and use the 2020 data for comparison
 <<eval=TRUE,echo=TRUE>>=
 d19 <- subset(fatalities, year < 2020)
@@ -857,7 +857,7 @@ lines(num ~ week, data = d20, col = 2, lwd = 2,
 grid()
 @
 \caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\% and 95\% quantiles of
-  the cyclic seasonal week model, black dashed lines, and number of fatalities in 2020 up
+  the cyclic seasonal week model, black lines, and number of fatalities in 2020 up
   to week 46, red points and line. Data before 2020 is shown in light gray in the
   background.}
 \end{figure}
@@ -1243,12 +1243,12 @@ about which optimizer and sampler functions can be used with which family. For e
 compatibility for the normal distribution of the \pkg{gamlss.dist} package and the family
 implemented in \pkg{bamlss} the user can type
 <<eval=TRUE, echo=TRUE>>=
-engines(NO, gaussian_bamlss)
+engines(NO, gaussian_bamlss, cox_bamlss)
 @
 The table shows that the \fct{NO} family is compatible with all pure \proglang{R} implementations of 
 optimizer and sampler functions, but not with special samplers like \pkg{BayesX} and \pkg{JAGS}. 
-These can only be used with the \fct{gaussian\_bamlss} family. In addition, neither family has its 
-own special optimizer or sampler implemented (such as the \fct{cox\_bamlss} family).
+These can only be used with the \fct{gaussian\_bamlss} family. In addition, neither \fct{NO} or
+\fct{gaussian\_bamlss} has its own special optimizer or sampler implemented, such as the \fct{cox\_bamlss} family.
 
 To exemplify the presented ``Lego toolbox'', the following \proglang{R} code estimates the
 logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logitmodel}. First,
@@ -1585,7 +1585,7 @@ discharges---detected by the Austrian Lightning Detection and Information System
 The lightning observations are available for the period 2010--2018.
 The reanalysis data come from the fifth generation of the ECMWF (European
 Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
-global climate \citep{era5a, era5b}. ERA5 provides a globally complete and consistent
+global climate \citep{era5a, era5b}. ERA5 provides globally complete and consistent
 pseudo-observations of the atmosphere using the laws of physics. The horizontal
 resolution is approx.\ $32~km$, while the temporal resolution is hourly and covers the years
 from 1979 to present.
@@ -1722,9 +1722,9 @@ optimizer and the sampler. We choose the gradient boosting optimizer
 \code{sam\_GMCMC()}. Gradient boosting proved to offer a very stable method for
 finding regression coefficients that serve as initial values for a MCMC sampler
 \citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.  We set the number of iterations
-to $1000$. For the sampling we allow another $2000$ iterations as burn-in
+to \code{maxit = 1000}. For the sampling we allow another $500$ iterations as burn-in
 phase, and apply a thinning of the resulting chain of $50$.  Running
-\code{n.iter = 3000} iterations over \code{cores = 50} cores leads to $1000$ MCMC samples in the
+\code{n.iter = 1500} iterations over \code{cores = 50} cores leads to $1000$ MCMC samples in the
 end. Finally, we set \code{light = TRUE} to return a lighter object, i.e., the model.frame
 and design and penalty matrices are not stored:
 %
@@ -1752,7 +1752,7 @@ Analogous models have been fitted for the two other distributions, zero-truncate
 negative binomial \code{flash_model_ztnbinom} and zero-truncated beta negative binomial
 \code{flash_model_ztBNB}.
 To select one of the three models, we examine their calibration using a worm plot
-\citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemnted within \pkg{bamlss}
+\citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemented within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
 argument of the plot method for these objects:
 %
@@ -1857,10 +1857,9 @@ splines from the term \code{s(sqrt\_cape)} of the model \code{nu}.}
 \end{figure}
 
 As these diagnostics suggest that a reasonable initial state for the sampling
-has been found
+has been found,
 %and the samples are independent draws from the posterior
-, one
-can go further and investigate the estimated effects. The boosting summary
+one can go further and investigate the estimated effects. The boosting summary
 (Figure~\ref{fig:appboost}) revealed that the terms
 \code{s(q_prof_PC1)}
 and
@@ -1902,9 +1901,9 @@ As \code{q_prof_PC1} is the leading principal component of the vertical profile
 of specific humidity, one has to consider the corresponding spatial mode (not
 shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
 more moisture in the lower atmosphere (below 850~hPa) and less moisture in the
-mid atmosphere (between 850~hPa and 600~hPa).  Thus smaller values of the
+mid atmosphere (between 850~hPa and 600~hPa). Thus smaller values of the
 principal component mean that more moisture is available in the mid atmosphere,
-which a source of \emph{latent energy}, energy that becomes free when water
+a source of \emph{latent energy}, energy that becomes free when water
 transfers from the gas to the liquid phase. This energy supports the occurrence
 of deep convection and thus of heavy lightning events.
 %

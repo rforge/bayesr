@@ -52,5 +52,5 @@ b_ztSICHEL_f <- bamlss(f, data = FlashAustriaTrain,
   thin = 200, burnin = 2000, n.iter = 6000, cores = 50,
   light = TRUE)
 
-save(b_ztSICHEL_f, file = "FLashAustiaModel_f.rda")
+save(b_ztSICHEL_f, file = "FlashAustriaModel_f.rda")
 
