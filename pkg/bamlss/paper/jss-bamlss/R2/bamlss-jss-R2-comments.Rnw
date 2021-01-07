@@ -317,10 +317,13 @@ Abbreviation & Description \\ \hline
   for instance, a \pkg{brms} or \fct{jagam} implementation using the same (or similar) model? Is the
   sampler implemented in R or C++?}
 
-  \fixme{Niki/Thorsten}
-  Parts of the building blocks in the family (zero-truncated negative binomial) are written in
-  C to speed up computation. However, it is correct that this single abolute number is very
-  informative. Thus, we skip this information.
+  The default \fct{sam\_GMCMC} sampling function is a quite generic implementation.
+  More specifically, \fct{sam\_GMCMC} accepts proposal functions for each model term which do not
+  necessarily have to be the same and can be exchanged, e.g., the core proposal function is
+  implemented in \proglang{C} and is additionally optimized for large design and penalty
+  matrices such that sampling using very large data sets is possible. E.g., using
+  \fct{sam\_JAGS} (similar \pkg{Stan}/\pkg{brms}) is only suitable for moderate sized data and
+  low complexity model terms. We now give additional information in Section~4.
 
 \medskip
 

@@ -1301,7 +1301,15 @@ where the first line basically represents the standard model frame specification
 \citep[see][]{bamlss:Chambers+Hastie:1992}. All other arguments represent functions presented
 in Table~\ref{tab:functions} and can be exchanged. Note that the default for argument
 \code{optimizer} is the backfitting estimation function \fct{opt\_bfit} and the default for argument
-\code{sampler} is the \fct{sam\_GMCMC} sampling function.
+\code{sampler} is the \fct{sam\_GMCMC} sampling function, which is a quite generic implementation.
+More specifically, \fct{sam\_GMCMC} accepts proposal functions for each model term which do not
+necessarily have to be the same and can be exchanged, e.g., the core proposal function is
+implemented in \proglang{C} and is additionally optimized for large design and penalty matrices
+such that sampling using very large data sets is possible
+(see \citealp{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014} for details, e.g.,
+using \fct{sam\_JAGS} is only suitable for moderate sized data and low
+complexity model terms). For more details on \fct{sam\_GMCMC} please see the \pkg{bamlss}
+manual.
 
 The returned fitted model object is a list of class \class{bamlss}, which is supported by several
 standard methods and extractor functions, such as \fct{plot}, \fct{summary} and \fct{predict}.
