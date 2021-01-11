@@ -17,7 +17,7 @@ CRPS(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ...)
 
 \arguments{
   \item{object}{An object returned from \code{\link{bamlss}}.}
-  \item{newdate}{Optional new data that should be used for calculation.}
+  \item{newdata}{Optional new data that should be used for calculation.}
   \item{interval}{The interval that should be used for numerical integration}
   \item{FUN}{Function to be applied on the CRPS scores.}
   \item{\dots}{Arguments passed to function \code{FUN}.}

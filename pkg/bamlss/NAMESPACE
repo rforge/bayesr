@@ -18,7 +18,7 @@ importFrom("survival", "Surv")
 importFrom("mvtnorm", "rmvnorm", "dmvnorm")
 importFrom("stats", "AIC", "BIC", "family")
 importFrom("grDevices", "chull", "dev.interactive", "devAskNewPage",
-  "gray", "gray.colors", "n2mfrow", "trans3d", "rgb")
+  "gray", "gray.colors", "n2mfrow", "trans3d", "rgb", "dev.off", "png")
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
   "layout", "lcm", "lines", "matplot", "mtext", "par",
   "points", "rect", "text", "plot.default", "barplot", "title", "legend", "grid")
