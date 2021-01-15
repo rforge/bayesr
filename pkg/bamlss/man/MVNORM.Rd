@@ -16,6 +16,9 @@
 \usage{
 sam_MVNORM(x, y = NULL, family = NULL, start = NULL,
   n.samples = 500, hessian = NULL, ...)
+
+MVNORM(x, y = NULL, family = NULL, start = NULL,
+  n.samples = 500, hessian = NULL, ...)
 }
 
 \arguments{

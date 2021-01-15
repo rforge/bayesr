@@ -25,8 +25,14 @@
 }
 
 \usage{
-## Sampler function:
+## Sampler functions:
 sam_JAGS(x, y, family, start = NULL,
+  tdir = NULL, n.chains = 1, n.adapt = 100,
+  n.iter = 4000, thin = 2, burnin = 1000,
+  seed = NULL, verbose = TRUE, set.inits = TRUE,
+  save.all = FALSE, modules = NULL, ...)
+
+JAGS(x, y, family, start = NULL,
   tdir = NULL, n.chains = 1, n.adapt = 100,
   n.iter = 4000, thin = 2, burnin = 1000,
   seed = NULL, verbose = TRUE, set.inits = TRUE,

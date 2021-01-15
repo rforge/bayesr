@@ -17,8 +17,12 @@
 }
 
 \usage{
-## Sampler function:
+## Sampler functions:
 sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE,
+  step = 20, propose = "iwlsC_gp", chains = NULL, ...)
+
+GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE,
   step = 20, propose = "iwlsC_gp", chains = NULL, ...)
 

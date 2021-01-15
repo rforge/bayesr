@@ -13,7 +13,7 @@
 #}
 
 
-sam_GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+sam_GMCMC <- GMCMC <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE, step = 20,
   propose = "iwlsC_gp", chains = NULL, ...)
 {
@@ -1544,7 +1544,7 @@ gmcmc_newton <- function(fun, theta, id, prior, ...)
 
 
 ## Naive sampler.
-sam_MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
+sam_MVNORM <- MVNORM <- function(x, y = NULL, family = NULL, start = NULL, n.samples = 500, hessian = NULL, ...)
 {
   if(!is.null(start))
     start <- unlist(start)

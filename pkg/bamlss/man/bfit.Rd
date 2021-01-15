@@ -22,8 +22,15 @@
 }
 
 \usage{
-## Optimizer function:
+## Optimizer functions:
 opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  outer = NULL, inner = FALSE, mgcv = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nu = TRUE, stop.nu = NULL, ...)
+
+bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = NULL, inner = FALSE, mgcv = FALSE,

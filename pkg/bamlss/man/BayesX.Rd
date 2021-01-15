@@ -25,8 +25,11 @@
 }
 
 \usage{
-## Sampler function:
+## Sampler functions:
 sam_BayesX(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  data = NULL, control = BayesX.control(...), ...)
+
+BayesX(x, y, family, start = NULL, weights = NULL, offset = NULL,
   data = NULL, control = BayesX.control(...), ...)
 
 ## Sampler control:

@@ -728,7 +728,7 @@ fmt <- Vectorize(function(x, width = 8, digits = 2) {
   txt
 })
 
-opt_bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
+opt_bfit <- bfit <- function(x, y, family, start = NULL, weights = NULL, offset = NULL,
   update = "iwls", criterion = c("AICc", "BIC", "AIC"),
   eps = .Machine$double.eps^0.25, maxit = 400,
   outer = NULL, inner = FALSE, mgcv = FALSE,
@@ -2092,7 +2092,7 @@ xcenter <- function(x)
 
 
 ## Modified likelihood based boosting.
-opt_boostm <- function(x, y, family, offset = NULL,
+opt_boostm <- boostm <- function(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
@@ -2375,7 +2375,7 @@ opt_boostm <- function(x, y, family, offset = NULL,
 
 
 ## Gradient boosting.
-opt_boost <- function(x, y, family, weights = NULL, offset = NULL,
+opt_boost <- boost <- function(x, y, family, weights = NULL, offset = NULL,
   nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400, mstop = NULL,
   maxq = NULL, qsel.splitfactor = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
@@ -3969,7 +3969,7 @@ set.starting.values <- function(x, start)
 }
 
 
-opt_lasso <- function(x, y, start = NULL, adaptive = TRUE,
+opt_lasso <- lasso <- function(x, y, start = NULL, adaptive = TRUE,
   lower = 0.001, upper = 1000,  nlambda = 100, lambda = NULL, multiple = FALSE,
   verbose = TRUE, digits = 4, flush = TRUE,
   nu = NULL, stop.nu = NULL, ridge = .Machine$double.eps^0.5,
@@ -5544,7 +5544,7 @@ sgd_grep_X <- function(x) {
 #}
 
 
-opt_bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   epochs = 1, nbatch = 10, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
@@ -6385,7 +6385,7 @@ contribplot <- function(x, ...) {
 }
 
 
-opt_bbfitp <- function(x, y, family, mc.cores = 1, ...)
+opt_bbfitp <- bbfitp <- function(x, y, family, mc.cores = 1, ...)
 {
   seeds <- ceiling(runif(mc.cores, 1, 1000000))
   parallel_fun <- function(i) {

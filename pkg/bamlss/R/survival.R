@@ -24,7 +24,7 @@ cox_bamlss <- function(...)
 }
 
 ## Posterior mode estimation.
-opt_Cox <- function(x, y, start, weights, offset, criterion = c("AICc", "BIC", "AIC"),
+opt_Cox <- cox_mode <- function(x, y, start, weights, offset, criterion = c("AICc", "BIC", "AIC"),
   nu = 0.1, update.nu = TRUE, eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
 {
@@ -359,7 +359,7 @@ update_surv_tc <- function(x, y, eta, eeta, int, criterion, edf, ...)
 
 
 ## The MCMC sampling engine.
-sam_Cox <- function(x, y, family, start, weights, offset,
+sam_Cox <- cox_mcmc <- function(x, y, family, start, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
 {

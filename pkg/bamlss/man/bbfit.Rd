@@ -16,6 +16,9 @@
 opt_bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
   epochs = 1, nbatch = 10, verbose = TRUE, ...)
 
+bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+  epochs = 1, nbatch = 10, verbose = TRUE, ...)
+
 ## Parallel version.
 opt_bbfitp(x, y, family, mc.cores = 1, ...)
 

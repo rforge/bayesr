@@ -15,6 +15,10 @@
 sam_Cox(x, y, family, start, weights, offset,
   n.iter = 1200, burnin = 200, thin = 1,
   verbose = TRUE, digits = 4, step = 20, ...)
+
+cox_mcmc(x, y, family, start, weights, offset,
+  n.iter = 1200, burnin = 200, thin = 1,
+  verbose = TRUE, digits = 4, step = 20, ...)
 }
 
 \arguments{

@@ -19,6 +19,12 @@ opt_Cox(x, y, start, weights, offset,
   nu = 0.1, update.nu = TRUE,
   eps = .Machine$double.eps^0.25, maxit = 400,
   verbose = TRUE, digits = 4, ...)
+
+cox_mode(x, y, start, weights, offset,
+  criterion = c("AICc", "BIC", "AIC"),
+  nu = 0.1, update.nu = TRUE,
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  verbose = TRUE, digits = 4, ...)
 }
 
 \arguments{

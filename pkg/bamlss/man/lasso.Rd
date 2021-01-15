@@ -24,6 +24,11 @@ opt_lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
   digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL,
   ridge = .Machine$double.eps^0.5, zeromodel = NULL, ...)
 
+lasso(x, y, start = NULL, adaptive = TRUE, lower = 0.001, upper = 1000,
+  nlambda = 100, lambda = NULL,  multiple = FALSE, verbose = TRUE,
+  digits = 4, flush = TRUE, nu = NULL, stop.nu = NULL,
+  ridge = .Machine$double.eps^0.5, zeromodel = NULL, ...)
+
 ## Lasso transformation function to set
 ## adaptive weights from an unpenalized model.
 lasso_transform(x, zeromodel, nobs = NULL, ...)

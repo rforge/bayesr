@@ -30,8 +30,27 @@ opt_boost(x, y, family, weights = NULL,
   reverse.edf = FALSE, approx.edf = FALSE,
   always = FALSE, ...)
 
+boost(x, y, family, weights = NULL,
+  offset = NULL, nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400,
+  mstop = NULL, maxq = NULL, qsel.splitfactor = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25,
+  nback = NULL, plot = TRUE, initialize = TRUE,
+  stop.criterion = NULL, select.type = 1,
+  force.stop = TRUE, hatmatrix = !is.null(stop.criterion),
+  reverse.edf = FALSE, approx.edf = FALSE,
+  always = FALSE, ...)
+
 ## Modified likelihood based boosting.
 opt_boostm(x, y, family, offset = NULL,
+  nu = 0.1, df = 3, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25, plot = TRUE,
+  initialize = TRUE, stop.criterion = "BIC",
+  force.stop = !is.null(stop.criterion),
+  do.optim = TRUE, always = FALSE, ...)
+
+boostm(x, y, family, offset = NULL,
   nu = 0.1, df = 3, maxit = 400, mstop = NULL,
   verbose = TRUE, digits = 4, flush = TRUE,
   eps = .Machine$double.eps^0.25, plot = TRUE,
