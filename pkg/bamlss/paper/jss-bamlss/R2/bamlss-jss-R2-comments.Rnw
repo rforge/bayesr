@@ -627,7 +627,7 @@ Abbreviation & Description \\ \hline
   problems mentioned here. Their work and GAMLSS based solutions to the problems
   are well documented in Rigby et al. (2019).}
 
-  \fixme{Nadja}
+  Yes that is of course correct, thank you, we have listed the reference of course.
 
 \medskip
 

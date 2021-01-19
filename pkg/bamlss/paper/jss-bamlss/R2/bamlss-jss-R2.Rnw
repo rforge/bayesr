@@ -631,7 +631,7 @@ dic <- lapply(res, function(x) {
   d <- data.frame(
     "distribution" = x$distribution,
     "dic1" = x$dic1$DIC, "dic2" = x$dic2$DIC,
-    "crps1" = x$crps1, "crps2" = x$crps2
+    "waic1" = x$waic1, "waic2" = x$waic2
   )
   return(d)
 })
@@ -720,34 +720,35 @@ In this example we use 12000 iterations for the MCMC sampler and withdraw the fi
 and only save every 10th sample. We did the same estimation step analogously with the
 other distributions.
 
-In addition to the DIC, there is also the continuous rank probability score (CRPS) to investigate 
-the goodness of fit of the distribution. The \proglang{R} package \pkg{scoringRules} 
-\citep{bamlss:Jordan+Krueger+Lerch:2018} provides tools for model calibration checks using the CRPS.
-Since the number of candidate distributions can be quite large, it might happen that the CRPS
-for some distributions is not implemented. In this case, the user can resort to a numerical 
-approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package
+In addition to the DIC, there is also the Watanabe-Akaike information criterion (WAIC, 
+\citealp{watanabe2010asymptotic}) to investigate the goodness of fit.
+In \pkg{bamlss}, the WAIC of the fitted model can be computed with
 <<>>=
-CRPS(b)
+WAIC(b)
 @
+The function returns two values for the WAIC, depending on the type of the estimated number
+of parameters of the model (\code{p1} uses expected differences of log densities, whereas \code{p2}
+is computed using the variance in the log density, for details
+see \citealp{watanabe2010asymptotic}).
 
-The values of the DIC and CRPS for the 6 models are given in Table~\ref{tab:DIC}.
+The values of the DIC and WAIC for the 6 models are given in Table~\ref{tab:DIC}.
 \begin{table}[h!]
 \centering
 \begin{tabular}{lcc}
 \hline
-Family & DIC & CRPS\\ 
+Family & DIC & WAIC\\ 
 \hline
-\fct{NO}   & 12291.75 & 51.28 \\
-\fct{GA}   & 12261.06 & 51.11 \\
-\fct{GG}   & 12248.10 & 51.03 \\
-\fct{BCT}  & 12215.85 & 50.69 \\
-\fct{BCCG} & 12190.41 & 50.67 \\
-\fct{BCPE} & \textbf{12188.30} & \textbf{50.61} \\
+\fct{NO}   & 12291.75 & 12294.20 \\
+\fct{GA}   & 12261.06 & 12262.40 \\
+\fct{GG}   & 12248.10 & 12249.31 \\
+\fct{BCT}  & 12215.85 & 12206.26 \\
+\fct{BCCG} & 12190.41 & 12188.05 \\
+\fct{BCPE} & \textbf{12188.30} & \textbf{12184.73} \\
 \hline
 \end{tabular}
-\caption{\label{tab:DIC} DIC comparison of the 6 distributional cyclical week models.}
+\caption{\label{tab:DIC} DIC and WAIC comparison of the 6 distributional cyclical week models.}
 \end{table}
-Here, the four parameter \fct{BCPE} model has the lowest DIC and CRPS, therefore, we
+Here, the four parameter \fct{BCPE} model has the lowest DIC and WAIC, therefore, we
 examine this model in more detail in the rest of the analysis. However, the differences
 are quite small, i.e., the final results of the three very flexible families \fct{BCT}, \fct{BCCG} 
 and \fct{BCPE} are expected to be quite similar.
@@ -873,7 +874,7 @@ indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95\% quantile,
 respectively.
 
-\section{A flexible Bayesian model framework} \label{sec:flexreg}
+\section{A flexible model framework} \label{sec:flexreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
 methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
@@ -948,12 +949,12 @@ more detailed discussions on priors for $\boldsymbol{\beta}_{jk}$ and $\boldsymb
 framework are the ones for: \label{somerefs2}
 \begin{itemize}
   \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as
-    proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz+Klein+Strumann:2016},
+    proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz+Klein+Strumann:2016, bamlss:Stasinopoulos+Rigby:2019},
     continuous responses with spikes, skewness, heavy tails or bounded support as in
-    \citet{bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Klein+Denuit+Kneib+Lang:2014}, as well as
+    \citet{bamlss:Klein+Denuit+Kneib+Lang:2014,bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Stasinopoulos+Rigby:2019}, as well as
     responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}.
  \item Multivariate responses such as multivariate normal, multivariate t or Dirichlet regression
-   (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
+   (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015, bamlss:Stasinopoulos+Rigby:2019}).
  \item Multivariate responses with more complex dependence structures modeled through copulas
    \citet{bamlss:Klein+Kneib:2016b}.
  \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
