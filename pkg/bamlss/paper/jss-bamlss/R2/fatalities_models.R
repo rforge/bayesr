@@ -48,7 +48,7 @@ parallel_fun <- function(j) {
   waic <- WAIC(b2)
   cat(".. .. b2: DIC =", dic$DIC, "pd =", dic$pd, "WAIC =", waic$WAIC1, "\n")
   rval$dic2 <- dic
-  rval$waic2 <- waic$WAIC2
+  rval$waic2 <- waic$WAIC1
   rval$b2 <- b2
 
   return(rval)
