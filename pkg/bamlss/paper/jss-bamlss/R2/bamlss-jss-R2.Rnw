@@ -1054,8 +1054,6 @@ number of candidate models. The following lists commonly used tools:
   \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007} can be utilized.
 \end{itemize}
 
-\newpage
-
 \subsubsection{Evaluation and interpretation}
  \begin{itemize}
 \item \emph{Plotting}: Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to a
@@ -1069,7 +1067,6 @@ number of candidate models. The following lists commonly used tools:
   the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
-
 
 \section[The bamlss package]{The \pkg{bamlss} package} \label{sec:package}
 

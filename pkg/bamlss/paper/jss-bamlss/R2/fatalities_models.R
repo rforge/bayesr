@@ -31,6 +31,18 @@ parallel_fun <- function(j) {
   b2 <- bamlss(f, data = d19, family = fam(mu.link = "log"),
     n.iter = 12000, burnin = 2000, thin = 10)
 
+  set.seed(789)
+  k <- 10
+  folds <- rep(1:k, length.out = nrow(d19))
+  crps <- NULL
+  for(i in 1:k) {
+    df <- subset(d19, folds != i)
+    de <- subset(d19, folds == i)
+    b3 <- bamlss(f, data = df, family = fam(mu.link = "log"),
+      n.iter = 12000, burnin = 2000, thin = 10)
+    crps <- c(crps, CRPS(b3, newdata = de, FUN = identity))
+  }
+
   rval <- list()
   rval$distribution <- j
 
@@ -50,6 +62,7 @@ parallel_fun <- function(j) {
   rval$dic2 <- dic
   rval$waic2 <- waic$WAIC1
   rval$b2 <- b2
+  rval$crps <- mean(crps)
 
   return(rval)
 }
