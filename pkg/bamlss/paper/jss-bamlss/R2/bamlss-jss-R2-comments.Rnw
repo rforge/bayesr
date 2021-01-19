@@ -616,7 +616,9 @@ Abbreviation & Description \\ \hline
 \item \emph{page 13, l 4 I am assuming that the priors are trying to be uninformative. How
   uninformative are they?}
 
-  \fixme{Nadja}
+  This is an interesting point but not correct in general. Rather as an alternative the cited 
+  references refer to possibly well elicited prior distributions based on certain principles for the 
+  variances in the prior distributions for beta.
 
 \medskip
 

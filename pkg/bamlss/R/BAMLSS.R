@@ -3586,12 +3586,14 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   }
 
   if(!missing(newdata)) {
-    if(nrow(newdata) < 1)
-      stop("newdata is empty with nrow < 1!")
+    if(!is.null(newdata)) {
+      if(nrow(newdata) < 1)
+        stop("newdata is empty with nrow < 1!")
+    }
   }
 
   ## If data have been scaled (scale.d=TRUE)
-  if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
+  if(!missing(newdata) & ! is.null(attr(object$model.frame, 'scale')) ) {
     sc <- attr(object$model.frame, 'scale')
     for ( name in unique(unlist(lapply(sc,names))) ) {
       newdata[,name] <- (newdata[,name] - sc$center[name] ) / sc$scale[name]

@@ -36,19 +36,19 @@ parallel_fun <- function(j) {
 
   par <- predict(b1, type = "parameter", drop = FALSE)
   dic <- DIC(b1)
-  crps <- CRPS(b1, interval = c(1e-05, Inf))
+  waic <- WAIC(b1)
   dnum <- family(b1)$d(d19$num, par)
-  cat(".. .. b1: DIC =", dic$DIC, "pd =", dic$pd, "CRPS =", crps, "\n")
+  cat(".. .. b1: DIC =", dic$DIC, "pd =", dic$pd, "WAIC =", waic$WAIC1, "\n")
   rval$dic1 <- dic
-  rval$crps1 <- crps
+  rval$waic1 <- waic$WAIC1
   rval$dnum <- dnum
   rval$b1 <- b1
 
   dic <- DIC(b2)
-  crps <- CRPS(b2, interval = c(1e-05, Inf))
-  cat(".. .. b2: DIC =", dic$DIC, "pd =", dic$pd, "CRPS =", crps, "\n")
+  waic <- WAIC(b2)
+  cat(".. .. b2: DIC =", dic$DIC, "pd =", dic$pd, "WAIC =", waic$WAIC1, "\n")
   rval$dic2 <- dic
-  rval$crps2 <- crps
+  rval$waic2 <- waic$WAIC2
   rval$b2 <- b2
 
   return(rval)
