@@ -1490,8 +1490,8 @@ in terms of optimization runtime this is certainly not the most efficient choice
 For distributions for which the expectation of the second derivative is intractable or does not
 exist, the user can rely on two options: The first option is to simply take
 the Hessian evaluated at observations and corresponding predictors rather than computing the 
-theoretical expectation analytically for filling the diagonals of $\mathbf{W}_{kk}$. The second
-option is to find a good approximation for the expectation (see,
+theoretical expectation analytically for filling the diagonals of the weight matrices
+$\mathbf{W}_{kk}$. The second option is to find a good approximation for the expectation (see,
 e.g., \citealp{bamlss:Klein+Kneib+Lang:2015}).
 
 Now we have to write a function that returns a \code{family.bamlss} object (S3)

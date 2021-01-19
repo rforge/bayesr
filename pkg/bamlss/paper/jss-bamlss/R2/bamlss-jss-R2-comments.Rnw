@@ -694,7 +694,8 @@ Abbreviation & Description \\ \hline
 
   This is a very good question to which we have two answers. The first option is to simply take
   the Hessian evaluated at observations and corresponding predictors rather than computing the 
-  theoretical expectation analytically for filling the diagonals of $\mathbf{W}$. The second
+  theoretical expectation analytically for filling the diagonals of the weight matrices
+  $\mathbf{W}_{kk}$. The second
   option is to find a good approximation for the expectation. This was for instance done for
   the overdispersion parameter of a negative binomial or zero-inflated negative binomial model
   in Klein et al 2015 (JASA). We added the paragraph to Section~4.1 now.
