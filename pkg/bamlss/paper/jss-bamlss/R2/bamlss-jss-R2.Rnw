@@ -1487,6 +1487,12 @@ stability it is recommended. If the information on the second derivatives is not
 functions, the same mechanism is applied for first order derivatives. Hence, in quite a few cases
 implementing a new family can only be based on the specification of the density function, however,
 in terms of optimization runtime this is certainly not the most efficient choice.
+For distributions for which the expectation of the second derivative is intractable or does not
+exist, the user can rely on two options: The first option is to simply take
+the Hessian evaluated at observations and corresponding predictors rather than computing the 
+theoretical expectation analytically for filling the diagonals of $\mathbf{W}_{kk}$. The second
+option is to find a good approximation for the expectation (see,
+e.g., \citealp{bamlss:Klein+Kneib+Lang:2015}).
 
 Now we have to write a function that returns a \code{family.bamlss} object (S3)
 which encapsulates functions for density, score and Hessian, and the names of
@@ -1494,6 +1500,8 @@ the family, parameter and link functions. The required elements are listed
 in Table~\ref{tab:families}. Note that there are no other specifications to follow, for example
 one could also build a family that allows for flexible link functions (like the families from the
 \pkg{gamlss} package).
+
+
 
 Merely all functions take as first argument the response \code{y} and as second
 argument a named list holding the evaluated parameters \code{par} of the
