@@ -1709,7 +1709,7 @@ distribution.
 
 The spatial and temporal scale of aggregation of the lightning discharges here differs
 from the one in \citet{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. Therefore it is worth testing
-the zero-truncated negative binomial against other distributions that can capture the
+the zero-truncated negative binomial against other distributions that could capture the
 truncation of the count data and its overdispersion. Two of these distributions for extremely
 skewed count data are zero-truncated versions of the Sichel and the beta negative 
 binomial.
@@ -1830,7 +1830,7 @@ of the distributions---\code{ztSICHEL} and \code{ztnbinom} underestimate the mas
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
 based on the zero-truncated Sichel exhibits the best overall calibration.
 Thus, from now on we focus on analyzing this model.
-As a first diagnostic we check the log-likelihood contributions of the
+As a next diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 %
 <<eval=FALSE>>=
