@@ -1736,11 +1736,14 @@ we set up a \code{list} of formulas with length three:
 %
 <<eval=FALSE>>=
 f <- list(
-  counts ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+  counts ~ s(sqrt_cape, bs = "ps") +
+           s(hcc, bs = "ps") + s(str, bs = "ps") +
            s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+         ~ s(sqrt_cape, bs = "ps") +
+           s(hcc, bs = "ps") + s(str, bs = "ps") +
            s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+         ~ s(sqrt_cape, bs = "ps") +
+           s(hcc, bs = "ps") + s(str, bs = "ps") +
            s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps")
 )
 @
@@ -1762,8 +1765,9 @@ finding regression coefficients that serve as initial values for a MCMC sampler
 to \code{maxit = 1000}. For the sampling we allow another $500$ iterations as burn-in
 phase, and apply a thinning of the resulting chain of $50$.  Running
 \code{n.iter = 1500} iterations over \code{cores = 50} cores leads to $1000$ MCMC samples in the
-end. Finally, we set \code{light = TRUE} to return a lighter object, i.e., the model.frame
-and design and penalty matrices are not stored:
+end (note that parallel chains are started using function \fct{mclapply} of the
+base \proglang{R} \pkg{parallel} package). Finally, we set \code{light = TRUE} to return a
+lighter object, i.e., the model.frame and design and penalty matrices are not stored:
 %
 \begin{Schunk}
 \begin{Sinput}
@@ -1874,18 +1878,19 @@ plot(flash_model_ztSICHEL,
 @
 %
 Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
-for two regression coefficients of the term \code{s(sqrt_cape)}. The traces
+for three regression coefficients of the term \code{s(sqrt_cape)} for parameter $\mu$, $\sigma$
+and $\nu$ of the Sichel distribution. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
 reasonable starting values for the sampling. The auto-correlation functions
-reveal quite some auto-correlation after the thinning, which suggests that one
-could increase the sampling efforts.
+for parameter $\mu$ and $\sigma$ reveal quite some auto-correlation after the thinning,
+which suggests that one could increase the sampling efforts.
 
 \begin{figure}[t!]
 \centering
-<<echo=FALSE, fig=TRUE>>=
+<<echo=FALSE, fig=TRUE, width=6, height=8>>=
 b2 <- b
-b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "mu.s.s(sqrt_cape).b2")]
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "sigma.s.s(sqrt_cape).b1", "nu.s.s(sqrt_cape).b1")]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
