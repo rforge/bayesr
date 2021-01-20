@@ -773,9 +773,7 @@ Family & DIC & WAIC & CRPS \\
 \caption{\label{tab:DIC} DIC, WAIC and CRPS comparison of the 6 distributional cyclical week models.}
 \end{table}
 Here, the four parameter \fct{BCPE} model has the lowest DIC, WAIC and CRPS, therefore, we
-examine this model in more detail in the rest of the analysis. However, the differences
-are quite small, i.e., the final results of the three very flexible families \fct{BCT}, \fct{BCCG} 
-and \fct{BCPE} are expected to be quite similar.
+examine this model in more detail in the rest of the analysis.
 
 After the estimation algorithms are finished, the estimated effects, e.g., for the \fct{BCPE} 
 model, can be visualized instantly using the plotting method.
