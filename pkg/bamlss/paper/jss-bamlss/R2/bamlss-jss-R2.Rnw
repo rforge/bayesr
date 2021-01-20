@@ -749,7 +749,7 @@ for(i in 1:10) {
   df <- subset(d19, folds != i)
   de <- subset(d19, folds == i)
   b3 <- bamlss(f, data = df, family = BCPE(mu.link = "log"),
-  n.iter = 12000, burnin = 2000, thin = 10)
+    n.iter = 12000, burnin = 2000, thin = 10)
   crps <- c(crps, CRPS(b3, newdata = de, FUN = identity))
 }
 crps <- mean(crps)
