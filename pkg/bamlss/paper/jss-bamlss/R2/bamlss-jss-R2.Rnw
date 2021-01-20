@@ -631,7 +631,8 @@ dic <- lapply(res, function(x) {
   d <- data.frame(
     "distribution" = x$distribution,
     "dic1" = x$dic1$DIC, "dic2" = x$dic2$DIC,
-    "waic1" = x$waic1, "waic2" = x$waic2
+    "waic1" = x$waic1, "waic2" = x$waic2,
+    "crps" = x$crps
   )
   return(d)
 })
@@ -731,24 +732,47 @@ of parameters of the model (\code{p1} uses expected differences of log densities
 is computed using the variance in the log density, for details
 see \citealp{watanabe2010asymptotic}).
 
-The values of the DIC and WAIC for the 6 models are given in Table~\ref{tab:DIC}.
+Another criterion for assessing model calibration is the continuous rank probability score (CRPS,
+\citealp{bamlss:Gneiting+Raftery:2007}).
+The \proglang{R} package \pkg{scoringRules} 
+\citep{bamlss:Jordan+Krueger+Lerch:2018} provides tools for model calibration checks using the CRPS.
+Since the number of candidate distributions can be quite large, it might happen that the CRPS
+for some distributions is not implemented. In this case, the user can resort to a numerical 
+approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package. Since
+the CRPS is a forecasting score, we computed the CRPS using 10-fold cross validation for
+each model. For example, the CRPS for the \fct{BCPE} model is computed with
+<<eval=FALSE>>=
+set.seed(789)
+folds <- rep(1:10, length.out = nrow(d19))
+crps <- NULL
+for(i in 1:10) {
+  df <- subset(d19, folds != i)
+  de <- subset(d19, folds == i)
+  b3 <- bamlss(f, data = df, family = BCPE(mu.link = "log"),
+  n.iter = 12000, burnin = 2000, thin = 10)
+  crps <- c(crps, CRPS(b3, newdata = de, FUN = identity))
+}
+crps <- mean(crps)
+@
+
+The values of the DIC, WAIC and CRPS for the 6 models are given in Table~\ref{tab:DIC}.
 \begin{table}[h!]
 \centering
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \hline
-Family & DIC & WAIC\\ 
+Family & DIC & WAIC & CRPS \\ 
 \hline
-\fct{NO}   & 12291.75 & 12294.20 \\
-\fct{GA}   & 12261.06 & 12262.40 \\
-\fct{GG}   & 12248.10 & 12249.31 \\
-\fct{BCT}  & 12215.85 & 12206.26 \\
-\fct{BCCG} & 12190.41 & 12188.05 \\
-\fct{BCPE} & \textbf{12188.30} & \textbf{12184.73} \\
+\fct{NO}   & 12291.75 & 12294.20 & 51.89 \\
+\fct{GA}   & 12261.06 & 12262.40 & 51.72 \\
+\fct{GG}   & 12248.10 & 12249.31 & 51.52 \\
+\fct{BCT}  & 12215.85 & 12206.26 & 51.44 \\
+\fct{BCCG} & 12190.41 & 12188.05 & 51.31 \\
+\fct{BCPE} & \textbf{12188.30} & \textbf{12184.73} & \textbf{51.26} \\
 \hline
 \end{tabular}
-\caption{\label{tab:DIC} DIC and WAIC comparison of the 6 distributional cyclical week models.}
+\caption{\label{tab:DIC} DIC, WAIC and CRPS comparison of the 6 distributional cyclical week models.}
 \end{table}
-Here, the four parameter \fct{BCPE} model has the lowest DIC and WAIC, therefore, we
+Here, the four parameter \fct{BCPE} model has the lowest DIC, WAIC and CRPS, therefore, we
 examine this model in more detail in the rest of the analysis. However, the differences
 are quite small, i.e., the final results of the three very flexible families \fct{BCT}, \fct{BCCG} 
 and \fct{BCPE} are expected to be quite similar.
