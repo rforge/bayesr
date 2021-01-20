@@ -738,7 +738,7 @@ The \proglang{R} package \pkg{scoringRules}
 \citep{bamlss:Jordan+Krueger+Lerch:2018} provides tools for model calibration checks using the CRPS.
 Since the number of candidate distributions can be quite large, it might happen that the CRPS
 for some distributions is not implemented. In this case, the user can resort to a numerical 
-approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package. Since
+approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package. Because
 the CRPS is a forecasting score, we computed the CRPS using 10-fold cross validation for
 each model. For example, the CRPS for the \fct{BCPE} model is computed with
 <<eval=FALSE>>=
