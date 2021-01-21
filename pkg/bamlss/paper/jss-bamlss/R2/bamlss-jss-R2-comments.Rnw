@@ -55,6 +55,7 @@ Sys.setenv("TZ" = "UTC")
 @
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \begin{center}
 \huge\bf Point-to-Point Response to Reviews.
@@ -77,6 +78,8 @@ of the reviewers are highlighted in italics, with our responses directly below.
 
   Thank you for the suggestion. We now implemented a function \fct{engines} that gives exactly this
   information. We added the information in the text in Section 4.
+  
+  \textbf{ich bin weiter nicht sicher, dass das seine Frage beantwortet, denn er meint wohl eher, dass man cox_mcmc ja nur bei Cox modell benutzen kann etc. also Modellklasse verbinden mit moeglichen samplern. man wuerde fuer die betas wohl auch nie den slice sampler verwenden wollen. dieser aspekt scheint mir weder von der tabelle noch der neuen funktion addressiert zu werden.}
 
   \medskip
 
@@ -123,6 +126,9 @@ of the reviewers are highlighted in italics, with our responses directly below.
   We rephrased the sentence to "However, because the posterior distribution for such models is not
   (explicitly) defined, obtaining MCMC samples is not supported by the software packages in most
   cases."
+  
+  \textbf{glaube weiterhin nicht, dass der referee oder unsere antwort korrekt sind. in welchen modellen bitte kann ich die posterior nicht hinschreiben. schlage daher vor: "We thank the referee for this comment indeed our sentence was wrong because there are Bayesian versions of lasso and ridge and for all these models, the posterior can be written down explicitely (even though not available in closed form but this is not a problem. in MCMC). The issue is that less R packages on the Bayesian side are existing. We hence rephrased the sentence to "However, many packages do not support Bayesian posterior estimation in such models.
+  wenn das fuer euch ok ist, bitte auch im Text so aendern!}
 
 \medskip
 
@@ -186,7 +192,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   We have now completely replaced this example because one of the reviewers was quite unhappy with 
   it. The previous example was based on an old dataset that has served as an illustration countless 
   times. Our new example is, we believe, much better and more interesting. It is about excess 
-  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals.
+  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals. \textbf{it is not a qq plot but quantile residuals. that is not the same.}
 
 \medskip
 
@@ -209,7 +215,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   linear combination of a design matrix and regression coefficients, \dots, the
   regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for
   $f_{jk}( \cdot )$ matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that
-  penalize the complexity using a P-spline representation."
+  penalize the complexity using a P-spline representation." \NK{bin weiterhin der meinung, dass es keine p-splines sein muessen.}
 
 \medskip
 
@@ -618,7 +624,7 @@ Abbreviation & Description \\ \hline
 
   This is an interesting point but not correct in general. Rather as an alternative the cited 
   references refer to possibly well elicited prior distributions based on certain principles for the 
-  variances in the prior distributions for beta.
+  variances in the prior distributions for \textbf{\mathbf{\beta}. da sollte dann auch was im text ergaenzt werden?!}
 
 \medskip
 
@@ -627,7 +633,7 @@ Abbreviation & Description \\ \hline
   problems mentioned here. Their work and GAMLSS based solutions to the problems
   are well documented in Rigby et al. (2019).}
 
-  Yes that is of course correct, thank you, we have listed the reference of course.
+  Yes that is of course correct, \textbf{and we tried to balance better by adding this reference at appropriate places in the text.}
 
 \medskip
 
@@ -698,7 +704,7 @@ Abbreviation & Description \\ \hline
   $\mathbf{W}_{kk}$. The second
   option is to find a good approximation for the expectation. This was for instance done for
   the overdispersion parameter of a negative binomial or zero-inflated negative binomial model
-  in Klein et al 2015 (JASA). We added the paragraph to Section~4.1 now.
+  in Klein et al 2015 (JASA). We added \textbf{details to Section~4.1 in the revised version}
 
 \medskip
 
