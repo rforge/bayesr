@@ -295,8 +295,8 @@ which also state that the zero-inflated negative binomial model is better than t
 ## Large data sets
 
 The R package _bamlss_ provides infrastructures to estimate models using large data sets. The default
-algorithms for posterior mode estimation (see function `bfit()`) and MCMC simulation
-(function `GMCMC()`) can be utilized in these situations. More precisely, the algorithms make advantage
+algorithms for posterior mode estimation (see function `opt_bfit()`) and MCMC simulation
+(function `sam_GMCMC()`) can be utilized in these situations. More precisely, the algorithms make advantage
 of the fact that usually the number of unique observations is much smaller than the number of
 total observations in the data (for a detailed description of the algorithms see
 @bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014). For illustration, we load the precipitation

@@ -166,19 +166,19 @@
 <h2 class="hasAnchor">
 <a href="#extensible-model-terms-and-model-fitting-engines" class="anchor"></a>Extensible model terms and model fitting engines</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="co">## Posterior mode optimization.</span></a>
-<a class="sourceLine" id="cb1-2" title="2">bfit &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb1-2" title="2">opt_bfit &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
 <a class="sourceLine" id="cb1-3" title="3">  <span class="dt">update =</span> <span class="st">"iwls"</span>, <span class="dt">criterion =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"AICc"</span>, <span class="st">"BIC"</span>, <span class="st">"AIC"</span>), ..) { }</a>
 <a class="sourceLine" id="cb1-4" title="4"></a>
 <a class="sourceLine" id="cb1-5" title="5"><span class="co">## MCMC Sampler.</span></a>
-<a class="sourceLine" id="cb1-6" title="6">GMCMC &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb1-6" title="6">sam_GMCMC &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
 <a class="sourceLine" id="cb1-7" title="7">  <span class="dt">n.iter =</span> <span class="dv">1200</span>, <span class="dt">burnin =</span> <span class="dv">200</span>, <span class="dt">thin =</span> <span class="dv">1</span>, <span class="dt">verbose =</span> <span class="ot">TRUE</span>, <span class="dt">step =</span> <span class="dv">20</span>, ...) { }</a>
 <a class="sourceLine" id="cb1-8" title="8"></a>
 <a class="sourceLine" id="cb1-9" title="9"><span class="co">## Gradient boosting.</span></a>
-<a class="sourceLine" id="cb1-10" title="10">boost &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
+<a class="sourceLine" id="cb1-10" title="10">opt_boost &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, family, <span class="dt">weights =</span> <span class="ot">NULL</span>, <span class="dt">offset =</span> <span class="ot">NULL</span>,</a>
 <a class="sourceLine" id="cb1-11" title="11">  <span class="dt">nu =</span> <span class="fl">0.1</span>, <span class="dt">nu.adapt =</span> <span class="ot">TRUE</span>, <span class="dt">df =</span> <span class="dv">4</span>, <span class="dt">maxit =</span> <span class="dv">400</span>, ...) { }</a>
 <a class="sourceLine" id="cb1-12" title="12"></a>
 <a class="sourceLine" id="cb1-13" title="13"><span class="co">## Lasso.</span></a>
-<a class="sourceLine" id="cb1-14" title="14">lasso &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">adaptive =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb1-14" title="14">opt_lasso &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, <span class="dt">start =</span> <span class="ot">NULL</span>, <span class="dt">adaptive =</span> <span class="ot">TRUE</span>,</a>
 <a class="sourceLine" id="cb1-15" title="15">  <span class="dt">lower =</span> <span class="fl">0.001</span>, <span class="dt">upper =</span> <span class="dv">1000</span>,  <span class="dt">nlambda =</span> <span class="dv">100</span>, <span class="dt">lambda =</span> <span class="ot">NULL</span>, ...) { }</a></code></pre></div>
 </div>
 </div>

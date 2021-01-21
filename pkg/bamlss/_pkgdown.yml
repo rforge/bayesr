@@ -100,7 +100,9 @@ reference:
     contents:
     - '`Austria`'
     - '`Crazy`'
+    - '`fatalities`'
     - '`GAMart`'
+    - '`GEFCom2014`'
     - '`LondonFire`'
     - '`Volcano`'
     - '`homstart_data`'

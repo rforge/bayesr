@@ -4,7 +4,7 @@
 \title{Weekly Number of Fatalities in Austria}
 
 \description{
-  This data set includes weekly fatalities in Austria from 2000 to 45 weeks in 2020. The data
+  This data set includes weekly fatalities in Austria from 2000 to 46 weeks in 2020. The data
   is taken from the Eurostat data base.
 }
 

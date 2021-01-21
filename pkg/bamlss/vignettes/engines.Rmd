@@ -58,7 +58,8 @@ So basically, the arguments of the optimizer and the sampling function are the s
 main difference is the return value. In _bamlss_ optimizer functions usually return
 a vector of estimated regression coefficients (parameters), while sampling functions 
 return a matrix of parameter samples of class `"mcmc"` or `"mcmc.list"` (for details see the 
-documentation of the _coda_ package).
+documentation of the _coda_ package). Also note that there is naming convention, optimizer
+functions start with prefix `opt_*` and sampler functions with `sam_*`.
 
 Internally, what the optimizer or sampling function is actually processing is not important
 for the `bamlss()` wrapper function as long as a vector or matrix of parameters is

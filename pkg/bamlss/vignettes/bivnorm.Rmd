@@ -17,13 +17,12 @@ vignette: >
 ---
 
 ```{r preliminaries, include=FALSE}
-library("zoo") 
+library("zoo")
 library("bamlss")
 
 if (!dir.exists("figures")) dir.create("figures")
 
 if(!file.exists("figures/bivnorm_models.rda")) {
-
   # -------------------------------------------------------------------
   # Formulas
   # -------------------------------------------------------------------
@@ -73,28 +72,26 @@ if(!file.exists("figures/bivnorm_models.rda")) {
   dat <- dat[["Innsbruck"]]
   
   ## Baseline model BLM-0 (w/o correlation)
-  m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+  m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat,
+    burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
                  
-  m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+  m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat,
+    burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
                  
   ## Rotation allowing model RAM-0 (w/o correlation)
-  m_ram.u.0 <- bamlss(f_ram.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+  m_ram.u.0 <- bamlss(f_ram.u.0, family = bamlss:::gaussian_bamlss, data = dat,
+    burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
 
-  m_ram.v.0 <- bamlss(f_ram.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+  m_ram.v.0 <- bamlss(f_ram.v.0, family = bamlss:::gaussian_bamlss, data = dat,
+    burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
 
   ## Rotation allowing model RAM-ADV (w/ correlation)
-  m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat, optimizer = bfit,
-                 burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+  m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat,
+    burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
 
   save(m_blm.u.0, m_blm.v.0, m_ram.u.0, m_ram.v.0, m_ram.adv, file = "figures/bivnorm_models.rda")
 } else {
-
   load(file = "figures/bivnorm_models.rda")
-
 }
 
 ```
@@ -182,25 +179,31 @@ The formulas, model fitting, and prediction are performed according to:
 
 ```{r, eval=FALSE}
 ## Formulas
-f_blm.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_mean),
-                  sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_sd.log))
+f_blm.u.0 <- list(
+  u10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_mean),
+  sigma ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = u10m_sd.log)
+)
 
-f_blm.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_mean),
-                  sigma    ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_sd.log ))
+f_blm.v.0 <- list(
+  v10m_obs ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_mean),
+  sigma ~ s(yday, bs = 'cc') + s(yday, bs = 'cc', by = v10m_sd.log )
+)
 
 ## Model fitting
-m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+m_blm.u.0 <- bamlss(f_blm.u.0, family = bamlss:::gaussian_bamlss, data = dat,
+  burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
                
-m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat, optimizer = bfit,
-               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+m_blm.v.0 <- bamlss(f_blm.v.0, family = bamlss:::gaussian_bamlss, data = dat,
+  burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
 
 ## Prediction
-p_blm.0 <- list("mu1" = predict(m_blm.u.0, type = "parameter")$mu,
-                "mu2" = predict(m_blm.v.0, type = "parameter")$mu,
-                "sigma1" = predict(m_blm.u.0, type = "parameter")$sigma,
-                "sigma2" = predict(m_blm.v.0, type = "parameter")$sigma,
-                "rho" = rep(0, unique(sapply(predict(m_blm.v.0, type = "parameter"), length))))
+p_blm.0 <- list(
+  "mu1" = predict(m_blm.u.0, type = "parameter")$mu,
+  "mu2" = predict(m_blm.v.0, type = "parameter")$mu,
+  "sigma1" = predict(m_blm.u.0, type = "parameter")$sigma,
+  "sigma2" = predict(m_blm.v.0, type = "parameter")$sigma,
+  "rho" = rep(0, unique(sapply(predict(m_blm.v.0, type = "parameter"), length)))
+)
 ```
 The estimated cyclic seasonal effects are visualized for the first wind component ($\text{vec}_1$) with
 
@@ -257,15 +260,19 @@ The model formulas are specified by
 
 ```{r, eval=FALSE}
 ## Formulas
-f_ram.u.0 <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean) +
-                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean),
-                  sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log) +
-                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log))
+f_ram.u.0 <- list(
+  u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean) +
+    te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean),
+  sigma ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log) +
+    te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log)
+)
 
-f_ram.v.0 <- list(v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean) +
-                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean),
-                  sigma    ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log) +
-                               te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log))
+f_ram.v.0 <- list(
+  v10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_mean) +
+    te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_mean),
+  sigma ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = v10m_sd.log) +
+    te(yday, dd10m_mean, k = c(5, 5), bs = c('cc','cc'), by = u10m_sd.log)
+)
 ```
 
 ## Rotation-allowing models with correlation
@@ -304,8 +311,8 @@ f_ram.adv <- list(u10m_obs ~ s(yday, bs = 'cc') + te(yday, dd10m_mean, k = c(5, 
                   rho      ~   s(yday, bs = 'cc') + s(dd10m_mean, bs = 'cc') + s(dd10m_mean, bs = 'cc', by = ff10m_mean))
 
 ## Model fitting
-m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat, optimizer = bfit,
-               burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
+m_ram.adv <- bamlss(f_ram.adv, family = bamlss:::bivnorm_bamlss, data = dat,
+  burnin = 2000, thin = 10, n.iter = 12000, sampler = TRUE, nu = 1)
 
 ## Prediction
 p_ram.adv <- predict(m_ram.adv, type = "parameter")

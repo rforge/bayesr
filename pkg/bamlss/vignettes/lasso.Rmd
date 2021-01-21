@@ -34,7 +34,7 @@ if(!file.exists("figures/lasso.rda")) {
   rentmodel <- bamlss(f, data = rent99, optimizer = opt_lasso, sampler = FALSE,
     criterion = "BIC", nlambda = 100, multiple = TRUE, upper = exp(6), lower = exp(0))
 
-  rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
+  rentmodel_s <- bamlss(f, data = rent99, optimizer = opt_bfit, sampler = FALSE,
     criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
 
   save(rentmodel, rentmodel_s, file = "figures/lasso.rda")
@@ -149,9 +149,9 @@ one for each distributional parameter (e.g., $\mu$ and $\sigma$ using the Gaussi
 is used.
 
 E.g., using the Munich rent data, we could estimate the model with the default backfitting
-model fitting engine `bfit()`
+model fitting engine `opt_bfit()`
 ```{r, eval=FALSE}
-rentmodel_s <- bamlss(f, data = rent99, optimizer = bfit, sampler = FALSE,
+rentmodel_s <- bamlss(f, data = rent99, optimizer = opt_bfit, sampler = FALSE,
   criterion = "BIC", nu = 1, start = coef(rentmodel, mstop = lasso_stop(rentmodel)))
 ```
 using the estimated parameters of the first model as starting values (`mstop` is the optimum
