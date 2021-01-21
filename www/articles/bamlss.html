@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -217,7 +217,7 @@
 ## absyes      -0.240481 -0.492048 -0.237776 -0.003060     -0.238
 ## sunroofyes  -0.024021 -0.300878 -0.025127  0.238145     -0.010
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##       Mean 2.5% 50% 97.5%
 ## alpha    1    1   1     1
 ## ---
@@ -229,23 +229,21 @@
 ##                Mean    2.5%     50%   97.5% parameters
 ## (Intercept) -0.2457 -0.3479 -0.2465 -0.1274     -0.271
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9703 0.7652 1.0000     1
 ## ---
 ## Sampler summary:
 ## -
 ## DIC = 408.9675 logLik = -201.0372 pd = 6.8932
-## runtime = 1.743
+## runtime = 1.433
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 409.6319 converged = 1 edf = 7
-## logLik = -197.4745 logPost = -252.2614 nobs = 172
-## runtime = 0.015
-## ---</code></pre>
+## AICc = 409.6319 edf = 7 logLik = -197.4745
+## logPost = -252.2614 nobs = 172 runtime = 0.019</code></pre>
 <p>indicating high acceptance rates as reported by the <code>alpha</code> parameter in the linear model output, which is a sign of good mixing of the MCMC chains. The mixing can also be inspected graphically by</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> Note, for convenience we only show the traceplots of the intercepts. Considering significance of the estimated effects, only variables <code>tia</code> and <code>sunroof</code> seem to have no effect on <code>price</code> since the credible intervals of estimated parameters contain zero. This information can also be extracted using the implemented <code><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint()</a></code> method.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/confint">confint</a></span>(b1, <span class="dt">prob =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</a></code></pre></div>
 <pre><code>##                          2.5%        97.5%
@@ -333,8 +331,8 @@
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">123</span>)</a>
 <a class="sourceLine" id="cb25-2" title="2"></a>
 <a class="sourceLine" id="cb25-3" title="3">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> mcycle, <span class="dt">family =</span> <span class="st">"gaussian"</span>)</a></code></pre></div>
-<p>using the default of 1200 iterations of the MCMC sampler to obtain first results quickly (see the documentation <code><a href="http://www.bamlss.org/reference/GMCMC.html">GMCMC()</a></code> for further details on tuning parameters). Note that per default <code><a href="http://www.bamlss.org/reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution parameters <code>mu</code> and <code>sigma</code> can be visualized by</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</a></code></pre></div>
+<p>using the default of 1200 iterations of the MCMC sampler to obtain first results quickly (see the documentation <code><a href="http://www.bamlss.org/reference/GMCMC.html">GMCMC()</a></code> for further details on tuning parameters). Note that per default <code><a href="http://www.bamlss.org/reference/bamlss.html">bamlss()</a></code> uses a backfitting algorithm to compute posterior mode estimates, afterwards these estimates are used as starting values for the MCMC chains. The returned object is of class <code>"bamlss"</code> for which generic extractor functions like <code><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary()</a></code>, <code><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot()</a></code>, <code><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict()</a></code>, etc., are provided. For example, the estimated effects for distribution parameters <code>mu</code> and <code>sigma</code> can be visualized by</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>))</a></code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-20-1.png" width="80%" style="display: block; margin: auto;"> The model summary gives</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/summary">summary</a></span>(b)</a></code></pre></div>
 <pre><code>## 
@@ -352,13 +350,13 @@
 ##               Mean   2.5%    50%  97.5% parameters
 ## (Intercept) -25.13 -29.36 -25.35 -20.34     -25.14
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##       Mean 2.5% 50% 97.5%
 ## alpha    1    1   1     1
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 425657.47 175634.81 372121.15 914429.32   209333.1
+## s(times).tau21 425657.47 175634.81 372121.15 914429.32   209325.2
 ## s(times).alpha      1.00      1.00      1.00      1.00         NA
 ## s(times).edf       14.24     12.64     14.22     15.97       13.6
 ## ---
@@ -370,32 +368,30 @@
 ##              Mean  2.5%   50% 97.5% parameters
 ## (Intercept) 2.680 2.549 2.676 2.831      2.581
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9664 0.7510 1.0000     1
 ## -
 ## Smooth terms:
 ##                     Mean      2.5%       50%     97.5% parameters
-## s(times).tau21 1.458e+02 2.384e+01 1.213e+02 4.604e+02     81.399
+## s(times).tau21 1.458e+02 2.384e+01 1.213e+02 4.604e+02     81.406
 ## s(times).alpha 5.385e-01 7.903e-04 5.069e-01 1.000e+00         NA
 ## s(times).edf   9.415e+00 6.491e+00 9.500e+00 1.259e+01      8.675
 ## ---
 ## Sampler summary:
 ## -
 ## DIC = 1115.068 logLik = -545.2265 pd = 24.6149
-## runtime = 4.447
+## runtime = 3.492
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 1123.881 converged = 1 edf = 24.2716
-## logLik = -531.9752 logPost = -747.4101 nobs = 133
-## runtime = 0.497
-## ---</code></pre>
+## AICc = 1123.881 edf = 24.2718 logLik = -531.975
+## logPost = -747.4106 nobs = 133 runtime = 0.387</code></pre>
 <p>showing, e.g., the acceptance probabilities of the MCMC chains (<code>alpha</code>), the estimated degrees of freedom of the optimizer and the successive sampler (<code>edf</code>), the final AIC and DIC as well as parametric model coefficients (in this case only the intercepts). As mentioned in the first example, using MCMC involves convergence checks of the sampled parameters. The easiest diagnostics are traceplots</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-23-1.png" width="864" style="display: block; margin: auto;"> Note again that this call would show all traceplots, for convenience we only show the plots for the intercepts. In this case, the traceplots do not indicate convergence of the Markov chains for parameter <code>"mu"</code>. To fix this, the number of iterations can be increased and also the burnin and thinning parameters can be adapted (see <code><a href="http://www.bamlss.org/reference/GMCMC.html">GMCMC()</a></code>). Further inspections are the maximum autocorrelation of all parameters, using <code><a href="http://www.bamlss.org/reference/plot.bamlss.html">plot.bamlss()</a></code> setting argument <code>which = "max-acf"</code>, besides other convergence diagnostics, e.g., diagnostics that are part of the <em>coda</em> package <span class="citation">(Plummer et al. 2006)</span>.</p>
 <p>Inspecting randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> is useful for judging how well the model fits to the data</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
 <p><img src="bamlss_files/figure-html/unnamed-chunk-25-1.png" width="80%" style="display: block; margin: auto;"> Randomized quantile residuals are the default method in <em>bamlss</em>, which are computed using the CDF function of the corresponding family object.</p>
 <p>The posterior mean including 95% credible intervals for new data based on MCMC samples for parameter <span class="math inline">\(\mu\)</span> can be computed by</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" title="1">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"times"</span> =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="fl">2.4</span>, <span class="fl">57.6</span>, <span class="dt">length =</span> <span class="dv">100</span>))</a>

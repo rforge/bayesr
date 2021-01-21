@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Create Samples for BAMLSS by Multivariate Normal Approximation — MVNORM • bamlss</title>
+<title>Create Samples for BAMLSS by Multivariate Normal Approximation — sam_MVNORM • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Create Samples for BAMLSS by Multivariate Normal Approximation — MVNORM" />
+<meta property="og:title" content="Create Samples for BAMLSS by Multivariate Normal Approximation — sam_MVNORM" />
 <meta property="og:description" content="This sampler function for BAMLSS uses estimated parameters and the Hessian
   information to create samples from a multivariate normal distribution. Note that smoothing
   variance uncertainty is not accounted for, therefore, the resulting credible intervals
@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -177,7 +177,10 @@
   are most likely too narrow.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>MVNORM</span>(<span class='no'>x</span>, <span class='kw'>y</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+    <pre class="usage"><span class='fu'>sam_MVNORM</span>(<span class='no'>x</span>, <span class='kw'>y</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>n.samples</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>hessian</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+
+<span class='fu'>MVNORM</span>(<span class='no'>x</span>, <span class='kw'>y</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>n.samples</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>hessian</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -226,8 +229,8 @@
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='bamlss.html'>bamlss</a></code>, <code><a href='bamlss.frame.html'>bamlss.frame</a></code>,
-  <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>, <code><a href='bamlss.engine.helpers.html'>set.starting.values</a></code>, <code><a href='bfit.html'>bfit</a></code>,
-  <code><a href='GMCMC.html'>GMCMC</a></code></p></div>
+  <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>, <code><a href='bamlss.engine.helpers.html'>set.starting.values</a></code>, <code><a href='bfit.html'>opt_bfit</a></code>,
+  <code><a href='GMCMC.html'>sam_GMCMC</a></code></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>## Simulated data example illustrating</span>
@@ -239,16 +242,13 @@
 <span class='no'>bf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.frame.html'>bamlss.frame</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
 
 <span class='co'>## First, find starting values with optimizer.</span>
-<span class='no'>o</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'><a href='bfit.html'>bfit</a></span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))</div><div class='output co'>#&gt; AICc 310.9125 logPost -146.281 logLik -148.601 edf 6.7482 eps 2.4418 iteration   1
-#&gt; AICc 308.4063 logPost -135.263 logLik -148.941 edf 5.1966 eps 0.1422 iteration   2
-#&gt; AICc 306.2649 logPost -126.116 logLik -149.144 edf 3.9490 eps 0.0221 iteration   3
-#&gt; AICc 305.0141 logPost -136.724 logLik -149.282 edf 3.1979 eps 0.0667 iteration   4
-#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0184 iteration   5
-#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0000 iteration   6
-#&gt; AICc 304.8739 logPost -172.796 logLik -149.351 edf 3.0608 eps 0.0000 iteration   6
-#&gt; elapsed time:  0.47sec</div><div class='input'>
+<span class='no'>o</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'><a href='bfit.html'>opt_bfit</a></span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))</div><div class='output co'>#&gt; AICc 310.9125 logPost -146.281 logLik -148.601 edf 6.7482 eps 2.4418 iteration   1
+#&gt; AICc 310.7117 logPost -146.181 logLik -148.501 edf 6.7482 eps 0.0062 iteration   2
+#&gt; AICc 310.7116 logPost -146.181 logLik -148.501 edf 6.7482 eps 0.0000 iteration   3
+#&gt; AICc 310.7116 logPost -146.181 logLik -148.501 edf 6.7482 eps 0.0000 iteration   3
+#&gt; elapsed time:  0.33sec</div><div class='input'>
 <span class='co'>## Sample.</span>
-<span class='no'>samps</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>MVNORM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='no'>o</span>$<span class='no'>parameters</span>))</div><div class='output co'>#&gt; </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>samps</span>)</div><div class='img'><img src='MVNORM-1.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-2.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-3.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-4.png' alt='' width='700' height='433' /></div></pre>
+<span class='no'>samps</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>sam_MVNORM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='no'>o</span>$<span class='no'>parameters</span>))</div><div class='output co'>#&gt; </div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>samps</span>)</div><div class='img'><img src='MVNORM-1.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-2.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-3.png' alt='' width='700' height='433' /></div><div class='img'><img src='MVNORM-4.png' alt='' width='700' height='433' /></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

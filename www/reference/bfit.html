@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Fit BAMLSS with Backfitting — bfit • bamlss</title>
+<title>Fit BAMLSS with Backfitting — opt_bfit • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Fit BAMLSS with Backfitting — bfit" />
+<meta property="og:title" content="Fit BAMLSS with Backfitting — opt_bfit" />
 <meta property="og:description" content="This optimizer function is a generic tool for fitting BAMLSS using a backfitting algorithm.
   The backfitting procedure is based on iteratively weighted least squares (IWLS) for finding
   posterior mode estimates, however, the updating methods for model terms can be more general, see
@@ -70,7 +70,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -179,13 +179,20 @@
   variance selection based on information criteria using a stepwise approach.</p>
     </div>
 
-    <pre class="usage"><span class='co'>## Optimizer function:</span>
+    <pre class="usage"><span class='co'>## Optimizer functions:</span>
+<span class='fu'>opt_bfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>update</span> <span class='kw'>=</span> <span class='st'>"iwls"</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>),
+  <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
+  <span class='kw'>outer</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>inner</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>mgcv</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>flush</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>stop.nu</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+
 <span class='fu'>bfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>update</span> <span class='kw'>=</span> <span class='st'>"iwls"</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>),
   <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
   <span class='kw'>outer</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>inner</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>mgcv</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>flush</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>stop.nu</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>stop.nu</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
 
 <span class='co'>## Model term updating functions:</span>
 <span class='fu'>bfit_iwls</span>(<span class='no'>x</span>, <span class='no'>family</span>, <span class='no'>y</span>, <span class='no'>eta</span>, <span class='no'>id</span>, <span class='no'>weights</span>, <span class='no'>criterion</span>, <span class='no'>...</span>)
@@ -199,7 +206,7 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>For function <code>bfit()</code> the <code>x</code> list, as returned from function
+      <td><p>For function <code>opt_bfit()</code> the <code>x</code> list, as returned from function
     <code><a href='bamlss.frame.html'>bamlss.frame</a></code>, holding all model matrices and other information that is used for
     fitting the model. For the updating functions an object as returned from function
     <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smooth.construct'>smooth.construct</a></code> or <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/smoothCon'>smoothCon</a></code>.</p></td>
@@ -284,12 +291,14 @@
     </tr>
     <tr>
       <th>nu</th>
-      <td><p>Numeric or logical. Function <code>bfit</code> uses step length optimization of parameters when 
-    updating a model term, useful when the algorithm encounters convergence problems. If
-    <code>nu = TRUE</code> the step length parameter is optimized for each model term in each iteration of
-    the backfitting algorithm. If <code>nu</code> is numeric, e.g. <code>nu = 1</code>, then <code>nu</code> is
-    halfed until an improvement in the log-posterior is obtained or nu is smaller than
-    <code>.Machine$double.eps</code>.</p></td>
+      <td><p>Logical, numeric or <code>NULL</code>. Function <code>opt_bfit()</code> uses step length
+    optimization of parameters when updating a model term, useful to encounter convergence problems
+    of the algorithm. If <code>nu = TRUE</code> the step length parameter is optimized for each model term
+    in each iteration of the backfitting algorithm. If <code>nu</code> is numeric, e.g. <code>nu = 1</code>,
+    then <code>nu</code> is halfed until an improvement in the log-posterior is obtained or nu is
+    smaller than <code>.Machine$double.eps</code>. If <code>nu = NULL</code>, no step length optimization
+    is performed. Note, using very large data sets it is usually better to switch of
+    step length optimization.</p></td>
     </tr>
     <tr>
       <th>stop.nu</th>
@@ -311,7 +320,7 @@
     </tr>
     <tr>
       <th>&#8230;</th>
-      <td><p>For function <code>bfit()</code>, arguments passed to function
+      <td><p>For function <code>opt_bfit()</code>, arguments passed to function
     <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>. For updating functions, within the dots argument the
     actual <code>iteration</code> number of the backfitting algorithm, the actual total number of
     equivalent degrees of freedom <code>edf</code> and vectors <code>z</code> and <code>hess</code>
@@ -376,8 +385,8 @@
   sparse matrix infrastructures of package <span class="pkg">Matrix</span>. The <span class="pkg">Matrix</span> package and
   <code>bfit_iwls_Matrix()</code> is used for model terms where
   the maximum number of non-zero entries in the design matrix is less than half of the total number
-  of columns, if an additional argument <code>force.Matrix</code> is set to <code>TRUE</code> in the <code>bfit()</code>
-  call.</p>
+  of columns, if an additional argument <code>force.Matrix</code> is set to <code>TRUE</code> in the
+  <code>opt_bfit()</code> call.</p>
 <p>The IWLS updating functions find optimum smoothing variances according to an information criterion
   using a stepwise approach, i.e., in each iteration and for each model term update the updating
   functions try to find a better smoothing variance to control the trade-off between over-smoothing
@@ -387,7 +396,7 @@
   for optimization.</p>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>For function <code>bfit()</code> a list containing the following objects:</p>
+    <p>For function <code>opt_bfit()</code> a list containing the following objects:</p>
 <dt>fitted.values</dt><dd><p>A named list of the fitted values of the modeled parameters
     of the selected distribution.</p></dd>
   <dt>parameters</dt><dd><p>The estimated set regression coefficients and smoothing variances.</p></dd>
@@ -430,23 +439,23 @@
 <span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='GAMart.html'>GAMart</a></span>(<span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>200</span>)
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>)
 <span class='no'>bf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.frame.html'>bamlss.frame</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
-<span class='no'>opt</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>bfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))
+<span class='no'>opt</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/with'>with</a></span>(<span class='no'>bf</span>, <span class='fu'>opt_bfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>))
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/print'>print</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/str'>str</a></span>(<span class='no'>opt</span>))
 
 <span class='co'>## Same with bamlss().</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/summary'>summary</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Use of different updating function.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>,
   <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>update</span> <span class='kw'>=</span> <span class='no'>bfit_lm</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Use mgcv gam() function for updating.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>,
   <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>mgcv</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Special smooth constructor including updating/sampler</span>
 <span class='co'>## function for nonlinear Gompertz curves.</span>
@@ -502,15 +511,15 @@
 
 <span class='co'>## Fit model with special model term.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>,
-  <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>bfit</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>GMCMC</span>)
+  <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bfit</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>sam_GMCMC</span>)
 
 <span class='co'>## Plot the fitted curves.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Predict with special model term.</span>
 <span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/data.frame'>data.frame</a></span>(<span class='st'>"time"</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/seq'>seq</a></span>(<span class='fl'>1</span>, <span class='fl'>30</span>, <span class='kw'>length</span> <span class='kw'>=</span> <span class='fl'>100</span>))
 <span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>FUN</span> <span class='kw'>=</span> <span class='no'>c95</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>d</span>, <span class='kw'>ylim</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/range'>range</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>d</span>$<span class='no'>y</span>, <span class='no'>p</span>)))
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>d</span>, <span class='kw'>ylim</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/range'>range</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>d</span>$<span class='no'>y</span>, <span class='no'>p</span>)))
 <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/matplot'>matplot</a></span>(<span class='no'>nd</span>$<span class='no'>time</span>, <span class='no'>p</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"l"</span>,
   <span class='kw'>lty</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>2</span>, <span class='fl'>1</span>, <span class='fl'>2</span>), <span class='kw'>col</span> <span class='kw'>=</span> <span class='st'>"black"</span>, <span class='kw'>add</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 <span class='co'># }</span></pre>

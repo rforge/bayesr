@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Boosting BAMLSS — boost • bamlss</title>
+<title>Boosting BAMLSS — opt_boost • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Boosting BAMLSS — boost" />
+<meta property="og:title" content="Boosting BAMLSS — opt_boost" />
 <meta property="og:description" content="Optimizer functions for gradient and likelihood boosting with bamlss. In each
   boosting iteration the function selects the model term with the largest contribution to the
   log-likelihood, AIC or BIC." />
@@ -68,7 +68,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -176,6 +176,17 @@
     </div>
 
     <pre class="usage"><span class='co'>## Gradient boosting optimizer.</span>
+<span class='fu'>opt_boost</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>nu.adapt</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
+  <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>maxq</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>qsel.splitfactor</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>flush</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>,
+  <span class='kw'>nback</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>initialize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>stop.criterion</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>select.type</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>force.stop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>hatmatrix</span> <span class='kw'>=</span> !<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/NULL'>is.null</a></span>(<span class='no'>stop.criterion</span>),
+  <span class='kw'>reverse.edf</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>approx.edf</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
+
 <span class='fu'>boost</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>nu.adapt</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
   <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>maxq</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>qsel.splitfactor</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
@@ -188,6 +199,14 @@
   <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
 
 <span class='co'>## Modified likelihood based boosting.</span>
+<span class='fu'>opt_boostm</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>flush</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>initialize</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>stop.criterion</span> <span class='kw'>=</span> <span class='st'>"BIC"</span>,
+  <span class='kw'>force.stop</span> <span class='kw'>=</span> !<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/NULL'>is.null</a></span>(<span class='no'>stop.criterion</span>),
+  <span class='kw'>do.optim</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)
+
 <span class='fu'>boostm</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>flush</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
@@ -210,7 +229,7 @@
   <span class='kw'>which</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"loglik"</span>, <span class='st'>"loglik.contrib"</span>), <span class='kw'>intercept</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>spar</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
 <span class='co'># S3 method for boost_summary</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>x</span>, <span class='no'>...</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>x</span>, <span class='no'>...</span>)
 
 <span class='co'>## Model frame for out-of-sample selection.</span>
 <span class='fu'>boost_frame</span>(<span class='no'>formula</span>, <span class='no'>train</span>, <span class='no'>test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>, <span class='no'>...</span>)</pre>
@@ -220,10 +239,10 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>For function <code>boost()</code> the <code>x</code> list, as returned from function
+      <td><p>For function <code>opt_boost()</code> the <code>x</code> list, as returned from function
     <code><a href='bamlss.frame.html'>bamlss.frame</a></code>, holding all model matrices and other information that is used for
     fitting the model. For the plotting function the corresponding <code><a href='bamlss.html'>bamlss</a></code> object
-    fitted with the <code>boost()</code> optimizer.</p></td>
+    fitted with the <code>opt_boost()</code> optimizer.</p></td>
     </tr>
     <tr>
       <th>y</th>
@@ -368,7 +387,7 @@
     </tr>
     <tr>
       <th>object</th>
-      <td><p>A <code><a href='bamlss.html'>bamlss</a></code> object that was fitted using <code>boost()</code>.</p></td>
+      <td><p>A <code><a href='bamlss.html'>bamlss</a></code> object that was fitted using <code>opt_boost()</code>.</p></td>
     </tr>
     <tr>
       <th>summary</th>
@@ -396,7 +415,7 @@
     </tr>
     <tr>
       <th>&#8230;</th>
-      <td><p>For function <code>boost()</code>, arguments passed to <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>.
+      <td><p>For function <code>opt_boost()</code>, arguments passed to <code><a href='bamlss.engine.setup.html'>bamlss.engine.setup</a></code>.
     for function <code>boost_summary()</code> arguments passed to function <code>print.boost_summary()</code>.</p></td>
     </tr>
     </table>
@@ -404,7 +423,7 @@
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>For function <code>boost_summary()</code> a list containing information on selection frequencies etc.
-  For function <code>boost()</code> and <code>boostm()</code> a list containing the following objects:</p>
+  For function <code>opt_boost()</code> and <code>opt_boostm()</code> a list containing the following objects:</p>
 <dt>fitted.values</dt><dd><p>A named list of the fitted values based on the last boosting iteration
     of the modeled parameters of the selected distribution.</p></dd>
   <dt>parameters</dt><dd><p>A matrix, each row corresponds to the parameter values of one boosting iteration.</p></dd>
@@ -415,8 +434,8 @@
     <p>The function does not take care of variable scaling for the linear parts! This must be done by the
   user, e.g., one option is to use argument <code>scale.d</code> in function <code><a href='bamlss.frame.html'>bamlss.frame</a></code>,
   which uses <code><a href='https://www.rdocumentation.org/packages/base/topics/scale'>scale</a></code>.</p>
-<p>Function <code>boost()</code> does not select the optimum stopping iteration! The modified likelihood
-  based algorithm implemented in function <code>boostm()</code> is still experimental!</p>
+<p>Function <code>opt_boost()</code> does not select the optimum stopping iteration! The modified likelihood
+  based algorithm implemented in function <code>opt_boostm()</code> is still experimental!</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='bamlss.frame.html'>bamlss.frame</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
@@ -431,12 +450,12 @@
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='no'>num</span> ~ <span class='no'>x1</span> + <span class='no'>x2</span> + <span class='no'>x3</span> + <span class='no'>lon</span> + <span class='no'>lat</span> +
   <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>s</span>(<span class='no'>lon</span>) + <span class='fu'>s</span>(<span class='no'>lat</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>)
 
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>boost</span>,
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_boost</span>,
   <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>scale.d</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
   <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='co'>## Plot estimated effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Print and plot the boosting summary.</span>
 <span class='fu'>boost_summary</span>(<span class='no'>b</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
@@ -453,8 +472,8 @@
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/do.call'>do.call</a></span>(<span class='st'>"cbind"</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fl'>1</span>)))
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/do.call'>do.call</a></span>(<span class='st'>"cbind"</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b</span>, <span class='kw'>mstop</span> <span class='kw'>=</span> <span class='fl'>100</span>)))
 
-<span class='co'>## Another example using the modified liklihood</span>
-<span class='co'>## bootsing algorithm.</span>
+<span class='co'>## Another example using the modified likelihood</span>
+<span class='co'>## boosting algorithm.</span>
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(
   <span class='no'>num</span> ~ <span class='no'>x1</span> + <span class='no'>x2</span> + <span class='no'>x3</span> + <span class='no'>lon</span> + <span class='no'>lat</span> +
     <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>s</span>(<span class='no'>lon</span>) + <span class='fu'>s</span>(<span class='no'>lat</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>),
@@ -462,12 +481,12 @@
     <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>s</span>(<span class='no'>lon</span>) + <span class='fu'>s</span>(<span class='no'>lat</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>)
 )
 
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>boostm</span>,
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_boostm</span>,
   <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>scale.d</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
   <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='kw'>stop.criterion</span> <span class='kw'>=</span> <span class='st'>"AIC"</span>, <span class='kw'>force.stop</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='co'>## Plot estimated effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Plot AIC and log-lik contributions.</span>
 <span class='fu'>boost_plot</span>(<span class='no'>b</span>, <span class='st'>"AIC"</span>)
@@ -479,8 +498,8 @@
 
 <span class='co'>## Split data into training and testing</span>
 <span class='no'>i</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/sample'>sample</a></span>(<span class='fl'>1</span>:<span class='fl'>2</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/nrow'>nrow</a></span>(<span class='no'>d</span>), <span class='kw'>replace</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-<span class='no'>d.test</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/subset'>subset</a></span>(<span class='no'>d</span>, <span class='no'>i</span> <span class='kw'>==</span> <span class='fl'>1</span>)
-<span class='no'>d.train</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/subset'>subset</a></span>(<span class='no'>d</span>, <span class='no'>i</span> <span class='kw'>==</span> <span class='fl'>2</span>)
+<span class='no'>dtest</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/subset'>subset</a></span>(<span class='no'>d</span>, <span class='no'>i</span> <span class='kw'>==</span> <span class='fl'>1</span>)
+<span class='no'>dtrain</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/subset'>subset</a></span>(<span class='no'>d</span>, <span class='no'>i</span> <span class='kw'>==</span> <span class='fl'>2</span>)
 
 <span class='co'>## Model formula</span>
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(
@@ -489,18 +508,18 @@
 )
 
 <span class='co'>## Create model frame for out-of-sample selection.</span>
-<span class='no'>sm</span> <span class='kw'>&lt;-</span> <span class='fu'>boost_frame</span>(<span class='no'>f</span>, <span class='kw'>train</span> <span class='kw'>=</span> <span class='no'>d.train</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='no'>d.test</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
+<span class='no'>sm</span> <span class='kw'>&lt;-</span> <span class='fu'>boost_frame</span>(<span class='no'>f</span>, <span class='kw'>train</span> <span class='kw'>=</span> <span class='no'>dtrain</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='no'>dtest</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"gaussian"</span>)
 
 <span class='co'>## Out-of-sample selection function.</span>
 <span class='no'>sfun</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>parameters</span>) {
   <span class='no'>sm</span>$<span class='no'>parameters</span> <span class='kw'>&lt;-</span> <span class='no'>parameters</span>
   <span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>sm</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"parameter"</span>)
-  -<span class='fl'>1</span> * <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/sum'>sum</a></span>(<span class='no'>sm</span>$<span class='no'>family</span>$<span class='fu'>d</span>(<span class='no'>d.test</span>$<span class='no'>num</span>, <span class='no'>p</span>, <span class='kw'>log</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>))
+  -<span class='fl'>1</span> * <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/sum'>sum</a></span>(<span class='no'>sm</span>$<span class='no'>family</span>$<span class='fu'>d</span>(<span class='no'>dtest</span>$<span class='no'>num</span>, <span class='no'>p</span>, <span class='kw'>log</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>))
 }
 
 <span class='co'>## Start boosting with out-of-sample negative</span>
 <span class='co'>## log-likelihood selection of model terms.</span>
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d.train</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>boost</span>,
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dtrain</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_boost</span>,
   <span class='kw'>selectfun</span> <span class='kw'>=</span> <span class='no'>sfun</span>, <span class='kw'>always</span> <span class='kw'>=</span> <span class='st'>"best"</span>)
 
 <span class='co'>## Plot curve of negative out-of-sample log-likelihood.</span>

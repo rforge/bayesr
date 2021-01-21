@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -204,7 +204,7 @@
 ## foreignyes   1.16362  0.77613  1.16502  1.53449      1.168
 ## I(age^2)    -0.48985 -0.64783 -0.48968 -0.32830     -0.488
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.8684 0.2947 0.9857     1
 ## ---
@@ -215,12 +215,10 @@
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 1033.737 converged = 1 edf = 8
-## logLik = -508.7851 logPost = -571.3986 nobs = 872
-## runtime = 0.171
-## ---</code></pre>
+## AICc = 1033.737 edf = 8 logLik = -508.7851
+## logPost = -571.3986 nobs = 872 runtime = 0.171</code></pre>
 <p>which suggests “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. Before we proceed, we usually do some convergence checks of the MCMC chains using traceplots.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="glm_files/figure-html/unnamed-chunk-6-1.png" width="864" style="display: block; margin: auto;"> The plots indicate convergence of the MCMC chains, i.e., there is no visible trend in the MCMC chains and very low autocorrelation suggest i.i.d. sampling from the posterior distribution. Note that the function call would show all traceplots, however, for convenience we only show the plots for the intercept and variable <code>income</code>.</p>
 <p>The estimated regression coefficients can also be extracted using the <code><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef()</a></code> method</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="co">## Extract posterior mean.</span></a>
@@ -301,7 +299,7 @@
 ## 5     yes      6 0.6588       no     yes       no
 ## 6      no      7 0.3301       no      no      yes</code></pre>
 <p>The response variable in this data is the number of physician office visits, variable <code>ofp</code>. A histogram of the count data response can be plotted with</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(DebTrivedi<span class="op">$</span>ofp),</a>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(DebTrivedi<span class="op">$</span>ofp),</a>
 <a class="sourceLine" id="cb18-2" title="2">  <span class="dt">xlab =</span> <span class="st">"Number of physician office visits"</span>,</a>
 <a class="sourceLine" id="cb18-3" title="3">  <span class="dt">ylab =</span> <span class="st">"Frequency"</span>)</a></code></pre></div>
 <p><img src="glm_files/figure-html/unnamed-chunk-13-1.png" width="50%" style="display: block; margin: auto;"> which shows very large counts and also a large number of zero counts. Our first model is a Poisson regression, which can be estimated with</p>
@@ -339,7 +337,7 @@
 ## school           0.02606  0.02223  0.02611  0.02960      0.026
 ## privinsyes       0.20102  0.16795  0.20116  0.23446      0.202
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9644 0.8023 0.9986     1
 ## ---
@@ -350,14 +348,12 @@
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 35959.26 converged = 1 edf = 8
-## logLik = -17971.61 logPost = -18034.23 nobs = 4406
-## runtime = 0.241
-## ---</code></pre>
+## AICc = 35959.26 edf = 8 logLik = -17971.61
+## logPost = -18034.23 nobs = 4406 runtime = 0.241</code></pre>
 <p>which shows “significant” effects for all covariates, since there are no zeros within the 95% credible intervals. We can use randomized quantile residuals <span class="citation">(Dunn and Smyth 1996)</span> to evaluate how good the models fits to the data.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
-<pre><code>## Warning in residuals.bamlss(x, ...): non finite quantiles from probabilities,
-## set to NA!</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b1, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
+<pre><code>## Warning in residuals.bamlss(x, FUN = FUN, ...): non finite quantiles from
+## probabilities, set to NA!</code></pre>
 <p><img src="glm_files/figure-html/unnamed-chunk-18-1.png" width="80%" style="display: block; margin: auto;"> Clearly, the plots shows that the model performance is not very good at the tails of the data, this might be caused by the large amount of zero counts in the data, which is not accounted for using the Poisson distribution.</p>
 <p>Therefore, another possible candidate for the response distribution is the zero-inflated negative binomial distribution, which is implemented in the <em>gamlss</em> package <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Stasinopoulos+Rigby:2018"><strong>???</strong></span>)</span> in the function <code>ZINBI</code>. The family has 3 parameters <code>mu</code>, <code>sigma</code> and <code>nu</code>. In this example we model distributional parameters <code>mu</code> and <code>sigma</code> in terms of covariates by setting up the model formula with</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" title="1">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
@@ -400,7 +396,7 @@
 ## school           0.02641  0.01720  0.02630  0.03495      0.027
 ## privinsyes       0.18738  0.09794  0.18607  0.27407      0.184
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##          Mean    2.5%     50% 97.5%
 ## alpha 0.67619 0.08023 0.71540     1
 ## ---
@@ -419,7 +415,7 @@
 ## school          -0.012696 -0.028136 -0.012729  0.003863     -0.013
 ## privinsyes      -0.449505 -0.587264 -0.452838 -0.308850     -0.452
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##          Mean    2.5%     50% 97.5%
 ## alpha 0.61640 0.05323 0.63030     1
 ## ---
@@ -431,7 +427,7 @@
 ##               Mean   2.5%    50%  97.5% parameters
 ## (Intercept) -4.210 -5.071 -4.177 -3.607     -4.268
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9091 0.4316 0.9868     1
 ## ---
@@ -442,12 +438,10 @@
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 24205.35 converged = 1 edf = 17
-## logLik = -12085.61 logPost = -12218.66 nobs = 4406
-## runtime = 2.508
-## ---</code></pre>
+## AICc = 24205.35 edf = 17 logLik = -12085.61
+## logPost = -12218.66 nobs = 4406 runtime = 2.508</code></pre>
 <p>and the corresponding randomized quantile residuals plots are created with</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b2, <span class="dt">which =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"hist-resid"</span>, <span class="st">"qq-resid"</span>))</a></code></pre></div>
 <p><img src="glm_files/figure-html/unnamed-chunk-24-1.png" width="80%" style="display: block; margin: auto;"> The plots indicate a better model fit compared to the Poisson model, however, for very large counts the model performance could probably be improved further. The corresponding DIC values are</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" title="1"><span class="kw"><a href="../reference/DIC.html">DIC</a></span>(b1, b2)</a></code></pre></div>
 <pre><code>##         DIC        pd
@@ -521,7 +515,7 @@
 ## sin1         7.021e-02  6.494e-02  7.025e-02  7.590e-02      0.070
 ## sin2        -2.897e-02 -3.462e-02 -2.900e-02 -2.359e-02     -0.029
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9988 0.9918 1.0000     1
 ## ---
@@ -531,10 +525,8 @@
 ## ---
 ## Optimizer summary:
 ## -
-## AICc = 1330320 converged = 1 edf = 7
-## logLik = -665152.9 logPost = -665207.7 nobs = 980633
-## runtime = 2.349
-## ---</code></pre>
+## AICc = 1330320 edf = 7 logLik = -665152.9
+## logPost = -665207.7 nobs = 980633 runtime = 2.349</code></pre>
 <p>that the weekend effect is very little and since we did not account for any spatial correlations in this example, the effect is most probably not existing (at least in Austria). Note, because we set <code>light = TRUE</code> in the <code><a href="../reference/bamlss.html">bamlss()</a></code> call, there will be no real sampler summary except of the presented runtime of the sampler. The reason is, that computing the DIC from the posterior samples can take quite long and can lead to memory storage problems, too.</p>
 </div>
 <div id="references" class="section level2 unnumbered">

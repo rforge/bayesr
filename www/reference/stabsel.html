@@ -66,7 +66,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -176,7 +176,7 @@
 
 <span class='co'>## Plot selection frequencies.</span>
 <span class='co'># S3 method for stabsel</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>x</span>, <span class='kw'>show</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>x</span>, <span class='kw'>show</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>pal</span> <span class='kw'>=</span> <span class='kw'>function</span>(<span class='no'>n</span>) <span class='fu'><a href='https://www.rdocumentation.org/packages/grDevices/topics/gray.colors'>gray.colors</a></span>(<span class='no'>n</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>end</span> <span class='kw'>=</span> <span class='fl'>0.3</span>), <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -201,7 +201,7 @@
     <tr>
       <th>maxit</th>
       <td><p>An integer specifying the maximum number of boosting iterations.
-  See <code><a href='boost.html'>boost</a></code>. Either choose <code>q</code> or <code>maxit</code> as hyper-parameter
+  See <code><a href='boost.html'>opt_boost</a></code>. Either choose <code>q</code> or <code>maxit</code> as hyper-parameter
   for regularization.</p></td>
     </tr>
     <tr>
@@ -245,7 +245,7 @@
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p><code>stabsel</code> performs stability selection based on gradient
-boosting (<code><a href='boost.html'>boost</a></code>): The boosting algorithm is run
+boosting (<code><a href='boost.html'>opt_boost</a></code>): The boosting algorithm is run
 <code>B</code> times on a randomly drawn <code>fraction</code> of the <code>data</code>.
 Each boosting run is stopped either when <code>q</code> terms have been selected,
 or when <code>maxit</code> iterations have been performed, i.e. either <code>q</code>
@@ -277,12 +277,12 @@ is used.</p>
 
 <span class='co'>## Run stability selection.</span>
 <span class='no'>sel</span> <span class='kw'>&lt;-</span> <span class='fu'>stabsel</span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>q</span> <span class='kw'>=</span> <span class='fl'>6</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>10</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>sel</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>sel</span>)
 
 <span class='co'>## Estimate selected model.</span>
 <span class='no'>nf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></span>(<span class='no'>sel</span>)
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>nf</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

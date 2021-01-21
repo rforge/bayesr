@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -189,6 +189,13 @@
   <span class='kw'>k_mu</span> <span class='kw'>=</span> <span class='fl'>6</span>, <span class='no'>...</span>)
 
 <span class='co'>## Posterior mode optimizing engine.     </span>
+<span class='fu'>opt_JM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>), <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>100</span>, <span class='fl'>1</span>),
+  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"lambda"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"gamma"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"mu"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"sigma"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>,
+  <span class='st'>"alpha"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"dalpha"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>),
+  <span class='kw'>update.nu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>eps</span> <span class='kw'>=</span> <span class='fl'>0.0001</span>, <span class='kw'>alpha.eps</span> <span class='kw'>=</span> <span class='fl'>0.001</span>, <span class='kw'>ic.eps</span> <span class='kw'>=</span> <span class='fl'>1e-08</span>,
+  <span class='kw'>nback</span> <span class='kw'>=</span> <span class='fl'>40</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='no'>...</span>)
+
 <span class='fu'>jm_mode</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>), <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='fl'>100</span>, <span class='fl'>1</span>),
   <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"lambda"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"gamma"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"mu"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='st'>"sigma"</span> <span class='kw'>=</span> <span class='fl'>0.1</span>,
@@ -197,6 +204,10 @@
   <span class='kw'>nback</span> <span class='kw'>=</span> <span class='fl'>40</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='no'>...</span>)
 
 <span class='co'>## Sampler function.</span>
+<span class='fu'>sam_JM</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>n.iter</span> <span class='kw'>=</span> <span class='fl'>1200</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>thin</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>,
+  <span class='kw'>step</span> <span class='kw'>=</span> <span class='fl'>20</span>, <span class='no'>...</span>)
+
 <span class='fu'>jm_mcmc</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>n.iter</span> <span class='kw'>=</span> <span class='fl'>1200</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>thin</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>,
   <span class='kw'>step</span> <span class='kw'>=</span> <span class='fl'>20</span>, <span class='no'>...</span>)
@@ -390,7 +401,7 @@
     <tr>
       <th>object</th>
       <td><p>A <code>"bamlss"</code> object processed with the JM optimizer function
-    <code>jm_mode()</code> ans/or sampler function <code>jm_mcmc()</code> for which the survival plot
+    <code>opt_JM()</code> ans/or sampler function <code>sam_JM()</code> for which the survival plot
     should be created.</p></td>
     </tr>
     <tr>
@@ -519,12 +530,12 @@ important distinction between associations which are nonlinear in \(\eta_{\mu}\)
 <span class='co'>## Joint model estimation</span>
 <span class='co'>## jm_bamlss() sets the default optimizer and sampler function.</span>
 <span class='co'>## First, posterior mode estimates are computed using function</span>
-<span class='co'>## jm_mode(), afterwards the sampler jm_mcmc() is started.</span>
+<span class='co'>## opt_JM(), afterwards the sampler sam_JM() is started.</span>
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"jm"</span>,
            <span class='kw'>timevar</span> <span class='kw'>=</span> <span class='st'>"obstime"</span>, <span class='kw'>idvar</span> <span class='kw'>=</span> <span class='st'>"id"</span>)
 
 <span class='co'>## Plot estimated effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 
 <span class='co'>## Predict event probabilities for two individuals</span>
 <span class='co'>## at 12 time units after their last longitudinal measurement.</span>
@@ -563,19 +574,19 @@ important distinction between associations which are nonlinear in \(\eta_{\mu}\)
   <span class='no'>dalpha</span> ~ -<span class='fl'>1</span>
 )
 
-<span class='co'>## Estimating posterior mode only using jm_mode()</span>
+<span class='co'>## Estimating posterior mode only using opt_JM()</span>
 <span class='no'>b_mode</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"jm"</span>,
                  <span class='kw'>timevar</span> <span class='kw'>=</span> <span class='st'>"obstime"</span>, <span class='kw'>idvar</span> <span class='kw'>=</span> <span class='st'>"id"</span>,
                  <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
-<span class='co'>## Estimating posterior means using jm_mcmc() </span>
+<span class='co'>## Estimating posterior means using sam_JM() </span>
 <span class='co'>##  with starting values generated from posterior mode </span>
 <span class='no'>b_mean</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"jm"</span>,
                  <span class='kw'>timevar</span> <span class='kw'>=</span> <span class='st'>"obstime"</span>, <span class='kw'>idvar</span> <span class='kw'>=</span> <span class='st'>"id"</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
                  <span class='kw'>start</span> <span class='kw'>=</span> <span class='fu'><a href='parameters.html'>parameters</a></span>(<span class='no'>b_mode</span>), <span class='kw'>results</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='co'>## Plot effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b_mean</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"alpha"</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b_mean</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"alpha"</span>)
 
 
 
@@ -607,7 +618,7 @@ important distinction between associations which are nonlinear in \(\eta_{\mu}\)
 <span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"jm"</span>, <span class='kw'>timevar</span> <span class='kw'>=</span> <span class='st'>"obstime"</span>, <span class='kw'>idvar</span> <span class='kw'>=</span> <span class='st'>"id"</span>,
             <span class='kw'>nonlinear</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start_mu</span> <span class='kw'>=</span> <span class='no'>mu</span>,
             <span class='kw'>n.iter</span> <span class='kw'>=</span> <span class='fl'>6000</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>2000</span>, <span class='kw'>thin</span> <span class='kw'>=</span> <span class='fl'>2</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 <span class='fu'><a href='samplestats.html'>samplestats</a></span>(<span class='no'>b</span>$<span class='no'>samples</span>)
 <span class='co'># }</span></pre>
   </div>

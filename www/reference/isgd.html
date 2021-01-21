@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Implicit Stochastic Gradient Descent Optimizer — isgd • bamlss</title>
+<title>Implicit Stochastic Gradient Descent Optimizer — opt_isgd • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Implicit Stochastic Gradient Descent Optimizer — isgd" />
+<meta property="og:title" content="Implicit Stochastic Gradient Descent Optimizer — opt_isgd" />
 <meta property="og:description" content="This optimizer performs an implicit stochastic gradient descent
 algorithm. It is mainly used within a bamlss call." />
 <meta name="twitter:card" content="summary" />
@@ -67,7 +67,7 @@ algorithm. It is mainly used within a bamlss call." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -173,7 +173,7 @@ algorithm. It is mainly used within a bamlss call." />
 algorithm. It is mainly used within a <code><a href='bamlss.html'>bamlss</a></code> call.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>isgd</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+    <pre class="usage"><span class='fu'>opt_isgd</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
      <span class='kw'>gammaFun</span> <span class='kw'>=</span> <span class='kw'>function</span>(<span class='no'>i</span>) <span class='fl'>1</span>/(<span class='fl'>1</span> + <span class='no'>i</span>), <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
      <span class='kw'>CFun</span> <span class='kw'>=</span> <span class='kw'>function</span>(<span class='no'>beta</span>) <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/diag'>diag</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/length'>length</a></span>(<span class='no'>beta</span>)),
      <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>i.state</span> <span class='kw'>=</span> <span class='fl'>0</span>)</pre>
@@ -233,7 +233,7 @@ algorithm. It is mainly used within a <code><a href='bamlss.html'>bamlss</a></co
     <p>tpf</p>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>For function <code>isgd()</code> a list containing the following objects:</p>
+    <p>For function <code>opt_isgd()</code> a list containing the following objects:</p>
 <dt>fitted.values</dt><dd><p>A named list of the fitted values based on the last iteration
     of the modeled parameters of the selected distribution.</p></dd>
   <dt>parameters</dt><dd><p>A matrix, each row corresponds to the parameter values of one iteration.</p></dd>
@@ -261,23 +261,23 @@ given by Ioannis Kosmidis in Innsbruck, January 2017.</p>
 <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>111</span>)
 <span class='no'>d</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='GAMart.html'>GAMart</a></span>(<span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>10000</span>)
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>, <span class='no'>lat</span>)
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='kw pkg'>bamlss</span><span class='kw ns'>:::</span><span class='no'><a href='https://www.rdocumentation.org/packages/bamlss/topics/isgd'>isgd</a></span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>, <span class='kw'>ask</span> <span class='kw'>=</span> <span class='no'>F</span>)
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>, <span class='kw'>ask</span> <span class='kw'>=</span> <span class='no'>F</span>)
 
 <span class='co'>## loop over observations a 2nd time</span>
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='kw pkg'>bamlss</span><span class='kw ns'>:::</span><span class='no'><a href='https://www.rdocumentation.org/packages/bamlss/topics/isgd'>isgd</a></span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='fu'><a href='parameters.html'>parameters</a></span>(<span class='no'>b</span>),
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='fu'><a href='parameters.html'>parameters</a></span>(<span class='no'>b</span>),
             <span class='kw'>i.state</span> <span class='kw'>=</span> <span class='no'>b</span>$<span class='no'>model.stats</span>$<span class='no'>optimizer</span>$<span class='no'>sgd.summary</span>$<span class='no'>i.state</span>)
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>, <span class='kw'>ask</span> <span class='kw'>=</span> <span class='no'>F</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>, <span class='kw'>ask</span> <span class='kw'>=</span> <span class='no'>F</span>)
 
 <span class='co'>## try differeent gammaFuns, e.g.,</span>
 <span class='co'># gammaFun &lt;- function(i) .3/sqrt((1+i)) + 0.001</span>
 
 <span class='co'>## testing some families</span>
 <span class='no'>f2</span> <span class='kw'>&lt;-</span> <span class='no'>bin</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>, <span class='no'>lat</span>)
-<span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f2</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"binomial"</span>)
+<span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f2</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"binomial"</span>)
 
 <span class='no'>f3</span> <span class='kw'>&lt;-</span> <span class='no'>cens</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>, <span class='no'>lat</span>)
-<span class='no'>b3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f3</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"cnorm"</span>)
+<span class='no'>b3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f3</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_isgd</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"cnorm"</span>)
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

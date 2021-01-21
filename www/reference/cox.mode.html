@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Cox Model Posterior Mode Estimation — cox_mode • bamlss</title>
+<title>Cox Model Posterior Mode Estimation — opt_Cox • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Cox Model Posterior Mode Estimation — cox_mode" />
+<meta property="og:title" content="Cox Model Posterior Mode Estimation — opt_Cox" />
 <meta property="og:description" content="This function computes posterior mode estimates of the parameters of a flexible Cox model
   with structured additive predictors using a Newton-Raphson algorithm. Integrals are solved
   numerically. Moreover, optimum smoothing variances are computed using a stepwise optimization,
@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -177,7 +177,13 @@
   see also the details section of function <code><a href='bfit.html'>bfit</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>cox_mode</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
+    <pre class="usage"><span class='fu'>opt_Cox</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
+  <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>),
+  <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>update.nu</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='no'>...</span>)
+
+<span class='fu'>cox_mode</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>start</span>, <span class='no'>weights</span>, <span class='no'>offset</span>,
   <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"AICc"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AIC"</span>),
   <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>update.nu</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>eps</span> <span class='kw'>=</span> <span class='no'>.Machine</span>$<span class='no'>double.eps</span>^<span class='fl'>0.25</span>, <span class='kw'>maxit</span> <span class='kw'>=</span> <span class='fl'>400</span>,
@@ -267,11 +273,11 @@
     Scale and Shape (and Beyond). <em>(to appear)</em></p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='cox.mcmc.html'>cox_mcmc</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv_transform</a></code>,
+    <div class='dont-index'><p><code><a href='cox.mcmc.html'>sam_Cox</a></code>, <code><a href='family.bamlss.html'>cox_bamlss</a></code>, <code><a href='surv.transform.html'>surv_transform</a></code>,
   <code><a href='simSurv.html'>simSurv</a></code>, <code><a href='bamlss.html'>bamlss</a></code></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>## Please see the examples of function cox_mcmc()!
+    <pre class="examples"><div class='input'>## Please see the examples of function sam_Cox()!
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

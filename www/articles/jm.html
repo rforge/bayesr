@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -229,7 +229,7 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 ## drugD-penicil -0.13823 -0.49208 -0.13589  0.19728     -0.081
 ## sexfemale     -0.03222 -0.54328 -0.03723  0.48846     -0.568
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.8499 0.0771 0.9707     1
 ## -
@@ -248,7 +248,7 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 ##               Mean   2.5%    50%  97.5% parameters
 ## (Intercept) 0.7109 0.5619 0.6258 1.0593      0.603
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9978 0.9850 1.0000     1
 ## -
@@ -273,7 +273,7 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 ##                Mean    2.5%     50%   97.5% parameters
 ## (Intercept) -0.3689 -0.4954 -0.3296 -0.2375      0.104
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##             Mean       2.5%        50% 97.5%
 ## alpha  6.962e-01 2.570e-143  9.920e-01     1
 ## ---
@@ -285,7 +285,7 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 ##              Mean  2.5%   50% 97.5% parameters
 ## (Intercept) 1.661 1.116 1.666 2.139          0
 ## -
-## Acceptance probabilty:
+## Acceptance probability:
 ##         Mean   2.5%    50% 97.5%
 ## alpha 0.9473 0.4908 0.9972     1
 ## -
@@ -306,9 +306,9 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 ## ---
 ## Optimizer summary:
 ## -
-## converged = 0 logPost = -33648.29 time = 174.306</code></pre>
+## logLik = -3460.477 logPost = -33648.29 time = 174.306</code></pre>
 <p>Here, the estimated parameters from the backfitting step are quite different from the posterior mean calculated from the MCMC samples. This might indicate that the default number of iterations, <code>n.iter = 1200</code>, is not enough to obtain convergence of the MCMC chains. To check this issue we look at some traceplots.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"samples"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-7-1.png" width="864" style="display: block; margin: auto;"> For convenience, we only show the traceplots of the intercept for parameter <span class="math inline">\(\gamma\)</span> and <span class="math inline">\(\mu\)</span>. The traceplot for parameter <span class="math inline">\(\mu\)</span> clearly shows an upwards trend of the MCMC chain. To overcome this issue, we estimate the model again and increase the burnin-in phase and the thinning parameter.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">321</span>)</a>
 <a class="sourceLine" id="cb8-2" title="2"></a>
@@ -317,15 +317,15 @@ with independent normal errors <span class="math inline">\(\varepsilon_{ij} \sim
 <a class="sourceLine" id="cb8-5" title="5">  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">idvar =</span> <span class="st">"id"</span>, <span class="dt">optimizer =</span> <span class="ot">FALSE</span>,</a>
 <a class="sourceLine" id="cb8-6" title="6">  <span class="dt">jm.start =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/coef">coef</a></span>(b), <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a></code></pre></div>
 <p>Note, executing the code will take some time because of the large number of parameters for the functional random intercept terms (<span class="math inline">\(&gt; 2500\)</span>). Another solution to speed up estimation is to use multiple cores for sampling. This can be done using the <code><a href="../reference/bamlss.html">bamlss()</a></code> wrapper by setting, e.g., <code>cores = 4</code>. Then, internally the <code>mclapply()</code> function of the <em>parallel</em> <span class="citation">(R Core Team 2019)</span> package is called. Now, the samples from model <code>m</code> look much better.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">which =</span> <span class="st">"samples"</span>, <span class="dt">lag =</span> <span class="dv">100</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(m, <span class="dt">which =</span> <span class="st">"samples"</span>, <span class="dt">lag =</span> <span class="dv">100</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-11-1.png" width="864" style="display: block; margin: auto;"> However, there is still some autocorrelation for parameter <span class="math inline">\(\mu\)</span>, which could be further reduced by, e.g., increasing the thinning parameter.</p>
 <p>The estimated effects can be plotted instantly, e.g., for the time-varying parameters <span class="math inline">\(\lambda\)</span> and <span class="math inline">\(\alpha\)</span>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-13-1.png" width="80%" style="display: block; margin: auto;"> The left plot is the estimated baseline hazard effect, the right plot the estimated association parameter. Both effects seem to be quite linear, however, according the 95% credible intervals the effect for parameter <code>alpha</code> is not significant.</p>
 <p>The <code>age</code> effect for the time-constant parameter <span class="math inline">\(\gamma\)</span> of the risk model is plotted with:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"gamma"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"gamma"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-15-1.png" width="50%" style="display: block; margin: auto;"> Again, the effect of age on the logarithmic risk scale is basically linear and increasing. The estimated effects for the bodymarker model in the <span class="math inline">\(\mu\)</span> parameter are plotted in similar fashion:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"mu"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(m, <span class="dt">model =</span> <span class="st">"mu"</span>)</a></code></pre></div>
 <p><img src="jm_files/figure-html/unnamed-chunk-17-1.png" width="100%" style="display: block; margin: auto;"> The left plot shows the estimated random effect for each individual, the middle plot the estimated functional random intercepts and the right plot the corresponding main effect of <code>year</code>, which is linearly increasing.</p>
 <p>Another feature that is implemented is the plot of estimated survival probabilities for single individuals.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1"><span class="kw"><a href="../reference/jm_bamlss.html">jm_survplot</a></span>(m, <span class="dt">id =</span> <span class="dv">21</span>)</a></code></pre></div>

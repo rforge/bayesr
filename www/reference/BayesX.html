@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Markov Chain Monte Carlo for BAMLSS using <span class="pkg">BayesX</span> — BayesX • bamlss</title>
+<title>Markov Chain Monte Carlo for BAMLSS using <span class="pkg">BayesX</span> — sam_BayesX • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Markov Chain Monte Carlo for BAMLSS using <span class="pkg">BayesX</span> — BayesX" />
+<meta property="og:title" content="Markov Chain Monte Carlo for BAMLSS using <span class="pkg">BayesX</span> — sam_BayesX" />
 <meta property="og:description" content="This sampler function for BAMLSS is an interface to the BayesX (http://www.BayesX.org)
   command-line binary from R. The sampler is based on the command line version and functions
   provided in the BayesXsrc package." />
@@ -68,7 +68,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -175,7 +175,10 @@
   provided in the <span class="pkg">BayesXsrc</span> package.</p>
     </div>
 
-    <pre class="usage"><span class='co'>## Sampler function:</span>
+    <pre class="usage"><span class='co'>## Sampler functions:</span>
+<span class='fu'>sam_BayesX</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'>BayesX.control</span>(<span class='no'>...</span>), <span class='no'>...</span>)
+
 <span class='fu'>BayesX</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'>BayesX.control</span>(<span class='no'>...</span>), <span class='no'>...</span>)
 
@@ -331,7 +334,7 @@
       <td><p>Not used in <code>BayesX.control</code>. For function <code>sx()</code> any extra arguments that
     should be passed to <span class="pkg">BayesX</span> for this model term can be specified here. For function
     <code>tx()</code>, all variables the smooth should be a function of are specified here. For function
-    <code>BayesX()</code> all arguments that should be passed to <code>BayesX.control</code>.</p></td>
+    <code>sam_BayesX()</code> all arguments that should be passed to <code>BayesX.control</code>.</p></td>
     </tr>
     <tr>
       <th>ctr</th>
@@ -346,8 +349,8 @@
     <tr>
       <th>special</th>
       <td><p>Should the <code>tx()</code> model term be treated as a special smooth. This must
-    be set to <code>TRUE</code> if using the <code>BayesX</code> sampler and should be set to <code>FALSE</code>,
-    e.g., when using the <code><a href='GMCMC.html'>GMCMC</a></code> sampler.</p></td>
+    be set to <code>TRUE</code> if using the <code>sam_BayesX</code> sampler and should be set to <code>FALSE</code>,
+    e.g., when using the <code><a href='GMCMC.html'>sam_GMCMC</a></code> sampler.</p></td>
     </tr>
     <tr>
       <th>object, knots</th>
@@ -365,13 +368,13 @@
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Function <code>BayesX()</code> writes a <span class="pkg">BayesX</span> <code>.prg</code> file and processes the data.
+    <p>Function <code>sam_BayesX()</code> writes a <span class="pkg">BayesX</span> <code>.prg</code> file and processes the data.
   Then, the function call the <span class="pkg">BayesX</span> binary via function
   <code><a href='https://www.rdocumentation.org/packages/BayesXsrc/topics/run.bayesx'>run.bayesx</a></code>. After the <span class="pkg">BayesX</span> sampler has finished, the function
   reads back in all the parameter samples that can then be used for further processing within
   <code><a href='bamlss.html'>bamlss</a></code>, i.a.</p>
 <p>The smooth term constructor functions <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/s'>s</a></code> and <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/te'>te</a></code> can
-  be used with the <code>BayesX()</code> sampler. When using <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/te'>te</a></code> note that only
+  be used with the <code>sam_BayesX()</code> sampler. When using <code><a href='https://www.rdocumentation.org/packages/mgcv/topics/te'>te</a></code> note that only
   one smoothing variance is estimated by <span class="pkg">BayesX</span>.</p>
 <p>For anisotropic penalties use function <code>tx()</code> and <code>tx3()</code>, the former currently
   supports smooth functions of two variables, while <code>tx3()</code> is supposed to model space-time
@@ -379,7 +382,7 @@
   variable the coordinates in space.</p>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Function <code>BayesX()</code> returns samples of parameters. The samples are provided as a
+    <p>Function <code>sam_BayesX()</code> returns samples of parameters. The samples are provided as a
   <code><a href='https://www.rdocumentation.org/packages/coda/topics/mcmc'>mcmc</a></code> matrix.</p>
 <p>Function <code>BayesX.control()</code> returns a <code>list</code> with control arguments for
   <span class="pkg">BayesX</span>.</p>
@@ -392,7 +395,7 @@
   source code, which is not yet part of the <span class="pkg">BayesXsrc</span> package on CRAN. The newest version
   can be installed with function <code>get_BayesXsrc</code>. Note that the function assumes that sh,
   subversion (svn) and <span style="R">R</span> can be run from the command line!</p>
-<p>Note that for setting up a new family object to be used with <code>BayesX()</code> additional
+<p>Note that for setting up a new family object to be used with <code>sam_BayesX()</code> additional
   information needs to be supplied. The extra information must be placed within the
   family object in an named <code>list</code> element named <code>"bayesx"</code>. For each parameter of
   the distribution a character string with the corresponding <span class="pkg">BayesX</span> <code>family</code> name and the
@@ -427,23 +430,23 @@
   <span class='co'>## these are not required by some optimizer function</span>
   <span class='co'>## in bamlss()</span>
   <span class='no'>b1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>s</span>(<span class='no'>lon</span>,<span class='no'>lat</span>),
-    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>BayesX</span>)
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>sam_BayesX</span>)
 
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b1</span>)
+  <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b1</span>)
 
   <span class='co'>## Same model with anisotropic penalty.</span>
   <span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>tx</span>(<span class='no'>lon</span>,<span class='no'>lat</span>),
-    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>BayesX</span>)
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>sam_BayesX</span>)
 
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b2</span>)
+  <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b2</span>)
 
   <span class='co'>## Quantile regression.</span>
   <span class='no'>b3_0.1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>tx</span>(<span class='no'>lon</span>,<span class='no'>lat</span>),
-    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>BayesX</span>,
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>sam_BayesX</span>,
     <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='gF.html'>gF</a></span>(<span class='st'>"quant"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.1</span>))
 
   <span class='no'>b3_0.9</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>) + <span class='fu'>tx</span>(<span class='no'>lon</span>,<span class='no'>lat</span>),
-    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>BayesX</span>,
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='no'>sam_BayesX</span>,
     <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='gF.html'>gF</a></span>(<span class='st'>"quant"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>))
 
   <span class='co'>## Predict quantiles.</span>

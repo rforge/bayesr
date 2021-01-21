@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Batchwise Backfitting — bbfit • bamlss</title>
+<title>Batchwise Backfitting — opt_bbfit • bamlss</title>
 
 
 <!-- jquery -->
@@ -33,7 +33,7 @@
 
 
 
-<meta property="og:title" content="Batchwise Backfitting — bbfit" />
+<meta property="og:title" content="Batchwise Backfitting — opt_bbfit" />
 <meta property="og:description" content="Batchwise backfitting estimation engine for GAMLSS using very large data sets." />
 <meta name="twitter:card" content="summary" />
 
@@ -66,7 +66,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -172,11 +172,14 @@
     </div>
 
     <pre class="usage"><span class='co'>## Batchwise backfitting engine.</span>
+<span class='fu'>opt_bbfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
+
 <span class='fu'>bbfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>shuffle</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)
 
 <span class='co'>## Parallel version.</span>
-<span class='fu'>bbfitp</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)
+<span class='fu'>opt_bbfitp</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>family</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='no'>...</span>)
 
 <span class='co'>## Loglik contribution plot.</span>
 <span class='fu'>contribplot</span>(<span class='no'>x</span>, <span class='no'>...</span>)</pre>
@@ -273,11 +276,11 @@
   <span class='no'>sigma</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>10</span>)
 )
 
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/file.path'>file.path</a></span>(<span class='no'>tf</span>, <span class='st'>"d.raw"</span>), <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>bbfit</span>,
+<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/file.path'>file.path</a></span>(<span class='no'>tf</span>, <span class='st'>"d.raw"</span>), <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfit</span>,
   <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>loglik</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
 
 <span class='co'>## Show estimated effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/graphics/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
