@@ -2124,8 +2124,9 @@ on the downwind side of the Alps has increased.
 The \proglang{R} package \pkg{bamlss} is a very comprehensive software to estimate Bayesian 
 distributional regression models. The package is primarily based on the typical \proglang{R}
 ``look \& feel'', which makes it easy to get started with the package. Similar to other 
-implementations, \pkg{bamlss} is a modular ``Lego toolbox'', so that users who are interested
-in extensions can easily write new families, optimizers or sampling functions, where all
+implementations, \pkg{bamlss} is a modular ``Lego toolbox'', however, the package stands out from
+others in that it makes complete sampling and or optimizer functions exchangeable,
+so that users who are interested in extensions can easily set up new models, where all
 elaborate data processing infrastructures and extractor functions are completely provided by
 the package.
 Several examples illustrate the functionality of the package. For the future it is planned to 
