@@ -122,6 +122,7 @@ reference:
     - '`cox_predict`'
     - '`CRPS`'
     - '`dl.bamlss`'
+    - '`engines`'
     - '`gamlss_distributions`'
     - '`family.bamlss`'
     - '`fitted.bamlss`'
