@@ -2051,8 +2051,8 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 @
 \caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
-September 15 2001 at 6~UTC, 17~UTC and 23~UTC and on September 16 2001 at
-13~UTC, i.e., the probability of having observed $10$ or more counts within one
+September 15 2001 at 12~UTC and at 18~UTC and on September 16 2001 at
+6~UTC and 12~UTC, i.e., the probability of having observed $10$ or more counts within one
 grid box.}
 \end{figure}
 %
@@ -2111,12 +2111,14 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
   facet_wrap(~time) + theme_minimal()
 @
 %
-The maps are shown in Figure~\ref{fig:appcase} and reveal that the probability for strong
-lightning events increases during 2001-09-15 between 6 and 17~UTC. During night time the front
-occurs on the north-western corner of the domain, which can be seen at 23~UTC.
-The propagation of the front is blocked by the main Alpine ridge located at
-$47^\circ~N$. On the subsequent day 2001-09-16 one can see that the probability
-on the downwind side of the Alps has increased.
+The case gives an example for a reconstructed lightning
+event: On 2001-09-15 (top row of Figure~\ref{fig:appcase})
+it reveals moderate probabilities for observing 10 or more
+lightning counts within a grid cell and hour. Over night the situation calms down,
+and reaches a minimum around 6~UTC on 2001-09-16 (bottom left panel of
+Figure~\ref{fig:appcase}). Finally, strong lightning events were reconstructed for the
+afternoon of the second day (2001-09-16) in particular on the Southern side of the main
+Alpine ridge (bottom right panel of Figure~\ref{fig:appcase}).
 
 
 \subsection{Conclusion}
