@@ -189,7 +189,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   We have now completely replaced this example because one of the reviewers was quite unhappy with 
   it. The previous example was based on an old dataset that has served as an illustration countless 
   times. Our new example is, we believe, much better and more interesting. It is about excess 
-  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals. \textbf{it is not a qq plot but quantile residuals. that is not the same.}
+  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals.
 
 \medskip
 
