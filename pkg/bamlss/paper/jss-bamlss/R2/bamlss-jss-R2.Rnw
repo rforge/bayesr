@@ -999,6 +999,8 @@ framework are the ones for: \label{somerefs2}
  \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
 \end{itemize}
 
+\pagebreak
+
 \subsection{Posterior estimation} \label{sec:algos}
 
 Estimation typically requires to evaluate the log-likelihood
@@ -1106,6 +1108,8 @@ number of candidate models. The following lists commonly used tools:
   the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
+
+\pagebreak
 
 \section[The bamlss package]{The \pkg{bamlss} package} \label{sec:package}
 
