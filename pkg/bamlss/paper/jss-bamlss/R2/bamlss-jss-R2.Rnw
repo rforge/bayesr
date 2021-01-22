@@ -41,27 +41,34 @@
 \Plaintitle{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond)}
 \Shorttitle{\pkg{bamlss}: A Lego Toolbox for Flexible Bayesian Regression}
 	
-\Keywords{\textbf{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, \proglang{R}}
-\Plainkeywords{\textbf{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, \proglang{R}}
+\Keywords{Backfitting, distributional regression, gradient boosting,
+  MCMC, penalization, probabilistic forecasting, \proglang{R}}
+\Plainkeywords{Backfitting, distributional regression, gradient boosting,
+  MCMC, penalization, probabilistic forecasting, R}
 
 \Abstract{
   Over the last decades, the challenges in applied regression and in predictive modeling have
-  been changing considerably: (1)~More flexible \textbf{regression} model specifications are needed as \textbf{data sizes and available information are steadily increasing, and as a consequence demanding for more powerful computing infrastructure.}
-  (2)~Full probabilistic modeling \NK{based on distribution regression}
-  rather than predicting \NK{single points such as means or expectations of the underlying distributions} is crucial in many applications.
-  (3)~\textbf{Availability of Bayesian inference has gained in importance both as an appealing framework for
-  regularizing or penalizing complex models and estimation therein as well as a natural alternative to classical
-  frequentist inference.} However, while there has been a lot of research \textbf{on all  three challenges and the development of corresponding software packages},
- a modular software implementation that
-  allows to easily combine all three aspects has not yet been available \textbf{for the general framework of distributional regression}. \textbf{To fill} this gap,
+  been changing considerably: (1)~More flexible regression model specifications are needed 
+  as data sizes and available information are steadily increasing, and as a consequence
+  demanding for more powerful computing infrastructure.
+  (2)~Full probabilistic modeling based on distribution regression
+  rather than predicting single points such as means or expectations of the underlying
+  distributions is crucial in many applications.
+  (3)~Availability of Bayesian inference has gained in importance both as an appealing framework for
+  regularizing or penalizing complex models and estimation therein as well as a natural
+  alternative to classical frequentist inference. However, while there has been a lot of
+  research on all  three challenges and the development of corresponding software packages,
+  a modular software implementation that allows to easily combine all three aspects has not yet been 
+  available for the general framework of distributional regression. To fill this gap,
   the \proglang{R} package \pkg{bamlss} is introduced for Bayesian additive models for location,
-  scale, and shape (and beyond). \textbf{The latter have been from a methodolgical perspective as an important area towards distributional regression in both classical frequenstist but also Bayesian frameworks}. At the core of the package are algorithms for highly-efficient Bayesian
+  scale, and shape (and beyond). The latter have been from a methodological perspective as an 
+  important area towards distributional regression in both classical frequentist but also Bayesian 
+  frameworks. At the core of the package are algorithms for highly-efficient Bayesian
   estimation and inference that can be applied to generalized additive models (GAMs) or
-  generalized additive models for location, scale, and shape (GAMLSS). However, its building blocks are designed as ``Lego bricks''
-  encompassing various
-  distributions (exponential family, Cox, joint models, \dots),
-  regression terms (e.g., linear, splines, random effects, tensor products, spatial fields), and
-  estimators (MCMC, backfitting, gradient boosting, lasso, and more).
+  generalized additive models for location, scale, and shape (GAMLSS). However, its building
+  blocks are designed as ``Lego bricks'' encompassing various distributions (exponential family,
+  Cox, joint models, \dots), regression terms (e.g., linear, splines, random effects, tensor
+  products, spatial fields), and estimators (MCMC, backfitting, gradient boosting, lasso, and more).
   It is demonstrated how these can be easily recombined to make classical models more
   flexible or create new custom models for specific modeling challenges.
 }
@@ -101,38 +108,44 @@ Sys.setenv("TZ" = "UTC")
 @
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 
 \section{Introduction}
 
 Many modern modeling tasks necessitate flexible regression tools that can deal with:
-(1)~\textbf{Large} data sets that can be both long (many observations) and/or wide (many variables or complex effect types).
-(2)~Probabilistic forecasts that capture the entire distribution and not only its mean or expectation.
-(3)~Enhanced inference infrastructure, typically Bayesian, broadening classical frequentist methodology.
-A popular framework to combine flexible regression with probabilistic modeling
+(1)~Large data sets that can be both long (many observations) and/or wide (many variables or
+complex effect types).
+(2)~Probabilistic forecasts that capture the entire distribution and not
+only its mean or expectation.
+(3)~Enhanced inference infrastructure, typically Bayesian, broadening classical frequentist 
+methodology. A popular framework to combine flexible regression with probabilistic modeling
 are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
-to generalized additive models for location, scale, and shape \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
-also known as \textbf{Bayesian structured additive} distributional regression \citep{bamlss:Klein+Kneib+Lang+Sohn:2015} which
-encompasses  (generalized) linear models \citep{bamlss:Nelder+Wedderburn:1972} as special cases.
-\textbf{Bayesian inference in these models can be seen} as a natural framework
+to generalized additive models for location, scale, and shape
+\citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
+also known as Bayesian structured additive distributional regression 
+\citep{bamlss:Klein+Kneib+Lang+Sohn:2015} which
+encompasses (generalized) linear models \citep{bamlss:Nelder+Wedderburn:1972} as special cases.
+Bayesian inference in these models can be seen as a natural framework
 for penalizing flexible model terms and to overcome potential problems with $p$~values
 and classical null hypothesis significance testing \citep{bamlss:ASA:2016}. However,
-when fitting such models to big data -- long and/or wide \textbf{was soll das long and wide hier?} -- classical estimation
-techniques using standard algorithms like iteratively weighted least squares \colorbox{yellow}{(IWLS)} \textbf{hier muss ide Referenz mit Gamermann und co.} or
+when fitting such models to big data -- long and/or wide -- classical estimation
+techniques using standard algorithms like iteratively weighted least squares
+(IWLS, \citealp{bamlss:Gamerman:1997}) or
 Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized estimation
-techniques such as lasso or boosting \citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
-might be necessary or \textbf{further advanced} custom algorithms \citep{bamlss:Wood:2017}. Hence,
-to facilitate \textbf{addressing all challgenges and needs simultaneously independent of a specific estimation strategy} and fitting algorithms, the \pkg{bamlss} package for the \proglang{R}
+techniques such as lasso or boosting
+\citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
+might be necessary or further advanced custom algorithms \citep{bamlss:Wood:2017}. Hence,
+to facilitate addressing all challgenges and needs simultaneously independent of a specific 
+estimation strategy and fitting algorithms, the \pkg{bamlss} package for the \proglang{R}
 system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox'',
 extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
 not only the response distribution or the regression terms are ``Lego bricks''
-but also the estimation algorithm \textbf{such as a specific} MCMC sampler.
+but also the estimation algorithm such as a specific MCMC sampler.
 
 The idea of a ``Lego toolbox'' for regression models has of course been around for some time;
 in some implementations, Bayesian and frequentist, there is not only the possibility to easily 
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. The following is a list
-of the best known packages for regression models in the \proglang{R} ecosystem \textbf{was soll hier ecosystem sein?}, whose
+of the best known packages for regression models in the \proglang{R} ecosystem, whose
 implementations are designed to be extremely flexible.
 %
 \begin{itemize}
@@ -149,7 +162,8 @@ for linear model terms. In contrast, \pkg{mgcv} excels
 at providing highly-optimized algorithms for general smooth models
 \citep{bamlss:Wood+Pya+Saefken:2016}, including inference,
 as well as the dedicated \fct{bam} function for big data
-that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. \textbf{All these packages rely on frequenstist estimation strategies.} Moreover, the package provides
+that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. All these packages rely on 
+frequentist estimation strategies. Moreover, the package provides
 sophisticated infrastructures for generating new classes of smooth terms (which is completely
 adopted by the \pkg{bamlss} package).
 
@@ -166,24 +180,29 @@ Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAM
 For more flexibility, going beyond these capabilities, it is in principle possible to 
 directly implement custom models using general purpose MCMC software like
 \pkg{JAGS}, \pkg{Stan}, or \pkg{WinBUGS} \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}.
-However, for complex models -- e.g., using large data sets, spatial effects, or higher-order interactions --
-sampling times from these generic MCMC engines can become long, sometimes prohibitively \textbf{long.}
-This has been addressed by dedicated packages for Bayesian additive models, e.g., with the standalone
-package \pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005} \textbf{Referenz falsch hier. es muss ide 2015 mit mehr autoren isnbesondere niki und mir sein!} being the first to provide highly-efficient
-sampling schemes for very large data sets as well as spatial/multilevel models \textbf{and structured additive distributional regression}. An \proglang{R}
-interface is available in \pkg{R2BayesX} \citep{bamlss:Umlauf:2015}. Instead of fully Bayesian MCMC
+However, for complex models -- e.g., using large data sets, spatial effects, or
+higher-order interactions -- sampling times from these generic MCMC engines can become long, 
+sometimes prohibitively long. This has been addressed by dedicated packages for Bayesian
+additive models, e.g., with the standalone package
+\pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005, bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017} 
+being the first to provide highly-efficient
+sampling schemes for very large data sets as well as spatial/multilevel models and structured 
+additive distributional regression. An \proglang{R} interface is available in \pkg{R2BayesX} 
+\citep{bamlss:Umlauf:2015}. Instead of fully Bayesian MCMC
 it is also possible to employ posterior mean estimation via the integrated nested Laplace
 approximation to estimate flexible Bayesian regression models. This is provided
 in the comprehensive \proglang{R} package \pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009},
 popular for estimating complex spatial Bayesian regression models
 \citep[see e.g.,][]{bamlss:Lindgren+Rue:2015,bamlss:Bivand+GomezRubio+Rue:2015}.
 
-\item \emph{Regularized estimation} \textbf{and explicit variable selection} might be necessary, though, for going beyond the models
-described above, especially for large/wide data with many potential regressors and corresponding
-effects/interactions/etc. Widely-used approaches for this include the lasso, e.g., as available
-for GLM-type models in the \proglang{R} package \pkg{glmnet} \citep{bamlss:Friedmann+Hastie+Tibshirani:2010},
-or gradient boosting as available for GAMLSS-type models in the \proglang{R} package
-\pkg{gamboostLSS} \citep{bamlss:Hofner+Mayr+Schmid:2014}. \textbf{However, many packages do not cover the Bayesian posterior estimation parts}.
+\item \emph{Regularized estimation} and explicit variable selection might be necessary, though,
+for going beyond the models described above, especially for large/wide data with many potential 
+regressors and corresponding effects/interactions/etc. Widely-used approaches for this include
+the lasso, e.g., as available for GLM-type models in the \proglang{R} package \pkg{glmnet} 
+\citep{bamlss:Friedmann+Hastie+Tibshirani:2010}, or gradient boosting as available for
+GAMLSS-type models in the \proglang{R} package \pkg{gamboostLSS}
+\citep{bamlss:Hofner+Mayr+Schmid:2014}. However, many packages do not cover the Bayesian
+posterior estimation parts.
 
 \end{itemize}
 %
@@ -764,7 +783,8 @@ Family & DIC & WAIC & CRPS \\
 \fct{BCPE} & \textbf{12188.30} & \textbf{12184.73} & \textbf{51.26} \\
 \hline
 \end{tabular}
-\caption{\label{tab:DIC} DIC, WAIC and CRPS comparison of the 6 distributional cyclical week models. \textbf{For the CRPS, 10-fold cross validation was used.}}
+\caption{\label{tab:DIC} DIC, WAIC and CRPS comparison of the 6 distributional cyclical
+  week models. For the CRPS, 10-fold cross validation was used.}
 \end{table}
 Here, the four parameter \fct{BCPE} model has the lowest DIC, WAIC and CRPS, therefore, we
 examine this model in more detail in the rest of the analysis.
@@ -801,13 +821,13 @@ plot(b, model = "tau", spar = FALSE)
   shaded areas represent 95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
-relationship for all parameters, however, 95\% credible intervals \textbf{NIKI: welche denn, habe ich vorher auch gefragt: pointwise oder simultaneous} for parameter $\nu$
+relationship for all parameters, however, 95\% pointwise credible intervals for parameter $\nu$
 and $\tau$ are larger such that the effects do not cross the horizontal zero line
 significantly, i.e., a simple intercept only specification for these parameters might be
 sufficient.
 
 For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots \textbf{replace by quantile residuals}. \textbf{das stimmt so nicht probability integral transforms (PIT). histograms ist ja nicht klar, bzw. man macht dann die PITs und guckt ob die gleichverteilt sind. fuer PIT muesste man Gneiting zitieren. ausserdem sind es keine QQ plots, glaube ich wie sie standardmaessig berechnet werden. mein Vorschlag ist nach wie vor durchgaengig randomized quantile resdiulas (RQR) zu benutzen als terme} 
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
 Residuals can be extracted using function \fct{residuals} and has a plotting method. 
 Alternatively, residuals can be investigated with
 <<eval=FALSE>>=
@@ -824,12 +844,12 @@ plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
 @
-\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot \textbf{replace by quantile residuals} including 95\% credible
+\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
   intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
   regression model.}
 \end{figure}
-By setting \code{c95 = TRUE}, the Q-Q plot \textbf{replace by quantile residuals} includes 95\% credible intervals.
-According the histogram and the Q-Q plot \textbf{replace by quantile residuals} of the resulting randomized
+By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
+According the histogram and the Q-Q plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
 
 In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
@@ -890,7 +910,7 @@ indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95\% quantile,
 respectively.
 
-\section{A flexible model framework \textbf{das finde ich jetzt wenig informativ. framework for what?}} \label{sec:flexreg}
+\section{A flexible Bayesian model framework} \label{sec:flexreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
 methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
@@ -959,8 +979,8 @@ distributions for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{j
 but as indicated previously, in principle any type of prior can be used
 (see \citealp{bamlss:Gelman:2006, bamlss:Polson+Scott:2012, bamlss:Klein+Kneib:2016,
 bamlss:Umlauf+Klein+Zeileis:2018} for
-more detailed discussions on priors for $\boldsymbol{\tau}_{jk}$).
-\textbf{and principled constructions for such priors. die priors sind auch nicht fuer beta!}.
+more detailed discussions on priors for $\boldsymbol{\tau}_{jk}$
+and principled constructions for such priors).
 
 \hypertarget{somerefs}{}Examples of distributional models that fit well in this
 framework are the ones for: \label{somerefs2}
@@ -971,7 +991,7 @@ framework are the ones for: \label{somerefs2}
     \citet{bamlss:Klein+Denuit+Kneib+Lang:2014,bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Stasinopoulos+Rigby:2019}, as well as
     responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}.
  \item Multivariate responses such as multivariate normal, multivariate t or Dirichlet regression
-   (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}). \textbf{Rigby and Stasinopolous 2019 removed here, because they do not do this!}
+   (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
  \item Multivariate responses with more complex dependence structures modeled through copulas
    \citet{bamlss:Klein+Kneib:2016b}.
  \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
@@ -1506,7 +1526,8 @@ exist, the user can rely on two options: The first option is to simply take
 the Hessian evaluated at observations and corresponding predictors rather than computing the 
 theoretical expectation analytically for filling the diagonals of the weight matrices
 $\mathbf{W}_{kk}$. The second option is to find a good approximation for the expectation (see,
-e.g., \citealp{bamlss:Klein+Kneib+Lang:2015}, \textbf{for the case of the overdispersion parameter of the negative binomial distribution}).
+e.g., \citealp{bamlss:Klein+Kneib+Lang:2015}, for the case of the overdispersion parameter
+of the negative binomial distribution).
 
 Now we have to write a function that returns a \code{family.bamlss} object (S3)
 which encapsulates functions for density, score and Hessian, and the names of
@@ -1605,9 +1626,7 @@ given in Appendix~\ref{appendix:engine}. The example also provides details on th
 and return values of optimizer and sampler functions.
 
 
-\section{Flexible count regression for lightning reanalysis \textbf{in welchem sinne reanalysis?}} \label{sec:application}
-
-\textbf{sample size noch immer nicht angegeben im text}
+\section{Flexible count regression for lightning reanalysis} \label{sec:application}
 
 This section illustrates the workflow with \pkg{bamlss} along a small case study.
 We want to build a statistical model linking positive counts of cloud-to-ground
