@@ -910,6 +910,8 @@ indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95\% quantile,
 respectively.
 
+\pagebreak
+
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
 This section briefly summarizes the BAMLSS modeling framework. For a detailed
