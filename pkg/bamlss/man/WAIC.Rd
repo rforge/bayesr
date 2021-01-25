@@ -27,7 +27,7 @@ WAIC(object, ..., newdata = NULL)
   Watanabe S. (2010). Asymptotic Equivalence of {B}ayes Cross Validation and Widely
   Applicable Information Criterion in Singular Learning Theory. \emph{The Journal of Machine
   Learning Research}, \bold{11}, 3571--3594.
-  \url{http://jmlr.org/papers/v11/watanabe10a.html}
+  \url{https://jmlr.org/papers/v11/watanabe10a.html}
 }
 
 \examples{
