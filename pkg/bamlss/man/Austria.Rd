@@ -5,7 +5,7 @@
 \title{Austria States and Topography}
 
 \description{
-  These two data sets provide the states of Austria as a
+  These two data sets \code{Austria} and \code{AsutriaTopo} provide the states of Austria as a
   \code{\link[sp]{SpatialPolygonsDataFrame}} and the topography of Austria as
   a raster object (see the \pkg{raster} package).
 }
@@ -20,13 +20,6 @@
     \emph{National Oceanic and Atmospheric Administration (NOAA)}.
     \url{https://www.ngdc.noaa.gov/mgg/global/global.html}
 }
-
-\examples{
-\dontrun{if(require("raster")) {
-  data("Austria")
-  plot(AustriaTopo, col = terrain.colors(10))
-  plot(Austria, add = TRUE)
-}}}
 
 \keyword{datasets}
 
