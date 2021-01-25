@@ -20,7 +20,7 @@
 
 \description{
   This sampler function for BAMLSS is an interface to the \pkg{BayesX}
-  (\url{https://www.uni-goettingen.de/de/bayesx/550513.html})
+  (\code{https://www.uni-goettingen.de/de/bayesx/550513.html})
   command-line binary from \R. The sampler is based on the command line version and functions
   provided in the \pkg{BayesXsrc} package.
 }

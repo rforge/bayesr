@@ -30,7 +30,7 @@
 
 \references{
   Fahrmeir, L., Kneib, T. , Lang, S., Marx, B. (2013): Regression. Models, Methods and Applications,
-  Springer Verlag. \url{https://www.uni-goettingen.de/de/551357.html}
+  Springer Verlag. \code{https://www.uni-goettingen.de/de/551357.html}
 }
 
 \seealso{
