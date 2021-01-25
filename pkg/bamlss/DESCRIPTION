@@ -20,8 +20,9 @@ Description: Infrastructure for estimating probabilistic distributional regressi
   <arXiv:1909.11784>.
 Depends: R (>= 3.5.0), coda, colorspace, mgcv
 Imports: Formula, MBA, mvtnorm, sp, Matrix, survival, methods, parallel
-Suggests: akima, ff, ffbase, fields, gamlss, gamlss.dist, geoR, rjags, BayesX, BayesXsrc, R2BayesX, mapdata, maps, maptools,
-  nnet, spatstat, spdep, zoo, keras, splines2, sdPrior, statmod, glogis, glmnet, scoringRules, knitr, MASS, raster
+Suggests: akima, ff, ffbase, fields, gamlss, gamlss.dist, geoR, rjags, BayesX, BayesXsrc, R2BayesX,
+  mapdata, maps, maptools, nnet, spatstat, spdep, zoo, keras, splines2, sdPrior, statmod, glogis,
+  glmnet, scoringRules, knitr, rmarkdown, MASS, raster
 License: GPL-2 | GPL-3
 LazyLoad: yes
 RoxygenNote: 7.1.1

@@ -197,11 +197,11 @@ important distinction between associations which are nonlinear in \eqn{\eta_{\mu
 \references{
   Koehler M, Umlauf N, Beyerlein, A., Winkler, C. Ziegler, A.-G., Greven S (2017). Flexible
   Bayesian Additive Joint Models with an Application to Type 1 Diabetes Research.
-  \emph{Biometrical Journal}, \url{http://dx.doi.org/10.1002/bimj.201600224}.
+  \emph{Biometrical Journal}. \doi{10.1002/bimj.201600224}
   
   Meike Koehler, Nikolaus Umlauf, and Sonja Greven (2018). Nonlinear association structures in
-  flexible Bayesian additive joint models. \emph{Statistics in Medicine},
-  \url{http://dx.doi.org/10.1002/sim.7967}.
+  flexible Bayesian additive joint models. \emph{Statistics in Medicine}.
+  \doi{10.1002/sim.7967}
 }
 
 \seealso{
