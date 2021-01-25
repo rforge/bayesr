@@ -1795,7 +1795,7 @@ lighter object, i.e., the model.frame and design and penalty matrices are not st
 \begin{Sinput}
 R> set.seed(123)
 R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
-+    family = "ztnbinom", binning = TRUE,                     
++    family = ztSICHEL, binning = TRUE,                     
 +    optimizer = opt_boost, maxit = 1000,                     
 +    thin = 50, burnin = 500, n.iter = 1500, cores = 50,      
 +    light = TRUE)                                            
