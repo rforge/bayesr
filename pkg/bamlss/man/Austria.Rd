@@ -22,11 +22,11 @@
 }
 
 \examples{
-if(require("raster")) {
+\dontrun{if(require("raster")) {
   data("Austria")
   plot(AustriaTopo, col = terrain.colors(10))
   plot(Austria, add = TRUE)
-}}
+}}}
 
 \keyword{datasets}
 
