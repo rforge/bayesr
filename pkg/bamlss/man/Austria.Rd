@@ -5,9 +5,9 @@
 \title{Austria States and Topography}
 
 \description{
-  These two data sets \code{Austria} and \code{AsutriaTopo} provide the states of Austria as a
+  These two data sets \code{Austria} and \code{AustriaTopo} provide the states of Austria as a
   \code{\link[sp]{SpatialPolygonsDataFrame}} and the topography of Austria as
-  a raster object (see the \pkg{raster} package).
+  data frame.
 }
 
 \usage{data("Austria")}
