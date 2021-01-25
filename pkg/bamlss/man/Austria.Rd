@@ -14,11 +14,11 @@
 
 \references{
   Austria (2016). Nuts Einheiten, \emph{STATISTIK AUSTRIA}.
-    \url{http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html}
+    \code{http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html}
 
   Austria Topography (2016). \emph{National Centers for Environmental Information},
     \emph{National Oceanic and Atmospheric Administration (NOAA)}.
-    \url{https://www.ngdc.noaa.gov/mgg/global/global.html}
+    \code{https://www.ngdc.noaa.gov/mgg/global/global.html}
 }
 
 \keyword{datasets}
