@@ -20,8 +20,8 @@ library("bamlss")
 set.seed(123)
 
 if(!file.exists("figures/rent99.rda")) {
-  rent99 <- read.table("http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw",
-    header = TRUE)
+  file_url <- "http://www.bamlss.org/misc/rent99.raw"
+  rent99 <- read.table(file_url, header = TRUE)
   save(rent99, file = "figures/rent99.rda")
 } else {
   load("figures/rent99.rda")
@@ -51,7 +51,7 @@ In this example we analyze rent index data from Munich, Germany. The data is pro
 supplemental materials of the Regression book [@bamlss:Fahrmeir+Kneib+Lang+Marx:2013] and can be
 loaded into R with
 ```{r}
-file_url <- "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"
+file_url <- "http://www.bamlss.org/misc/rent99.raw"
 rent99 <- read.table(file_url, header = TRUE)
 ```
 

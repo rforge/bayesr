@@ -66,7 +66,7 @@ original data shown in the paper because of copywright reasons. However, an olde
 data is available in the supplementary materials of the Regression book
 [@bamlss:Fahrmeir+Kneib+Lang+Marx:2013]. The data can be loaded into R with
 ```{r}
-file_url <- "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"
+file_url <- "http://www.bamlss.org/misc/rent99.raw"
 rent99 <- read.table(file_url, header = TRUE)
 ```
 The response is the monthly rent per square meter in Euro (`rentsqm`). In this example
