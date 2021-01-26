@@ -135,7 +135,7 @@
     
     
 <p>In this example we analyze rent index data from Munich, Germany. The data is provided in the supplemental materials of the Regression book <span class="citation">(Fahrmeir et al. 2013)</span> and can be loaded into R with</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">file_url &lt;-<span class="st"> "http://www.uni-goettingen.de/de/document/download/64c29c1b1fccb142cfa8f29a942a9e05.raw/rent99.raw"</span></a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">file_url &lt;-<span class="st"> "http://www.bamlss.org/misc/rent99.raw"</span></a>
 <a class="sourceLine" id="cb1-2" title="2">rent99 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/read.table">read.table</a></span>(file_url, <span class="dt">header =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <p>The aim of this analysis is to find a model explaining the rent or rent per square meter of an apartment. We first assume a linear relationship with homoscedastic Gaussian errors:</p>
 <p><span class="math display">\[
