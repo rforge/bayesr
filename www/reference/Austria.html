@@ -34,9 +34,9 @@
 
 
 <meta property="og:title" content="Austria States and Topography — Austria" />
-<meta property="og:description" content="These two data sets provide the states of Austria as a
+<meta property="og:description" content="These two data sets Austria and AustriaTopo provide the states of Austria as a
   SpatialPolygonsDataFrame and the topography of Austria as
-  a raster object (see the raster package)." />
+  data frame." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -170,37 +170,43 @@
     </div>
 
     <div class="ref-description">
-    <p>These two data sets provide the states of Austria as a
+    <p>These two data sets <code>Austria</code> and <code>AustriaTopo</code> provide the states of Austria as a
   <code><a href='https://www.rdocumentation.org/packages/sp/topics/SpatialPolygons'>SpatialPolygonsDataFrame</a></code> and the topography of Austria as
-  a raster object (see the <span class="pkg">raster</span> package).</p>
+  data frame.</p>
     </div>
 
     <pre class="usage"><span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='st'>"Austria"</span>)</pre>
 
 
+    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
+
+    <p>The <code>AustriaTopo</code> data contains the following variables:</p><dl class='dl-horizontal'>
+  <dt>lon:</dt><dd><p>Numeric, longitude coordinates.</p></dd>
+  <dt>lat:</dt><dd><p>Numeric, latitude coordinates.</p></dd>
+  <dt>alt:</dt><dd><p>Numeric, altitude.</p></dd>
+</dl>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Austria (2016). Nuts Einheiten, <em>STATISTIK AUSTRIA</em>.
-    <a href='http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html'>http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html</a></p>
+    <code>http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/nuts_einheiten/index.html</code></p>
 <p>Austria Topography (2016). <em>National Centers for Environmental Information</em>,
     <em>National Oceanic and Atmospheric Administration (NOAA)</em>.
-    <a href='https://www.ngdc.noaa.gov/mgg/global/global.html'>https://www.ngdc.noaa.gov/mgg/global/global.html</a></p>
+    <code>https://www.ngdc.noaa.gov/mgg/global/global.html</code></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/library'>require</a></span>(<span class='st'>"raster"</span>)) {
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='st'>"Austria"</span>)
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/raster/topics/plot'>plot</a></span>(<span class='no'>AustriaTopo</span>, <span class='kw'>col</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/grDevices/topics/palettes'>terrain.colors</a></span>(<span class='fl'>10</span>))
-  <span class='fu'><a href='https://www.rdocumentation.org/packages/raster/topics/plot'>plot</a></span>(<span class='no'>Austria</span>, <span class='kw'>add</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-}</div><div class='output co'>#&gt; <span class='message'>Loading required package: raster</span></div><div class='output co'>#&gt; <span class='message'>Loading required package: sp</span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Attaching package: ‘raster’</span></div><div class='output co'>#&gt; <span class='message'>The following object is masked from ‘package:nlme’:</span>
-#&gt; <span class='message'></span>
-#&gt; <span class='message'>    getData</span></div><div class='output co'>#&gt; <span class='message'>The following object is masked from ‘package:colorspace’:</span>
-#&gt; <span class='message'></span>
-#&gt; <span class='message'>    RGB</span></div><div class='img'><img src='Austria-1.png' alt='' width='700' height='433' /></div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/data'>data</a></span>(<span class='st'>"Austria"</span>)
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>Austria</span>)</div><div class='img'><img src='Austria-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/print'>print</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/head'>head</a></span>(<span class='no'>AustriaTopo</span>))</div><div class='output co'>#&gt;        lon      lat      alt
+#&gt; 1 15.01302 49.01572 504.9214
+#&gt; 2 15.02972 49.01572 522.9792
+#&gt; 3 15.01302 48.99902 543.8965
+#&gt; 4 15.02972 48.99902 568.7490
+#&gt; 5 15.04642 48.99902 584.8317
+#&gt; 6 15.06312 48.99902 598.7867</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
+      <li><a href="#format">Format</a></li>
       <li><a href="#references">References</a></li>
       <li><a href="#examples">Examples</a></li>
     </ul>
