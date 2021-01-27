@@ -19,6 +19,7 @@ articles:
     - bf
     - jm
     - cox
+    - fatalities
 
 navbar:
   left:
@@ -46,6 +47,8 @@ navbar:
         href: articles/rent.html
       - text: Spatial Location-Scale Model
         href: articles/zn.html
+      - text: Fatalities Model for Austria
+        href: articles/fatalities.html
       - text: Miscellaneous Topics
         href: articles/misc.html
     - text: Publications
