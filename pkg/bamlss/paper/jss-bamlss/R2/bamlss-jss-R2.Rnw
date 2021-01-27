@@ -49,28 +49,31 @@
 \Abstract{
   Over the last decades, the challenges in applied regression and in predictive modeling have
   been changing considerably: (1)~More flexible regression model specifications are needed 
-  as data sizes and available information are steadily increasing, and as a consequence
+  as data sizes and available information are steadily increasing, consequently
   demanding for more powerful computing infrastructure.
-  (2)~Full probabilistic modeling based on distribution regression
-  rather than predicting single points such as means or expectations of the underlying
-  distributions is crucial in many applications.
+  (2)~Full probabilistic models by means of distributional regression
+  -- rather than predicting only some underlying individual quantities from the distributions such as means or
+  expectations -- is crucial in many applications.
   (3)~Availability of Bayesian inference has gained in importance both as an appealing framework for
   regularizing or penalizing complex models and estimation therein as well as a natural
   alternative to classical frequentist inference. However, while there has been a lot of
   research on all  three challenges and the development of corresponding software packages,
   a modular software implementation that allows to easily combine all three aspects has not yet been 
-  available for the general framework of distributional regression. To fill this gap,
+  available for the general framework of distributional regression.
+  
+  To fill this gap,
   the \proglang{R} package \pkg{bamlss} is introduced for Bayesian additive models for location,
-  scale, and shape (and beyond). The latter have been from a methodological perspective as an 
-  important area towards distributional regression in both classical frequentist but also Bayesian 
-  frameworks. At the core of the package are algorithms for highly-efficient Bayesian
+  scale, and shape (and beyond) -- with the name reflecting the most important distributional
+  quantities (among others) that can be modeled with the software.
+  At the core of the package are algorithms for highly-efficient Bayesian
   estimation and inference that can be applied to generalized additive models (GAMs) or
-  generalized additive models for location, scale, and shape (GAMLSS). However, its building
+  generalized additive models for location, scale, and shape (GAMLSS), or more general
+  distributional regression models. However, its building
   blocks are designed as ``Lego bricks'' encompassing various distributions (exponential family,
-  Cox, joint models, \dots), regression terms (e.g., linear, splines, random effects, tensor
-  products, spatial fields), and estimators (MCMC, backfitting, gradient boosting, lasso, and more).
-  It is demonstrated how these can be easily recombined to make classical models more
-  flexible or create new custom models for specific modeling challenges.
+  Cox, joint models, etc.), regression terms (linear, splines, random effects, tensor
+  products, spatial fields, etc.), and estimators (MCMC, backfitting, gradient boosting, lasso, etc.).
+  It is demonstrated how these can be easily combined to make classical models more
+  flexible or to create new custom models for specific modeling challenges.
 }
 
 \Address{
