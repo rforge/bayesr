@@ -293,7 +293,7 @@ the seasonal variation of fatalities. The median reveals a clear annual cycle
 with a higher number of fatalities in winter. The skewness of the distribution
 is also very dominant in winter.  However, also in the summer months there is a
 visible increase in the upper quantile, which is probably due to particular
-heat waves leading to greater cardiovascular stress [@fouillet2008]. The
+heat waves leading to greater cardiovascular stress [@bamlss:fouillet2008]. The
 mortality rate from beginning of 2020 to week 46 is plotted in red and clearly
 indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95% quantile,
