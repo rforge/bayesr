@@ -140,15 +140,156 @@
 <p>In this example we estimate a distributional regression model using data on fatalities in Austria. The data is taken from the Eurostat data base (<a href="https://ec.europa.eu/eurostat/" class="uri">https://ec.europa.eu/eurostat/</a>) and includes weekly fatalities in Austria from the beginning of 2000 up to week~46 in 2020. The data is provided in the <em>bamlss</em> package and can be loaded with</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"fatalities"</span>, <span class="dt">package =</span> <span class="st">"bamlss"</span>)</a></code></pre></div>
 <p>The data set contains information on the number of fatalities (variable <code>num</code>) and the year and week of recording (variables <code>year</code> and <code>week</code>). The motivation for this analysis is to model a reference mortality, which allows one to describe the excess mortabilty caused by exceptional events such as pandemics <span class="citation">(Leon et al. 2020)</span> or natural catastrophes <span class="citation">(Fouillet et al. 2008)</span>. Excess mortality refers to mortality in excess of what would be expected based on the non-crisis mortality rate in the population of interest. Here, we model the long-term seasonal trend of fatality numbers before the COVID-19 crisis and compare estimated quantiles with the cases in 2020, which will give insights into the excess mortality of the pandemic <span class="citation">(Leon et al. 2020)</span>. Therefore, we subset the data set before 2020 for estimation and use the 2020 data for comparison</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">d19 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/subset">subset</a></span>(fatalities, year <span class="op">&lt;</span><span class="st"> </span><span class="dv">2020</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2">d20 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/subset">subset</a></span>(fatalities, year <span class="op">&gt;</span><span class="st"> </span><span class="dv">2019</span>)</a></code></pre></div>
+<p>To find a well-calibrated model, the first step is to look for a suitable distribution for the data at hand. The <em>gamlss.dist</em> package <span class="citation">(Stasinopoulos and Rigby 2019)</span> provides a number of distributions which can also be used for estimation in <em>bamlss</em>. In this example, we consider 6 distributions with different number of parameters, from 2 to 4. In detail these are the normal distribution (family <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/NO">NO()</a></code>), gamma and generalized gamma distribution (family <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/GA">GA()</a></code> and <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/GG">GG()</a></code>), Box-Cox t distribution (family <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCt">BCT()</a></code>), Box-Cox power exponential distribution (family <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code>) and the Box-Cox Cole and Green distribution (family <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCCG">BCCG()</a></code>). First, we only estimate the distributional parameters without covariates, to get a first idea which distribution fits well. We compare visually as well as by the deviance information criterion (DIC, the complete code is available <a href="http://bamlss.org/misc/fatalities_models.R">here</a>). Note that we do not use discrete distributions in this example because the number of fatalities is far away from zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.</p>
+<div class="figure" style="text-align: center">
+<img src="fatalities_files/figure-html/unnamed-chunk-3-1.png" alt="Fatalities data in Austria (2000--2019), histogram and fitted distributions." width="60%"><p class="caption">
+Fatalities data in Austria (2000–2019), histogram and fitted distributions.
+</p>
+</div>
+<p>One of the most flexible distributions of the <em>gamlss.dist</em> package, the four parameter Box-Cox t distribution, has a quite good fit and the lowest DIC (though only by a small difference). Hence, with some certainty one of the chosen distribution models will have a fairly good model fit in further analysis.</p>
+<p>In the next step, we estimate Bayesian models that take into account the cyclical pattern over the year. In winter, there are usually quite a lot of influenza and other viral infections, which lead to a higher mortality rate. The models are estimated using the predictor <span class="math inline">\(\eta_k = f_{k} (\texttt{week})\)</span> for each parameter of the distribution, where functions <span class="math inline">\(f_{k}(\texttt{week})\)</span> are unspecified smooth functions, which are estimated using regression splines. We can use the following model formula for estimation</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">f &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(</a>
+<a class="sourceLine" id="cb3-2" title="2">  num   <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(week, <span class="dt">bs =</span> <span class="st">"cc"</span>, <span class="dt">k =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb3-3" title="3">  sigma <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(week, <span class="dt">bs =</span> <span class="st">"cc"</span>, <span class="dt">k =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb3-4" title="4">  nu    <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(week, <span class="dt">bs =</span> <span class="st">"cc"</span>, <span class="dt">k =</span> <span class="dv">20</span>),</a>
+<a class="sourceLine" id="cb3-5" title="5">  tau   <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(week, <span class="dt">bs =</span> <span class="st">"cc"</span>, <span class="dt">k =</span> <span class="dv">20</span>)</a>
+<a class="sourceLine" id="cb3-6" title="6">)</a></code></pre></div>
+<p>again, function <code>s()</code> is the smooth term constructor from the <em>mgcv</em> package <span class="citation">(Wood 2020)</span> and <code>bs = "cc"</code> specifies a penalized cyclic cubic regression spline. Note that model formulae are provided as lists of formulae, i.e., each list entry represents one parameter of the response distribution. Since the maximum number of parameters of the selected distributions is 4, we supply 4 formulae. Internally, <em>bamlss</em> only processes the relevant formulae depending on the family. The <em>gamlss.dist</em> package has a naming convention for the distributional parameters, which is adopted in this example. However, the user can also drop the parameter names on the left hand side of the formulae (but not the response <code>num</code>). Moreover, note that all smooth terms, e.g., <code>te()</code>, <code>ti()</code>, are supported by <em>bamlss</em>. This way, it is also possible to incorporate user defined model terms, since the <em>mgcv</em> smooth term constructor functions are based on the generic <code><a href="../reference/smooth.construct.html">smooth.construct()</a></code> method, for which new classes can be added (see also the <em>mgcv</em> manual). For example, a full Bayesian semi-parametric distributional regression model using the <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code> family of the <em>gamlss.dist</em> package can be estimated with</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(<span class="st">"gamlss.dist"</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">456</span>)</a>
+<a class="sourceLine" id="cb4-3" title="3">b &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> d19, <span class="dt">family =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE</a></span>(<span class="dt">mu.link =</span> <span class="st">"log"</span>),</a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a></code></pre></div>
+<p>Note that we assign the log-link for parameter <span class="math inline">\(\mu\)</span> to ensure positivity. In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples and only save every <span class="math inline">\(10\)</span>-th sample. We did the same estimation step analogously with the other distributions.</p>
+<p>In addition to the DIC, there is also the Watanabe-Akaike information criterion (WAIC, <span class="citation">Watanabe (2010)</span>) to investigate the goodness of fit. In <em>bamlss</em>, the WAIC of the fitted model can be computed with</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw"><a href="../reference/WAIC.html">WAIC</a></span>(b)</a></code></pre></div>
+<pre><code>##     WAIC1    WAIC2       p1       p2
+##  12184.73 12189.34 28.95351 31.25739</code></pre>
+<p>The function returns two values for the WAIC, depending on the type of the estimated number of parameters of the model (<code>p1</code> uses expected differences of log densities, whereas <code>p2</code> is computed using the variance in the log density, for details see <span class="citation">Watanabe (2010)</span>).</p>
+<p>Another criterion for assessing model calibration is the continuous rank probability score (CRPS, <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Gneiting+Raftery:2007"><strong>???</strong></span>)</span>). The R package <em>scoringRules</em> <span class="citation">(Jordan, Krüger, and Lerch 2019)</span> provides tools for model calibration checks using the CRPS. Since the number of candidate distributions can be quite large, it might happen that the CRPS for some distributions is not implemented. In this case, the user can resort to a numerical approximation as implemented in the function <code><a href="../reference/CRPS.html">CRPS()</a></code> in the <em>bamlss</em> package. Because the CRPS is a forecasting score, we computed the CRPS using 10-fold cross validation for each model. For example, the CRPS for the <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code> model is computed with</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">789</span>)</a>
+<a class="sourceLine" id="cb7-2" title="2">folds &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span><span class="op">:</span><span class="dv">10</span>, <span class="dt">length.out =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(d19))</a>
+<a class="sourceLine" id="cb7-3" title="3">crps &lt;-<span class="st"> </span><span class="ot">NULL</span></a>
+<a class="sourceLine" id="cb7-4" title="4"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>) {</a>
+<a class="sourceLine" id="cb7-5" title="5">  df &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/subset">subset</a></span>(d19, folds <span class="op">!=</span><span class="st"> </span>i)</a>
+<a class="sourceLine" id="cb7-6" title="6">  de &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/subset">subset</a></span>(d19, folds <span class="op">==</span><span class="st"> </span>i)</a>
+<a class="sourceLine" id="cb7-7" title="7">  b3 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/bamlss.html">bamlss</a></span>(f, <span class="dt">data =</span> df, <span class="dt">family =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE</a></span>(<span class="dt">mu.link =</span> <span class="st">"log"</span>),</a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="dt">n.iter =</span> <span class="dv">12000</span>, <span class="dt">burnin =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb7-9" title="9">  crps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(crps, <span class="kw"><a href="../reference/CRPS.html">CRPS</a></span>(b3, <span class="dt">newdata =</span> de, <span class="dt">FUN =</span> identity))</a>
+<a class="sourceLine" id="cb7-10" title="10">}</a>
+<a class="sourceLine" id="cb7-11" title="11">crps &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/mean">mean</a></span>(crps)</a></code></pre></div>
+<p>The values of the DIC, WAIC and CRPS for the 6 models are</p>
+<center>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Family</th>
+<th align="center">DIC</th>
+<th align="center">WAIC</th>
+<th align="center">CRPS</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/NO">NO()</a></code></td>
+<td align="center">12291.75</td>
+<td align="center">12294.20</td>
+<td align="center">51.89</td>
+</tr>
+<tr class="even">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/GA">GA()</a></code></td>
+<td align="center">12261.06</td>
+<td align="center">12262.40</td>
+<td align="center">51.72</td>
+</tr>
+<tr class="odd">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/GG">GG()</a></code></td>
+<td align="center">12248.10</td>
+<td align="center">12249.31</td>
+<td align="center">51.52</td>
+</tr>
+<tr class="even">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCt">BCT()</a></code></td>
+<td align="center">12215.85</td>
+<td align="center">12206.26</td>
+<td align="center">51.44</td>
+</tr>
+<tr class="odd">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCCG">BCCG()</a></code></td>
+<td align="center">12190.41</td>
+<td align="center">12188.05</td>
+<td align="center">51.31</td>
+</tr>
+<tr class="even">
+<td align="left"><code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code></td>
+<td align="center"><strong>12188.30</strong></td>
+<td align="center"><strong>12184.73</strong></td>
+<td align="center"><strong>51.26</strong></td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>The table shows the DIC, WAIC and CRPS comparison of the 6 distributional cyclical week models. For the CRPS, 10-fold cross validation was used. Here, the four parameter <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code> model has the lowest DIC, WAIC and CRPS, therefore, we examine this model in more detail in the rest of the analysis.</p>
+<p>After the estimation algorithms are finished, the estimated effects, e.g., for the <code><a href="https://www.rdocumentation.org/packages/gamlss.dist/topics/BCPE">BCPE()</a></code> model, can be visualized instantly using the plotting method.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">model =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"mu"</span>, <span class="st">"sigma"</span>, <span class="st">"nu"</span>, <span class="st">"tau"</span>))</a></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="fatalities_files/figure-html/unnamed-chunk-10-1.png" alt="Estimated effects of `week` on parameter `mu`, `sigma`, `nu` and `tau` of the Box-Cox power exponential model. The grey shaded areas represent 95% credible intervals." width="100%"><p class="caption">
+Estimated effects of <code>week</code> on parameter <code>mu</code>, <code>sigma</code>, <code>nu</code> and <code>tau</code> of the Box-Cox power exponential model. The grey shaded areas represent 95% credible intervals.
+</p>
+</div>
+<p>The estimated effects depict a clear nonlinear relationship for all parameters, however, 95% pointwise credible intervals for parameter <code>nu</code> and <code>tau</code> are larger such that the effects do not cross the horizontal zero line significantly, i.e., a simple intercept only specification for these parameters might be sufficient.</p>
+<p>For judging how well the model fits to the data the user can inspect randomized quantile residuals <span class="citation">(<span class="citeproc-not-found" data-reference-id="bamlss:Dunn+Smyth:1996"><strong>???</strong></span>)</span> using histograms or quantile-quantile (Q-Q) plots. Residuals can be extracted using function <code><a href="https://www.rdocumentation.org/packages/stats/topics/residuals">residuals()</a></code> and has a plotting method. Alternatively, residuals can be investigated with</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"hist-resid"</span>)</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/plot">plot</a></span>(b, <span class="dt">which =</span> <span class="st">"qq-resid"</span>, <span class="dt">c95 =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="fatalities_files/figure-html/unnamed-chunk-12-1.png" alt="Histogram and Q-Q plot including 95% credible intervals (dashed lines) of the resulting randomized quantile residuals of the distributional regression model." width="90%"><p class="caption">
+Histogram and Q-Q plot including 95% credible intervals (dashed lines) of the resulting randomized quantile residuals of the distributional regression model.
+</p>
+</div>
+<p>By setting <code>c95 = TRUE</code>, the Q-Q plot includes 95% credible intervals. According the histogram and the Q-Q plot of the resulting randomized quantile residuals, the model seems to fit quite well.</p>
+<p>In the next step, we compare quantiles of the intra-year long-term trend of the estimated distribution with the current situation in 2020. Therefore parameters for each week of the year are predicted</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">nd &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/data.frame">data.frame</a></span>(<span class="st">"week"</span> =<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">53</span>)</a>
+<a class="sourceLine" id="cb10-2" title="2">par &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/predict">predict</a></span>(b, <span class="dt">newdata =</span> nd, <span class="dt">type =</span> <span class="st">"parameter"</span>)</a></code></pre></div>
+<p>and the estimated quantiles are computed with the quantile function of the family</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">nd<span class="op">$</span>fit &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">sapply</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fl">0.95</span>),</a>
+<a class="sourceLine" id="cb11-2" title="2">  <span class="dt">FUN =</span> <span class="cf">function</span>(p) { <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/family">family</a></span>(b)<span class="op">$</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/quit">q</a></span>(p, par) })</a></code></pre></div>
+<p>The estimated quantiles and the data used for modeling can now be plotted with</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">d19w &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/reshape">reshape</a></span>(d19, <span class="dt">idvar =</span> <span class="st">"week"</span>,</a>
+<a class="sourceLine" id="cb12-2" title="2">  <span class="dt">timevar =</span> <span class="st">"year"</span>, <span class="dt">direction =</span> <span class="st">"wide"</span>)</a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/matplot">matplot</a></span>(d19w<span class="op">$</span>week, d19w[, <span class="dv">-1</span>],</a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="dt">type =</span> <span class="st">"b"</span>, <span class="dt">lty =</span> <span class="dv">1</span>, <span class="dt">pch =</span> <span class="dv">16</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/gray">gray</a></span>(<span class="fl">0.1</span>, <span class="dt">alpha =</span> <span class="fl">0.1</span>),</a>
+<a class="sourceLine" id="cb12-5" title="5">  <span class="dt">xlab =</span> <span class="st">"Week"</span>, <span class="dt">ylab =</span> <span class="st">"#Fatalities"</span>)</a>
+<a class="sourceLine" id="cb12-6" title="6"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/matplot">matplot</a></span>(nd<span class="op">$</span>week, nd<span class="op">$</span>fit, <span class="dt">type =</span> <span class="st">"l"</span>, <span class="dt">lty =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="dt">col =</span> <span class="dv">1</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb12-8" title="8"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(num <span class="op">~</span><span class="st"> </span>week, <span class="dt">data =</span> d20, <span class="dt">col =</span> <span class="dv">2</span>, <span class="dt">lwd =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb12-9" title="9">  <span class="dt">type =</span> <span class="st">"b"</span>, <span class="dt">pch =</span> <span class="dv">16</span>, <span class="dt">cex =</span> <span class="fl">1.3</span>)</a>
+<a class="sourceLine" id="cb12-10" title="10"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/grid">grid</a></span>()</a></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="fatalities_files/figure-html/unnamed-chunk-16-1.png" alt="Predicted 5%, 50% and 95% quantiles of the cyclic seasonal week model, black lines, and number of fatalities in 2020 up to week 46, red points and line. Data before 2020 is shown in light gray in the background." width="60%"><p class="caption">
+Predicted 5%, 50% and 95% quantiles of the cyclic seasonal week model, black lines, and number of fatalities in 2020 up to week 46, red points and line. Data before 2020 is shown in light gray in the background.
+</p>
+</div>
+<p>The resulting plot reveals the seasonal variation of fatalities. The median reveals a clear annual cycle with a higher number of fatalities in winter. The skewness of the distribution is also very dominant in winter. However, also in the summer months there is a visible increase in the upper quantile, which is probably due to particular heat waves leading to greater cardiovascular stress <span class="citation">(<span class="citeproc-not-found" data-reference-id="fouillet2008"><strong>???</strong></span>)</span>. The mortality rate from beginning of 2020 to week 46 is plotted in red and clearly indicates that this is much higher than the long-term median in the spring and from about week 40 onward, and also well above the estimated 95% quantile, respectively.</p>
 <div id="refs" class="references">
 <div id="ref-bamlss:fouillet2008">
 <p>Fouillet, A, G Rey, V Wagner, K Laaidi, P Empereur-Bissonnet, A Le Tertre, P Frayssinet, et al. 2008. “Has the Impact of Heat Waves on Mortality Changed in France Since the European Heat Wave of Summer 2003? A Study of the 2006 Heat Wave.” <em>International Journal of Epidemiology</em> 37 (2): 309–17. <a href="https://doi.org/10.1093/ije/dym253" class="uri">https://doi.org/10.1093/ije/dym253</a>.</p>
 </div>
+<div id="ref-bamlss:Jordan+Krueger+Lerch:2018">
+<p>Jordan, Alexander, Fabian Krüger, and Sebastian Lerch. 2019. “Evaluating Probabilistic Forecasts with scoringRules.” <em>Journal of Statistical Software</em> 90 (12): 1–37. <a href="https://doi.org/10.18637/jss.v090.i12" class="uri">https://doi.org/10.18637/jss.v090.i12</a>.</p>
+</div>
 <div id="ref-bamlss:Leon:2020">
 <p>Leon, David A, Vladimir M Shkolnikov, Liam Smeeth, Per Magnus, Markéta Pechholdová, and Christopher I Jarvis. 2020. “COVID-19: A Need for Real-Time Monitoring of Weekly Excess Deaths.” <em>The Lancet</em> 395 (10234): e81. <a href="https://doi.org/https://doi.org/10.1016/S0140-6736(20)30933-8" class="uri">https://doi.org/https://doi.org/10.1016/S0140-6736(20)30933-8</a>.</p>
 </div>
+<div id="ref-bamlss:gamlss-dist">
+<p>Stasinopoulos, Mikis, and Robert Rigby. 2019. <em>Gamlss.dist: Distributions for Generalized Additive Models for Location Scale and Shape</em>. <a href="https://CRAN.R-project.org/package=gamlss.dist" class="uri">https://CRAN.R-project.org/package=gamlss.dist</a>.</p>
+</div>
 <div id="ref-bamlss:Umlauf+bamlss:2018">
 <p>Umlauf, Nikolaus, Nadja Klein, Achim Zeileis, and Thorsten Simon. 2021. <em>bamlss: Bayesian Additive Models for Location Scale and Shape (and Beyond)</em>. <a href="https://CRAN.R-project.org/package=bamlss" class="uri">https://CRAN.R-project.org/package=bamlss</a>.</p>
+</div>
+<div id="ref-watanabe2010asymptotic">
+<p>Watanabe, Sumio. 2010. “Asymptotic Equivalence of Bayes Cross Validation and Widely Applicable Information Criterion in Singular Learning Theory.” <em>The Journal of Machine Learning Research</em> 11. JMLR. org: 3571–94.</p>
+</div>
+<div id="ref-bamlss:Wood:2018">
+<p>Wood, S. N. 2020. <em>mgcv: GAMs with Gcv/Aic/Reml Smoothness Estimation and Gamms by Pql</em>. <a href="https://CRAN.R-project.org/package=mgcv" class="uri">https://CRAN.R-project.org/package=mgcv</a>.</p>
 </div>
 </div>
   </div>
