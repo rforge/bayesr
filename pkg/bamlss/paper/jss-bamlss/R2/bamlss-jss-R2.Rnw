@@ -167,7 +167,7 @@ at providing highly-optimized algorithms for general smooth models
 as well as the dedicated \fct{bam} function for big data
 that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. All these packages rely on 
 frequentist estimation strategies. Moreover, the package provides
-sophisticated infrastructures for generating new classes of smooth terms (which is fully
+sophisticated infrastructure for generating new classes of smooth terms (which is fully
 adopted by the \pkg{bamlss} package).
 
 \item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
@@ -237,7 +237,7 @@ standard extractor methods like \fct{summary}, \fct{plot}, \fct{predict}, etc.
 
 The remainder of this paper is as follows. In Section~\ref{sec:motivation},
 three motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
-of the provided infrastructures. Section~\ref{sec:flexreg}
+of the provided infrastructure. Section~\ref{sec:flexreg}
 introduces the flexible regression framework in more detail. A thorough introduction of the
 \proglang{R} package \pkg{bamlss}, describing the most important building blocks for developing
 families, model terms and estimation algorithms, is then given in Section~\ref{sec:package}. In
@@ -257,7 +257,7 @@ basic handling of the package should be relatively simple. The second example sh
 package can deal with a variety of different model terms and that model fitting functions
 can easily be exchanged, here, we exemplify this feature by applying a lasso-type estimation engine.
 The third example then explains how full distributional regression models can be estimated and show
-cases once more the flexibility of the provided modeling infrastructures.
+cases once more the flexibility of the provided modeling infrastructure.
 
 \subsection{Basic Bayesian regression: Logit model} \label{sec:logitmodel}
 
@@ -274,9 +274,9 @@ binomial logit model using the default MCMC algorithm can be fitted (sampler fun
 \fct{sam\_GMCMC}, see also Section~\ref{sec:package} for other options). The MCMC algorithm
 uses iteratively weighted least squares (IWLS,~\citealp{bamlss:Gamerman:1997}, for more
 details see Section~\ref{sec:algos}) proposals, which have very good mixing properties and
-computational advances when using very large data sets
+computational advantages when using very large data sets
 \citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. First, the model formula
-specified with
+is specified with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("SwissLaborModel.rda")) {
   f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
@@ -291,12 +291,13 @@ if(!file.exists("SwissLaborModel.rda")) {
 f <- participation ~ income + age + education +
   youngkids + oldkids + foreign + I(age^2)
 @
-Then, to reproduce the results the seed of the random number generator is set to
-<<>>=
+Then, to reproduce the results the seed of the random number generator is set and
+the model is estimated by
+<<echo=FALSE>>=
 set.seed(123)
 @
-The model is estimated by
 <<eval=FALSE>>=
+set.seed(123)
 b <- bamlss(f, family = "binomial", data = SwissLabor,
   n.iter = 1200, burnin = 200, thin = 1)
 @
@@ -312,8 +313,8 @@ application Section~\ref{sec:application}. The default model fitting engines use
 (see also Section~\ref{sec:package}), similar to the families that can be used
 with the \fct{glm} function, which enables easy implementation of new distributions (models).
 
-Note, to capture nonlinearities, a quadratic term for variable \code{age} is added to
-the model. The resulting object \code{b} is of class \code{"bamlss"} for which standard
+Note that the model contains a quadratic term for variable \code{age} in order to capture nonlinearities.
+The resulting object \code{b} is of class \code{"bamlss"} for which standard
 extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
 are available. \hypertarget{msummary}{}The model summary output is printed
 by~\label{logitmodel_summary}
@@ -332,7 +333,7 @@ Besides, more results from the optimizer are reported at the very end of the out
 the corrected AIC (\code{AICc}, \citealp{bamlss:aic1, bamlss:aic2}), the equivalent degrees of freedom
 (\code{edf}), the log-likelihood (\code{logLik}), etc.
 Before proceeding the analysis, users usually perform additional convergence checks of the
-MCMC chains by looking at traceplots and auto-correlation (besides acceptance probabilities).
+MCMC chains by looking at traceplots and autocorrelation (besides acceptance probabilities).
 <<eval=FALSE>>=
 plot(b, which = c("samples", "max-acf"))
 @
@@ -347,21 +348,21 @@ plot(bsp, which = "samples", spar = FALSE, ask = FALSE)
 plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
 @
 \caption{\label{fig:logit_traceplots} Logit model, MCMC trace (left panel),
-  auto-correlation for the intercept (middle panel), maximum auto-correlation for all
+  autocorrelation for the intercept (middle panel), maximum autocorrelation for all
   parameters (right panel).}
 \end{figure}
 These are visualized in Figure~\ref{fig:logit_traceplots} and reveal approximate convergence of
-the MCMC chains, i.e., there is no visible trend, and the very low auto-correlation shown for
-the intercept and the maximum auto-correlation calculated as the maximum for each lag across all 
+the MCMC chains, i.e., there is no visible trend, and the very low autocorrelation shown for
+the intercept and the maximum autocorrelation calculated as the maximum for each lag across all 
 parameters suggest close to i.i.d.\ samples from the posterior distribution.
 As mentioned above, the
 user could also increase the number iterations and the burnin-phase, as well as adapt the thinning
 parameter (arguments \code{n.iter}, \code{burnin} and \code{thin}), to make the significant bar at lag one disappear.
-Note that the function call would compute all trace- and auto-correlation plots, however,
+Note that the function call would compute all trace and autocorrelation plots, however,
 for convenience we only show plots for the intercept. In addition, samples can also be
 extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},
-a class provided by the \pkg{coda} package \citep{bamlss:Plummer+Best+Cowles+Vines:2006}.
-This package includes a rich infrastructure for further convergence diagnostic checks,
+a class provided by the \pkg{coda} package \citep{bamlss:Plummer+Best+Cowles+Vines:2006}
+which includes a rich infrastructure for further convergence diagnostic checks,
 e.g., Gelman and Rubin's convergence diagnostic
 \citep{bamlss:Gelman+Rubin:1992, bamlss:Brooks+Gelman:1998} or
 Heidelberger and Welch's convergence diagnostic
@@ -387,7 +388,7 @@ using function \fct{c95} to obtain credible intervals (note, individual samples 
 extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
 <<plot2d, eval=FALSE>>=
-blues <- function(n, ...) sequential_hcl(n, "Blues", rev = TRUE)
+blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
 plot2d(pSwiss ~ age, data = nd, ylab = "participation",
   ylim = range(c(nd$pSwiss, nd$pForeign)),
   fill.select = c(0, 1, 0, 1))
@@ -437,10 +438,10 @@ first impression of the modeling capabilities, we again use the \code{SwissLabor
 logit model of Section~\ref{sec:logitmodel}, however, in this example we use
 regression splines to capture the nonlinear effect variable \code{age}.
 
-As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
-package \pkg{mgcv} \citep{bamlss:Wood:2019} infrastructures, i.e., for setting up the design
-and penalty matrices for smooth terms the \pkg{mgcv} generic \fct{smooth.construct} or 
-\fct{smoothCon} is called (see also Section~\ref{sec:package}).
+As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the \proglang{R}
+package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
+and penalty matrices for smooth terms by calling \pkg{mgcv}'s \fct{smooth.construct} or 
+\fct{smoothCon}.
 To estimate a spline model instead of a polynomial model for variable \code{age} the model
 formula only needs to be slightly adapted
 <<>>=
@@ -463,7 +464,7 @@ Figure~\ref{fig:logit_effects} and reveals that the quadratic polynomial seems t
 nonlinearity appropriately. 
 
 To give a better impression what type of model terms can be used with the \pkg{bamlss} framework
-Table~\ref{tab:modelterms} lists commonly used specifications.
+Table~\ref{tab:modelterms} lists commonly-used specifications.
 \begin{table}[t!]
 \centering
 \begin{tabular}{p{6cm}p{8.3cm}}
@@ -503,10 +504,10 @@ if(!file.exists("SwissLaborModel-lasso.rda")) {
 }
 @
 
-Besides the supported infrastructures from the \pkg{mgcv} package, it is also possible to
+Besides the supported infrastructure from the \pkg{mgcv} package, it is also possible to
 implement completely new model terms that may follow different setups compared to the basis
 functions approach (see also Appendix~\ref{appendix:specialterms} for an example using growth curves).
-Moreover, using \pkg{ba mlss}, estimation engines can also be exchanged. To give
+Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
 an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
 a fused lasso algorithm (see also Section~\ref{sec:application} for a complex example using gradient
 boosting optimization).
@@ -595,8 +596,8 @@ spline based estimate in the right panel of Figure~\ref{fig:logit_effects}.
 
 In this example we will now extend the framework and estimate a distributional regression
 model using data on fatalities in Austria. The data is taken from the Eurostat data base
-(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from 2000 to 46
-weeks in 2020. The data is provided in the \pkg{bamlss} package and can be loaded with
+(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from the beginning
+of 2000 up to week~46 in 2020. The data is provided in the \pkg{bamlss} package and can be loaded with
 <<>>=
 data("fatalities", package = "bamlss")
 @
@@ -668,14 +669,14 @@ dnum <- dnum[, dn]
 hist(d19$num, breaks = "Scott", freq = FALSE,
   main = "", xlab = "#Fatalities", ylim = c(0, max(dnum, na.rm = TRUE)))
 i <- order(d19$num)
-col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
+col <- palette.colors(ncol(dnum) + 1)[-1]
 matplot(d19$num[i], dnum[i, ], type = "l",
   lty = 1, col = col, add = TRUE, lwd = 3)
 legend("topright", paste0(dn, ": ", round(dic$dic1, 2)),
   lty = 1, lwd = 3, bty = "n", col = col,
   title = "Family & DIC")
 @
-\caption{\label{fig:fathist} Fatalities data in Austria (2000-2019), histogram and
+\caption{\label{fig:fathist} Fatalities data in Austria (2000--2019), histogram and
   fitted distributions.}
 \end{figure}
 The histogram of the number of fatalities together with the fitted
@@ -734,7 +735,7 @@ b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
 @
 Note that we assign the log-link for parameter $\mu$ to ensure positivity. 
 In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples
-and only save every 10th sample. We did the same estimation step analogously with the
+and only save every $10$-th sample. We did the same estimation step analogously with the
 other distributions.
 
 In addition to the DIC, there is also the Watanabe-Akaike information criterion (WAIC, 
@@ -1076,7 +1077,7 @@ implement neural network distributional regression models.
 \subsubsection{Measures of performance}
 
 Model choice and variable selection is important in distributional regression due to the large
-number of candidate models. The following lists commonly used tools:
+number of candidate models. The following lists commonly-used tools:
 \begin{itemize}
 \item \emph{Information criteria} can be used to compare different model specifications.  
   For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
@@ -1373,7 +1374,7 @@ Similar to the well-known \fct{model.frame} function that is used, e.g., by the 
 fitting function \fct{lm}, or for generalized linear models \fct{glm}, the \fct{bamlss.frame}
 function extracts a ``model frame'' for fitting distributional regression models. 
 Internally, the function parses model formulae, one for each parameter of the distribution,
-using the \pkg{Formula} package infrastructures \citep{bamlss:Zeileis+Croissant:2010} in combination
+using the \pkg{Formula} package infrastructure \citep{bamlss:Zeileis+Croissant:2010} in combination
 with \fct{model.matrix} processing for linear effects and \fct{smooth.construct} processing of
 the \pkg{mgcv} package to setup design and penalty matrices for unspecified smooth function 
 estimation (\citealp{bamlss:Wood:2019}, see also, e.g., the documentation of function \fct{s} and
@@ -1892,7 +1893,7 @@ the algorithm approached a stable state, which suggest that we retrieve
 reasonable initial values for the MCMC sampling.
 
 The MCMC chains are investigated by looking directly at the traces of the chains
-and with the auto-correlation function of the chains.
+and with the autocorrelation function of the chains.
 %
 <<fig=FALSE, eval=FALSE>>=
 plot(flash_model_ztSICHEL,
@@ -1902,13 +1903,13 @@ plot(flash_model_ztSICHEL,
 )
 @
 %
-Figure~\ref{fig:apptrace} shows the traces and the auto-correlation functions
+Figure~\ref{fig:apptrace} shows the traces and the autocorrelation functions
 for three regression coefficients of the term \code{s(sqrt_cape)} for parameter $\mu$, $\sigma$
 and $\nu$ of the Sichel distribution. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
-reasonable starting values for the sampling. The auto-correlation functions
-for parameter $\mu$ and $\sigma$ reveal quite some auto-correlation after the thinning,
+reasonable starting values for the sampling. The autocorrelation functions
+for parameter $\mu$ and $\sigma$ reveal quite some autocorrelation after the thinning,
 which suggests that one could increase the sampling efforts.
 
 \begin{figure}[t!]
@@ -1920,7 +1921,7 @@ b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "sigma.s.s(sqrt_c
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
 @
-\caption{MCMC trace (left panels) and auto-correlation (right panels) for two
+\caption{MCMC trace (left panels) and autocorrelation (right panels) for two
 splines from the term \code{s(sqrt\_cape)} of the model \code{nu}.}
 \label{fig:apptrace}
 \end{figure}
@@ -2154,7 +2155,7 @@ distributional regression models. The package is primarily based on the typical 
 implementations, \pkg{bamlss} is a modular ``Lego toolbox'', however, the package stands out from
 others in that it makes complete sampling and or optimizer functions exchangeable,
 so that users who are interested in extensions can easily set up new models, where all
-elaborate data processing infrastructures and extractor functions are completely provided by
+elaborate data processing infrastructure and extractor functions are completely provided by
 the package.
 Several examples illustrate the functionality of the package. For the future it is planned to 
 provide algorithms for Gigadata, a topic that the package so far treats only very superficially.
@@ -2223,7 +2224,7 @@ Gauss_bamlss <- function(...) {
 
 The default estimation engines \fct{opt\_bfit} and \fct{sam\_GMCMC} (also the gradient boosting optimizer function
 \fct{boost}) in \pkg{bamlss} provide support for the implementation of special model terms, i.e.,
-model terms that cannot be represented by the \pkg{mgcv} smooth term constructor infrastructures.
+model terms that cannot be represented by the \pkg{mgcv} smooth term constructor infrastructure.
 One simple example of such a special model term is a nonlinear growth curve, e.g., a nonlinear
 Gompertz curve
 $$
