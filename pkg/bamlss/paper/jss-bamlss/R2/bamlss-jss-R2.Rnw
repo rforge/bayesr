@@ -126,7 +126,7 @@ to generalized additive models for location, scale, and shape
 \citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
 also known as Bayesian structured additive distributional regression 
 \citep{bamlss:Klein+Kneib+Lang+Sohn:2015} which
-encompasses (generalized) linear models \citep{bamlss:Nelder+Wedderburn:1972} as special cases.
+encompasses (generalized) linear models \citep[GLMs,][]{bamlss:Nelder+Wedderburn:1972} as special cases.
 Bayesian inference in these models can be seen as a natural framework
 for penalizing flexible model terms and to overcome potential problems with $p$~values
 and classical null hypothesis significance testing \citep{bamlss:ASA:2016}. However,
@@ -137,18 +137,18 @@ Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized esti
 techniques such as lasso or boosting
 \citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
 might be necessary or further advanced custom algorithms \citep{bamlss:Wood:2017}. Hence,
-to facilitate addressing all challgenges and needs simultaneously independent of a specific 
-estimation strategy and fitting algorithms, the \pkg{bamlss} package for the \proglang{R}
+to facilitate addressing all challgenges and needs simultaneously -- independent of a specific 
+estimation strategy and/or fitting algorithm -- the \pkg{bamlss} package for the \proglang{R}
 system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox'',
 extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
-not only the response distribution or the regression terms are ``Lego bricks''
-but also the estimation algorithm such as a specific MCMC sampler.
+not only the response distribution is a ``Lego brick'' (as in a classical GLM) or the
+regression terms (as in a GAM) but also the estimation algorithm such as a specific MCMC sampler.
 
 The idea of a ``Lego toolbox'' for regression models has of course been around for some time;
 in some implementations, Bayesian and frequentist, there is not only the possibility to easily 
 implement new distributions, but also model terms, from splines to neural networks to regression 
 trees. In some implementations optimization routines may also be exchanged. The following is a list
-of the best known packages for regression models in the \proglang{R} ecosystem, whose
+of well-known packages for regression models in the \proglang{R} ecosystem, whose
 implementations are designed to be extremely flexible.
 %
 \begin{itemize}
@@ -167,7 +167,7 @@ at providing highly-optimized algorithms for general smooth models
 as well as the dedicated \fct{bam} function for big data
 that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. All these packages rely on 
 frequentist estimation strategies. Moreover, the package provides
-sophisticated infrastructures for generating new classes of smooth terms (which is completely
+sophisticated infrastructures for generating new classes of smooth terms (which is fully
 adopted by the \pkg{bamlss} package).
 
 \item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
@@ -182,7 +182,7 @@ Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAM
 
 For more flexibility, going beyond these capabilities, it is in principle possible to 
 directly implement custom models using general purpose MCMC software like
-\pkg{JAGS}, \pkg{Stan}, or \pkg{WinBUGS} \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000}.
+\pkg{JAGS}, \pkg{Stan}, or the \proglang{BUGS} family of packages \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000,bamlss:Goudie+Turner+Angelis:2020}.
 However, for complex models -- e.g., using large data sets, spatial effects, or
 higher-order interactions -- sampling times from these generic MCMC engines can become long, 
 sometimes prohibitively long. This has been addressed by dedicated packages for Bayesian
