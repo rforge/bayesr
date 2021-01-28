@@ -26,7 +26,7 @@ data("fatalities", package = "bamlss")
 The data set contains information on the number of fatalities (variable `num`) and
 the year and week of recording (variables `year` and `week`). The motivation
 for this analysis is to model a reference mortality, which allows one to describe
-the excess mortabilty caused by exceptional events such as pandemics [@bamlss:Leon:2020] or
+the excess mortality caused by exceptional events such as pandemics [@bamlss:Leon:2020] or
 natural catastrophes [@bamlss:fouillet2008].
 Excess mortality refers to mortality in excess of what would be
 expected based on the non-crisis mortality rate in the population of interest. Here,
