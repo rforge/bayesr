@@ -1669,16 +1669,26 @@ Starting the sampler...
 %
 The model was fitted on an Intel(R) Xeon(R) CPU E5-4660 v4 with 2.20GHz
 on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours.
+If the argument \code{binning = TRUE}, this will result in only different observations being used 
+internally to create the design matrices. This can have two advantages, (a) for large data sets one 
+does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
+faster, because fewer floating point operations need to be performed . In addition, if the argument
+\code{light = TRUE}, no design or penalty matrices, model frames, results, etc.,
+are stored, hence, the returned object requires much less memory.
 
 Analogous models have been fitted for the two other distributions, zero-truncated
 Sichel \code{flash_model_ztSICHEL} and zero-truncated beta negative binomial
-\code{flash_model_ztBNB}.
+\code{flash_model_ztBNB}. All models are provided within the \pkg{FlashAustria} package and can be
+loaded with
+<<eval=FALSE>>=
+data("FlashAustriaModel", package = "FlashAustria")
+@
+The corresponding \proglang{R}-script is provided in the supplemental materials.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemented within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
 argument of the plot method for these objects:
 %
-%% TODO: * document c.bamlss.residuals, * ylim for "WP", * default for newdata
 <<eval=FALSE>>=
 resids <- c(
   "ztnbinom" = residuals(flash_model_ztnbinom),
@@ -1707,13 +1717,16 @@ plot(resids, which = "wp", main = "Worm plot",
 Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behavior
 of the distributions---\code{ztSICHEL} and \code{ztnbinom} underestimate the mass of
 the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
-based on the zero-truncated Sichel exhibits the best overall calibration.
-Thus, from now on we focus on analyzing this model.
+based on the zero-truncated Sichel exhibits the best overall calibration. However, as
+mentioned above the mixing behavior and computational speed of the \fct{ztnbinom\_bamlss} model
+is much better and qualitative differences in predictions between the models are very small, 
+therefore, we focus on the \fct{ztnbinom\_bamlss} model.
+
 As a next diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
 %
 <<eval=FALSE>>=
-pathplot(flash_model_ztSICHEL, which = "loglik.contrib")
+pathplot(flash_model_ztnbinom, which = "loglik.contrib")
 @
 %
 \setkeys{Gin}{width=.7\textwidth}
@@ -1767,9 +1780,9 @@ which suggests that one could increase the sampling efforts.
 
 \begin{figure}[t!]
 \centering
-<<echo=FALSE, fig=TRUE, width=6, height=8>>=
+<<echo=FALSE, fig=TRUE>>=
 b2 <- b
-b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "theta.s.s(sqrt_cape).b1")]
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.p.(Intercept)", "theta.p.(Intercept)")]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)

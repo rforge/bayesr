@@ -46,5 +46,27 @@ flash_model_ztBNB <- bamlss(f, data = FlashAustriaTrain,
   thin = 50, burnin = 2000, n.iter = 3000, cores = 50,
   light = TRUE)
 
-save(flash_model_ztnbinom, flash_model_ztSICHEL, flash_model_ztBNB, file = "FlashAustriaModel.rda")
+## Reduced formula for ztnbinom model based on boosting step.
+boost_summary(flash_model_ztnbinom)
+
+fr <- list(
+  counts ~ s(sqrt_cape, bs = "ps") + s(hcc, bs = "ps") + s(str, bs = "ps") +
+           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
+         ~ s(sqrt_cape, bs = "ps")
+)
+
+set.seed(123)
+flash_model_ztnbinom_r <- bamlss(fr, data = FlashAustriaTrain,
+  family = "ztnbinom", binning = TRUE,
+  optimizer = opt_boost, maxit = 1000,
+  thin = 10, burnin = 2000, n.iter = 12000,
+  light = TRUE)
+
+save(
+  flash_model_ztnbinom_r,
+  flash_model_ztnbinom,
+  flash_model_ztSICHEL,
+  flash_model_ztBNB,
+  file = "FlashAustriaModel.rda"
+)
 
