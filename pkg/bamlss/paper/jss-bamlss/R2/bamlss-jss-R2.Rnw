@@ -695,10 +695,8 @@ of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smoo
 which are estimated using regression splines. We can use the following model formula for estimation
 <<>>=
 f <- list(
-  num   ~ s(week, bs = "cc", k = 20),
-  sigma ~ s(week, bs = "cc", k = 20),
-  nu    ~ s(week, bs = "cc", k = 20),
-  tau   ~ s(week, bs = "cc", k = 20)
+  log(num) ~ s(week, bs = "cc", k = 20),
+  sigma    ~ s(week, bs = "cc", k = 20)
 )
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
@@ -720,8 +718,7 @@ For example, a full Bayesian semi-parametric distributional regression model usi
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
-    n.iter = 12000, burnin = 2000, thin = 10)
+  b <- bamlss(f, data = d19, family = LO)
   save(b, file = "FatModel.rda")
 } else {
   load("FatModel.rda")
@@ -867,7 +864,7 @@ and the estimated quantiles are computed with the quantile function of the famil
 (see Section~\ref{sec:families} for details)
 <<>>=
 nd$fit <- sapply(c(0.05, 0.5, 0.95),
-  FUN = function(p) { family(b)$q(p, par) })
+  FUN = function(p) { exp(family(b)$q(p, par)) })
 @
 The estimated quantiles and the data used for modeling can now be plotted with
 <<echo=TRUE,eval=FALSE>>=
