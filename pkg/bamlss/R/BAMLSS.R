@@ -9604,6 +9604,11 @@ residuals.bamlss <- function(object, type = c("quantile", "response"), nsamps = 
       n <- if(is.null(dim(y))) length(y) else nrow(y)
     }
 
+    if(is.null(y)) {
+      rn <- response_name(object)
+      y <- model.frame(object)[[rn]]
+    }
+
     if(is.null(y))
       stop("response variable is missing, cannot compute residuals!")
 

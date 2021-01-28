@@ -1515,18 +1515,9 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 \citep{FlashAustria}. The data are loaded with
 %
 <<echo=FALSE>>=
-## Load the data.
 data("FlashAustria", package = "FlashAustria")
 data("FlashAustriaModel", package = "FlashAustria")
-FlashAustriaModel <- b <- flash_model_ztSICHEL
-
-### ## Specify formula.
-### f <- list(
-###   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
-###     s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
-###     s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
-###   theta ~ s(sqrt_lsp, bs = "ps")
-### )
+FlashAustriaModel <- b <- flash_model_ztnbinom
 @
 %
 <<>>=
@@ -1600,7 +1591,7 @@ binomial.
 
 The zero-truncated negative binomial distribution is implemented as
 \fct{ztnbinom\_bamlss} within \pkg{bamlss}.  Implementations of the Sichel
-\fct{SICHEL} and the beta negative binomial \code{BNB()} are available within
+\fct{SICHEL} and the beta negative binomial \fct{BNB} are available within
 \pkg{gamlss.dist}.  Using \fct{trun} from \pkg{gamlss.tr} zero-truncated
 versions of the two GAMLSS families can be generated that can instantaneously be
 plugged into the \code{family} argument of the \fct{bamlss} model call.
@@ -1614,7 +1605,7 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 
 In the following we illustrate how to set up and model the lightning counts with one
 of the three distributions. To specify smooth terms for all distributional parameters
-(for \fct{ztnbinom\_bamlss} parameters $\mu$ and $\theta$, for \fct(ztSICHEL) and \fct{ztBNB}
+(for \fct{ztnbinom\_bamlss} parameters $\mu$ and $\theta$, for \fct{ztSICHEL} and \fct{ztBNB}
 parameters $\mu$, $\sigma$ and $\nu$), we set up a \code{list} of formulas with length three:
 %
 <<eval=FALSE>>=
@@ -1632,35 +1623,41 @@ f <- list(
 @
 %
 Internally, only the relevant formulae are processed, i.e., family \fct{ztnbinom\_bamlss} has
-only two paremeters, hence the first two formulae are evaluated.
+only two paremeters, hence the first two formulae are used.
 Here, we adopt P-splines \citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
-properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
-\pkg{mgcv} infrastructure \citep{bamlss:Wood:2019} provided by \code{s()}.
+properties.
 
 Now, we have all ingredients on hand to feed the standard interface for
-statistical models in \proglang{R}: A formula \code{f}, a family
-\code{ztSICHEL}, and a data set \code{FlashAustriaTrain}. Within the
+statistical models in \proglang{R}: A formula \code{f}, families
+\fct{ztnbinom\_bamss}, \fct{ztSICHEL}, \fct{ztBNB}, and a data set
+\code{FlashAustriaTrain}. Within the
 \code{bamlss()} call we also provide arguments which are passed forward to the
 optimizer and the sampler. We choose the gradient boosting optimizer
 \code{opt\_boost()} in order to find initial values for the default sampler
 \code{sam\_GMCMC()}. Gradient boosting proved to offer a very stable method for
 finding regression coefficients that serve as initial values for a MCMC sampler
-\citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}.  We set the number of iterations
-to \code{maxit = 1000}. For the sampling we allow another $500$ iterations as burn-in
-phase, and apply a thinning of the resulting chain of $50$.  Running
-\code{n.iter = 1500} iterations over \code{cores = 50} cores leads to $1000$ MCMC samples in the
+\citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. In the following, we illustrate the estimation of the 
+models with the \fct{ztnbinom\_bamlss} family, the reason being that this family is implemented
+much more efficiently and has relatively weak correlation between the distribution parameters in 
+comparison, i.e., the mixing of the MCMC chains is significantly better. In addition, the difference 
+between the models in terms of prediction is qualitatively very similar.
+We set the number of iterations
+to \code{maxit = 1000}. For the sampling we allow another $2000$ iterations as burn-in
+phase, and apply a thinning of the resulting chain of $10$.  Running
+\code{n.iter = 12000} iterations leads to $1000$ MCMC samples in the
 end (note that parallel chains are started using function \fct{mclapply} of the
-base \proglang{R} \pkg{parallel} package). Finally, we set \code{light = TRUE} to return a
+base \proglang{R} \pkg{parallel} package by setting argument \code{cores}, see the manual of
+sampler function \fct{sam\_MCMC}). Finally, we set \code{light = TRUE} to return a
 lighter object, i.e., the model.frame and design and penalty matrices are not stored:
 %
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(123)
-R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
-+    family = ztSICHEL, binning = TRUE,                     
+R> flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain,
++    family = "ztnbinom", binning = TRUE,                     
 +    optimizer = opt_boost, maxit = 1000,                     
-+    thin = 50, burnin = 500, n.iter = 1500, cores = 50,      
-+    light = TRUE)                                            
++    thin = 10, burnin = 2000, n.iter = 12000,      
++    light = TRUE)             
 \end{Sinput}
 \begin{Soutput}
 logLik -36607.4 eps 0.0003 iteration 1000 qsel 10
@@ -1670,13 +1667,11 @@ Starting the sampler...
 \end{Soutput}
 \end{Schunk}
 %
-The model was fitted in parallel on 50 Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
-on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours
-(note that sampling time can usually reduced tremendously by implementing the score
-and Hessian functions of the family in \proglang{C} as in \fct{ztnbinom\_bamlss}).
+The model was fitted on an Intel(R) Xeon(R) CPU E5-4660 v4 with 2.20GHz
+on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours.
 
 Analogous models have been fitted for the two other distributions, zero-truncated
-negative binomial \code{flash_model_ztnbinom} and zero-truncated beta negative binomial
+Sichel \code{flash_model_ztSICHEL} and zero-truncated beta negative binomial
 \code{flash_model_ztBNB}.
 To select one of the three models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemented within \pkg{bamlss}
