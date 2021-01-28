@@ -592,7 +592,7 @@ plot2d(page ~ age, data = SwissLabor, rug = TRUE)
 Using the fused lasso estimation nonlinearities can be identified again, similar to the
 spline based estimate in the right panel of Figure~\ref{fig:logit_effects}.
 
-\subsection{Distributional model} \label{sec:distmodel}
+\subsection{Location-scale model} \label{sec:distmodel}
 
 In this example we will now extend the framework and estimate a distributional regression
 model using data on fatalities in Austria. The data is taken from the Eurostat data base
@@ -604,7 +604,7 @@ data("fatalities", package = "bamlss")
 The data set contains information on the number of fatalities (variable \code{num}) and
 the year and week of recording (variables \code{year} and \code{week}). The motivation
 for this analysis is to model a reference mortality, which allows one to describe
-the excess mortabilty caused by exceptional events such as pandemics \citep{bamlss:Leon:2020} or
+the excess mortality caused by exceptional events such as pandemics \citep{bamlss:Leon:2020} or
 natural catastrophes \citep{fouillet2008}.
 Excess mortality refers to mortality in excess of what would be
 expected based on the non-crisis mortality rate in the population of interest. Here,
@@ -617,82 +617,16 @@ d19 <- subset(fatalities, year < 2020)
 d20 <- subset(fatalities, year > 2019)
 @
 
-To find a well-calibrated model, the first step is to look for a suitable distribution for the
-data at hand. The \pkg{gamlss.dist} package \citep{bamlss:gamlss.dist} provides a number
-of distributions which can also be used for estimation in \pkg{bamlss}. In this example, we consider
-6 distributions with different number of parameters, from 2 to 4. In detail these are the
-normal distribution (family \fct{NO}), gamma and generalized gamma distribution (family \fct{GA}
-and \fct{GG}), Box-Cox t distribution (family \fct{BCT}), Box-Cox power exponential
-distribution (family \fct{BCPE}) and the Box-Cox Cole and
-Green distribution (family \fct{BCCG}). First, we only estimate the distributional parameters
-without covariates, to get a first idea which distribution fits well. We compare visually
-as well as by the deviance information criterion (DIC, the complete \proglang{R}-code is
-available in the supplements). Note that we do not
-use discrete distributions in this example because the number of fatalities is far away from
-zero in the thousands, i.e., a model for count data will most probable not improve the overall fit.
-\begin{figure}[!ht]
-\centering
-\setkeys{Gin}{width=0.7\textwidth}
-<<echo=FALSE, fig=TRUE, width=6, height=5>>=
-par(mar = c(4.1, 4.1, 0.1, 0.1))
-
-if(!file.exists("fatalities_models.rda")) {
-  source("fatalities_models.R")
-} else {
-  load("fatalities_models.rda")
-}
-
-names(res) <- sapply(res, function(x) x$distribution)
-
-dic <- lapply(res, function(x) {
-  d <- data.frame(
-    "distribution" = x$distribution,
-    "dic1" = x$dic1$DIC, "dic2" = x$dic2$DIC,
-    "waic1" = x$waic1, "waic2" = x$waic2,
-    "crps" = x$crps
-  )
-  return(d)
-})
-
-dic <- do.call("rbind", dic)
-dic <- dic[order(dic$dic1, decreasing = TRUE), ]
-
-dn <- as.character(dic$distribution)
-dnum <- list()
-for(i in seq_along(res)) {
-  if(res[[i]]$distribution %in% dn)
-    dnum[[as.character(res[[i]]$distribution)]] <- res[[i]]$dnum
-}
-dnum <- do.call("cbind", dnum)
-dnum <- dnum[, dn]
-
-hist(d19$num, breaks = "Scott", freq = FALSE,
-  main = "", xlab = "#Fatalities", ylim = c(0, max(dnum, na.rm = TRUE)))
-i <- order(d19$num)
-col <- palette.colors(ncol(dnum) + 1)[-1]
-matplot(d19$num[i], dnum[i, ], type = "l",
-  lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(dn, ": ", round(dic$dic1, 2)),
-  lty = 1, lwd = 3, bty = "n", col = col,
-  title = "Family & DIC")
-@
-\caption{\label{fig:fathist} Fatalities data in Austria (2000--2019), histogram and
-  fitted distributions.}
-\end{figure}
-The histogram of the number of fatalities together with the fitted
-densities and corresponding DIC values is shown in
-Figure~\ref{fig:fathist}. One of the most flexible distributions of the
-\pkg{gamlss.dist} package, the four parameter Box-Cox t
-distribution, has a quite good fit and the lowest DIC (though only
-by a small difference). Hence, with some certainty one of the chosen distribution models will
-have a fairly good model fit in further analysis.
-
-In the next step, we estimate Bayesian models that take into account the cyclical pattern over
-the year. In winter, there are usually quite a lot of influenza and other viral infections,
-which lead to a higher mortality rate. The models are estimated using the predictor
-$\eta_k = f_{k} (\texttt{week})$ for each parameter
-of the distribution, where functions $f_{k}(\texttt{week})$ are unspecified smooth functions,
-which are estimated using regression splines. We can use the following model formula for estimation
+As a first distributional model for analysis we use the normal distribution, which seems
+plausible, the number of fatalities is far away from zero in the
+thousands and the distribution is only moderately skew towards larger rates. Hence,
+to stabilize the variance additionally we log-transform the dependent variable.
+Moreover, in winter there are usually quite a lot of influenza and other viral
+infections, which lead to a higher mortality rate. Therefore, we specify a
+a cyclic smooth spline for the \code{week}s of the year to capture the seasonal variation,
+i.e., the model is estimated using the predictor $\eta_k = f_{k} (\texttt{week})$ for parameter
+$\mu$ and $\sigma$ of the normal distribution and functions $f_{k}(\texttt{week})$ are 
+unspecified smooth functions. The model formula is specified by
 <<>>=
 f <- list(
   log(num) ~ s(week, bs = "cc", k = 20),
@@ -701,24 +635,18 @@ f <- list(
 @
 again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
 \citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic cubic
-regression spline.
-Note that model formulae are provided as lists of formulae, i.e., each list entry
-represents one parameter of the response distribution. Since the maximum number of
-parameters of the selected distributions is 4, we supply 4 formulae. Internally, \pkg{bamlss}
-only processes the relevant formulae depending on the family. The \pkg{gamlss.dist} package
-has a naming convention for the distributional parameters, which is adopted in this example.
-However, the user can also drop the parameter names on the left hand side of the formulae
-(but not the response \code{num}). Moreover, note that all smooth
+regression spline. Note that model formulae are provided as lists of formulae, i.e., each list
+entry represents one parameter of the response distribution. Moreover, note that all smooth
 terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
 constructor functions are based on the generic \fct{smooth.construct} method, for which
 new classes can be added (see also the \pkg{mgcv} manual).
 For example, a full Bayesian semi-parametric distributional regression model using the
-\fct{BCPE} family of the \pkg{gamlss.dist} package can be estimated with
+\fct{NO} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
-  b <- bamlss(f, data = d19, family = LO)
+  b <- bamlss(f, data = d19, family = NO)
   save(b, file = "FatModel.rda")
 } else {
   load("FatModel.rda")
@@ -727,73 +655,12 @@ if(!file.exists("FatModel.rda")) {
 <<eval=FALSE>>=
 library("gamlss.dist")
 set.seed(456)
-b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
-  n.iter = 12000, burnin = 2000, thin = 10)
+b <- bamlss(f, data = d19, family = NO)
 @
-Note that we assign the log-link for parameter $\mu$ to ensure positivity. 
-In this example we use 12000 iterations for the MCMC sampler and withdraw the first 2000 samples
-and only save every $10$-th sample. We did the same estimation step analogously with the
-other distributions.
-
-In addition to the DIC, there is also the Watanabe-Akaike information criterion (WAIC, 
-\citealp{watanabe2010asymptotic}) to investigate the goodness of fit.
-In \pkg{bamlss}, the WAIC of the fitted model can be computed with
-<<>>=
-WAIC(b)
-@
-The function returns two values for the WAIC, depending on the type of the estimated number
-of parameters of the model (\code{p1} uses expected differences of log densities, whereas \code{p2}
-is computed using the variance in the log density, for details
-see \citealp{watanabe2010asymptotic}).
-
-Another criterion for assessing model calibration is the continuous rank probability score (CRPS,
-\citealp{bamlss:Gneiting+Raftery:2007}).
-The \proglang{R} package \pkg{scoringRules} 
-\citep{bamlss:Jordan+Krueger+Lerch:2018} provides tools for model calibration checks using the CRPS.
-Since the number of candidate distributions can be quite large, it might happen that the CRPS
-for some distributions is not implemented. In this case, the user can resort to a numerical 
-approximation as implemented in the function \fct{CRPS} in the \pkg{bamlss} package. Because
-the CRPS is a forecasting score, we computed the CRPS using 10-fold cross validation for
-each model. For example, the CRPS for the \fct{BCPE} model is computed with
-<<eval=FALSE>>=
-set.seed(789)
-folds <- rep(1:10, length.out = nrow(d19))
-crps <- NULL
-for(i in 1:10) {
-  df <- subset(d19, folds != i)
-  de <- subset(d19, folds == i)
-  b3 <- bamlss(f, data = df, family = BCPE(mu.link = "log"),
-    n.iter = 12000, burnin = 2000, thin = 10)
-  crps <- c(crps, CRPS(b3, newdata = de, FUN = identity))
-}
-crps <- mean(crps)
-@
-
-The values of the DIC, WAIC and CRPS for the 6 models are given in Table~\ref{tab:DIC}.
-\begin{table}[h!]
-\centering
-\begin{tabular}{lccc}
-\hline
-Family & DIC & WAIC & CRPS \\ 
-\hline
-\fct{NO}   & 12291.75 & 12294.20 & 51.89 \\
-\fct{GA}   & 12261.06 & 12262.40 & 51.72 \\
-\fct{GG}   & 12248.10 & 12249.31 & 51.52 \\
-\fct{BCT}  & 12215.85 & 12206.26 & 51.44 \\
-\fct{BCCG} & 12190.41 & 12188.05 & 51.31 \\
-\fct{BCPE} & \textbf{12188.30} & \textbf{12184.73} & \textbf{51.26} \\
-\hline
-\end{tabular}
-\caption{\label{tab:DIC} DIC, WAIC and CRPS comparison of the 6 distributional cyclical
-  week models. For the CRPS, 10-fold cross validation was used.}
-\end{table}
-Here, the four parameter \fct{BCPE} model has the lowest DIC, WAIC and CRPS, therefore, we
-examine this model in more detail in the rest of the analysis.
-
-After the estimation algorithms are finished, the estimated effects, e.g., for the \fct{BCPE} 
+After the estimation algorithms are finished, the estimated effects, e.g., for the \fct{NO} 
 model, can be visualized instantly using the plotting method.
 <<eval=FALSE>>=
-plot(b, model = c("mu", "sigma", "nu", "tau"))
+plot(b, model = c("mu", "sigma"))
 @
 \begin{figure}[!ht]
 \centering
@@ -806,52 +673,12 @@ plot(b, model = "mu", spar = FALSE)
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE)
 @
-
-\medskip
-
-<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, model = "nu", spar = FALSE)
-@
-<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
-plot(b, model = "tau", spar = FALSE)
-@
 \caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on parameter
-  $\mu$, $\sigma$, $\nu$ and $\tau$ of the Box-Cox power exponential model. The grey
+  $\mu$ and$\sigma$ of the normal location-scale model. The grey
   shaded areas represent 95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
-relationship for all parameters, however, 95\% pointwise credible intervals for parameter $\nu$
-and $\tau$ are larger such that the effects do not cross the horizontal zero line
-significantly, i.e., a simple intercept only specification for these parameters might be
-sufficient.
-
-For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
-Residuals can be extracted using function \fct{residuals} and has a plotting method. 
-Alternatively, residuals can be investigated with
-<<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
-@
-\begin{figure}[!ht]
-\centering
-\setkeys{Gin}{width=0.4\textwidth}
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
-@
-<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
-par(mar = c(4.1, 4.1, 4.1, 1.1))
-plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
-@
-\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
-  intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
-  regression model.}
-\end{figure}
-By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
-According the histogram and the Q-Q plot of the resulting randomized
-quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
+relationship for parameter $\mu$ and $\sigma$.
 
 In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
 distribution with the current situation in 2020. Therefore parameters for each week of the
@@ -861,7 +688,8 @@ nd <- data.frame("week" = 1:53)
 par <- predict(b, newdata = nd, type = "parameter")
 @
 and the estimated quantiles are computed with the quantile function of the family
-(see Section~\ref{sec:families} for details)
+(see Section~\ref{sec:families} for details) and re-transformed to the original scale using
+\fct{exp}
 <<>>=
 nd$fit <- sapply(c(0.05, 0.5, 0.95),
   FUN = function(p) { exp(family(b)$q(p, par)) })
@@ -911,7 +739,32 @@ indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95\% quantile,
 respectively.
 
-\pagebreak
+For judging how well the model fits to the data the user can inspect randomized quantile
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
+Residuals can be extracted using function \fct{residuals} and has a plotting method. 
+Alternatively, residuals can be investigated with
+<<eval=FALSE>>=
+plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
+@
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
+@
+\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
+  intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
+  regression model.}
+\end{figure}
+By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
+According the histogram and the Q-Q plot of the resulting randomized
+quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
+
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
