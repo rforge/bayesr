@@ -1751,8 +1751,7 @@ followed by \code{s(sqrt_cape).mu} with %
 \Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}.
 These two terms as well as all other terms with a strong contribution
 act on the distributional parameter \code{mu}. The contributions for the terms of the
-parameter \code{nu} play also an important role. The contributions for the terms of the
-distributional parameter \code{sigma} seem negligible.
+parameter \code{theta} seem negligible, except for covariate \code{sqrt_cape}.
 The overall message of this diagnostic is that the contributions to the
 log-likelihood at the end of the boosting procedure are very small and that
 the algorithm approached a stable state, which suggest that we retrieve
@@ -1764,7 +1763,7 @@ and with the autocorrelation function of the chains.
 <<fig=FALSE, eval=FALSE>>=
 plot(flash_model_ztSICHEL,
   model = "mu",
-  term  = "s(sqrt_cape)",
+  term  = "s(q_prof_PC1)",
   which = "samples"
 )
 @
@@ -1781,8 +1780,8 @@ which suggests that one could increase the sampling efforts.
 \begin{figure}[t!]
 \centering
 <<echo=FALSE, fig=TRUE>>=
-b2 <- b
-b2$samples[[1]] <- b2$samples[[1]][, c("mu.p.(Intercept)", "theta.p.(Intercept)")]
+b2 <- flash_model_ztnbinom_r
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(q_prof_PC1).b1", "mu.s.s(q_prof_PC1).b2")]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
