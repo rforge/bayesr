@@ -620,7 +620,7 @@ d20 <- subset(fatalities, year > 2019)
 As a first distributional model for analysis we use the normal distribution, which seems
 plausible, the number of fatalities is far away from zero in the
 thousands and the distribution is only moderately skew towards larger rates. Hence,
-to stabilize the variance additionally we log-transform the dependent variable.
+to stabilize skewness and variance we additionally log-transform the dependent variable.
 Moreover, in winter there are usually quite a lot of influenza and other viral
 infections, which lead to a higher mortality rate. Therefore, we specify a
 a cyclic smooth spline for the \code{week}s of the year to capture the seasonal variation,
@@ -641,7 +641,7 @@ terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
 also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
 constructor functions are based on the generic \fct{smooth.construct} method, for which
 new classes can be added (see also the \pkg{mgcv} manual).
-For example, a full Bayesian semi-parametric distributional regression model using the
+In the next step, a full Bayesian semi-parametric distributional regression model using the
 \fct{NO} family of the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
@@ -657,8 +657,8 @@ library("gamlss.dist")
 set.seed(456)
 b <- bamlss(f, data = d19, family = NO)
 @
-After the estimation algorithms are finished, the estimated effects, e.g., for the \fct{NO} 
-model, can be visualized instantly using the plotting method.
+After the estimation algorithms are finished, the estimated effects can be visualized
+instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma"))
 @
@@ -674,11 +674,14 @@ par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE)
 @
 \caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on parameter
-  $\mu$ and$\sigma$ of the normal location-scale model. The grey
+  $\mu$ and $\sigma$ of the normal location-scale model. The grey
   shaded areas represent 95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
-relationship for parameter $\mu$ and $\sigma$.
+relationship for parameter $\mu$ and $\sigma$. One can see a significant increase in mortality 
+during the winter months, but uncertainty also increases at this time of year. Likewise, the 
+uncertainty increases in the summer months, which is quite natural due to recurrent heat waves that 
+can be quite stressful for the cardiovascular system \citep{fouillet2008}.
 
 In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
 distribution with the current situation in 2020. Therefore parameters for each week of the
@@ -730,7 +733,7 @@ grid()
 \end{figure}
 The resulting plot is shown in Figure~\ref{fig:fatmodel_compare} and reveals
 the seasonal variation of fatalities. The median reveals a clear annual cycle
-with a higher number of fatalities in winter. The skewness of the distribution
+with a higher number of fatalities in winter. The effect of the standard deviation of the
 is also very dominant in winter.  However, also in the summer months there is a
 visible increase in the upper quantile, which is probably due to particular
 heat waves leading to greater cardiovascular stress \citep{fouillet2008}. The
@@ -763,8 +766,13 @@ plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
 \end{figure}
 By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
 According the histogram and the Q-Q plot of the resulting randomized
-quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to fit quite well.
+quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to be less
+appropriate for very large cases. Therefore, the next step will be to investigate other 
+distributions to obtain the best possible model fit.
 
+For the interested reader we have continued the analysis in the vignette for the \pkg{bamlss} 
+package with a variety of distributions from the \pkg{gamlss.dist} package, the vignette
+is available at \url{http://bamlss.org/articles/fatalities.html}.
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
@@ -1766,7 +1774,7 @@ which suggests that one could increase the sampling efforts.
 \centering
 <<echo=FALSE, fig=TRUE, width=6, height=8>>=
 b2 <- b
-b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "sigma.s.s(sqrt_cape).b1", "nu.s.s(sqrt_cape).b1")]
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "theta.s.s(sqrt_cape).b1")]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
