@@ -26,7 +26,7 @@ set.seed(123)
 flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
   family = "ztnbinom", binning = TRUE,                      ## General arguments.
   optimizer = opt_boost, maxit = 1000,                      ## Boosting arguments.
-  thin = 3, burnin = 1000, n.iter = 3000,                 ## Sampler arguments.
+  thin = 3, burnin = 1000, n.iter = 3000,                   ## Sampler arguments.
   light = TRUE)
 
 set.seed(123)
