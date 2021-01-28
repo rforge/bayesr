@@ -1613,10 +1613,9 @@ ztBNB <- trun(0, family = "BNB", local = FALSE)
 @
 
 In the following we illustrate how to set up and model the lightning counts with one
-of the three distributions,
-the zero-truncated Sichel.
-To specify smooth terms for all three distributional parameter $\mu$, $\sigma$ and $\nu$,
-we set up a \code{list} of formulas with length three:
+of the three distributions. To specify smooth terms for all distributional parameters
+(for \fct{ztnbinom\_bamlss} parameters $\mu$ and $\theta$, for \fct(ztSICHEL) and \fct{ztBNB}
+parameters $\mu$, $\sigma$ and $\nu$), we set up a \code{list} of formulas with length three:
 %
 <<eval=FALSE>>=
 f <- list(
@@ -1632,8 +1631,9 @@ f <- list(
 )
 @
 %
-Here, we adopt P-splines
-\citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
+Internally, only the relevant formulae are processed, i.e., family \fct{ztnbinom\_bamlss} has
+only two paremeters, hence the first two formulae are evaluated.
+Here, we adopt P-splines \citep{bamlss:Eilers+Marx:1996}, which are well known for their sampling
 properties.  Specifying smooth terms within \pkg{bamlss} formulae builds on the
 \pkg{mgcv} infrastructure \citep{bamlss:Wood:2019} provided by \code{s()}.
 
