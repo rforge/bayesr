@@ -3002,8 +3002,8 @@ if(FALSE) {
   d$p2 <- predict(b1, model = "mu")
 
   plot2d(p1 ~ x, data = d)
-  plot2d(p2 ~ x, data = d, add = TRUE, col.lines = "blue")
-  plot2d(I(1.2 + sin(x)) ~ x, data = d, add = TRUE, col.lines = "red")
+  plot2d(p2 ~ x, data = d, add = TRUE, col.lines = 4)
+  plot2d(I(1.2 + sin(x)) ~ x, data = d, add = TRUE, col.lines = 2)
 
   b1 <- bamlss(y ~ s(x,k=50), data = d, sampler = FALSE)
 }

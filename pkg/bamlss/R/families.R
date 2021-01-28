@@ -4913,7 +4913,7 @@ nmult_bamlss <- function(K)
 #p3 <- predict(b3, model = "mu")
 
 #plot(x, y)
-#plot2d(cbind(p1, p2, p3) ~ x, col.lines = "blue", lty = c(2, 1, 2), add = TRUE)
+#plot2d(cbind(p1, p2, p3) ~ x, col.lines = 4, lty = c(2, 1, 2), add = TRUE)
 #}
 
 ALD_bamlss <- function(..., tau = 0.5, eps = 0.01)

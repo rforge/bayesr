@@ -7351,8 +7351,8 @@ plot.bamlss <- function(x, model = NULL, term = NULL, which = "effects",
         for(j in 1:np) {
           traceplot2(samps[, j, drop = FALSE], main = "")
           mtext(paste("Trace of", snames[j]), side = 3, line = 1, font = 2)
-          lines(lowess(tx, samps[, j]), col = "red")
-          ##lines(fitted(gam(samps[, j] ~ s(tx,bs="ps"), method = "REML")), col = "red")
+          lines(lowess(tx, samps[, j]), col = 2)
+          ##lines(fitted(gam(samps[, j] ~ s(tx,bs="ps"), method = "REML")), col = 2)
           nu <- length(unique(samps[, j, drop = FALSE]))
           acf(if(nu < 2) jitter(samps[, j, drop = FALSE]) else samps[, j, drop = FALSE], main = "", ..., na.action = na.pass)
           mtext(paste("ACF of", snames[j]), side = 3, line = 1, font = 2)
