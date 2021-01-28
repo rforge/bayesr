@@ -17,7 +17,7 @@ f <- list(
   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
            s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
            s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
-         ~ s(sqrt_lsp, bs = "ps")
+         ~ s(sqrt_lsp, bs = "ps"),
          ~ 1
 )
 
