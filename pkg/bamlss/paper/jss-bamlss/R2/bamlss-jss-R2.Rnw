@@ -1517,13 +1517,13 @@ can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
 <<echo=FALSE>>=
 data("FlashAustria", package = "FlashAustria")
 data("FlashAustriaModel", package = "FlashAustria")
-FlashAustriaModel <- b <- flash_model_ztnbinom
+FlashAustriaModel <- b <- flash_model_ztSICHEL
 @
 %
 <<>>=
 data("FlashAustria", package = "FlashAustria")
-head(FlashAustriaTrain)[, c("counts", "hcc", "str", "tciw",
-  "q_prof_PC1", "sqrt_cape")]  
+head(FlashAustriaTrain)[, c("counts", "q_prof_PC1", "sqrt_cape",
+  "sqrt_lsp", "d2m", "cswc_prof_PC4")]
 nrow(FlashAustriaTrain)
 @
 %
@@ -1600,7 +1600,6 @@ plugged into the \code{family} argument of the \fct{bamlss} model call.
 library("gamlss.dist")
 library("gamlss.tr")
 ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
-ztBNB <- trun(0, family = "BNB", local = FALSE)
 @
 
 In the following we illustrate how to set up and model the lightning counts with one
@@ -1610,15 +1609,11 @@ parameters $\mu$, $\sigma$ and $\nu$), we set up a \code{list} of formulas with 
 %
 <<eval=FALSE>>=
 f <- list(
-  counts ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps")
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+           s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+           s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
+         ~ s(sqrt_lsp, bs = "ps"),
+         ~ 1
 )
 @
 %
@@ -1654,21 +1649,21 @@ lighter object, i.e., the model.frame and design and penalty matrices are not st
 \begin{Sinput}
 R> set.seed(123)
 R> flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain,
-+    family = "ztnbinom", binning = TRUE,                     
++    family = ztSICHEL, binning = TRUE,                     
 +    optimizer = opt_boost, maxit = 1000,                     
-+    thin = 10, burnin = 2000, n.iter = 12000,      
-+    light = TRUE)             
++    thin = 3, burnin = 1000, n.iter = 3000,
++    light = TRUE)        
 \end{Sinput}
 \begin{Soutput}
-logLik -36607.4 eps 0.0003 iteration 1000 qsel 10
-elapsed time: 31.76min
+logLik -36636.9 eps 0.0003 iteration 1000 qsel 7
+elapsed time: 43.61min
 Starting the sampler...
-|********************| 100%  0.00sec 502.15min
+|********************| 100%  0.00sec 176.41min
 \end{Soutput}
 \end{Schunk}
 %
 The model was fitted on an Intel(R) Xeon(R) CPU E5-4660 v4 with 2.20GHz
-on which the boosting took about 31.76~minutes and average sampling time about 8.4~hours.
+on which the boosting took about 43.61~minutes and the sampling time about 2.9~hours.
 If the argument \code{binning = TRUE}, this will result in only different observations being used 
 internally to create the design matrices. This can have two advantages, (a) for large data sets one 
 does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
@@ -1692,7 +1687,6 @@ argument of the plot method for these objects:
 <<eval=FALSE>>=
 resids <- c(
   "ztnbinom" = residuals(flash_model_ztnbinom),
-  "ztBNB"    = residuals(flash_model_ztBNB),
   "ztSICHEL" = residuals(flash_model_ztSICHEL)
 )
 plot(resids, which = "wp", main = "Worm plot")
@@ -1809,24 +1803,22 @@ $\log(\mu)$ would result in a higher expectation of the count data distribution.
 <<fig=FALSE, eval=FALSE>>=
 plot(flash_model_ztSICHEL,
   model = "mu",
-  term  = c("s(q_prof_PC1)", "s(sqrt_cape)")
+  term  = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)")
 )
 @
 %
 \begin{figure}[t!]
 \centering
-\setkeys{Gin}{width=0.8\textwidth}
-<<echo=FALSE, fig=TRUE, height=4.7, width=9, png=TRUE, pdf=FALSE>>=
-par(mfrow = c(1, 2))
-plot(b, model = "mu", term = c("s(q_prof_PC1)", "s(sqrt_cape)"),
+\setkeys{Gin}{width=1\textwidth}
+<<echo=FALSE, fig=TRUE, height=3, width=6, png=TRUE, pdf=FALSE>>=
+par(mfrow = c(1, 3))
+plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
-### plot(b, model = "nu", term = "s(q_prof_PC1)",
-###   ask = FALSE, spar = FALSE,
-###   rug = TRUE, col.rug = "#39393919")
 @
-\caption{Effect of the terms \code{s(q\_prof\_PC1)} and \code{s(sqrt\_cape)}
-from the model \code{mu}. Credible intervals derived from MCMC samples.}
+\caption{Effect of the terms \code{s(q\_prof\_PC1)}, \code{s(sqrt\_cape)},
+  and term \code{s(d2m)} from model \code{mu}. Credible intervals derived from MCMC
+  samples.}
 \label{fig:appeffect}
 \end{figure}
 %
