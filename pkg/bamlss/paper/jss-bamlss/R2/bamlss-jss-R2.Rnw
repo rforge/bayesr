@@ -1703,12 +1703,11 @@ plot(resids, which = "wp", main = "Worm plot")
 <<fig=TRUE, height=5.5, width=6, echo=FALSE>>=
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
-	"ztBNB"    = residuals(flash_model_ztBNB, newdata = FlashAustriaTrain),
 	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
 par(mar = c(4.1, 4.1, 4.1, 0.1))
 plot(resids, which = "wp", main = "Worm plot",
-  col = hcl.colors(3, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
+  col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 @
 \caption{Worm plots for the three distributional models.}
 \label{fig:appworm}
@@ -1780,7 +1779,7 @@ which suggests that one could increase the sampling efforts.
 \begin{figure}[t!]
 \centering
 <<echo=FALSE, fig=TRUE>>=
-b2 <- flash_model_ztnbinom_r
+b2 <- b
 b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(q_prof_PC1).b1", "mu.s.s(q_prof_PC1).b2")]
 
 par(mar = c(4.1, 4.1, 4.1, 1.1))
