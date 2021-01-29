@@ -1,10 +1,13 @@
 ## https://www.euromomo.eu/index.html
-## https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/demo_r_mwk3_t.tsv.gz
+tdir <- tempfile()
+dir.create(tdir)
+file_url <- "https://ec.europa.eu/eurostat/estat-navtree-portlet-prod/BulkDownloadListing?file=data/demo_r_mwk3_t.tsv.gz"
+download.file(file_url, file.path(tdir, "fatalities.tsv.gz"))
 
 ## Background information:
 ## https://www.statcan.gc.ca/eng/statistical-programs/document/3233_D5_V1
 
-d <- read.csv("demo_r_mwk3_t.tsv", sep = "\t")
+d <- read.csv(gzfile(file.path(tdir, "fatalities.tsv.gz")), sep = "\t")
 
 countries <- d$unit.geo.time
 countries <- gsub("NR,", "", countries)
@@ -49,7 +52,7 @@ for(j in "AT") {
 fatalities <- data.frame("num" = fd[[1]]$num, "year" = fd[[1]]$year, "week" = fd[[1]]$week)
 
 plot(num ~ week, data = fatalities)
-d2 <- subset(fatalities, year == 2020)
+d2 <- subset(fatalities, year >= 2020)
 points(d2$week, d2$num, pch=16,col=2)
 
 library("bamlss")
