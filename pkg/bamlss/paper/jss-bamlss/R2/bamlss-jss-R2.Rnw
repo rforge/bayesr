@@ -1632,23 +1632,21 @@ optimizer and the sampler. We choose the gradient boosting optimizer
 finding regression coefficients that serve as initial values for a MCMC sampler
 \citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. In the following, we illustrate the estimation of the 
 models with the \fct{ztSICHEL} family.
-We set the number of iterations
-to \code{maxit = 1000}. For the sampling we allow $1000$ iterations as burn-in
-phase, and apply a thinning of the resulting chain of $3$.  Running
-\code{n.iter = 4000} iterations leads to $1000$ MCMC samples in the
+We set the number of iterations to \code{maxit = 1000}. For the sampling we allow $1000$
+iterations as burn-in phase, and apply a thinning of the resulting chain of $3$. Running
+\code{n.iter = 2000} iterations on 3 cores in parallel leads to $1000$ MCMC samples in the
 end (note that parallel chains are started using function \fct{mclapply} of the
 base \proglang{R} \pkg{parallel} package by setting argument \code{cores}, see the manual of
-sampler function \fct{sam\_MCMC}). Finally, we set \code{light = TRUE} to return a
-lighter object, i.e., the model.frame and design and penalty matrices are not stored:
+sampler function \fct{sam\_MCMC}).
 %
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(123)
-R> flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain,
-+    family = ztSICHEL, binning = TRUE,                     
-+    optimizer = opt_boost, maxit = 1000,                     
-+    thin = 3, burnin = 1000, n.iter = 4000,
-+    light = TRUE)        
+R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
++    family = ztSICHEL, binning = TRUE,
++    optimizer = opt_boost, maxit = 1000,
++    thin = 3, burnin = 1000, n.iter = 2000,
++    light = TRUE, cores = 3)      
 \end{Sinput}
 \begin{Soutput}
 logLik -36636.9 eps 0.0003 iteration 1000 qsel 7
