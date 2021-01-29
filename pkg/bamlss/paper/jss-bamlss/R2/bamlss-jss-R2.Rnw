@@ -1650,14 +1650,19 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
 \end{Sinput}
 \begin{Soutput}
 logLik -36636.9 eps 0.0003 iteration 1000 qsel 7
-elapsed time: 43.61min
+elapsed time: 28.99min
 Starting the sampler...
-|********************| 100%  0.00sec 176.41min
+|********************| 100%  0.00sec 109.24min
+|********************| 100%  0.00sec 112.98min
+|********************| 100%  0.00sec 115.67min
 \end{Soutput}
 \end{Schunk}
 %
-The model was fitted on an Intel(R) Xeon(R) CPU E5-4660 v4 with 2.20GHz
-on which the boosting took about 43.61~minutes and the sampling time about 2.9~hours.
+The model was fitted on three Intel(R) Xeon(R) CPU E5-4660 v4 cores with 2.20GHz
+on which the boosting took about 28.99~minutes and the average sampling time about 1.9~hours.
+Note that for the \fct{ztnbinom\_bamlss} model boosting takes about 7~minutes and average sampling
+time is about 9~minutes, only.
+The reason is that the \fct{ztSICHEL} family is not yet implemented so efficiently.
 If the argument \code{binning = TRUE}, this will result in only different observations being used 
 internally to create the design matrices. This can have two advantages, (a) for large data sets one 
 does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
