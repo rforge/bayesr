@@ -1562,7 +1562,6 @@ Abbreviation & Description \\ \hline
 \end{tabular}
 \caption{\label{tab:desc} Describtions of the parameters taken directly or derived from ERA5.}
 \end{table}
-\fixme{Thorsten, complete table please!}
 %
 The covariates are taken directly or are derived from ERA5. For this study only a
 small subset of parameters is on hand \citep{era5a, era5b}. It encloses variables that
