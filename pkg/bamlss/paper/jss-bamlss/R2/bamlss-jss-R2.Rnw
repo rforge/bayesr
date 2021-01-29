@@ -1664,16 +1664,13 @@ does not run into memory problems so easily, (b) the estimation algorithms are s
 faster, because fewer floating point operations need to be performed . In addition, if the argument
 \code{light = TRUE}, no design or penalty matrices, model frames, results, etc.,
 are stored, hence, the returned object requires much less memory.
-
-Analogous models have been fitted for the two other distributions, zero-truncated
-Sichel \code{flash_model_ztSICHEL} and zero-truncated beta negative binomial
-\code{flash_model_ztBNB}. All models are provided within the \pkg{FlashAustria} package and can be
-loaded with
+All models are provided within the \pkg{FlashAustria} package and can be loaded with
 <<eval=FALSE>>=
 data("FlashAustriaModel", package = "FlashAustria")
 @
 The corresponding \proglang{R}-script is provided in the supplemental materials.
-To select one of the three models, we examine their calibration using a worm plot
+
+To select one of the two models, we examine their calibration using a worm plot
 \citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemented within \pkg{bamlss}
 for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
 argument of the plot method for these objects:
@@ -1697,17 +1694,14 @@ par(mar = c(4.1, 4.1, 4.1, 0.1))
 plot(resids, which = "wp", main = "Worm plot",
   col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 @
-\caption{Worm plots for the three distributional models.}
+\caption{Worm plots for the two distributional models.}
 \label{fig:appworm}
 \end{figure}
 %
-Though, the worm plots (Figure~\ref{fig:appworm}) reveal different tail behavior
-of the distributions---\code{ztSICHEL} and \code{ztnbinom} underestimate the mass of
-the tail and \code{ztBNB} slightly overestimates the tail---the distributional model
-based on the zero-truncated Sichel exhibits the best overall calibration. However, as
-mentioned above the mixing behavior and computational speed of the \fct{ztnbinom\_bamlss} model
-is much better and qualitative differences in predictions between the models are very small, 
-therefore, we focus on the \fct{ztnbinom\_bamlss} model.
+The worm plots (Figure~\ref{fig:appworm}) reveal that \code{ztSICHEL} and \code{ztnbinom} 
+underestimate the mass of the tail. The distributional model
+based on the zero-truncated Sichel exhibits the best overall calibration, 
+therefore, we focus on the \fct{ztSICHEL} model in this illustration.
 
 As a next diagnostic we check the log-likelihood contributions of the
 individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
@@ -1735,10 +1729,11 @@ After 1000~iterations the term \code{s(q_prof_PC1).mu} has the highest contribut
 to the log-likelihood with %
 \Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])} %
 followed by \code{s(sqrt_cape).mu} with %
-\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}.
-These two terms as well as all other terms with a strong contribution
-act on the distributional parameter \code{mu}. The contributions for the terms of the
-parameter \code{theta} seem negligible, except for covariate \code{sqrt_cape}.
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}
+and \code{s(d2m).mu} with
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(d2m)",2])}.
+These three terms as well as all other terms with a strong contribution
+act on the distributional parameter \code{mu}.
 The overall message of this diagnostic is that the contributions to the
 log-likelihood at the end of the boosting procedure are very small and that
 the algorithm approached a stable state, which suggest that we retrieve
@@ -1756,13 +1751,13 @@ plot(flash_model_ztSICHEL,
 @
 %
 Figure~\ref{fig:apptrace} shows the traces and the autocorrelation functions
-for three regression coefficients of the term \code{s(sqrt_cape)} for parameter $\mu$, $\sigma$
-and $\nu$ of the Sichel distribution. The traces
+for two regression coefficients of the term \code{s(q\_prof\_PC1)} for parameter $\mu$ of the
+Sichel distribution. The traces
 reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
 reasonable starting values for the sampling. The autocorrelation functions
-for parameter $\mu$ and $\sigma$ reveal quite some autocorrelation after the thinning,
-which suggests that one could increase the sampling efforts.
+reveal quite some autocorrelation after the thinning,
+which suggests that one could increase the sampling efforts in a final model run.
 
 \begin{figure}[t!]
 \centering
@@ -1774,7 +1769,7 @@ par(mar = c(4.1, 4.1, 4.1, 1.1))
 plot(b2, which = "samples", ask = FALSE)
 @
 \caption{MCMC trace (left panels) and autocorrelation (right panels) for two
-splines from the term \code{s(sqrt\_cape)} of the model \code{nu}.}
+parameters from the term \code{s(q\_prof\_PC1)} of the model \code{mu}.}
 \label{fig:apptrace}
 \end{figure}
 
@@ -1782,11 +1777,9 @@ As these diagnostics suggest that a reasonable initial state for the sampling
 has been found,
 %and the samples are independent draws from the posterior
 one can go further and investigate the estimated effects. The boosting summary
-(Figure~\ref{fig:appboost}) revealed that the terms
-\code{s(q_prof_PC1)}
-and
-\code{s(sqrt_cape)}
-had the largest contribution for improving the fit. 
+(Figure~\ref{fig:appboost}) reveals that the terms
+\code{s(q_prof_PC1)}, \code{s(sqrt_cape)} adn \code{s(d2m)}
+have the largest contribution for improving the fit. 
 Looking at these effects illustrate how the atmospheric parameters
 of the reanalyses are related to lightning events (Figure~\ref{fig:appeffect}),
 and thus help to understand the physics associated with lightning events.
@@ -1816,7 +1809,7 @@ plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
 \label{fig:appeffect}
 \end{figure}
 %
-\code{s(q_prof_PC1)} shows a clear monotonic decrease.
+\code{s(q_prof_PC1)} shows a clear decrease.
 As \code{q_prof_PC1} is the leading principal component of the vertical profile
 of specific humidity, one has to consider the corresponding spatial mode (not
 shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
@@ -1827,12 +1820,13 @@ a source of \emph{latent energy}, energy that becomes free when water
 transfers from the gas to the liquid phase. This energy supports the occurrence
 of deep convection and thus of heavy lightning events.
 %
-\code{s(sqrt_cape)} reveals a monotonic increasing shape.
+\code{s(sqrt_cape)} reveals an increasing shape.
 This means a higher \textit{convective available potential energy} (CAPE)
 increases $\mu$, which increases the expectation of the distribution and
 thus is associated with higher probabilities for events with high counts.
 Physically the shape of the effect is meaningful as more convective available
 potential energy has the potential to lead to heavier lightning events.
+The similar is true for the increasing effect of \code{s(d2m)}.
 %%% 
 %%% Finally it is interesting to look at the effect acting on the link scale of
 %%% the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Figure~\ref{fig:appeffect}).
