@@ -1762,7 +1762,7 @@ reveal samples around stables means. This suggests that the 1000 boosting
 iterations and the 1000 burn-in samples were sufficient in order to approach
 reasonable starting values for the sampling. The autocorrelation functions
 reveal quite some autocorrelation after the thinning,
-which suggests that one could increase the sampling efforts in a final model run.
+which suggests that one should increase the sampling efforts in a final model run.
 
 \begin{figure}[t!]
 \centering
