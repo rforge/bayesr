@@ -1949,7 +1949,7 @@ The case data \code{FlashAustriaCase} contains additional columns containing
 time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
 We predict the parameters for this case, and derive the probability of
 observing 10 or more flashes within a grid box conditioned on thunderstorm activity,
-by applying the cumulative distribution function \code{...$p} of the family
+by applying the cumulative distribution function \code{...$p()} of the family
 which can be extracted from the fitted model using \code{family()}.
 The family contains functions to map the predictors to the parameter
 scale, density, cumulative distribution function, log-likelihood, and
