@@ -1,5 +1,12 @@
 \documentclass[nojss]{jss}
+
+%% references with long author lists to always be abbreviated
+\shortcites{bamlss:INLA,bamlss:Waldmann+Taylor+Klein+Kneib+Pressler+Schmid+Mayr:2016,bamlss:stan,zeileis2019colorspace,fouillet2008,westra2014}
+
+%% LaTeX packages
 \usepackage{amsmath,amssymb,amsfonts,multirow,longtable,tikz,thumbpdf,lmodern}
+
+%% tikz
 \usetikzlibrary{fit,backgrounds,arrows,calc,arrows.meta}
 \tikzset{%
   >={Latex[width=2mm,length=2mm]},
@@ -41,10 +48,8 @@
 \Plaintitle{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond)}
 \Shorttitle{\pkg{bamlss}: A Lego Toolbox for Flexible Bayesian Regression}
 	
-\Keywords{Backfitting, distributional regression, gradient boosting,
-  MCMC, penalization, probabilistic forecasting, \proglang{R}}
-\Plainkeywords{Backfitting, distributional regression, gradient boosting,
-  MCMC, penalization, probabilistic forecasting, R}
+\Keywords{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, \proglang{R}}
+\Plainkeywords{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, R}
 
 \Abstract{
   Over the last decades, the challenges in applied regression and in predictive modeling have
@@ -86,8 +91,8 @@
   E-mail: \email{Nikolaus.Umlauf@uibk.ac.at},\\
   \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
   \phantom{E-mail: }\email{Thorsten.Simon@uibk.ac.at}\\
-  URL: \url{http://eeecon.uibk.ac.at/~umlauf/},\\
-  \phantom{URL: }\url{http://eeecon.uibk.ac.at/~zeileis/}\\
+  URL: \url{https://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{https://www.zeileis.org/}\\
 
   Nadja Klein\\
   Humboldt Universit\"at zu Berlin\\
@@ -377,9 +382,9 @@ nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
 @
 Afterwards, we predict for both cases of variable \code{foreign}
 <<>>=
-nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$p_swiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
-nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 @
 The \fct{predict} method is applied on all MCMC samples and argument \code{FUN} specifies a function
 that can be applied on the predictor or distribution parameter samples. The default is the \fct{mean} function,
@@ -389,10 +394,10 @@ extracted by passing \code{FUN = identity}, i.e., this way users can
 easily generate their own statistics). Then, the estimated effect can be visualized with
 <<plot2d, eval=FALSE>>=
 blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
-plot2d(pSwiss ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$pSwiss, nd$pForeign)),
+plot2d(p_swiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p_swiss, nd$p_foreign)),
   fill.select = c(0, 1, 0, 1))
-plot2d(pForeign ~ age, data = nd, add = TRUE,
+plot2d(p_foreign ~ age, data = nd, add = TRUE,
   fill.select = c(0, 1, 0, 1), axes = FALSE,
   s2.col = blues, col.lines = blues(1))
 @
@@ -594,55 +599,48 @@ spline based estimate in the right panel of Figure~\ref{fig:logit_effects}.
 
 \subsection{Location-scale model} \label{sec:distmodel}
 
-In this example we will now extend the framework and estimate a distributional regression
-model using data on fatalities in Austria. The data is taken from the Eurostat data base
-(\url{https://ec.europa.eu/eurostat/}) and includes weekly fatalities in Austria from the beginning
-of 2000 up to week~46 in 2020. The data is provided in the \pkg{bamlss} package and can be loaded with
+Here, we extend the framework and estimate a distributional regression model that not
+only captures the mean (or location) of the response variable but also its variance
+(or scale). As an example, we employ the number of weekly fatalities in Austria from
+2000--2020 (up to week~46 in 2020) as obtained from the Eurostat data base
+(\url{https://ec.europa.eu/eurostat/}). The data is available in the \pkg{bamlss} package
+as \code{fatalities}, providing the number (\code{num}) of fatalities in a certain
+\code{year} and \code{week}. It can be loaded with
 <<>>=
 data("fatalities", package = "bamlss")
 @
-The data set contains information on the number of fatalities (variable \code{num}) and
-the year and week of recording (variables \code{year} and \code{week}). The motivation
-for this analysis is to model a reference mortality, which allows one to describe
-the excess mortality caused by exceptional events such as pandemics \citep{bamlss:Leon:2020} or
-natural catastrophes \citep{fouillet2008}.
-Excess mortality refers to mortality in excess of what would be
-expected based on the non-crisis mortality rate in the population of interest. Here,
-we model the long-term seasonal trend of fatality numbers before the COVID-19 crisis and compare
-estimated quantiles with the cases in 2020, which will give insights into the excess
-mortality of the pandemic \citep{bamlss:Leon:2020}.
-Therefore, we subset the data set before 2020 for estimation and use the 2020 data for comparison
+The idea of the subsequent analysis is to estimate a reference mortality model based
+on the data from 2000--2019 prior to the COVID-19 (Corona virus disease 2019) crisis
+in order to bring out graphically the excess mortality in 2020. Such a strategy is
+often employed for assessing the mortality effects of exceptional events such as
+pandemics \citep{bamlss:Leon:2020} or natural catastrophes \citep{fouillet2008}.
+Therefore, we split the full data into the subsets before and within 2020.
 <<eval=TRUE,echo=TRUE>>=
-d19 <- subset(fatalities, year < 2020)
-d20 <- subset(fatalities, year > 2019)
+d19 <- subset(fatalities, year <= 2019)
+d20 <- subset(fatalities, year >= 2020)
 @
-
-As a first distributional model for analysis we use the normal distribution, which seems
-plausible, the number of fatalities is far away from zero in the
-thousands and the distribution is only moderately skew towards larger rates. Hence,
-to stabilize skewness and variance we additionally log-transform the dependent variable.
-Moreover, in winter there are usually quite a lot of influenza and other viral
-infections, which lead to a higher mortality rate. Therefore, we specify a
-a cyclic smooth spline for the \code{week}s of the year to capture the seasonal variation,
-i.e., the model is estimated using the predictor $\eta_k = f_{k} (\texttt{week})$ for parameter
-$\mu$ and $\sigma$ of the normal distribution and functions $f_{k}(\texttt{week})$ are 
-unspecified smooth functions. The model formula is specified by
+To capture the long-term seasonal trend of the fatality numbers, both in terms of
+mean and variance, we employ a simple model here: log-fatalities are assumed to be
+normally distributed with smooth seasonal variations in both mean and variance.
+As shown below the log-transformation stabilizes skewness and variance in the data
+somewhat so that a normal model works sufficiently well. Cyclic splines with respect
+to the week of the year are employed to capture the smooth seasonal trends while assuring
+that the values at the beginning and the end of the year match. The model formula
+is now a list with elements for the mean (parameter \code{mu}) and standard deviation
+(parameter \code{sigma}) of the normal distribution.
 <<>>=
 f <- list(
   log(num) ~ s(week, bs = "cc", k = 20),
   sigma    ~ s(week, bs = "cc", k = 20)
 )
 @
-again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
+Function \fct{s} is again the smooth term constructor from the \pkg{mgcv} package
 \citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic cubic
-regression spline. Note that model formulae are provided as lists of formulae, i.e., each list
-entry represents one parameter of the response distribution. Moreover, note that all smooth
-terms, e.g., \fct{te}, \fct{ti}, are supported by \pkg{bamlss}. This way, it is
-also possible to incorporate user defined model terms, since the \pkg{mgcv} smooth term
-constructor functions are based on the generic \fct{smooth.construct} method, for which
-new classes can be added (see also the \pkg{mgcv} manual).
-In the next step, a full Bayesian semi-parametric distributional regression model using the
-\fct{NO} family of the \pkg{gamlss.dist} package can be estimated with
+regression spline. (Other smooth terms such as \fct{te} or \fct{ti} could be included
+in the same way.)
+
+Finally, a full Bayesian semi-parametric distributional regression model using the
+\fct{NO} normal family from the \pkg{gamlss.dist} package can be estimated with
 <<echo=FALSE, results=hide>>=
 if(!file.exists("FatModel.rda")) {
   set.seed(456)
@@ -662,9 +660,9 @@ instantly using the plotting method.
 <<eval=FALSE>>=
 plot(b, model = c("mu", "sigma"))
 @
-\begin{figure}[!ht]
+\begin{figure}[t!]
 \centering
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.49\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "mu", spar = FALSE)
@@ -673,15 +671,15 @@ plot(b, model = "mu", spar = FALSE)
 par(mar = c(4.1, 4.1, 0.1, 1.1))
 plot(b, model = "sigma", spar = FALSE)
 @
-\caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on parameter
-  $\mu$ and $\sigma$ of the normal location-scale model. The grey
-  shaded areas represent 95\% credible intervals.}
+\caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on the mean \code{mu}
+  and standard deviation \code{sigma} of the normal model. The gray shaded areas represent 95\% credible intervals.}
 \end{figure}
 The estimated effects are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
-relationship for parameter $\mu$ and $\sigma$. One can see a significant increase in mortality 
-during the winter months, but uncertainty also increases at this time of year. Likewise, the 
-uncertainty increases in the summer months, which is quite natural due to recurrent heat waves that 
-can be quite stressful for the cardiovascular system \citep{fouillet2008}.
+relationship for both parameters. The left panel shows that mean log-fatalities are much higher in winter
+than in summer with a peak around February matching the highest risk for influenza and other viral
+infections in Austria. The right panel shows that the standard deviation is also highest at around
+the same time but that there is another local maximum in the summer months, possibly related to 
+recurrent heat waves that can be quite stressful for the cardiovascular system \citep{fouillet2008}.
 
 In the next step, we compare quantiles of the intra-year long-term trend of the estimated 
 distribution with the current situation in 2020. Therefore parameters for each week of the
@@ -702,29 +700,29 @@ The estimated quantiles and the data used for modeling can now be plotted with
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 matplot(d19w$week, d19w[, -1],
-  type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
-  xlab = "Week", ylab = "#Fatalities")
+  type = "o", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "Number of fatalities")
+grid()
 matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
   col = 1, lwd = 3, add = TRUE)
 lines(num ~ week, data = d20, col = 2, lwd = 2,
-  type = "b", pch = 16, cex = 1.3)
-grid()
+  type = "o", pch = 16, cex = 1.3)
 @
-\begin{figure}[!ht]
+\begin{figure}[t!]
 \centering
-\setkeys{Gin}{width=0.7\textwidth}
-<<echo=FALSE, fig=TRUE, height=6, width=6>>=
+\setkeys{Gin}{width=0.75\textwidth}
+<<echo=FALSE, fig=TRUE, height=5, width=7>>=
 d19w <- reshape(d19, idvar = "week",
   timevar = "year", direction = "wide")
 par(mar = c(4.1, 4.1, 0.1, 0.1))
 matplot(d19w$week, d19w[, -1],
-  type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
-  xlab = "Week", ylab = "#Fatalities")
+  type = "o", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "Number of fatalities")
+grid()
 matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
   col = 1, lwd = 3, add = TRUE)
 lines(num ~ week, data = d20, col = 2, lwd = 2,
-  type = "b", pch = 16, cex = 1.3)
-grid()
+  type = "o", pch = 16, cex = 1.3)
 @
 \caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\% and 95\% quantiles of
   the cyclic seasonal week model, black lines, and number of fatalities in 2020 up
@@ -742,14 +740,7 @@ indicates that this is much higher than the long-term median in the spring and
 from about week 40 onward, and also well above the estimated 95\% quantile,
 respectively.
 
-For judging how well the model fits to the data the user can inspect randomized quantile
-residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
-Residuals can be extracted using function \fct{residuals} and has a plotting method. 
-Alternatively, residuals can be investigated with
-<<eval=FALSE>>=
-plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
-@
-\begin{figure}[!ht]
+\begin{figure}[t!]
 \centering
 \setkeys{Gin}{width=0.4\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
@@ -764,6 +755,14 @@ plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
   intervals (dashed lines) of the resulting randomized quantile residuals of the distributional
   regression model.}
 \end{figure}
+
+For judging how well the model fits to the data the user can inspect randomized quantile
+residuals \citep{bamlss:Dunn+Smyth:1996} using histograms or quantile-quantile (Q-Q) plots. 
+Residuals can be extracted using function \fct{residuals} and has a plotting method. 
+Alternatively, residuals can be investigated with
+<<eval=FALSE>>=
+plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
+@
 By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
 According the histogram and the Q-Q plot of the resulting randomized
 quantile residuals in Figure~\ref{fig:fatmodel_resids}, the model seems to be less
@@ -772,7 +771,7 @@ distributions to obtain the best possible model fit.
 
 For the interested reader we have continued the analysis in the vignette for the \pkg{bamlss} 
 package with a variety of distributions from the \pkg{gamlss.dist} package, the vignette
-is available at \url{http://bamlss.org/articles/fatalities.html}.
+is available at \url{http://www.bamlss.org/articles/fatalities.html}.
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
 
