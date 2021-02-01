@@ -769,7 +769,7 @@ In an accompanying online vignette at \url{http://www.bamlss.org/articles/fatali
 we show how to find a better probabilistic model by considering more flexible distributions
 (beyond the normal case) and general Box-Cox transformations (instead of hard-coding the log-transformation).
 While this improves the distributional model, the qualitative insights regarding the
-excess mortality in Austira during the COVID-19 crisis remain unchanged.
+excess mortality in Austria during the COVID-19 crisis remain unchanged.
 
 
 \section{A flexible Bayesian model framework} \label{sec:flexreg}
@@ -858,8 +858,6 @@ framework are the ones for: \label{somerefs2}
    \citet{bamlss:Klein+Kneib:2016b}.
  \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
 \end{itemize}
-
-\pagebreak
 
 \subsection{Posterior estimation} \label{sec:algos}
 
@@ -968,8 +966,6 @@ number of candidate models. The following lists commonly-used tools:
   the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
   graphical user interface for visualization of distributional regression models.
  \end{itemize}
-
-\pagebreak
 
 \section[The bamlss package]{The \pkg{bamlss} package} \label{sec:package}
 
@@ -1491,6 +1487,7 @@ An example of how to setup an estimation engine for \pkg{bamlss} for linear regr
 given in Appendix~\ref{appendix:engine}. The example also provides details on the naming convention
 and return values of optimizer and sampler functions.
 
+\newpage
 
 \section{Flexible count regression for lightning reanalysis} \label{sec:application}
 
@@ -1610,7 +1607,7 @@ Smooth P-splines \citep{bamlss:Eilers+Marx:1996}, known for their good sampling 
 are employed for all predictors in the formula for $\mu$. For the (over)dispersion
 model large-scale precipitation is used in the second formula (without a parameter
 name on the left-hand side in order to be applicable to both distributional models).
-Finally, for the Sichel distribution a constant shape parameter is added in th third
+Finally, for the Sichel distribution a constant shape parameter is added in the third
 formula (which is ignored when using the formula list with the zero-truncated negative
 binomial distribution).
 %
@@ -1670,7 +1667,7 @@ with about 7 and 9~minutes for boosting and sampling, respectively.
 By setting the argument \code{binning = TRUE} only unique observations are being used 
 internally to create the design matrices. This can have two advantages, (a) for large data sets one 
 does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
-faster, because fewer floating point operations need to be performed . In addition, when setting
+faster, because fewer floating point operations need to be performed. In addition, when setting
 \code{light = TRUE}, no design or penalty matrices, model frames, results, etc.,
 are stored. Hence, memory requirements when storing the model objects are much lower
 so that the fitted model objects can be provided within the \pkg{FlashAustria} package.
@@ -1990,12 +1987,11 @@ ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
 The case gives an example for a reconstructed lightning
 event: On 2001-09-15 (top row of Figure~\ref{fig:appcase})
 it reveals moderate probabilities for observing 10 or more
-lightning counts within a grid cell and hour. Over night the situation calms down,
-and reaches a minimum around 6~UTC on 2001-09-16 (bottom left panel of
-Figure~\ref{fig:appcase}). Finally, strong lightning events were reconstructed for the
-afternoon of the second day (2001-09-16) in particular on the Southern side of the main
-Alpine ridge (bottom right panel of Figure~\ref{fig:appcase}).
-
+lightning counts within a grid cell and hour. Over night the situation is still unstable,
+around 6~UTC on 2001-09-16 there is still quite high activity on the northern parts of the Alps.
+(bottom left panel of Figure~\ref{fig:appcase}). Finally, strong lightning events were
+reconstructed for the afternoon of the second day (2001-09-16) in particular on the Southern
+side of the main Alpine ridge (bottom right panel of Figure~\ref{fig:appcase}).
 
 \section{Conclusion}
 
