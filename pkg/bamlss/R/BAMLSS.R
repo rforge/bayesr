@@ -6069,7 +6069,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
   object$rank <- df#qr(object$S[[1]](runif(df)))$rank
 
-  object$xt$prior <- "ig"
+  object$xt$prior <- "hc"
   #object$fx <- object$xt$fx <- object$xt$fxsp <- object$fxsp <- FALSE
 
   if(is.null(object$xt$alpha))
@@ -11161,5 +11161,23 @@ CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ..
     crps[i] <- int1 + int2
   }
   return(crps)
+}
+
+
+GramSchmidt <- function(X) {
+  itcpt <- if(is.null(colnames(X))) {
+    FALSE
+  } else {
+    any(colnames(X) == "(Intercept)")
+  }
+  js <- if(itcpt) 2 else 1
+  tX <- X
+  coef <- list()
+  for(j in js:ncol(X)) {
+    b <- lm.fit(tX[, 1:(j - 1), drop = FALSE], X[, j])
+    coef[[paste0("c", j)]] <- b$coefficients
+    tX[, j] <- b$residuals
+  }
+  return(list("coefficients" = coef, "X" = tX))
 }
 
