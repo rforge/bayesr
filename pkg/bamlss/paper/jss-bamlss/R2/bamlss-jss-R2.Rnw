@@ -336,7 +336,19 @@ coefficients, which are calculated by the upstream optimizer algorithm (note tha
 is named parameters, because optimizer functions can in principle return any type of parameters).
 Besides, more results from the optimizer are reported at the very end of the output:
 the corrected AIC (\code{AICc}, \citealp{bamlss:aic1, bamlss:aic2}), the equivalent degrees of freedom
-(\code{edf}), the log-likelihood (\code{logLik}), etc.
+(\code{edf}), the log-likelihood (\code{logLik}), etc. In addition, there are also extractor 
+functions in \pkg{bamlss} for information criteria like the DIC (function \fct{DIC}) and the widely 
+applicable information criterion (WAIC, \citealp{watanabe2010asymptotic}, function \fct{WAIC}), or 
+the out-of-sample continuous rank probability score
+(CRPS, \citealp{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}, function
+\fct{CRPS}).
+Note that \fct{CRPS} approximates numerically, while the \pkg{scoringRules} package 
+\citep{bamlss:Jordan+Krueger+Lerch:2018} can compute the CRPS 
+very efficiently for some distributions. The usage of the provided functions is similar to the
+generic \fct{AIC} and \fct{BIC}, e.g., the DIC can be computed with
+<<>>=
+DIC(b)
+@
 Before proceeding the analysis, users usually perform additional convergence checks of the
 MCMC chains by looking at traceplots and autocorrelation (besides acceptance probabilities).
 <<eval=FALSE>>=
@@ -443,10 +455,11 @@ first impression of the modeling capabilities, we again use the \code{SwissLabor
 logit model of Section~\ref{sec:logitmodel}, however, in this example we use
 regression splines to capture the nonlinear effect variable \code{age}.
 
-As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the \proglang{R}
-package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
+As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the 
+\proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
 and penalty matrices for smooth terms by calling \pkg{mgcv}'s \fct{smooth.construct} or 
-\fct{smoothCon}.
+\fct{smoothCon}, i.e., new user-defined smooth terms can also be added by providing new classes
+for the generic functions.
 To estimate a spline model instead of a polynomial model for variable \code{age} the model
 formula only needs to be slightly adapted
 <<>>=

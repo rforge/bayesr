@@ -95,7 +95,8 @@ of the reviewers are highlighted in italics, with our responses directly below.
   must be installed separately. Are you planning to make bamlss depend on \pkg{R2BayesX}
   explicitly (i.e. via the Depends or Imports fields) in future versions of the package?}
 
-  We now clarify that the sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS} need installation
+  In Section~4, we now clarify that the sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS}
+  need installation
   of the \pkg{BayesXsrc} and the \pkg{rjags} package. We do not plan to make \pkg{bamlss} depend on
   \pkg{R2BayesX}, it is exactly the other way round. The \pkg{bamlss} package does not depend on
   any features of \pkg{R2BayesX}, but we will rewrite \pkg{R2BayesX} and integrate it in \pkg{bamlss}
@@ -172,10 +173,9 @@ of the reviewers are highlighted in italics, with our responses directly below.
   terms." Please add more explanations, as the fact that \pkg{bamlss} support \fct{te}, 
   \fct{ti}, etc.\ does not necessarily imply that user defined terms can be used.}
 
-  Thanks for pointing that out, of course it's not immediately obvious. We now write:
-  "This way, it is also possible to incorporate user defined model terms, since the \pkg{mgcv}
-  smooth term constructor functions are based on the generic \fct{smooth.construct} method, for
-  which new classes can be added (see also the \pkg{mgcv} manual)."
+  Thanks for pointing that out, of course it's not immediately obvious. We now try to clarify
+  this and mention the corresponding generic functions from the \pkg{mgcv} package more explicitly
+  in Section~2.2.
 
 \medskip
 
@@ -207,7 +207,7 @@ of the reviewers are highlighted in italics, with our responses directly below.
   the $\mathbf{G}_jk$'s are referred to as both derivative matrices and penalty matrix, which can
   be understood only by readers already familiar with these models.}
 
-  We have now tried to formulate everything a little more precisely: "Using a basis function 
+  We have now tried to formulate everything a little more precisely: "\dots using a basis function 
   approach, i.e., each function $f_{jk}( \cdot )$ can be represented by a
   linear combination of a design matrix and regression coefficients, \dots, the
   regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for
@@ -341,7 +341,7 @@ Abbreviation & Description \\ \hline
 
   Albeit its small contribution we decided to rather show \code{s(sqrt\_lsp).theta} as this
   term acts on the parameter $\theta$ of the distribution. However, in this iteration we fully
-  worked over this example and use a different distribution. We now show only the two most
+  worked over this example and use a different distribution. We now show the three most
   important terms.
 
 \end{enumerate}
@@ -381,10 +381,9 @@ Abbreviation & Description \\ \hline
   interesting simple data sets than can be used to demonstrate the \pkg{bamlss} package.}
 
   Yes, we completely agree with you here, so we have now completely replaced the example. We are
-  now using a brand-new data set about weekly mortality rates in Austria. We also estimate a variety
-  of distributional models to obtain the best fitting model. We think the example is much more
-  illustrative and one gets a good impression how completely probabilistic models can be
-  estimated in \pkg{bamlss}.
+  now using a brand-new data set about weekly mortality rates in Austria. We think the example
+  is much more illustrative and one gets a good first impression how completely probabilistic
+  models can be estimated in \pkg{bamlss}.
 
 \medskip
 
@@ -395,11 +394,12 @@ Abbreviation & Description \\ \hline
 
   We admit that the zero-truncated negative binomial might not be the best fitting
   distribution. However, it fits reasonably well. Further, we want to note that the
-  true dirstribution of the data is extremly skewed, and finding a proper fit is
+  true distribution of the data is extremely skewed, and finding a proper fit is
   challenging as each term only contributes little to the whole picture.
-  During the revision we continued testing distributions, i.e., the Sichel \code{SI()} and the
-  beta negative binomial \code{NBN()} both from \pkg{gamlss.dist} and both zero-truncated using
-  \code{trun()} from \pkg{gamlss.tr}. The results in the paper now consider these tests.
+  During the revision we continued testing distributions, i.e., the Sichel \code{SICHEL()} and the
+  beta negative binomial \code{BNB()} both from \pkg{gamlss.dist} and both zero-truncated using
+  \code{trun()} from \pkg{gamlss.tr}. We now compare two distributions and think that we can thus
+  illustrate quite well how to estimate and evaluate probabilistic models in \pkg{bamlss}.
 
 \medskip
 
@@ -414,28 +414,23 @@ Abbreviation & Description \\ \hline
 \item \emph{The main smoothers considered are similar to the ones in package \pkg{mgcv}. It was
   not clear to me whether the functions are straightforward copies of the functions in
   \pkg{mgcv} or new functions adopting the \pkg{mgcv} notation. Also, how easy is to write a
-  new smother function for \pkg{bamlss}.}
+  new smoother function for \pkg{bamlss}.}
 
   The smoothers are imports from package \pkg{mgcv}, which \pkg{bamlss} depends on. We use the
   \pkg{mgcv} infrastructures to set up design and penalty matrices, e.g., using the generic
-  \fct{smooth.construct}. We now describe this more explicitly in several places in the text:
+  \fct{smooth.construct}. We now describe this more explicitly in several places in the text, e.g.:
 
-  "As noted in the introduction, the \pkg{bamlss} package heavily builds upon the \proglang{R}
-  package \pkg{mgcv} (Wood 2019) infrastructures, i.e., for setting up the design
-  and penalty matrices for smooth terms the \pkg{mgcv} generic \fct{smooth.construct} or 
-  \fct{smoothCon} is called."
+  "As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the 
+  \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
+  and penalty matrices for smooth terms by calling \pkg{mgcv}'s \fct{smooth.construct} or 
+  \fct{smoothCon}, i.e., new user-defined smooth terms can also be added by providing new classes
+  for the generic functions."
 
-  "\dots again, function \fct{s} is the smooth term constructor from the \pkg{mgcv} package
-  (Wood 2019) and \code{bs = "cc"} specifies a penalized cyclic
-  cubic regression spline."
+  "Function \fct{s} is again the smooth term constructor from the \pkg{mgcv} package
+  (Wood 2020) and \code{bs = "cc"} specifies a penalized cyclic cubic
+  regression spline."
 
-  "This way, it is also possible to incorporate user defined model terms, since the
-  \pkg{mgcv} smooth term constructor functions are based on the generic
-  \fct{smooth.construct} method, for which new classes can be added (see also the
-  \pkg{mgcv} manual)."
-
-  "\dots and \fct{smooth.construct} processing of the \pkg{mgcv} package to setup design
-  and penalty matrices for unspecified smooth function estimation \dots"
+  We also give an example of a non-standard smooth term in Appendix~B.
 
 \medskip
 
@@ -444,15 +439,17 @@ Abbreviation & Description \\ \hline
   existing in the \pkg{gamlss.dist} package. The authors claim that all the GAMLSS
   distributions can be fitted in \pkg{bamlss} but unfortunately they give no example of doing so.}
 
-  Yes, in the exchanged example we heavily stress this point now and fit models using all
-  continuous distributions of the \pkg{gamlss.dist} package.
+  Yes, in the exchanged example on fatalities in Austria and in the lightning example we now fit 
+  models using distributions of the \pkg{gamlss.dist} package.
 
 \medskip
 
 \item \emph{For example in example 3 the distribution used, the zero inflated negative binomial,
   seems to be inadequate for the training data (see the worm plot at the end of this report).}
 
-  We now test 3 different distributions (two coming from GAMLSS) for this example.
+  We now test two distributions (one coming from \pkg{gamlss} and \pkg{gamlss.tr}) for this
+  example. Thanks for pointing it out, we also think the example is so improved to illustrate
+  the workflow of \pkg{bamlss}.
 
 \medskip
 
@@ -460,11 +457,11 @@ Abbreviation & Description \\ \hline
   in BAMLSS from the ones existing in GAMLSS? one minute? one hour? one day? one week?}
 
   Very good point. This should be really clear to the reader! You can use families/distributions
-  from GAMLSS instantaneously! You pass the GAMLSS family as it is into the bamlss model call
-  as family argument. To make this clear to the reader, we now use GAMLSS families within
-  some of the examples presented in the paper.
+  from \pkg{gamlss.dist} instantaneously! You pass the \pkg{gamlss.dist} family as it is into
+  the \pkg{bamlss} model call as family argument. To make this clear to the reader, we now use
+  \pkg{gamlss.dist} families within some of the examples presented in the paper.
 
-  Further, we give an example how to implement a new distribution from scratch in Appendix B.
+  Further, we give an example how to implement a new distribution from scratch in Appendix A.
   The time it takes to implement a new distribution heavily depends on the complexity of
   the density function and its derivatives.
 
@@ -498,8 +495,8 @@ Abbreviation & Description \\ \hline
   the first example, but why accept the normal distribution and zero inflated negative
   binomial distributions without considering alternatives?}
 
-  Yes exactly, as mentioned above we have completely replaced the moto cycle example and extended the 
-  flash example accordingly.
+  Yes exactly, as mentioned above we have completely replaced the moto cycle example and extended
+  the lightning example accordingly.
 
 \medskip
 
@@ -560,7 +557,7 @@ Abbreviation & Description \\ \hline
 
 \medskip
 
-\item \emph{page 7 line 10 "heavily builds upon the R package \pkg{mgcv}" How?}
+\item \emph{page 7 line 10 "heavily builds upon the \proglang{R} package \pkg{mgcv}" How?}
 
   Mainly through the \fct{smooth.construct} and \fct{smoothCon} methods. We now note the dependency
   more explicitly in several places in the text.
@@ -591,9 +588,10 @@ Abbreviation & Description \\ \hline
 
 \item \emph{page 12 l4 Maybe a small example of the use of CRPS will help.}
 
-  Yes, absolutely. We added an example in Section 2.3 now. Moreover, we have removed the
-  Appendix Section~A. and implemented a more flexible version of the \fct{CRPS} function in
-  \pkg{bamlss}.
+  We have now added the \fct{CRPS} function to the package and removed the corresponding
+  Appendix section. Example 2.1 now describes the supported 
+  extractor functions for information criteria. The usage is the same as for the generic
+  \fct{AIC} and \fct{BIC}, we also give a minimal example now.
 
 \medskip
 
@@ -705,7 +703,7 @@ Abbreviation & Description \\ \hline
   $\mathbf{W}_{kk}$. The second
   option is to find a good approximation for the expectation. This was for instance done for
   the overdispersion parameter of a negative binomial or zero-inflated negative binomial model
-  in Klein et al 2015 (JASA). We added details to Section~4.1 in the revised version.
+  in Klein et al 2015 (JASA). We added details to Section~4.2 in the revised version.
 
 \medskip
 
@@ -717,10 +715,10 @@ Abbreviation & Description \\ \hline
   data than the truncated negative binomial as it demonstrated by the worm plots
   displaying both models in Figure 1.}
 
-  We now test the zero-truncated (zt) negative binomial against the zt Sichel and
-  zt beta negative binomial. We therefore also adapted the set of explorative  variables.
-  The latter shows the most promsing fit---check with
-  worm plot---and is now used for the final model. 
+  We now test the zero-truncated (zt) negative binomial against the zt Sichel. We therefore
+  also adapted the set of explorative  variables.
+  The latter shows the most promising fit---check with worm plot---and is now used for the
+  final model. 
 
 \medskip
 
@@ -728,7 +726,7 @@ Abbreviation & Description \\ \hline
   Please check the fitted values for both $\mu$ and $\theta$.}
 
   Correct. The old model produced some odd predictions. Now, we present the zero-truncated
-  beta negative binomial and the predictions are stable.
+  Sichel and the predictions are stable.
 
 \medskip
 
