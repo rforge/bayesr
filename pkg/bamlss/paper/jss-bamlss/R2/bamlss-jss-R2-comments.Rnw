@@ -718,7 +718,7 @@ Abbreviation & Description \\ \hline
   We now test the zero-truncated (zt) negative binomial against the zt Sichel. We therefore
   also adapted the set of explorative  variables.
   The latter shows the most promising fit---check with worm plot---and is now used for the
-  final model. 
+  final model.
 
 \medskip
 
