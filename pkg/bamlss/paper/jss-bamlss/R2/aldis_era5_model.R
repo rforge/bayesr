@@ -9,9 +9,6 @@ data("FlashAustria", package = "FlashAustria")
 ## Generate zero truncated Sichel distribution.
 ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
 
-## Generate zero truncated beta negative binomial.
-ztBNB <- trun(0, family = "BNB", local = FALSE)
-
 ## Model formula.
 f <- list(
   counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +

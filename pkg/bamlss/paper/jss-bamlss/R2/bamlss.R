@@ -23,6 +23,9 @@ b <- bamlss(f, family = "binomial", data = SwissLabor)
 ## Model summary.
 summary(b)
 
+## Compute DIC.
+DIC(b)
+
 ## Figure 1: MCMC diagnostics.
 plot(b, which = c("samples", "max-acf"))
 
@@ -34,11 +37,10 @@ nd$foreign <- "yes"
 nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 
 ## Plot effect of age on probability.
-blues <- function(n, ...) sequential_hcl(n, "Blues", rev = TRUE)
-plot2d(pSwiss ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$pSwiss, nd$pForeign)),
-  fill.select = c(0, 1, 0, 1))
-plot2d(pForeign ~ age, data = nd, add = TRUE,
+blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
+plot2d(p_swiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p_swiss, nd$p_foreign)), fill.select = c(0, 1, 0, 1))
+plot2d(p_foreign ~ age, data = nd, add = TRUE,
   fill.select = c(0, 1, 0, 1), axes = FALSE,
   s2.col = blues, col.lines = blues(1))
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
@@ -86,100 +88,46 @@ mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
 data("fatalities", package = "bamlss")
 
 ## Create subsets.
-d19 <- subset(fatalities, year < 2020)
-d20 <- subset(fatalities, year > 2019)
+d19 <- subset(fatalities, year <= 2019)
+d20 <- subset(fatalities, year >= 2020)
 
-## Full model formula.
+## Model formula.
 f <- list(
-  num   ~ s(week, bs = "cc", k = 20),
-  sigma ~ s(week, bs = "cc", k = 20),
-  nu    ~ s(week, bs = "cc", k = 20),
-  tau   ~ s(week, bs = "cc", k = 20)
+  log(num) ~ s(week, bs = "cc", k = 20),
+  sigma    ~ s(week, bs = "cc", k = 20)
 )
 
-## Estimate distributional models.
-if(!file.exists("fatalities_models.rda")) {
-  source("fatalities_models.R")
-} else {
-  load("fatalities_models.rda")
-}
-
-## Extract results.
-names(res) <- sapply(res, function(x) x$distribution)
-
-dic <- lapply(res, function(x) {
-  d <- data.frame(
-    "distribution" = x$distribution,
-    "dic1" = x$dic1$DIC, "dic2" = x$dic2$DIC,
-    "waic1" = x$waic1, "waic2" = x$waic2,
-    "crps" = x$crps
-  )
-  return(d)
-})
-
-dic <- do.call("rbind", dic)
-dic <- dic[order(dic$dic1, decreasing = TRUE), ]
-
-## Show DIC, WAIC and CRPS.
-print(dic)
-
-dn <- as.character(dic$distribution)
-dnum <- list()
-for(i in seq_along(res)) {
-  if(res[[i]]$distribution %in% dn)
-    dnum[[as.character(res[[i]]$distribution)]] <- res[[i]]$dnum
-}
-dnum <- do.call("cbind", dnum)
-dnum <- dnum[, dn]
-
-## Histogram with fitted densities.
-hist(d19$num, breaks = "Scott", freq = FALSE,
-  main = "", xlab = "#Fatalities", ylim = c(0, max(dnum, na.rm = TRUE)))
-i <- order(d19$num)
-col <- qualitative_hcl(ncol(dnum), palette = "dynamic")
-matplot(d19$num[i], dnum[i, ], type = "l",
-  lty = 1, col = col, add = TRUE, lwd = 3)
-legend("topright", paste0(dn, ": ", round(dic$dic1, 2)),
-  lty = 1, lwd = 3, bty = "n", col = col,
-  title = "Family & DIC")
-
-## Final BCPE model.
+## Estimate location-scale model.
 set.seed(456)
-b <- bamlss(f, data = d19, family = BCPE(mu.link = "log"),
-  n.iter = 12000, burnin = 2000, thin = 10)
-
-## Extract the WAIC.
-WAIC(b)
+b <- bamlss(f, data = d19, family = NO)
 
 ## Plot estimated effects.
-plot(b, model = c("mu", "sigma", "nu", "tau"))
+plot(b, model = c("mu", "sigma"))
+
+## Show predicted quantiles with 2020 data.
+nd <- data.frame(week = 1:53)
+par <- predict(b, newdata = nd, type = "parameter")
+nd$fit <- sapply(c(0.05, 0.5, 0.95),
+  FUN = function(p) { exp(family(b)$q(p, par)) })
+d19w <- reshape(d19, idvar = "week",
+  timevar = "year", direction = "wide")
+
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+matplot(d19w$week, d19w[, -1],
+  type = "o", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "Number of fatalities")
+grid()
+matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
+  col = 1, lwd = 2, add = TRUE)
+lines(num ~ week, data = d20, col = 2, lwd = 2, type = "o", pch = 16)
+
+
 
 ## Plot histogram of quantile residuals.
 plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
 
 ## Show quantile residuals QQ-plot.
 plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
-
-## Predict long-term trend.
-nd <- data.frame("week" = 1:53)
-par <- predict(b, newdata = nd, type = "parameter")
-
-## Compute quantiles.
-nd$fit <- sapply(c(0.05, 0.5, 0.95),
-  FUN = function(p) { family(b)$q(p, par) })
-
-## Show predicted quantiles with 2020 data.
-d19w <- reshape(d19, idvar = "week",
-  timevar = "year", direction = "wide")
-par(mar = c(4.1, 4.1, 0.1, 0.1))
-matplot(d19w$week, d19w[, -1],
-  type = "b", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
-  xlab = "Week", ylab = "#Fatalities")
-matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
-  col = 1, lwd = 3, add = TRUE)
-lines(num ~ week, data = d20, col = 2, lwd = 2,
-  type = "b", pch = 16, cex = 1.3)
-grid()
 
 
 # ---- Section 4: The bamlss package ---------------------------------------
@@ -234,49 +182,44 @@ gaussian_bamlss()$names
 ## Example of parameter names.
 paste0("mu.s.s(x3)", ".b", 1:10)
 
+
 # ---- Section 5: Flexible count regression for lightning reanalysis ------
 data("FlashAustria", package = "FlashAustria")
 
 ## Load estimated models.
 data("FlashAustriaModel", package = "FlashAustria")
 
-## Models are estimated with:
-## source("aldis_era5_model.R")
-
 ## Show first rows of the data.
-head(FlashAustriaTrain)[, c("counts", "hcc", "str", "tciw",
-  "q_prof_PC1", "sqrt_cape")]
+head(FlashAustriaTrain)[, c("counts", "q_prof_PC1", "sqrt_cape",
+  "sqrt_lsp", "d2m", "cswc_prof_PC4")]
 
 ## Number of observations.
 nrow(FlashAustriaTrain)
 
-## Generate truncate Sichel and Beta negative binomial distributions.
+## Generate truncate Sichel distribution.
 ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
-ztBNB <- trun(0, family = "BNB", local = FALSE)
 
 ## The model formula.
 f <- list(
-  counts ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps"),
-         ~ s(sqrt_cape, bs = "ps") +
-           s(hcc, bs = "ps") + s(str, bs = "ps") +
-           s(tciw, bs = "ps") + s(q_prof_PC1, bs = "ps")
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+           s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+           s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
+         ~ s(sqrt_lsp, bs = "ps"),
+         ~ 1
 )
+
+## Estimate models, use:
+## source("aldis_era5_models.R")
 
 ## Compute quantile residuals.
 resids <- c(
 	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
-	"ztBNB"    = residuals(flash_model_ztBNB, newdata = FlashAustriaTrain),
 	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
 )
 
 ## Compare using worm plots.
 plot(resids, which = "wp", main = "Worm plot",
-  col = hcl.colors(3, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
+  col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 
 ## Show coefficient paths of the boosting iterations of the best model.
 pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
@@ -288,9 +231,12 @@ plot(b2, which = "samples", ask = FALSE)
 
 ## Plot selection of estimated effects.
 par(mfrow = c(1, 2))
-plot(b, model = "mu", term = c("s(q_prof_PC1)", "s(sqrt_cape)"),
+plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
+
+## Projection issues may happen, in this case try
+## sf::st_crs(FlashAustriaCase) <- 4326
 
 ## Compute estimated probabilities.
 fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
