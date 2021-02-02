@@ -407,8 +407,7 @@ easily generate their own statistics). Then, the estimated effect can be visuali
 <<plot2d, eval=FALSE>>=
 blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
 plot2d(p_swiss ~ age, data = nd, ylab = "participation",
-  ylim = range(c(nd$p_swiss, nd$p_foreign)),
-  fill.select = c(0, 1, 0, 1))
+  ylim = range(c(nd$p_swiss, nd$p_foreign)), fill.select = c(0, 1, 0, 1))
 plot2d(p_foreign ~ age, data = nd, add = TRUE,
   fill.select = c(0, 1, 0, 1), axes = FALSE,
   s2.col = blues, col.lines = blues(1))
@@ -418,9 +417,9 @@ for the effect of \code{age} between both cases of factor variable \code{foreign
 
 \begin{figure}[!t]
 \centering
-\setkeys{Gin}{width=0.4\textwidth}
+\setkeys{Gin}{width=0.49\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+par(mar = c(4.1, 4.1, 0.4, 1.1))
 <<plot2d>>
 legend("topright", c("Foreign", "Swiss"), lwd = 1,
   col = c(blues(1), "black"), bty = "n")
@@ -437,7 +436,7 @@ if(!file.exists("SwissLaborModel-spline.rda")) {
   load("SwissLaborModel-spline.rda")
 }
 
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+par(mar = c(4.1, 4.1, 0.4, 1.1))
 plot(b, term = "s(age)", spar = FALSE, ylab = expression(paste("Effect on Logi", t^-1, (pi))))
 @
 \caption{\label{fig:logit_effects} Left panel, quadratic polynomial effect of covariate \code{age}
@@ -675,11 +674,11 @@ plot(b, model = c("mu", "sigma"))
 \centering
 \setkeys{Gin}{width=0.49\textwidth}
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+par(mar = c(4.1, 4.1, 0.4, 1.1))
 plot(b, model = "mu", spar = FALSE)
 @
 <<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
-par(mar = c(4.1, 4.1, 0.1, 1.1))
+par(mar = c(4.1, 4.1, 0.4, 1.1))
 plot(b, model = "sigma", spar = FALSE)
 @
 \caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on the mean \code{mu}
@@ -1245,6 +1244,8 @@ the \pkg{mgcv} package to setup design and penalty matrices for unspecified smoo
 estimation (\citealp{bamlss:Wood:2019}, see also, e.g., the documentation of function \fct{s} and
 \fct{te}).
 
+\pagebreak
+
 The most important arguments are
 \begin{Code}
   bamlss.frame(formula, data = NULL, family = "gaussian",
@@ -1437,6 +1438,8 @@ In our experience, programming then takes only slightly longer, about 2 to 3 hou
 
 For a list of all implemented families, please see the documentation of \code{?bamlss.family}.
 
+\pagebreak
+
 \subsection{Estimation engines} \label{sec:engines}
 
 Estimation engines in \pkg{bamlss} are usually based on the model frame setup function\linebreak
@@ -1499,8 +1502,6 @@ i.e., all smooth term parameters are named with \code{"b"} and a numerated.
 An example of how to setup an estimation engine for \pkg{bamlss} for linear regression models is
 given in Appendix~\ref{appendix:engine}. The example also provides details on the naming convention
 and return values of optimizer and sampler functions.
-
-\newpage
 
 \section{Flexible count regression for lightning reanalysis} \label{sec:application}
 

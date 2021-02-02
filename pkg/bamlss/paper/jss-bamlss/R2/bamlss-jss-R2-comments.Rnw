@@ -400,6 +400,8 @@ Abbreviation & Description \\ \hline
   beta negative binomial \code{BNB()} both from \pkg{gamlss.dist} and both zero-truncated using
   \code{trun()} from \pkg{gamlss.tr}. We now compare two distributions and think that we can thus
   illustrate quite well how to estimate and evaluate probabilistic models in \pkg{bamlss}.
+  We also added subsections to the example to give more structure and thus better show the
+  different steps using \pkg{bamlss}.
 
 \medskip
 
