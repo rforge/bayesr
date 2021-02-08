@@ -98,6 +98,7 @@ options("use.akima" = TRUE)
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 
 \section{Introduction} \label{sec:intro}

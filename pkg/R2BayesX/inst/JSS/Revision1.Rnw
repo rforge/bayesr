@@ -53,6 +53,7 @@ library("R2BayesX")
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \textbf{\Large Reviewer 1}
 
