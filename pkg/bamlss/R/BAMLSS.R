@@ -8107,7 +8107,11 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL, newdata = NUL
       samps <- process.chains(object[[i]]$samples)
       if(is.null(samps))
         stop("samples are missing in object!")
-      y <- model.response2(object[[i]])
+      y <- if(is.null(newdata)) {
+        model.response2(object[[i]])
+      } else {
+        newdata[, response.name(object[[i]])]
+      }
       msamps <- matrix(apply(samps[[1]], 2, mean, na.rm = TRUE), nrow = 1)
       colnames(msamps) <- colnames(samps[[1]])
       msamps <- as.mcmc.list(list(mcmc(msamps, start = 1, end = 1, thin = 1)))
