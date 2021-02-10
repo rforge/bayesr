@@ -184,7 +184,6 @@ sam_BayesX <- BayesX <- function(x, y, family, start = NULL, weights = NULL, off
 
     rn <- response.name(as.formula(x$formula), hierarchical = FALSE)
 
-
     if(!family$family == "dirichlet") {
       if(is.null(family$cat)) {
         if(length(cny) > 1) {
