@@ -8083,7 +8083,7 @@ print.bamlss <- function(x, digits = max(3, getOption("digits") - 3), ...)
 
 
 ## More extractor functions.
-DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
+DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL, newdata = NULL)
 {
   object <- c(object, ...)
   rval <- NULL
@@ -8112,11 +8112,13 @@ DIC.bamlss <- function(object, ..., samples = TRUE, nsamps = NULL)
       colnames(msamps) <- colnames(samps[[1]])
       msamps <- as.mcmc.list(list(mcmc(msamps, start = 1, end = 1, thin = 1)))
       object[[i]]$samples <- msamps
-      mpar <- predict.bamlss(object[[i]], type = "parameter", FUN = mean, nsamps = nsamps, drop = FALSE)
+      mpar <- predict.bamlss(object[[i]], newdata = newdata,
+        type = "parameter", FUN = mean, nsamps = nsamps, drop = FALSE)
       mdev <- -2 * sum(family$d(y, mpar, log = TRUE), na.rm = TRUE)
       object[[i]]$samples <- samps
       rm("samps")
-      par <- predict.bamlss(object[[i]], type = "parameter", FUN = function(x) { x }, nsamps = nsamps, drop = FALSE)
+      par <- predict.bamlss(object[[i]], newdata = newdata,
+        type = "parameter", FUN = function(x) { x }, nsamps = nsamps, drop = FALSE)
       iter <- if(is.list(par)) ncol(par[[1]]) else ncol(par)
       dev <- rep(NA, iter)
       tpar <- mpar
@@ -10869,7 +10871,7 @@ WAIC <- function(object, ..., newdata = NULL)
 
 
 compute_WAIC <- function(object, newdata = NULL) {
-  if(is.null(object$samples) | is.null(object$y)) {
+  if(is.null(object$samples)) {
     warning("cannot compute WAIC, return NULL!")
     return(NULL)
   }
