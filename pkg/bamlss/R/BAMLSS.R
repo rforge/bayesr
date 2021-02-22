@@ -736,10 +736,9 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
       xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = 100), na.rm = TRUE)
       nd[[j]] <- sample(xq)
     } else {
-      nd[[j]] <- sample(unique(data[[j]]), size = 500, replace = TRUE)
+      nd[[j]] <- sample(unique(data[[j]]), size = 100, replace = TRUE)
     }
   }
-  nd <- as.data.frame(nd)
   object <- smooth.construct(object, nd, knots)
   object[["X"]] <- NULL
   sX <- function(x) {
