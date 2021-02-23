@@ -3322,6 +3322,9 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   if(nt > 2)
     return(NULL)
 
+  if((nt == 2) & (x$by != "NA"))
+    return(NULL)
+
   if(x$by != "NA") grid <- NA
   if(!is.na(grid)) {
     if(grid < 0) {
