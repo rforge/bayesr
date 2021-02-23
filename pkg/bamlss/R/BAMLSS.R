@@ -8726,10 +8726,7 @@ results.bamlss.default <- function(x, what = c("samples", "parameters"), grid = 
           paste(x[-length(x)], collapse = "")
         })
       }
-print(tl2)
-print(tl)
       tl <- tl[grep2(tl2, tl, fixed = TRUE)]
-print(tl)
       sn <- paste(id, "s", tl, sep = ".")
       i <- grep2(sn, snames, fixed = TRUE)
       if(length(i)) {
