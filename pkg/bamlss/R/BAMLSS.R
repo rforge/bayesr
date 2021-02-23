@@ -727,13 +727,14 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
 
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
-  object$xt$center <- FALSE
-  object$xt$nocenter <- TRUE
+  object$xt$center <- TRUE
+  object$xt$nocenter <- FALSE
   if(object$by != "NA") {
     object$label <- strsplit(object$label, "")[[1]]
     object$label <- paste0(object$label[-length(object$label)], collapse = "")
     object$label <- paste0(object$label, ",by=", object$by, ")")
     object$xt$center <- FALSE
+    object$xt$nocenter <- TRUE
   }
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
