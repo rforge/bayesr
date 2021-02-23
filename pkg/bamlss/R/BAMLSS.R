@@ -733,6 +733,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     object$label <- strsplit(object$label, "")[[1]]
     object$label <- paste0(object$label[-length(object$label)], collapse = "")
     object$label <- paste0(object$label, ",by=", object$by, ")")
+    object$xt$center <- FALSE
   }
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
@@ -3319,11 +3320,15 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
   if(is.list(data))
     data <- as.data.frame(data)
 
-  if(nt > 2)
+  if(nt > 2) {
+    cat(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
     return(NULL)
+  }
 
-  if((nt == 2) & (x$by != "NA"))
+  if((nt == 2) & (x$by != "NA")) {
+    cat(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
     return(NULL)
+  }
 
   if(x$by != "NA") grid <- NA
   if(!is.na(grid)) {
@@ -3387,7 +3392,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       data <- nd
     } else xsmall <- FALSE
   } else {
-    if(!is.list(data)) {
+    if(is.data.frame(data)) {
       data0 <- data[, c(tterms, if(x$by != "NA") x$by else NULL), drop = FALSE]
       if(nt < 2) {
         if(x$by != "NA") {
@@ -3397,6 +3402,10 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
       }
       xsmall <- if((nrow(data) != nrow(data0)) & (nt < 2)) TRUE else FALSE
     } else xsmall <- FALSE
+  }
+  if(nrow(data) > 1e+05) {
+    cat(paste0(".. not computing effect plot for term ", x$label, ",\n.. .. too many observations, use predict() instead!\n"))
+    return(NULL)
   }
   if(is.null(x$special)) {
     X <- get.X(data)
