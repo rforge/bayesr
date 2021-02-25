@@ -5588,7 +5588,6 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     object$dim <- length(object$term)
     object$by <- "NA"
     object$type <- "single"
-    object$xt$fx <- FALSE
     object$xt$k <- object$bs.dim
   }
   object$xt[["standardize"]] <- object[["standardize01"]] <- object$xt[["standardize01"]] <-  TRUE
@@ -5698,12 +5697,11 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$bs.dim <- ncol(object$X)
 
   object$rank <- df
-  object$xt$prior <- "ig"
   object$xt$binning <- FALSE
 
   object$update <- object$xt$update <- nnet0_update
   object$boost.fit <- function(...) stop("Boost not yet implemented for n()!")
-  object$propose <- function(...) stop("MCMC updating not yet implemented for n()!")
+  object$propose <- GMCMC_slice
 
   object$activ_fun <- switch(type[1],
     "relu" = function(x) {
@@ -5747,20 +5745,49 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   }
   ##attr(object$fit.fun, ".internal") <- TRUE
 
-  tau2 <- rep(10000, length(object$S))
-  names(tau2) <- paste0("tau2", 1:length(object$S))
   object$state <- list()
+  tau2 <- rep(0.001, length(object$S))
+  names(tau2) <- paste0("tau2", 1:length(object$S))
   object$state$parameters <- c(rep(0, nodes))
   names(object$state$parameters) <- paste0("bb", 1:nodes)
-  object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), tau2)
   object$state$fitted.values <- rep(0, nrow(object$X))
   object$state$edf <- nodes
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  object$prior <- function(...) { 1 }
+  df <- round(0.2 * nodes)
+  XX <- crossprod(object$getZ(object$X, object$state$parameters))
+
+  objfun <- function(tau2, ret.edf = FALSE) {
+    S <- 0
+    for(j in seq_along(object$S))
+       S <- S + 1 / tau2[j] * diag(1, ncol(XX))
+    edf <- sum_diag(XX %*% matrix_inv(XX + S))
+    if(ret.edf)
+      return(edf)
+    else
+      return((df - edf)^2)
+  }
+
+  opt <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100,
+    add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
+
+  object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), opt)
+
+  object[["X0"]] <- object$X
+  object$X <- object$getZ(object$X, object$state$parameters)
+  op <- make.prior(object)
+  object$prior <- op$prior
+  object$grad <- op$grad
+  object$hess <- op$hess
+  object$X <- object$X0
+
+  object[["a"]] <- object[["b"]] <- 0.0001
 
   object$PredictMat <- Predict.matrix.nnet0.smooth
+  object$fxsp <- object$xt$fx
+  if(is.null(object$fxsp))
+    object$fxsp <- FALSE
 
   class(object) <- c("nnet0.smooth", "no.mgcv", "special")
 
@@ -5836,7 +5863,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     fit <- drop(Z %*% beta)
     fit <- fit - mean(fit)
     eta[[id]] <- eta[[id]] + fit
-    ll <- family$loglik(y, family$map2par(eta)) - t(beta) %*% S %*% beta
+    ll <- drop(family$loglik(y, family$map2par(eta)) - t(beta) %*% S %*% beta)
     ll
   }
 
@@ -5869,19 +5896,12 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     return(colSums(gr2))
   }
 
-w0 <- par0[i]
+#  opt <- optim(par0[i], fn = objfun0, gr = gradfun0,
+#    method = "L-BFGS-B", tau2 = tau2,
+#    control = list(fnscale = -1, maxit = 5))
 
-  opt <- optim(par0[i], fn = objfun0, gr = gradfun0,
-    method = "L-BFGS-B", tau2 = tau2,
-    control = list(fnscale = -1, maxit = 1000))
-
-  if(opt$convergence <= 1)
-    par0[i] <- opt$par
-
-w1 <- par0[i]
-
-plot(w0 - w1, main = opt$convergence)
-abline(h = 0)
+##  if(opt$convergence <= 1)
+#  par0[i] <- opt$par
 
   Z <- x$getZ(x$X, par0)
 
@@ -5889,22 +5909,22 @@ abline(h = 0)
 
   edf0 <- args$edf - x$state$edf
 
-  objfun1 <- function(tau2) {
-    S <- 0
-    for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par0[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
-    P <- matrix_inv(ZWZ + S)
-    beta <- drop(P %*% crossprod(Z * hess, e))
-    fit <- drop(Z %*% beta)
-    fit <- fit - mean(fit)
-    eta[[id]] <- eta[[id]] + fit
-    edf <- sum_diag(ZWZ %*% P)
-    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf,
-      length(fit), type = criterion, ...)
-    return(ic)
+  if(!x$fxsp) {
+    objfun1 <- function(tau2) {
+      S <- 0
+      for(j in seq_along(x$S))
+        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par0[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
+      P <- matrix_inv(ZWZ + S)
+      beta <- drop(P %*% crossprod(Z * hess, e))
+      fit <- drop(Z %*% beta)
+      fit <- fit - mean(fit)
+      eta[[id]] <- eta[[id]] + fit
+      edf <- sum_diag(ZWZ %*% P)
+      ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, length(z), criterion)
+      return(ic)
+    }
+    tau2 <- tau2.optim(objfun1, start = tau2)
   }
-
-  tau2 <- tau2.optim(objfun1, start = tau2)
 
   S <- 0
   for(j in seq_along(x$S))
@@ -8177,9 +8197,22 @@ logLik.bamlss <- function(object, ..., optimizer = FALSE, samples = FALSE)
   }
   object <- object[mn != "mstop"]
   ll <- edf <- nobs <- NULL
+  nd <- list(...)$newdata
+  if(!is.null(nd))
+    samples <- FALSE
   if(samples)
     ll <- list()
   for(j in seq_along(object)) {
+    if(!is.null(nd)) {
+      par <- predict(object[[j]], newdata = nd, type = "parameter")
+      rn <- response_name(object[[j]])
+      y <- eval(parse(text = rn), envir = nd)
+      edfo <- summary(object[[j]])$model.stats$optimizer$edf
+      edfs <- summary(object[[j]])$model.stats$sampler$pd
+      ll <- c(ll, "logLik" = sum(family(object[[j]])$d(y, par, log = TRUE), na.rm = TRUE))
+      edf <- c(edf, if(is.null(edfs)) edfo else edfs)
+      next
+    }
     if(samples) {
       if(is.null(object[[j]]$samples)) {
         warning(paste("no samples available for object ", mn[j], ", cannot compute logLik!", sep = ""))

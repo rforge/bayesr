@@ -195,7 +195,7 @@ get.par <- function(x, what = NULL) {
     return(x[grep("tau2", names(x))])
   } else {
     if(what %in% "b") {
-      return(x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))])
+      return(x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)) & !grepl("bw", names(x))])
     } else return(x[what])
   }
 }
@@ -207,10 +207,10 @@ set.par <- function(x, replacement, what) {
     x[grep("tau2", names(x))] <- replacement
   } else {
     if(what %in% "b") {
-      if(as.integer(sum(!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)))) != length(replacement)) {
+      if(as.integer(sum(!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)) & !grepl("bw", names(x)))) != length(replacement)) {
         stop("here")
       }
-      x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x))] <- replacement
+      x[!grepl("tau2", names(x)) & !grepl("edf", names(x)) & !grepl("lasso", names(x)) & !grepl("bw", names(x))] <- replacement
     } else x[what] <- replacement
   }
   x
