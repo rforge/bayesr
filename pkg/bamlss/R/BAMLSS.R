@@ -6037,8 +6037,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
     ## object$xt$csd <- apply(object$X, 2, sd)
 #    for(j in 1:ncol(object$X))
 #      object$X[, j] <- object$X[, j] - object$xt$cmeans[j]
-
     object$QR <- qr.Q(qr(crossprod(object$X, rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
+
     object$X <- object$X %*% object$QR
   }
 
