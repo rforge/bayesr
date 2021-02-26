@@ -3322,12 +3322,12 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     data <- as.data.frame(data)
 
   if(nt > 2) {
-    cat(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
     return(NULL)
   }
 
   if((nt == 2) & (x$by != "NA")) {
-    cat(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
     return(NULL)
   }
 
@@ -3405,7 +3405,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     } else xsmall <- FALSE
   }
   if(nrow(data) > 1e+05) {
-    cat(paste0(".. not computing effect plot for term ", x$label, ",\n.. .. too many observations, use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ",\n.. .. too many observations, use predict() instead!\n"))
     return(NULL)
   }
   if(is.null(x$special)) {
@@ -6051,8 +6051,8 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       }
     }
     sm <- do.call("cbind", lapply(object$sm, function(x) { x$X }))
-    for(j in seq_along(object$sm))
-      object$sm[[j]]$X <- NULL
+#    for(j in seq_along(object$sm))
+#      object$sm[[j]]$X <- matrix(0, nrow = 0, ncol = ncol(object$sm[[j]]$X))
 
 #  qrL <- qr(L)
 #  Q <- qr.Q(qrL)
@@ -6392,7 +6392,7 @@ Predict.matrix.nnet0.smooth <- function(object, data)
 }
 
 
-Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, data)
+Predict.matrix.nnet2.smooth <- function(object, data)
 {
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
@@ -6400,13 +6400,10 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
   X <- X[, object$Xkeep, drop = FALSE]
   if(!is.null(object$Xsubset))
     X <- X[, object$Xsubset, drop = FALSE]
-
   if(!is.null(object$smC)) {
     smX <- list()
-    for(j in seq_along(object$sm)) {
-      if(!is.factor(data[[j]])) {
-        smX[[j]] <- PredictMat(object$sm[[j]], data)
-      }
+    for(j in seq_along(object[["sm"]])) {
+      smX[[j]] <- PredictMat(object[["sm"]][[j]], as.data.frame(data))
     }
     smX <- do.call("cbind", smX)
     smL <- qr(smX)
@@ -6422,6 +6419,8 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
   }
   return(X)
 }
+
+Predict.matrix.nnet3.smooth <- Predict.matrix.nnet2.smooth
 
 
 nnet.fit <- function(X, y, nodes = 20, ..., random = FALSE, w = NULL, lambda = 0.001,
