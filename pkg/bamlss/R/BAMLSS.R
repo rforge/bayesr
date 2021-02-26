@@ -3322,12 +3322,12 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     data <- as.data.frame(data)
 
   if(nt > 2) {
-    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!"))
     return(NULL)
   }
 
   if((nt == 2) & (x$by != "NA")) {
-    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ", use predict() instead!"))
     return(NULL)
   }
 
@@ -3405,7 +3405,7 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
     } else xsmall <- FALSE
   }
   if(nrow(data) > 1e+05) {
-    message(paste0(".. not computing effect plot for term ", x$label, ",\n.. .. too many observations, use predict() instead!\n"))
+    message(paste0(".. not computing effect plot for term ", x$label, ",\n.. .. too many observations, use predict() instead!"))
     return(NULL)
   }
   if(is.null(x$special)) {
@@ -6061,14 +6061,13 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 
     smL <- qr(sm)
     object$smC <- tcrossprod(qr.Q(smL))
-    ##object$X <- object$X - object$smC %*% object$X
-    object$X <- object$smC %*% object$X
-  } else {
-    if(is.null(object$xt$nocenter)) {
-      object$QR <- qr.Q(qr(crossprod(object$X,
-        rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
-      object$X <- object$X %*% object$QR
-    }
+    object$X <- object$X - object$smC %*% object$X
+    ##object$X <- object$smC %*% object$X
+  }
+  if(is.null(object$xt$nocenter)) {
+    object$QR <- qr.Q(qr(crossprod(object$X,
+      rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
+    object$X <- object$X %*% object$QR
   }
 
   if(ncol(object$X) < 1)
@@ -6172,7 +6171,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   if(object$xt$single) {
     ncX <- ncol(object$X)
     nrX <- nrow(object$X)
-    if(is.null(object$xt$ndf)) {
+    if(is.null(object$xt$ndf) | TRUE) {
       object$N <- apply(object$X, 2, function(x) {
         return((1/crossprod(x)) %*% t(x))
       })
@@ -6213,7 +6212,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
 #        x$state$rss <- sum((y - x$state$fitted.values)^2)
 ##print(sum_diag(crossprod(Z) %*% matrix_inv(crossprod(Z) + K)))
       } else {
-        bf <- boost_fit_nnet(nu/x$xt$K, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
+        bf <- boost_fit_nnet(nu, x$X, x$N, y, x$binning$match.index, nthreads = nthreads)
         j <- which.min(bf$rss)
         g2[j] <- bf$g[j]
         x$state$fitted.values <- bf$fit[, j]
@@ -6408,19 +6407,51 @@ Predict.matrix.nnet2.smooth <- function(object, data)
     smX <- do.call("cbind", smX)
     smL <- qr(smX)
     smC <- tcrossprod(qr.Q(smL))
-    ## X <- X - smC %*% X
-    X <- smC %*% X
-  } else {
-    if(is.null(object$xt$nocenter)) {
+    X <- X - smC %*% X
+    ## X <- smC %*% X
+  }
+  if(is.null(object$xt$nocenter)) {
 #    for(j in 1:length(object$xt$cmeans))
 #      X[, j] <- X[, j] - object$xt$cmeans[j]
-      X <- X %*% object$QR
-    }
+    X <- X %*% object$QR
   }
   return(X)
 }
 
 Predict.matrix.nnet3.smooth <- Predict.matrix.nnet2.smooth
+
+
+if(FALSE) {
+  n <- 600
+
+  d <- data.frame(
+    "x1" = runif(n, -3, 3),
+    "x2" = runif(n,-3, 3)
+  )
+  d$y <- d$x1 + d$x2^2 + sin(d$x1)*cos(d$x2) + rnorm(n, sd = 0.3)
+
+  i <- sample(1:2, size = n, replace = TRUE)
+
+  dtrain <- d[i == 1, ]
+  dtest <- d[i == 2, ]
+
+  b0 <- bamlss(y ~ s(x1)+s(x2), data= dtrain)
+  b1 <- bamlss(y ~ s(x1)+s(x2)+n(~x1+x2,k=100,orthc=F,rint=0.1,sint=1000), data = dtest)
+
+  p0 <- predict(b0, newdata = dtest, model = "mu")
+  p1 <- predict(b1, newdata = dtest, model = "mu")
+
+  plot(dtest$y ~ p0)
+  points(p1, dtest$y, col = 2)
+  abline(0, 1)
+
+  mse <- c(
+    "GAM" = mean((dtest$y - p0)^2),
+    "GAM+NET" = mean((dtest$y - p1)^2)
+  )
+
+  print(mse)
+}
 
 
 nnet.fit <- function(X, y, nodes = 20, ..., random = FALSE, w = NULL, lambda = 0.001,
