@@ -711,7 +711,7 @@ get.hessian <- function(x)
       nh <- c(nh, pn)
     }
   }
-  hessian <- -1 * as.matrix(do.call("Matrix::bdiag", hessian))
+  hessian <- -1 * as.matrix(do.call("bdiag", hessian))
   rownames(hessian) <- colnames(hessian) <- nh
   hessian <- hessian[npar, npar]
   return(hessian)

@@ -6032,14 +6032,43 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
   ## object$Xsubset <- subset_features(object$X)
   ## object$X <- object$X[, object$Xsubset, drop = FALSE]
 
-  if(is.null(object$xt$nocenter)) {
-#    object$xt$cmeans <- colMeans(object$X)
-    ## object$xt$csd <- apply(object$X, 2, sd)
-#    for(j in 1:ncol(object$X))
-#      object$X[, j] <- object$X[, j] - object$xt$cmeans[j]
-    object$QR <- qr.Q(qr(crossprod(object$X, rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
+  ## Orthogonal complement.
+  oc <- object$xt$orthc
+  if(is.null(oc))
+    oc <- TRUE
+  if(oc) {
+    object$xt$nocenter <- TRUE
+    object$xt$center <- FALSE
+    object$sm <- list()
+    for(j in object$term) {
+      if(!is.factor(data[[j]])) {
+        k <- min(c(10, length(unique(data[[j]])) - 1))
+        if(k > 7) {
+          sj <- eval(parse(text = paste0("s(", j,",bs='ps')")))
+          object$sm[[j]] <- smoothCon(sj, data, knots = NULL,
+            absorb.cons = TRUE, sparse.cons = 0, scale.penalty = TRUE)[[1]]
+        }
+      }
+    }
+    sm <- do.call("cbind", lapply(object$sm, function(x) { x$X }))
+    for(j in seq_along(object$sm))
+      object$sm[[j]]$X <- NULL
 
-    object$X <- object$X %*% object$QR
+#  qrL <- qr(L)
+#  Q <- qr.Q(qrL)
+#  XtXinvXt <- tcrossprod(Q)
+#  Sorth <- S - XtXinvXt%*%S
+
+    smL <- qr(sm)
+    object$smC <- tcrossprod(qr.Q(smL))
+    ##object$X <- object$X - object$smC %*% object$X
+    object$X <- object$smC %*% object$X
+  } else {
+    if(is.null(object$xt$nocenter)) {
+      object$QR <- qr.Q(qr(crossprod(object$X,
+        rep(1, length = nrow(object$X)))), complete = TRUE)[, -1]
+      object$X <- object$X %*% object$QR
+    }
   }
 
   if(ncol(object$X) < 1)
@@ -6371,10 +6400,25 @@ Predict.matrix.nnet2.smooth <- Predict.matrix.nnet3.smooth <- function(object, d
   X <- X[, object$Xkeep, drop = FALSE]
   if(!is.null(object$Xsubset))
     X <- X[, object$Xsubset, drop = FALSE]
-  if(is.null(object$xt$nocenter)) {
+
+  if(!is.null(object$smC)) {
+    smX <- list()
+    for(j in seq_along(object$sm)) {
+      if(!is.factor(data[[j]])) {
+        smX[[j]] <- PredictMat(object$sm[[j]], data)
+      }
+    }
+    smX <- do.call("cbind", smX)
+    smL <- qr(smX)
+    smC <- tcrossprod(qr.Q(smL))
+    ## X <- X - smC %*% X
+    X <- smC %*% X
+  } else {
+    if(is.null(object$xt$nocenter)) {
 #    for(j in 1:length(object$xt$cmeans))
 #      X[, j] <- X[, j] - object$xt$cmeans[j]
-    X <- X %*% object$QR
+      X <- X %*% object$QR
+    }
   }
   return(X)
 }
