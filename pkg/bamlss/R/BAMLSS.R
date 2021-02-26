@@ -6044,7 +6044,7 @@ smooth.construct.nnet2.smooth.spec <- function(object, data, knots, ...)
       if(!is.factor(data[[j]])) {
         k <- min(c(10, length(unique(data[[j]])) - 1))
         if(k > 7) {
-          sj <- eval(parse(text = paste0("s(", j,",bs='ps')")))
+          sj <- eval(parse(text = paste0("s(", j,")")))
           object$sm[[j]] <- smoothCon(sj, data, knots = NULL,
             absorb.cons = TRUE, sparse.cons = 0, scale.penalty = TRUE)[[1]]
         }
