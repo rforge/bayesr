@@ -5432,12 +5432,12 @@ n.weights <- function(nodes, k, r = NULL, s = NULL, type = c("sigmoid", "gauss",
           } else {
             id <- as.integer(sapply(strsplit(names(cb1), ").b", fixed = TRUE), function(x) { x[2] }))
             id <- id[abs(cb1) > 1e-10]
-            rval[[j]] <- id
-#            weights <- vector(mode = "list", length = length(id))
-#            for(i in seq_along(id))
-#              weights[[i]] <- as.numeric(cb[grep(paste0(terms, ".bw", id[i], "_w"), names(cb), fixed = TRUE)])
-#              
-#            attr(rval[[j]], "weights") <- weights
+            rval[[j]] <- list()
+            i <- strsplit(terms, ".", fixed = TRUE)[[1]][3]
+            ww <- nodes$x[[j]]$smooth.construct[[i]]$n.weights
+            for(jj in names(ww)) {
+              rval[[j]][[jj]] <- ww[[jj]][id]
+            }
           }
         }
       }
@@ -11119,12 +11119,12 @@ if(FALSE) {
   y <- 2 + 0.5 * x + sin(x) + rnorm(n, sd = 0.3)
 
   ## P-spline design matrix.
-  sm <- smooth.construct(n(~x,k=1000,rint=0.05,sint=100,nocenter=TRUE), list(x=x), NULL)
+  sm <- smooth.construct(n(~x,k=200,rint=0.1,sint=100,orthc=TRUE), list(x=x), NULL)
   Z <- sm$X
   S <- sm$S[[1]]
 
-  ## Linear design matrix including intercept.
-  X <- matrix((x - mean(x)) / sd(x), ncol = 1)
+  ## Smooth X.
+  X <- smooth.construct(s(x), list(x=x), NULL)$X
 
   ## Orthogonal complement of subspace.
   R <- cbind(X)
