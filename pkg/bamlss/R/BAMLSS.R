@@ -5564,14 +5564,14 @@ nnet2Zmat <- function(X, weights, afun)
         x
       },
       "sigmoid" = function(x) {
-        1 / (1 + exp(-x))
+        1 / (1 + exp2(-x))
       },
       "tanh" = tanh,
       "sin" = sin,
       "cos" = sin,
-      "gauss" = function(x) { exp(-x^2) },
+      "gauss" = function(x) { exp2(-x^2) },
       "identity" = function(x) { x },
-      "softplus" = function(x) { log(1 + exp(x)) }
+      "softplus" = function(x) { log(1 + exp2(x)) }
     )
     for(j in 1:nc) {
       Z[[k]] <- afun(X %*% weights[[i]][[j]])
@@ -5839,106 +5839,93 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ## Compute working observations.
     z <- eta[[id]] + 1 / hess * score
   } else z <- args$z
-  
+
+  ll0 <- family$loglik(y, family$map2par(eta))
+
   ## Compute partial predictor.
   eta[[id]] <- eta[[id]] - fitted(x$state)
-  
+
   ## Compute reduced residuals.
   e <- z - eta[[id]]
 
-  ## Old parameters.
-  par0 <- x$state$parameters
-  i <- grep("bw", names(par0))
+  par <- x$state$parameters
 
-  tau2 <- get.state(x, "tau2")
-
-  objfun0 <- function(par, tau2) {
+  objfun <- function(w, i, j, ...) {
+    par[i] <- w
     Z <- x$getZ(x$X, par)
-    S <- 0
-    for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
     ZWZ <- crossprod(Z * hess, Z)
-    P <- matrix_inv(ZWZ + S)
+    P <- matrix_inv(ZWZ)
     beta <- drop(P %*% crossprod(Z * hess, e))
     fit <- drop(Z %*% beta)
     fit <- fit - mean(fit)
     eta[[id]] <- eta[[id]] + fit
-    ll <- drop(family$loglik(y, family$map2par(eta)) - t(beta) %*% S %*% beta)
-    ll
+    ll <- family$loglik(y, family$map2par(eta))
+    ret <- -ll
+
+#    eXw <- exp(-drop(x$X %*% w))
+#    score <- family$score[[id]](y, family$map2par(eta))
+#    gr <- x$X * score * beta[j] * eXw / (1 + eXw)^2
+#    gr <- -colSums(gr)
+#    attr(ret, "gradient") <- gr
+
+    return(ret)
   }
 
-  gradfun0 <- function(par, tau2) {
+  nc <- ncol(x$X)
+
+  gradfun <- function(w, i, j, ...) {
+    par[i] <- w
     Z <- x$getZ(x$X, par)
-    S <- 0
-    for(j in seq_along(x$S))
-      S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
     ZWZ <- crossprod(Z * hess, Z)
-    P <- matrix_inv(ZWZ + S)
+    P <- matrix_inv(ZWZ)
     beta <- drop(P %*% crossprod(Z * hess, e))
     fit <- drop(Z %*% beta)
     fit <- fit - mean(fit)
     eta[[id]] <- eta[[id]] + fit
-    s1 <- family$score[[id]](y, family$map2par(eta))
-    nc <- ncol(x$X)
-    gr2 <- matrix(0, nrow = length(fit), ncol = x$nodes * nc)
-    k <- 1
-    for(j in 1:x$nodes) {
-      s2 <- beta[j] * Z[, j] * (1 - Z[, j])
-      for(i in 1:nc) {
-        if(i < 2) {
-          gr2[, k] <- s1 * s2
-        } else {
-          gr2[, k] <- s1 * s2 * x$X[, i]
-        }
-        k <- k + 1
-      }
-    }
-    return(colSums(gr2))
+    score <- family$score[[id]](y, family$map2par(eta))
+    gr <- x$X * score * beta[j] * exp2(-drop(x$X %*% w)) / (1 + exp2(-drop(x$X %*% w)))^2
+    return(-colSums(gr))
   }
 
-#  opt <- optim(par0[i], fn = objfun0, gr = gradfun0,
-#    method = "L-BFGS-B", tau2 = tau2,
-#    control = list(fnscale = -1, maxit = 5))
+  for(j in 1:x$nodes) {
+    i <- paste0("bw", j, "_w", 0:(ncol(x$X) - 1))
 
-##  if(opt$convergence <= 1)
-#  par0[i] <- opt$par
+#w <- par[i]
+#a <- numericDeriv(quote(objfun(w, i = i)), "w")
+#b <- gradfun(w, i = i, j = j)
+#print(attr(a, "gradient"))
+#print(b)
+#stop()
 
-  Z <- x$getZ(x$X, par0)
+    opt <- optim(par[i], fn = objfun, #gr = gradfun,
+      method = "L-BFGS-B", i = i, j = j,
+      control = list("maxit" = 3))
 
-  ZWZ <- crossprod(Z * hess, Z)
+#    opt <- nlm(f = objfun, p = par[i], gradtol = 1e-4, steptol = 1e-4, i = i, j = j,
+#      check.analyticals = FALSE)
+#    opt <- list("par" = opt$estimate, "value" = opt$minimum)
 
-  edf0 <- args$edf - x$state$edf
-
-  if(!x$fxsp) {
-    objfun1 <- function(tau2) {
-      S <- 0
-      for(j in seq_along(x$S))
-        S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par0[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
-      P <- matrix_inv(ZWZ + S)
+    if((-1* opt$value) > ll0) {
+      par[i] <- opt$par
+      Z <- x$getZ(x$X, par)
+      ZWZ <- crossprod(Z * hess, Z)
+      P <- matrix_inv(ZWZ)
       beta <- drop(P %*% crossprod(Z * hess, e))
-      fit <- drop(Z %*% beta)
-      fit <- fit - mean(fit)
-      eta[[id]] <- eta[[id]] + fit
-      edf <- sum_diag(ZWZ %*% P)
-      ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, length(z), criterion)
-      return(ic)
+      par[grep("bb", names(par))] <- beta
     }
-    tau2 <- tau2.optim(objfun1, start = tau2)
   }
 
-  S <- 0
-  for(j in seq_along(x$S))
-    S <- S + 1 / tau2[j] * if(is.function(x$S[[j]])) x$S[[j]](c(par0[1:x$nodes], x$fixed.hyper)) else x$S[[j]]
-  P <- matrix_inv(ZWZ + S)
+  Z <- x$getZ(x$X, par)
+  ZWZ <- crossprod(Z * hess, Z)
+  P <- matrix_inv(ZWZ)
   beta <- drop(P %*% crossprod(Z * hess, e))
   fit <- drop(Z %*% beta)
   fit <- fit - mean(fit)
 
-  par0[grep("bb", names(par0))] <- beta
-  par0 <- set.par(par0, tau2, "tau2")
+  par[grep("bb", names(par))] <- beta
 
   x$state$fitted.values <- fit
-  x$state$parameters <- par0
+  x$state$parameters <- par
   x$state$edf <- sum_diag(ZWZ %*% P)
   x$state$log.prior <- sum(dnorm(beta, sd = 1000, log = TRUE))
 
