@@ -5776,10 +5776,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object[["X0"]] <- object$X
   object$X <- object$getZ(object$X, object$state$parameters)
-  op <- make.prior(object)
-  object$prior <- op$prior
-  object$grad <- op$grad
-  object$hess <- op$hess
+  object$prior <- function(parameters) {
+    sum(dnorm(parameters[grep("bb", parameters)], log = TRUE))
+  }
   object$X <- object$X0
 
   object[["a"]] <- object[["b"]] <- 0.0001
@@ -5887,8 +5886,11 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     return(-colSums(gr))
   }
 
+  if(FALSE) {
   for(j in 1:x$nodes) {
-    i <- paste0("bw", j, "_w", 0:(ncol(x$X) - 1))
+    i <- paste0("bw", j, "_w", 0:(nc - 1))
+
+print(j)
 
 #w <- par[i]
 #a <- numericDeriv(quote(objfun(w, i = i)), "w")
@@ -5897,9 +5899,8 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #print(b)
 #stop()
 
-    opt <- optim(par[i], fn = objfun, #gr = gradfun,
-      method = "L-BFGS-B", i = i, j = j,
-      control = list("maxit" = 3))
+    opt <- optim(par[i], fn = objfun, gr = gradfun,
+      method = "L-BFGS-B", i = i, j = j)
 
 #    opt <- nlm(f = objfun, p = par[i], gradtol = 1e-4, steptol = 1e-4, i = i, j = j,
 #      check.analyticals = FALSE)
@@ -5913,6 +5914,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
       beta <- drop(P %*% crossprod(Z * hess, e))
       par[grep("bb", names(par))] <- beta
     }
+  }
   }
 
   Z <- x$getZ(x$X, par)
