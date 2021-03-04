@@ -5713,10 +5713,31 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     },
     "tanh" = tanh,
     "sin" = sin,
-    "cos" = sin,
+    "cos" = cos,
     "gauss" = function(x) { exp2(-x^2) },
-    "identity" = function(x) { x },
     "softplus" = function(x) { log(1 + exp2(x)) }
+  )
+
+  object$activ_grad <- switch(type[1],
+    "sigmoid" = function(x) {
+      1 / (1 + exp2(-x)) * (1 - 1 / (1 + exp2(-x)))
+    },
+    "tanh" = 1 - tanh(x)^2,
+    "sin" = cos,
+    "cos" = sin,
+    "gauss" = function(x) -(exp2(-x^2) * (2 * x)),
+    "softplus" = function(x) exp2(x)/(1 + exp2(x))
+  )
+
+  object$activ_hess <- switch(type[1],
+    "sigmoid" = function(x) {
+      exp2(-x)/(1 + exp2(-x))^2 * (1 - 1/(1 + exp2(-x))) - 1/(1 + exp2(-x)) * (exp2(-x)/(1 + exp2(-x))^2)
+    },
+    "tanh" = -(2 * (1/cosh(x)^2 * tanh(x))),
+    "sin" = sin,
+    "cos" = cos,
+    "gauss" = function(x) -(exp2(-x^2) * 2 - exp2(-x^2) * (2 * x) * (2 * x)),
+    "softplus" = function(x) exp2(x)/(1 + exp2(x)) - exp2(x) * exp2(x)/(1 + exp2(x))^2
   )
 
   nc <- ncol(object$X) - 1L
@@ -5797,6 +5818,97 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 {
   args <- list(...)
+  nobs <- length(eta[[1L]])
+
+  peta <- family$map2par(eta)
+  
+  if(is.null(args$hess)) {
+    hess <- process.derivs(family$hess[[id]](y, peta, id = id, ...), is.weight = TRUE)
+  } else hess <- args$hess
+  
+  if(!is.null(weights))
+    hess <- hess * weights
+  
+  if(is.null(args$z)) {
+    score <- process.derivs(family$score[[id]](y, peta, id = id, ...), is.weight = FALSE)
+    z <- eta[[id]] + 1 / hess * score
+  } else z <- args$z
+
+  par <- x$state$parameters
+  Z <- x$getZ(x$X, par)
+  nc <- ncol(x$X)
+  eta[[id]] <- eta[[id]] - fitted(x$state)
+  e <- z - eta[[id]]
+
+#  ZWZ <- crossprod(Z * hess, Z)
+#  P <- matrix_inv(ZWZ)
+#  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+
+  objfun <- function(w, i, j, fit) {
+    Z[, j] <- x$activ_fun(drop(x$X %*% w[-1L]))
+    fit <- fit + Z[, j] * w[1L]
+    eta[[id]] <- eta[[id]] + fit
+    ll <- family$loglik(y, family$map2par(eta))
+    return(-ll)
+  }
+
+  gradfun <- function(w, i, j, fit) {
+    Xw <- drop(x$X %*% w[-1L])
+    Z[, j] <- x$activ_fun(Xw)
+    fit <- fit + Z[, j] * w[1L]
+    eta[[id]] <- eta[[id]] + fit
+    score <- family$score[[id]](y, family$map2par(eta))
+    gr <- score * cbind(Z[, j], w[1L] * x$activ_grad(Xw) * x$X)
+    return(-colSums(gr))
+  }
+
+  fit <- drop(Z %*% par[1:x$nodes])
+
+  eta2 <- eta
+
+  for(j in 1:x$nodes) {
+    i <- paste0("bw", j, "_w", 0:(nc - 1))
+
+    eta2[[id]] <- eta[[id]] + fit
+    ll0 <- family$loglik(y, family$map2par(eta2))
+    fit <- fit - Z[, j] * par[j]
+
+    opt <- optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
+      method = "L-BFGS-B", i = i, j = j, fit = fit)
+
+#w <- opt$par
+#print(gradfun(w, i, j, fit))
+#print(numericDeriv(quote(objfun(w, i, j, fit)), "w"))
+#stop()
+
+    if(!inherits(opt, "try-error")) {
+      if((-1* opt$value) > ll0) {
+        par[i] <- opt$par[-1L]
+        par[j] <- opt$par[1L]
+        Z[, j] <- x$activ_fun(drop(x$X %*% opt$par[-1L]))
+      }
+    }
+
+    fit <- fit + Z[, j] * par[j]
+  }
+
+  ZWZ <- crossprod(Z * hess, Z)
+  P <- matrix_inv(ZWZ)
+  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+
+  fit <- drop(Z %*% par[1:x$nodes])
+  fit <- fit - mean(fit)
+  x$state$fitted.values <- fit
+  x$state$parameters <- par
+  x$state$edf <- sum_diag(ZWZ %*% P)
+  x$state$log.prior <- sum(dnorm(par[1:x$nodes], sd = 1000, log = TRUE))
+
+  return(x$state)
+}
+
+nnet00_update <- function(x, family, y, eta, id, weights, criterion, ...)
+{
+  args <- list(...)
 
   no_ff <- !inherits(y, "ff")
   peta <- family$map2par(eta)
@@ -5855,19 +5967,32 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ZWZ <- crossprod(Z * hess, Z)
     P <- matrix_inv(ZWZ)
     beta <- drop(P %*% crossprod(Z * hess, e))
-    fit <- drop(Z %*% beta)
-    fit <- fit - mean(fit)
-    eta[[id]] <- eta[[id]] + fit
-    ll <- family$loglik(y, family$map2par(eta))
-    ret <- -ll
+    eta[[id]] <- eta[[id]] + drop(Z %*% beta)
+    ll <- -1 * family$loglik(y, family$map2par(eta))
 
-#    eXw <- exp(-drop(x$X %*% w))
-#    score <- family$score[[id]](y, family$map2par(eta))
-#    gr <- x$X * score * beta[j] * eXw / (1 + eXw)^2
-#    gr <- -colSums(gr)
-#    attr(ret, "gradient") <- gr
+    score <- family$score[[id]](y, family$map2par(eta))
+    gr <- score * beta[j] * x$activ_grad(drop(x$X %*% w)) * x$X
+    attr(ll, "gradient") <- -colSums(gr)
 
-    return(ret)
+#    hess <- family$hess[[id]](y, family$map2par(eta))
+#    Xw <- drop(x$X %*% w)
+#    h <- matrix(0, nc, nc)
+#    for(l in 1:nobs) {
+#      for(ii in 1:nc) {
+#        for(jj in 1:nc) {
+#          if(ii <= jj) {
+#            h[ii, jj] <- h[ii, jj] + x$X[l, ii] * x$X[l, jj] * x$activ_hess(Xw[l]) * score[l] +
+#              x$X[l, ii] * x$X[l, jj] * x$activ_grad(Xw[l])^2 * hess[l]
+#            h[jj, ii] <- h[ii, jj]
+#          }
+#        }
+#      }
+#    }
+#    #attr(ll, "hessian") <- h
+
+#    h2 <- t(x$X) %*% diag(x$activ_hess(Xw) * score + x$activ_grad(Xw[l])^2 * hess) %*% x$X
+
+    return(ll)
   }
 
   nc <- ncol(x$X)
@@ -5878,19 +6003,40 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ZWZ <- crossprod(Z * hess, Z)
     P <- matrix_inv(ZWZ)
     beta <- drop(P %*% crossprod(Z * hess, e))
-    fit <- drop(Z %*% beta)
-    fit <- fit - mean(fit)
-    eta[[id]] <- eta[[id]] + fit
+    eta[[id]] <- eta[[id]] + drop(Z %*% beta)
     score <- family$score[[id]](y, family$map2par(eta))
-    gr <- x$X * score * beta[j] * exp2(-drop(x$X %*% w)) / (1 + exp2(-drop(x$X %*% w)))^2
+    gr <- score * beta[j] * x$activ_grad(drop(x$X %*% w)) * x$X
     return(-colSums(gr))
   }
 
-  if(FALSE) {
+  hessfun <- function(w, i, j) {
+    par[i] <- w
+    Z <- x$getZ(x$X, par)
+    ZWZ <- crossprod(Z * hess, Z)
+    P <- matrix_inv(ZWZ)
+    beta <- drop(P %*% crossprod(Z * hess, e))
+    eta[[id]] <- eta[[id]] + drop(Z %*% beta)
+    score <- family$score[[id]](y, family$map2par(eta))
+    hess <- family$hess[[id]](y, family$map2par(eta))
+
+    Xw <- drop(x$X %*% w)
+    h <- matrix(0, nc, nc)
+    for(l in 1:nobs) {
+      for(ii in 1:nc) {
+        for(jj in 1:nc) {
+          if(ii <= jj) {
+            h[ii, jj] <- h[ii, jj] + x$X[l, ii] * x$X[l, jj] * x$activ_hess(Xw[l]) * score[l] +
+              x$X[l, ii] * x$X[l, jj] * x$activ_grad(Xw[l])^2 * hess[l]
+            h[jj, ii] <- h[ii, jj]
+          }
+        }
+      }
+    }
+    return(h)    
+  }
+
   for(j in 1:x$nodes) {
     i <- paste0("bw", j, "_w", 0:(nc - 1))
-
-print(j)
 
 #w <- par[i]
 #a <- numericDeriv(quote(objfun(w, i = i)), "w")
@@ -5899,12 +6045,26 @@ print(j)
 #print(b)
 #stop()
 
-    opt <- optim(par[i], fn = objfun, gr = gradfun,
-      method = "L-BFGS-B", i = i, j = j)
+#    opt <- optim(par[i], fn = objfun, gr = gradfun,
+#      method = "L-BFGS-B", i = i, j = j)
 
-#    opt <- nlm(f = objfun, p = par[i], gradtol = 1e-4, steptol = 1e-4, i = i, j = j,
-#      check.analyticals = FALSE)
-#    opt <- list("par" = opt$estimate, "value" = opt$minimum)
+    opt <- try(nlm(f = objfun, p = par[i], i = i, j = j,
+      check.analyticals = TRUE, hessian = TRUE), silent = TRUE)
+
+oo <- optimHess(opt$estimate, objfun, gr = gradfun, i = i, j = j)
+
+print(oo)
+
+print(opt)
+cat("---\n")
+#print(gradfun(opt$estimate, i, j))
+print(hessfun(opt$estimate, i, j))
+stop()
+
+    if(inherits(opt, "try-error"))
+      next
+
+    opt <- list("par" = opt$estimate, "value" = opt$minimum)
 
     if((-1* opt$value) > ll0) {
       par[i] <- opt$par
@@ -5914,7 +6074,6 @@ print(j)
       beta <- drop(P %*% crossprod(Z * hess, e))
       par[grep("bb", names(par))] <- beta
     }
-  }
   }
 
   Z <- x$getZ(x$X, par)
