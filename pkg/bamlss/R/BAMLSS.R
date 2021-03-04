@@ -5873,8 +5873,8 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ll0 <- family$loglik(y, family$map2par(eta2))
     fit <- fit - Z[, j] * par[j]
 
-    opt <- optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
-      method = "L-BFGS-B", i = i, j = j, fit = fit)
+    opt <- try(optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
+      method = "L-BFGS-B", i = i, j = j, fit = fit), silent = TRUE)
 
 #w <- opt$par
 #print(gradfun(w, i, j, fit))
