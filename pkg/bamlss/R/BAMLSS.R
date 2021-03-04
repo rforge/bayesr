@@ -5894,7 +5894,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   fit <- fit - mean(fit)
   x$state$fitted.values <- fit
   x$state$parameters <- par
-  x$state$edf <- sum(abs(par[1:x$nodes]) > 0.00001) ##sum_diag(ZWZ %*% P)
+  x$state$edf <- sum_diag(ZWZ %*% P)
   x$state$log.prior <- x$prior(par)
 
   return(x$state)
