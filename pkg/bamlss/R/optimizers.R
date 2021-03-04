@@ -989,7 +989,7 @@ opt_bfit <- bfit <- function(x, y, family, start = NULL, weights = NULL, offset 
               iteration = iter, criterion = criterion, score = score)
             
             ## Update predictor and smooth fit.
-            if(!is.null(nu)) {
+            if(!is.null(nu) & !inherits(x[[nx[j]]]$smooth.construct[[sj]], "nnet0.smooth")) {
               lp0 <- get.log.prior(x)
               lpost0 <- family$loglik(y, family$map2par(eta)) ##+ lp0
               ##lp <- lp0 - x[[nx[j]]]$smooth.construct[[sj]]$prior(x[[nx[j]]]$smooth.construct[[sj]]$state$parameters)

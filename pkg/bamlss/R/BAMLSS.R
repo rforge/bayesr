@@ -5656,7 +5656,8 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   const <- object$xt$const
   if(is.null(const))
     const <- 1e-05
-  pt <- object$xt$pt
+  ## pt <- object$xt$pt
+  object$xt$pt <- pt <- "ridge"
   if(is.null(pt))
     pt <- "ridge"
 
@@ -5764,6 +5765,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     }
     return(Z)
   }
+
   ##attr(object$fit.fun, ".internal") <- TRUE
 
   object$state <- list()
@@ -5772,36 +5774,14 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$state$parameters <- c(rep(0, nodes))
   names(object$state$parameters) <- paste0("bb", 1:nodes)
   object$state$fitted.values <- rep(0, nrow(object$X))
-  object$state$edf <- nodes
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  df <- round(0.2 * nodes)
-  XX <- crossprod(object$getZ(object$X, object$state$parameters))
-
-  objfun <- function(tau2, ret.edf = FALSE) {
-    S <- 0
-    for(j in seq_along(object$S))
-       S <- S + 1 / tau2[j] * diag(1, ncol(XX))
-    edf <- sum_diag(XX %*% matrix_inv(XX + S))
-    if(ret.edf)
-      return(edf)
-    else
-      return((df - edf)^2)
-  }
-
-  opt <- tau2.optim(objfun, start = tau2, maxit = 1000, scale = 100,
-    add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
-
-  object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), opt)
-
-  object[["X0"]] <- object$X
-  object$X <- object$getZ(object$X, object$state$parameters)
+  object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), tau2)
+  object$state$edf <- 0
   object$prior <- function(parameters) {
     sum(dnorm(parameters[grep("bb", parameters)], log = TRUE))
   }
-  object$X <- object$X0
-
   object[["a"]] <- object[["b"]] <- 0.0001
 
   object$PredictMat <- Predict.matrix.nnet0.smooth
@@ -5892,16 +5872,30 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     fit <- fit + Z[, j] * par[j]
   }
 
-  ZWZ <- crossprod(Z * hess, Z)
-  P <- matrix_inv(ZWZ)
-  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+#  ZWZ <- crossprod(Z * hess, Z)
+#  edf0 <- args$edf - x$state$edf
+
+#  objfun <- function(tau2) {
+#    P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+#    edf <- sum_diag(ZWZ %*% P)
+#    g <- P %*% crossprod(Z * hess, e)
+#    eta[[id]] <- eta[[id]] + drop(Z %*% g)
+#    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = criterion)
+#    return(ic)
+#  }
+
+#  tau2 <- tau2.optim(objfun, start = get.par(par, "tau2"))
+
+#  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+#  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+#  par["tau21"] <- tau2
 
   fit <- drop(Z %*% par[1:x$nodes])
   fit <- fit - mean(fit)
   x$state$fitted.values <- fit
   x$state$parameters <- par
-  x$state$edf <- sum_diag(ZWZ %*% P)
-  x$state$log.prior <- sum(dnorm(par[1:x$nodes], sd = 1000, log = TRUE))
+  x$state$edf <- sum(abs(par[1:x$nodes]) > 0.00001) ##sum_diag(ZWZ %*% P)
+  x$state$log.prior <- x$prior(par)
 
   return(x$state)
 }
