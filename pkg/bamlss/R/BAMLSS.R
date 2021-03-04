@@ -5872,23 +5872,23 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     fit <- fit + Z[, j] * par[j]
   }
 
-#  ZWZ <- crossprod(Z * hess, Z)
-#  edf0 <- args$edf - x$state$edf
+  ZWZ <- crossprod(Z * hess, Z)
+  edf0 <- args$edf - x$state$edf
 
-#  objfun <- function(tau2) {
-#    P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
-#    edf <- sum_diag(ZWZ %*% P)
-#    g <- P %*% crossprod(Z * hess, e)
-#    eta[[id]] <- eta[[id]] + drop(Z %*% g)
-#    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = criterion)
-#    return(ic)
-#  }
+  objfun <- function(tau2) {
+    P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+    edf <- sum_diag(ZWZ %*% P)
+    g <- P %*% crossprod(Z * hess, e)
+    eta[[id]] <- eta[[id]] + drop(Z %*% g)
+    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = criterion)
+    return(ic)
+  }
 
-#  tau2 <- tau2.optim(objfun, start = get.par(par, "tau2"))
+  tau2 <- tau2.optim(objfun, start = get.par(par, "tau2"))
 
-#  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
-#  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
-#  par["tau21"] <- tau2
+  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+  par["tau21"] <- tau2
 
   fit <- drop(Z %*% par[1:x$nodes])
   fit <- fit - mean(fit)
