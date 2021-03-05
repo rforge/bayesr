@@ -5877,7 +5877,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
   objfun <- function(tau2) {
     P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
-    edf <- sum_diag(ZWZ %*% P)
+    edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
     g <- P %*% crossprod(Z * hess, e)
     eta[[id]] <- eta[[id]] + drop(Z %*% g)
     ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = criterion)
@@ -5894,7 +5894,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   fit <- fit - mean(fit)
   x$state$fitted.values <- fit
   x$state$parameters <- par
-  x$state$edf <- sum_diag(ZWZ %*% P)
+  x$state$edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
   x$state$log.prior <- x$prior(par)
 
   return(x$state)
