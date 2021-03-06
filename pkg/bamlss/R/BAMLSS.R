@@ -5820,10 +5820,6 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   eta[[id]] <- eta[[id]] - fitted(x$state)
   e <- z - eta[[id]]
 
-#  ZWZ <- crossprod(Z * hess, Z)
-#  P <- matrix_inv(ZWZ)
-#  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
-
   gradfun <- function(w, i, j, fit) {
     Xw <- drop(x$X %*% w[-1L])
     Z[, j] <- x$activ_fun(Xw)
@@ -5834,27 +5830,27 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     return(-colSums(gr))
   }
 
-  hessfun <- function(w, i, j, fit) {
-    Xw <- drop(x$X %*% w[-1L])
-    Z[, j] <- x$activ_fun(Xw)
-    fit <- fit + Z[, j] * w[1L]
-    eta[[id]] <- eta[[id]] + fit
-    score <- -1 * family$score[[id]](y, family$map2par(eta))
-    hess <- family$hess[[id]](y, family$map2par(eta))
+#  hessfun <- function(w, i, j, fit) {
+#    Xw <- drop(x$X %*% w[-1L])
+#    Z[, j] <- x$activ_fun(Xw)
+#    fit <- fit + Z[, j] * w[1L]
+#    eta[[id]] <- eta[[id]] + fit
+#    score <- -1 * family$score[[id]](y, family$map2par(eta))
+#    hess <- family$hess[[id]](y, family$map2par(eta))
 
-    h0 <- sum(Z[,j]^2 * hess)
+#    h0 <- sum(Z[,j]^2 * hess)
 
-    dh <- w[1L]^2 * x$activ_grad(Xw)^2 * hess +  w[1L] * x$activ_hess(Xw) * score
-    h1 <- crossprod(x$X * dh, x$X)
+#    dh <- w[1L]^2 * x$activ_grad(Xw)^2 * hess +  w[1L] * x$activ_hess(Xw) * score
+#    h1 <- crossprod(x$X * dh, x$X)
 
-    h2 <- x$X * w[1L] * Z[, j] * x$activ_grad(Xw) * hess +
-      x$X * x$activ_grad(Xw) * score
-    h2 <- colSums(h2)
+#    h2 <- x$X * w[1L] * Z[, j] * x$activ_grad(Xw) * hess +
+#      x$X * x$activ_grad(Xw) * score
+#    h2 <- colSums(h2)
 
-    h3 <- rbind(c(h0, h2), cbind(h2, h1))
+#    h3 <- rbind(c(h0, h2), cbind(h2, h1))
 
-    return(h3)    
-  }
+#    return(h3)    
+#  }
 
   objfun <- function(w, i, j, fit) {
     Z[, j] <- x$activ_fun(drop(x$X %*% w[-1L]))
