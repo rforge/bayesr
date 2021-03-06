@@ -5824,14 +5824,6 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #  P <- matrix_inv(ZWZ)
 #  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
 
-  objfun <- function(w, i, j, fit) {
-    Z[, j] <- x$activ_fun(drop(x$X %*% w[-1L]))
-    fit <- fit + Z[, j] * w[1L]
-    eta[[id]] <- eta[[id]] + fit
-    ll <- family$loglik(y, family$map2par(eta))
-    return(-ll)
-  }
-
   gradfun <- function(w, i, j, fit) {
     Xw <- drop(x$X %*% w[-1L])
     Z[, j] <- x$activ_fun(Xw)
@@ -5841,6 +5833,45 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     gr <- score * cbind(Z[, j], w[1L] * x$activ_grad(Xw) * x$X)
     return(-colSums(gr))
   }
+
+  hessfun <- function(w, i, j, fit) {
+    Xw <- drop(x$X %*% w[-1L])
+    Z[, j] <- x$activ_fun(Xw)
+    fit <- fit + Z[, j] * w[1L]
+    eta[[id]] <- eta[[id]] + fit
+    score <- -1 * family$score[[id]](y, family$map2par(eta))
+    hess <- family$hess[[id]](y, family$map2par(eta))
+
+    h0 <- sum(Z[,j]^2 * hess)
+
+    dh <- w[1L]^2 * x$activ_grad(Xw)^2 * hess +  w[1L] * x$activ_hess(Xw) * score
+    h1 <- crossprod(x$X * dh, x$X)
+
+    h2 <- x$X * w[1L] * Z[, j] * x$activ_grad(Xw) * hess +
+      x$X * x$activ_grad(Xw) * score
+    h2 <- colSums(h2)
+
+    h3 <- rbind(c(h0, h2), cbind(h2, h1))
+
+    return(h3)    
+  }
+
+  objfun <- function(w, i, j, fit) {
+    Z[, j] <- x$activ_fun(drop(x$X %*% w[-1L]))
+    fit <- fit + Z[, j] * w[1L]
+    eta[[id]] <- eta[[id]] + fit
+    ll <- family$loglik(y, family$map2par(eta))
+
+    ## attr(ll, "gradient") <- gradfun(w, i, j, fit)
+    ## attr(ll, "hessian") <- hessfun(w, i, j, fit)
+
+    return(-ll)
+  }
+
+  tau2 <- get.par(par, "tau2")
+  ZWZ <- crossprod(Z * hess, Z)
+  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
 
   fit <- drop(Z %*% par[1:x$nodes])
 
@@ -5855,6 +5886,11 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
     opt <- try(optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
       method = "L-BFGS-B", i = i, j = j, fit = fit), silent = TRUE)
+
+#    opt <- try(nlm(f = objfun, p = c(par[j], par[i]), i = i, j = j, fit = fit,
+#      check.analyticals = FALSE, hessian = TRUE), silent = TRUE)
+
+#    opt <- list("par" = opt$estimate, "value" = opt$minimum)
 
 #w <- opt$par
 #print(gradfun(w, i, j, fit))
@@ -5884,7 +5920,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     return(ic)
   }
 
-  tau2 <- tau2.optim(objfun, start = get.par(par, "tau2"))
+  tau2 <- tau2.optim(objfun, start = tau2)
 
   P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
   par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
@@ -5894,7 +5930,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   fit <- fit - mean(fit)
   x$state$fitted.values <- fit
   x$state$parameters <- par
-  x$state$edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
+  x$state$edf <- sum_diag(ZWZ %*% P) ## + nc * x$nodes
   x$state$log.prior <- x$prior(par)
 
   return(x$state)
