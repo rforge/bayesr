@@ -26,7 +26,7 @@ Journal of Computational and Graphical Statistics, 27(3), 612--627.
 ## Visualization of fitted model
 if(require("bamlss") && require("gamlss.dist") && require("gamlss.tr")) {
   data("FlashAustriaModel", package = "FlashAustria")
-  plot(flash_model_ztSI)
+  plot(flash_model_ztSICHEL)
 }
 
 ## Replication code:
