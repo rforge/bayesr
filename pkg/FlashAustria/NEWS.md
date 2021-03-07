@@ -1,3 +1,7 @@
+# FlashAustria 0.4-2
+
+* Subset data to variables need for JSS submission.
+
 # FlashAustria 0.4-1
 
 * Re-fit models with with zero-truncated negbin and Sichel (GAMLSS), and

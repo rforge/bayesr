@@ -1,8 +1,7 @@
 \name{FlashAustriaModel}
 \alias{FlashAustriaModel}
-\alias{flash_model_ztBNB}
 \alias{flash_model_ztnbinom}
-\alias{flash_model_ztSI}
+\alias{flash_model_ztSICHEL}
 
 \title{Fitted Distributional Regression Model Object (bamlss)}
 
@@ -41,46 +40,30 @@ library("gamlss.tr")
 data("FlashAustria", package = "FlashAustria")
 
 ## Generate zero truncated Sichel distribution.
-ztSI <- trun(0, family = "SI", local = FALSE)
-
-## Generate zero truncated beta negative binomial.
-ztBNB <- trun(0, family = "BNB", local = FALSE)
+ztSICHEL <- trun(0, family = "SI", local = FALSE)
 
 ## Model formula, up to four parameters.
 f <- list(
-  counts ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1),
-         ~ s(sqrt_cape) + s(hcc) + s(str) + s(tciw) + s(q_prof_PC1)
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+	s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+	s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"),
+         ~ s(sqrt_lsp, bs = "ps")
 )
 
 ## Estimate models.
 set.seed(123)
 flash_model_ztnbinom <- bamlss(f,
-  data = FlashAustriaTrain,                       
-  family = "ztnbinom", binning = TRUE,            
-  optimizer = opt_boost, maxit = 1000,            
-  thin = 5, burnin = 1000, n.iter = 6000,         
-  light = TRUE)
+	family = "ztnbinom", data = FlashAustriaTrain, 
+	optimizer = opt_boost, cores = 3, light = TRUE, binning = TRUE, 
+	maxit = 1000, thin = 3, burnin = 1000, n.iter = 2000)
 
 set.seed(123)
-flash_model_ztSI <- bamlss(f,
-  data = FlashAustriaTrain,
-  family = ztSI, binning = TRUE,
-  optimizer = opt_boost, maxit = 1000,
-  thin = 5, burnin = 1000, n.iter = 6000,
-  light = TRUE)
+flash_model_ztSICHEL <- bamlss(f,
+	family = ztSICHEL, data = FlashAustriaTrain, 
+	optimizer = opt_boost, cores = 3, light = TRUE, binning = TRUE, 
+	maxit = 1000, thin = 3, burnin = 1000, n.iter = 2000)
 
-set.seed(123)
-flash_model_ztBNB <- bamlss(f,
-  data = FlashAustriaTrain,
-  family = ztBNB, binning = TRUE,
-  optimizer = opt_boost, maxit = 1000,
-  thin = 5, burnin = 1000, n.iter = 6000,
-  light = TRUE)
-}
-
-}}
+}}}
 
 \keyword{datasets}
 
