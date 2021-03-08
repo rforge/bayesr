@@ -5789,15 +5789,15 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
                 x[[i]]$smooth.construct[[j]]$S[[l]]
               }
             }
-            edf <- sum_diag(XX %*% matrix_inv(XX + S))
+            edf <- tryCatch(sum_diag(XX %*% matrix_inv(XX + S)), error = function(e) { 2 * ncX })
             if(retedf)
               return(edf)
             else
               return((min(c(ncX - 1, 4)) - edf)^2)
           }
           tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
-          opt <- tau2.optim(objfun1, start = tau2[[i]][[j]], maxit = 1000, scale = 10,
-            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8)
+          opt <- try(tau2.optim(objfun1, start = tau2[[i]][[j]], maxit = 1000, scale = 10,
+            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8), silent = TRUE)
           if(!inherits(opt, "try-error")) {
             cat("parameter", i, "term", x[[i]]$smooth.construct[[j]]$label,
               objfun1(opt, retedf = TRUE), "\n")
