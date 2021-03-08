@@ -742,7 +742,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     if(!is.factor(data[[j]][1:2])) {
       ux <- length(ffbase::unique.ff(data[[j]]))
       ux <- if(ux < 100L) ux - 1L else 100
-      xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = 100), na.rm = TRUE)
+      xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = ux), na.rm = TRUE)
       nd[[j]] <- sample(xq)
     } else {
       nd[[j]] <- sample(unique(data[[j]]), size = 100, replace = TRUE)
