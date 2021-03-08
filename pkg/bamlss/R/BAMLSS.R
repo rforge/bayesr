@@ -1629,8 +1629,17 @@ parameters <- function(x, model = NULL, start = NULL, fill = c(0, 0.0001),
               else
                 ncol(x[[i]]$smooth.construct[[k]]$X)
             } else x[[i]]$smooth.construct[[k]]$special.npar
+            if(inherits(x[[i]]$smooth.construct[[k]], "nnet0.smooth")) {
+              nfill <- x[[i]]$smooth.construct[[k]]$nodes * ncol(x[[i]]$smooth.construct[[k]]$X) +
+                x[[i]]$smooth.construct[[k]]$nodes
+            }
             tpar <- rep(fill[1], nfill)
-            cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
+            if(inherits(x[[i]]$smooth.construct[[k]], "nnet0.smooth")) {
+              cn <- c(paste0("bb", 1:x[[i]]$smooth.construct[[k]]$nodes),
+                names(unlist(x[[i]]$smooth.construct[[k]]$n.weights)))
+            } else {
+              cn <- colnames(x[[i]]$smooth.construct[[k]]$X)
+            }
             if(is.null(cn))
               cn <- paste("b", 1:length(tpar), sep = "")
             if(!simple.list)
@@ -5702,21 +5711,28 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$update <- object$xt$update <- nnet0_update
   object$boost.fit <- function(...) stop("Boost not yet implemented for n()!")
-  object$propose <- GMCMC_slice
+  object$propose <- GMCMC_iwls
 
   object$activ_fun <- switch(type[1],
     "relu" = function(x) {
       x[x < 0] <- 0
-      x
+      return(x - mean(x))
     },
     "sigmoid" = function(x) {
-      1 / (1 + exp2(-x))
+      f <- 1 / (1 + exp2(-x))
+      return(f - mean(f))
     },
     "tanh" = tanh,
     "sin" = sin,
     "cos" = cos,
-    "gauss" = function(x) { exp2(-x^2) },
-    "softplus" = function(x) { log(1 + exp2(x)) }
+    "gauss" = function(x) {
+      f <- exp2(-x^2)
+      return(f - mean(f))
+    },
+    "softplus" = function(x) {
+      f <- log(1 + exp2(x))
+      return(f - mean(f))
+    }
   )
 
   object$activ_grad <- switch(type[1],
@@ -5745,13 +5761,17 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$fit.fun <- function(X, b, ...) {
     nb <- names(b)
-    nb <- strsplit(nb, ".", fixed = TRUE)
-    nb <- sapply(nb, function(x) { x[length(x)] })
-    names(b) <- nb
-    fit <- 0
-    for(j in 1:nodes) {
-      z <- drop(X %*% b[paste0("bw", j, "_w", 0:nc)])
-      fit <- fit + b[paste0("bb", j)] * object$activ_fun(z)
+    if(is.null(nb)) {
+      fit <- drop(X %*% b)
+    } else {
+      nb <- strsplit(nb, ".", fixed = TRUE)
+      nb <- sapply(nb, function(x) { x[length(x)] })
+      names(b) <- nb
+      fit <- 0
+      for(j in 1:nodes) {
+        z <- drop(X %*% b[paste0("bw", j, "_w", 0:nc)])
+        fit <- fit + b[paste0("bb", j)] * object$activ_fun(z)
+      }
     }
     fit <- fit - mean(fit)
     return(fit)
@@ -5779,15 +5799,27 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), tau2)
   object$state$edf <- 0
-  object$prior <- function(parameters) {
-    sum(dnorm(parameters[grep("bb", parameters)], log = TRUE))
-  }
-  object[["a"]] <- object[["b"]] <- 0.0001
-
+  object$xt$prior <- "ig"
+  object[["a"]] <- 0.0001
+  object[["b"]] <- 0.0001
+  object$rank <- qr(object$S[[1]])$rank
+  pf <- make.prior(object)
+  object$prior <- pf$prior
+  object$grad <- pf$grad
+  object$hess <- pf$hess
   object$PredictMat <- Predict.matrix.nnet0.smooth
   object$fxsp <- object$xt$fx
   if(is.null(object$fxsp))
     object$fxsp <- FALSE
+  object$nobs <- nrow(object$X)
+  object$weights <- rep(0, length = object$nobs)
+  object$rres <- rep(0, length = object$nobs)
+  object$fit.reduced <- rep(0, length = object$nobs)
+  object$binning <- match.index(matrix(1:nrow(object$X), ncol = 1))
+  object$binning$order <- order(object$binning$match.index)
+  object$binning$sorted.index <- object$binning$match.index[object$binning$order]
+  if(is.null(object$xt$decay))
+    object$xt$decay <- 0.00001
 
   class(object) <- c("nnet0.smooth", "no.mgcv", "special")
 
@@ -5820,6 +5852,8 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   eta[[id]] <- eta[[id]] - fitted(x$state)
   e <- z - eta[[id]]
 
+  I <- diag(c(0, rep(x$xt$decay, ncol(x$X)))) 
+
   gradfun <- function(w, i, j, fit) {
     Xw <- drop(x$X %*% w[-1L])
     Z[, j] <- x$activ_fun(Xw)
@@ -5827,7 +5861,8 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     eta[[id]] <- eta[[id]] + fit
     score <- family$score[[id]](y, family$map2par(eta))
     gr <- score * cbind(Z[, j], w[1L] * x$activ_grad(Xw) * x$X)
-    return(-colSums(gr))
+    gr <- colSums(gr) - drop(I %*% w)
+    return(-gr)
   }
 
 #  hessfun <- function(w, i, j, fit) {
@@ -5847,7 +5882,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #      x$X * x$activ_grad(Xw) * score
 #    h2 <- colSums(h2)
 
-#    h3 <- rbind(c(h0, h2), cbind(h2, h1))
+#    h3 <- rbind(c(h0, h2), cbind(h2, h1)) + I
 
 #    return(h3)    
 #  }
@@ -5856,7 +5891,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     Z[, j] <- x$activ_fun(drop(x$X %*% w[-1L]))
     fit <- fit + Z[, j] * w[1L]
     eta[[id]] <- eta[[id]] + fit
-    ll <- family$loglik(y, family$map2par(eta))
+    ll <- family$loglik(y, family$map2par(eta)) - t(w) %*% I %*% w
 
     ## attr(ll, "gradient") <- gradfun(w, i, j, fit)
     ## attr(ll, "hessian") <- hessfun(w, i, j, fit)
@@ -5865,9 +5900,9 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   }
 
   tau2 <- get.par(par, "tau2")
-  ZWZ <- crossprod(Z * hess, Z)
-  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
-  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
+#  ZWZ <- crossprod(Z * hess, Z)
+#  P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
+#  par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
 
   fit <- drop(Z %*% par[1:x$nodes])
 
@@ -5912,7 +5947,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
     g <- P %*% crossprod(Z * hess, e)
     eta[[id]] <- eta[[id]] + drop(Z %*% g)
-    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = criterion)
+    ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = "BIC")
     return(ic)
   }
 
@@ -5926,7 +5961,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   fit <- fit - mean(fit)
   x$state$fitted.values <- fit
   x$state$parameters <- par
-  x$state$edf <- sum_diag(ZWZ %*% P) ## + nc * x$nodes
+  x$state$edf <- sum_diag(ZWZ %*% P)
   x$state$log.prior <- x$prior(par)
 
   return(x$state)

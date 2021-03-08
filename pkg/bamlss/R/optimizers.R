@@ -3951,11 +3951,15 @@ set.starting.values <- function(x, start)
             i <- grep2(c(".edf", ".accepted", ".alpha"), names(tpar), fixed = TRUE)
             tpar <- if(length(i)) tpar[-i] else tpar
             names(tpar) <- gsub(paste(tl, ".", sep = ""), "", names(tpar), fixed = TRUE)
-            spar <- x[[id]]$smooth.construct[[j]]$state$parameters
-            if(length(get.par(tpar, "b")))
-              spar <- set.par(spar, get.par(tpar, "b"), "b")
-            if(any(grepl("tau2", names(tpar)))) {
-              spar <- set.par(spar, get.par(tpar, "tau2"), "tau2")
+            if(inherits(x[[id]]$smooth.construct[[j]], "nnet0.smooth")) {
+              spar <- tpar
+            } else {
+              spar <- x[[id]]$smooth.construct[[j]]$state$parameters
+              if(length(get.par(tpar, "b")))
+                spar <- set.par(spar, get.par(tpar, "b"), "b")
+              if(any(grepl("tau2", names(tpar)))) {
+                spar <- set.par(spar, get.par(tpar, "tau2"), "tau2")
+              }
             }
             x[[id]]$smooth.construct[[j]]$state$parameters <- spar
             x[[id]]$smooth.construct[[j]]$state$fitted.values <- x[[id]]$smooth.construct[[j]]$fit.fun(x[[id]]$smooth.construct[[j]]$X, x[[id]]$smooth.construct[[j]]$state$parameters)
