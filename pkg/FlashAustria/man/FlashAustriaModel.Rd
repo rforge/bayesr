@@ -25,7 +25,9 @@ Journal of Computational and Graphical Statistics, 27(3), 612--627.
 \examples{\donttest{
 ## Visualization of fitted model
 if(require("bamlss") && require("gamlss.dist") && require("gamlss.tr")) {
+  data("FlashAustria", package = "FlashAustria")
   data("FlashAustriaModel", package = "FlashAustria")
+  ztSICHEL <- trun(0, family = "SI", local = FALSE)
   plot(flash_model_ztSICHEL)
 }
 
