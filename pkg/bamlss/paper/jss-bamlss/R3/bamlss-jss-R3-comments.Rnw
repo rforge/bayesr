@@ -64,681 +64,112 @@ We thank the two anonymous reviewers for their helpful comments. We agree with a
 raised and considered them in the revised version of the manuscript. In the following, comments
 of the reviewers are highlighted in italics, with our responses directly below.
 
-\section*{Answers to Reviewer 1}
+\section*{Answers to Reviewer}
 
 \begin{enumerate}
-\item \emph{I have two main comments. The first is that it would be very useful to have a table
-  of all the samplers and 
-  optimizers provided by the package. It would also be useful to specify which classes of models are 
-  compatible with which optimizers/samplers (as I understand some samplers are specifically aimed at 
-  certain models, e.g. \code{cox\_mcmc()}.). Maybe the best way to do this is to include a function
-  in the package which, given a bamlss model specification as input, returns a list of
-  optimizers/samplers that could be used to fit it.}
+\item Minor comments:\\
+  page 2, line 13: challgenges\\
+  page 11, line -2 and -3: check parentheses and punctuation\\
+  page 15, third bullet point: check the reference style.\\
+  page 15, line -1: check punctuation\\
+  page 16, line 9: a.o.? and the empty space that follows?\\
+  page 16, line 2 after the third equation: check punctuation and capital letter\\
+  page 16, line 3 after the third equation: remove comma after "is"\\
+  page 17, line 7: "is computed" is repeated twice\\
+  page 18, line 11: staring values\\
+  page 25, line 13: capital letter after colon\\
+  page 25, last bullet point: the meaning of "...," is not clear\\
+  page 28, line 1 of text: capital letter after colon\\
+  page 29, line 16 of text: extra parenthesis after $\nu$\\
+  page 29, line -11: capital letter after colon\\
+  page 35, line 1: capital letter after colon
 
-  Thank you for the suggestion. We now implemented a function \fct{engines} that gives exactly this
-  information. We added the information in the text in Section 4.
+  \bigskip
 
-  \medskip
+  Needs to be fixed.
 
-\item \emph{A related suggestion is that it would be useful to adopt prefixes in the package to 
-  indicate sampler and optimizers (e.g., all the sampler could start with \code{sam\_*} and
-  all optimizers with \code{opt\_*}), because the package provides quite a lot of functions but
-  no consistent naming convention for functions that do similar things.}
-
-  Again, thank you for this very useful suggestion. We now changed the package infrastructures
-  completely and added the suggested prefixes to the optimizer and sampler functions.
-
-  \medskip
-
-\item \emph{The second comment is that the paper needs to clarify the fact that some features of
-  \pkg{bamlss} implicitly depend on packages and stand alone software such as \pkg{BayesX}, which
-  must be installed separately. Are you planning to make bamlss depend on \pkg{R2BayesX}
-  explicitly (i.e. via the Depends or Imports fields) in future versions of the package?}
-
-  In Section~4, we now clarify that the sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS}
-  need installation
-  of the \pkg{BayesXsrc} and the \pkg{rjags} package. We do not plan to make \pkg{bamlss} depend on
-  \pkg{R2BayesX}, it is exactly the other way round. The \pkg{bamlss} package does not depend on
-  any features of \pkg{R2BayesX}, but we will rewrite \pkg{R2BayesX} and integrate it in \pkg{bamlss}
-  in the future. The manuscript (and the package) does not state a dependency to \pkg{R2BayesX},
-  so we believe the reader recognizes that the \pkg{bamlss} package does something
-  completely different.
-
-  \medskip
-
-\item \emph{pg 1 says "(3) Enhanced inference infrastructure, typically Bayesian, beyond classical 
-  frequentist significance tests." maybe rephrase this, as it seems to say that frequentist
-  inference consists only of significance tests.}
-
-  We now write "Enhanced inference infrastructure, typically Bayesian, broaden classical
-  frequentist methodology".
+\item I run the code available in the \code{bamlss-R2.R} file. I noticed that: \\
 
 \medskip
 
-\item \emph{pg 3, talking about gradient boosting "However, obtaining MCMC samples from the posterior
-  distributions corresponding to such models is not easily available in these packages" in my
-  understanding, the problem is not that it is difficult to do MCMC sampling for boosting, the
-  problem is that the posterior distribution is undefined (or at least not explicitly defined)
-  for such models. Some rephrasing would be helpful here.}
+1) The code in the file at lines 35-37:
+\begin{Schunk}
+\begin{Sinput}
+nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- "yes"
+nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+\end{Sinput}
+\end{Schunk}
 
-  We thank the referee for this comment indeed our sentence was wrong because there are Bayesian 
-  versions of lasso and ridge and for all these models, the posterior can be written down explicitly 
-  (even though not available in closed form but this is not a problem in MCMC). The issue is that 
-  less \proglang{R} packages on the Bayesian side are existing.
-  We hence rephrased the sentence to: "However, many packages do not cover the
-  Bayesian posterior estimation parts."
-
-\medskip
-
-\item \emph{pg 4 "Now, a standard Bayesian binomial logit model using the default MCMC algorithm
-  can be fitted." what MCMC sampler has been used here (slice sampling?) and where does the
-  sampling occur (in \pkg{BayesX} or in \pkg{bamlss})?}
-
-  We tried to clarify this. We now write: "Now, a standard Bayesian binomial
-  logit model using the default MCMC algorithm can be fitted (sampler function \fct{sam\_GMCMC},
-  see also Section 4 for other options). The MCMC algorithm uses iteratively weighted
-  least squares (IWLS, Gamerman 1997, for more details see Section 3.2) proposals, which
-  have very good mixing properties and computational advances when using very large data
-  sets."
+is different from the code in the paper at page 7 (here \code{_} is used for the
+names):
+\begin{Schunk}
+\begin{Sinput}
+R> nd$p_swiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+R> nd$foreign <- "yes"
+R> nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+\end{Sinput}
+\end{Schunk}
 
 \medskip
 
-\item \emph{pg 5 "In addition, the acceptance probabilities alpha are reported and indicate proper
-  behavior of the MCMC algorithm." I am not sure I know what the acceptance probabilities are.
-  That is, I guess that they are not just the acceptance ratio of the MCMC chain. Please
-  clarify in the text.}
+2) The following code reported at page 30 of the paper is not reported int
+he R file:
+\begin{Schunk}
+\begin{Sinput}
+R> set.seed(123)
+R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
++ family = ztSICHEL, binning = TRUE,
++ optimizer = opt_boost, maxit = 1000,
++ thin = 3, burnin = 1000, n.iter = 2000,
++ light = TRUE, cores = 3)
+\end{Sinput}
+\end{Schunk}
 
-  It is the acceptance probability of the sample candidate which is computed in each iteration.
-  We clarify this in the text now.
-
-  "In addition, the acceptance probabilities \code{alpha} are reported, i.e., the acceptance
-  probability of the sample candidate based on the proposal and the posterior distribution which
-  is calculated in each iteration, indicating proper behavior of the MCMC algorithm."
-
-\medskip
-
-\item \emph{pg 6 "maximum auto-correlation for all parameters" please clarify what you mean
-  by maximum auto-correlation, as it might be, for example, the maximum auto-correlation across
-  the parameters at each lag or averaged across the lags.}
-
-  We have now rephrased the sentence: "\dots , there is no visible trend, and the very low auto-
-  correlation shown for the intercept and the maximum auto-correlation calculated as the maximum
-  for each lag across all parameters suggest close to i.i.d.\ samples from the posterior 
-  distribution."
-
-\medskip
-
-\item \emph{pg 10 "Moreover, note that all smooth terms, i.e., \fct{te}, \fct{ti}, etc., are
-  supported by \pkg{bamlss}. This way, it is also possible to incorporate user defined model
-  terms." Please add more explanations, as the fact that \pkg{bamlss} support \fct{te}, 
-  \fct{ti}, etc.\ does not necessarily imply that user defined terms can be used.}
-
-  Thanks for pointing that out, of course it's not immediately obvious. We now try to clarify
-  this and mention the corresponding generic functions from the \pkg{mgcv} package more explicitly
-  in Section~2.2.
-
-\medskip
-
-\item \emph{pg 11 "According the histogram and the quantile-quantile plot of the resulting
-  randomized quantile residuals in Figure 5, the model seems to fit relatively well. Only for very
-  low and very high values of \code{accel} the fitted distributions seem to be less appropriate."
-  I guess that the last part of the sentence refers to the QQ-plot, but the plot does not provide 
-  confidence intervals, hence it might be that there is no significant departure from normality
-  in the tails.}
-
-  We have now completely replaced this example because one of the reviewers was quite unhappy with 
-  it. The previous example was based on an old dataset that has served as an illustration countless 
-  times. Our new example is, we believe, much better and more interesting. It is about excess 
-  mortality rates in Austria. The QQ-plot now includes 95\% credible intervals.
+More importantly, there is a problem starting from section 5.3 because the
+code
+\begin{Schunk}
+\begin{Sinput}
+resids <- c(
++ "ztnbinom" = residuals(flash_model_ztnbinom),
++ "ztSICHEL" = residuals(flash_model_ztSICHEL)
++ )
+\end{Sinput}
+\end{Schunk}
+use two objects but in the paper only the code for computing
+\code{flash\_model\_ztSICHEL} is provided (and not for \code{flash\_model\_ztnbinom}).
+It is reported that "model" objects can be provided within the FlashAustria
+package.
+\begin{Schunk}
+\begin{Sinput}
+R> data("FlashAustriaModel", package = "FlashAustria")
+\end{Sinput}
+\end{Schunk}
+but I wasn't able to find the necessary objects for computing resids.
 
 \medskip
 
-\item \emph{pg 13 "For fully Bayesian inference the log-posterior is either used for posterior mode 
-  estimation, or for solving high-dimensional integrals, e.g., for posterior mean estimation MCMC 
-  samples need to be computed." I would remove "fully" as for some people mode estimation if not
-  full Bayesian inference.}
-
-  Thank you, done.
-
-\medskip
-
-\item \emph{pg 13 bottom, the paragraph starting with "Using a basis function approach \dots" needs
-  some rephrasing. In fact "a basis function approach" is a bit vague and later in the paragraph
-  the $\mathbf{G}_jk$'s are referred to as both derivative matrices and penalty matrix, which can
-  be understood only by readers already familiar with these models.}
-
-  We have now tried to formulate everything a little more precisely: "\dots using a basis function 
-  approach, i.e., each function $f_{jk}( \cdot )$ can be represented by a
-  linear combination of a design matrix and regression coefficients, \dots, the
-  regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for
-  $f_{jk}( \cdot )$ matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that
-  penalize the complexity using a P-spline representation."
+Moreover, line 225 of the R code uses "b" in the function pathplot, while in
+the paper "\code{flash\_model\_ztnbinom}" is used. The same happens for the following
+lines of code.
+I don't know if the \code{bamlss-R2.R} file will be provided to readers, but in
+this case it was quite difficult to check that the code in the paper works
+properly.
 
 \medskip
 
-\item \emph{pg 14 bottom "Estimated functions $f_{jk}( \cdot )$ are usually centered around their
-  mean \dots" please clarify what this means in the text, as I guess that the effect are centered
-  to have mean equal to 0 across the data (i.e., $\sum f_{jk}( x_i ) = 0$), but this is not what the 
-  text says.}
-
-  Thank you, we rephrased to: "Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to
-  a centering constraint (e.g., $\sum \hat{f}_{jk}( x_i ) = 0$), \dots"
-
-\medskip
-
-\item \emph{pg 17, top "In summary, the architecture is very flexible such that users interested
-  in implementing new models only need to focus on the estimation step, i.e., write \fct{optimizer}
-  or \fct{sampler} functions and get all post-processing and extractor functionalities
-  ``for free''." This sounds a bit confusing, in fact if I want to implement a new model, why
-  should I implement a new sampler rather than use one of those already provided by bamlss? Are
-  you referring to non-standard models that cannot use the standard samplers? Please clarify.}
-
-  We have now adjusted the paragraph accordingly: "In summary, besides implementing models using the 
-  family infrastructure (see Section~4.2) the architecture is very 
-  flexible such that also users interested in implementing new and non-standard models or
-  algorithms only need to focus on the estimation step, i.e., write \fct{optimizer} or
-  \fct{sampler} functions and get all post-processing and extractor functionalities ``for free''.
-  This way, prototyping becomes relatively easy, but also the integration high-performance
-  estimation engines is facilitated."
-
-\medskip
-
-\item \emph{pg 21, table 3. I see that the link functions have to be specified by name, is it
-  possible to pass the link functions directly? I guess that that would allow more flexibility,
-  in particular the use of user-defined link functions.}
-
-  This depends on the implementation of the family. The ones provided by \pkg{bamlss} do not
-  allow for user-defined link functions, mainly because of speed reasons. But it is in principle
-  possible, similar to the families implemented in the \pkg{gamlss} package. We added the
-  following sentence to clarify: "Note that there are no other specifications to follow, for
-  example one could also build a family that allows for flexible link functions (like the families
-  from the \pkg{gamlss} package)."
-
-\medskip
-
-\item \emph{pg 21 table 3 and text under the table. I am a bit surprised that the mixed elements
-  of the Fisher information are not needed. Is this because the model are fitted by backfitting? 
-  Please state explicitly that you are using the diagonal elements of the Fisher information
-  matrix. Also, I guess that the observed Fisher information cannot be used in place of its
-  expected version?}
-
-  Thank you for pointing this out. We have added a new paragraph that gives more details about
-  the specification of families, respectively also describes internal mechanisms.
-
-\medskip
-
-\item \emph{pg 23 to make the example more interesting, it would make sense providing a brief 
-  description of the variables contained in the \code{FlashAustria} data set.}
-
-  We worked over this example, and give now a description of what the variables mean as table and
-  a why we included them for modelling lightning counts in the text. NB: We adapted the
-  set of explorative variables, as we now test the zero-truncated negative binomial against
-  alternative distributions.
-  
-\begin{tabular}{p{2.5cm}p{11cm}}
-\hline
-Abbreviation & Description \\ \hline
-\code{d2m} & 2 metre dewpoint temperature is a measure of the humidity of the air.
-	The temperature to which the air, at 2 metres above the surface of the Earth,
-	would have to be cooled for saturation to occur. \\
-\code{q\_prof\_PC1} & The vertical profile of specific humidity \code{q} has been decomposed
-	by principal component analysis (PCA). This is the first principal component. \\
-\code{cswc\_prof\_PC4} & The vertical profile of specific snow water content \code{cswc} has
-	been decomposed by PCA. This is the forth principal component. \\
-\code{t\_prof\_PC1} & The vertical profile of temperature \code{t} has
-    been decomposed by PCA. This is the first principal component. \\
-\code{v\_prof\_PC2} & The vertical profile of the v-component of the wind \code{v} has
-    been decomposed by PCA. This is the second principal component. \\
-\code{sqrt\_cape} & The square root of convective available potential energy. This is an indication 
-                    of the (in)stability of the atmosphere. \\
-\code{sqrt\_lsp} & Large-scale precipitation. Accumulated liquid and frozen water, comprising
-                   rain and snow, which is generated by the cloud scheme of the numerical model. \\
-\hline
-\end{tabular}
-
-\medskip
-
-\item \emph{pg 24 "With a statistical model on hand one could predict lightning counts for the
-  time before 2010 and thus analyze lightning events in the past for which no observations are 
-  available." To better motivate the example, please add a sentence to explain what is the
-  purpose of reconstructing lightning events before 2010 (is this an useful thing to do in practice? 
-  I guess so, but the text does not say anything about it).}
-
-  One---and for us the strongest---motivation is to have data on hand that allows to
-  investigate wheather lightning events are strongly influenced by climate change that
-  took place between 1950--2020. We added some sentences to the text.
-
-\medskip
-
-\item \emph{pg 24 "The second element specifies the formula for parameter $\theta$. Hence well
-  known for their sampling properties, we are applying P-splines (Eilers and Marx 1996) for all 
-  terms." Please rephrase the second sentence, which is quite unclear (e.g., "We adopt P-splines
-  (Eilers and Marx 1996), which are well known for their sampling properties.").}
-
-  Rephrased.
-
-\medskip
-
-\item \emph{pg 24 the model seems to take 5 + 27 = 32 minutes to compute. How does this compare with, 
-  for instance, a \pkg{brms} or \fct{jagam} implementation using the same (or similar) model? Is the
-  sampler implemented in R or C++?}
-
-  The default \fct{sam\_GMCMC} sampling function is a quite generic implementation.
-  More specifically, \fct{sam\_GMCMC} accepts proposal functions for each model term which do not
-  necessarily have to be the same and can be exchanged, e.g., the core proposal function is
-  implemented in \proglang{C} and is additionally optimized for large design and penalty
-  matrices such that sampling using very large data sets is possible. E.g., using
-  \fct{sam\_JAGS} (similar \pkg{Stan}/\pkg{brms}) is only suitable for moderate sized data and
-  low complexity model terms. We now give additional information in Section~4.
-
-\medskip
-
-\item \emph{pg 25 "After 1000 iterations the term \code{s(q\_prof\_PC1).mu} has the highest
-  contribution to  the log-likelihood with 282 followed by \code{s(sqrt\_cape).mu} with 344. The
-  term of the parameter $\theta$ \code{s(sqrt\_lsp).theta} has a relatively small contribution with
-  38." but from Figure~7 it seems that \code{s(sqrt\_cape).mu} has the highest contribution, while
-  \code{s(sqrt\_lsp).theta} does not appear in the plot.}
-
-  Albeit its small contribution we decided to rather show \code{s(sqrt\_lsp).theta} as this
-  term acts on the parameter $\theta$ of the distribution. However, in this iteration we fully
-  worked over this example and use a different distribution. We now show the three most
-  important terms.
+3) In Appendix C: the plots corresponding to the following code do not
+appear in the paper:
+\begin{Schunk}
+\begin{Sinput}
+R> par(mfrow = c(1, 3))
+R> plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+R> plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+R> plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+\end{Sinput}
+\end{Schunk}
 
 \end{enumerate}
-
-\section*{Answers to Reviewer 2}
-
-\begin{enumerate}
-\item \emph{This is a rather impressive distributional regression package and the authors
-  needed to be congratulated for the amount of thought and work put into it. Without damping their
-  enthusiasm, I would have like to point out, though, that a lot of the ideas, material and
-  models, used here, have been around for some time. Also, the Lego toolbox idea, that
-  is, combining algorithm and method together to create new and potential more powerful
-  models is not new either. I would suggest that there should be greater acknowledgment
-  of this.}
-
-  Yes, of course, that's right, thank you for the important comment. This was definitely not
-  considered enough in the 1st version of the paper. We have now rewritten the introduction
-  accordingly, with more details, and hope the reader will get a more complete picture of
-  available implementations.
-
-\medskip
-
-\item \emph{The authors explain the features of the package using three different examples.
-  The first two examples are introduced in section 2, while the third is in section 5. The first
-  example uses a binary response. This is a rather strange choice because for binary response
-  variables the GAMLSS methodology has nothing to add compared to GLM's and GAM's.
-  I guess, it can be seen as a gentle introduction to the package.}
-
-  Yes exactly, this is definitely an introductory example to show the reader that familiar commands
-  to estimate for example a GLM can be taken over quasi one to one. That's why we think the section
-  is important and would like to leave it in the article.
-
-\medskip
-
-\item \emph{The second example is the crash helmet data which has been extensively used over the
-  last 35 years (including the authors in their BAMLSS 2018 paper). I am sure that there are more
-  interesting simple data sets than can be used to demonstrate the \pkg{bamlss} package.}
-
-  Yes, we completely agree with you here, so we have now completely replaced the example. We are
-  now using a brand-new data set about weekly mortality rates in Austria. We think the example
-  is much more illustrative and one gets a good first impression how completely probabilistic
-  models can be estimated in \pkg{bamlss}.
-
-\medskip
-
-\item \emph{The third example in Section 5 it more substantial and very interesting. It
-  demonstrates the power of using boosting within BAMLSS but it misses one important aspect of a
-  distribution regression framework. Modelling the distribution. It fits a rather inadequate
-  distribution to the data.}
-
-  We admit that the zero-truncated negative binomial might not be the best fitting
-  distribution. However, it fits reasonably well. Further, we want to note that the
-  true distribution of the data is extremely skewed, and finding a proper fit is
-  challenging as each term only contributes little to the whole picture.
-  During the revision we continued testing distributions, i.e., the Sichel \code{SICHEL()} and the
-  beta negative binomial \code{BNB()} both from \pkg{gamlss.dist} and both zero-truncated using
-  \code{trun()} from \pkg{gamlss.tr}. We now compare two distributions and think that we can thus
-  illustrate quite well how to estimate and evaluate probabilistic models in \pkg{bamlss}.
-  We also added subsections to the example to give more structure and thus better show the
-  different steps using \pkg{bamlss}.
-
-\medskip
-
-\item \emph{Section 3 described the underpinning theoretical work. Section 4 the \pkg{bamlss}
-  package. There is no conclusion section (and maybe there should be one describing what has been
-  achieved and what the authors would like to achieve in the future.}
-
-  Yes, you are absolutely right, we have now added a conclusion section.
-
-\medskip
-
-\item \emph{The main smoothers considered are similar to the ones in package \pkg{mgcv}. It was
-  not clear to me whether the functions are straightforward copies of the functions in
-  \pkg{mgcv} or new functions adopting the \pkg{mgcv} notation. Also, how easy is to write a
-  new smoother function for \pkg{bamlss}.}
-
-  The smoothers are imports from package \pkg{mgcv}, which \pkg{bamlss} depends on. We use the
-  \pkg{mgcv} infrastructures to set up design and penalty matrices, e.g., using the generic
-  \fct{smooth.construct}. We now describe this more explicitly in several places in the text, e.g.:
-
-  "As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the 
-  \proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
-  and penalty matrices for smooth terms by calling \pkg{mgcv}'s \fct{smooth.construct} or 
-  \fct{smoothCon}, i.e., new user-defined smooth terms can also be added by providing new classes
-  for the generic functions."
-
-  "Function \fct{s} is again the smooth term constructor from the \pkg{mgcv} package
-  (Wood 2020) and \code{bs = "cc"} specifies a penalized cyclic cubic
-  regression spline."
-
-  We also give an example of a non-standard smooth term in Appendix~B.
-
-\medskip
-
-\item \emph{There are about 25 different distributions in the package. Some of them are
-  very important, but the list falls short of the variety of univariate distributions
-  existing in the \pkg{gamlss.dist} package. The authors claim that all the GAMLSS
-  distributions can be fitted in \pkg{bamlss} but unfortunately they give no example of doing so.}
-
-  Yes, in the exchanged example on fatalities in Austria and in the lightning example we now fit 
-  models using distributions of the \pkg{gamlss.dist} package.
-
-\medskip
-
-\item \emph{For example in example 3 the distribution used, the zero inflated negative binomial,
-  seems to be inadequate for the training data (see the worm plot at the end of this report).}
-
-  We now test two distributions (one coming from \pkg{gamlss} and \pkg{gamlss.tr}) for this
-  example. Thanks for pointing it out, we also think the example is so improved to illustrate
-  the workflow of \pkg{bamlss}.
-
-\medskip
-
-\item \emph{So I am left with wondering how long I have to spend to implement a new distribution
-  in BAMLSS from the ones existing in GAMLSS? one minute? one hour? one day? one week?}
-
-  Very good point. This should be really clear to the reader! You can use families/distributions
-  from \pkg{gamlss.dist} instantaneously! You pass the \pkg{gamlss.dist} family as it is into
-  the \pkg{bamlss} model call as family argument. To make this clear to the reader, we now use
-  \pkg{gamlss.dist} families within some of the examples presented in the paper.
-
-  Further, we give an example how to implement a new distribution from scratch in Appendix A.
-  The time it takes to implement a new distribution heavily depends on the complexity of
-  the density function and its derivatives.
-
-%%   However, if all formulas are worked out it should not take longer than 1 hour. If
-%%   all family functions need to be implemented in C for speed reasons it can for sure take
-%%   longer, in our experience about 2-3 hours. Transferring a \pkg{gamlss.dist} distribution
-%%   into a \pkg{bamlss} distribution is done internally. Doing so manually would also take
-%%   about 1 hour, depending on the complexity for sure. We now added more information
-%%   in Section~4.2.
-
-\medskip
-
-\item \emph{Within their approach, the selection of prior distributions is rather played down,
-  which does not distract from the problem of finding an adequate model for the data.
-  But how sensitive are the results to changing the prior distributions used?}
-
-  This is a very good and reasonable question! Indeed the aspect on prior 
-  sensitivity and choice was investigated in the context of distributional 
-  regression and in general depends on your prior choices and the data at hand. 
-  In general, in situations with weak signals and large noise it can be 
-  advisable to carefully elicit priors as proposed and shown in several 
-  simulation studies in Klein and Kneib (2016), Bayesian Analysis.
-  For the special cases of inverse gamma priors or flat priors on the variances, 
-  Klein, Kneib and Lang (2015), JASA have a large amount of further simulations 
-  and checks also for real data. All the details can be found in the supplement 
-  therein. As a result the software proposed default values.
-
-\medskip
-
-\item \emph{In all three examples there is no distribution modelling. I can understand this in
-  the first example, but why accept the normal distribution and zero inflated negative
-  binomial distributions without considering alternatives?}
-
-  Yes exactly, as mentioned above we have completely replaced the moto cycle example and extended
-  the lightning example accordingly.
-
-\medskip
-
-\item \label{itm:beyond} \emph{I do not like '(and beyond)' in the title. What is
-  beyond "Flexible Bayesian
-  Regression"?. I understand that there are trying to say beyond univariate regression but
-  I think this is rather irrelevant here. "\pkg{bamlss}: A Lego Toolbox for Flexible
-  Bayesian Regression" will do.}
-
-  Well, the reason why '(and beyond)' is in the title is that the package does not only stand for 
-  Bayesian regression, but other concepts can easily be used, for example gradient boosting. We would 
-  therefore be reluctant to take '(and beyond)' out of the title, especially since it is also part of 
-  the title from the Umlauf (2018) paper.
-
-\medskip
-
-\item \emph{page 2 l 17 "\pkg{gamlss} family of packages (Stasinopoulos and Rigby 2007)" maybe
-  should be replaced with "\pkg{gamlss} family of packages (Stasinopoulos et al. 2017 and Rigby
-  et al. 2019)"}
-
-  Fixed.
-
-\medskip
-
-\item \emph{page 2 l 19 "However, for complex predictor structures and response distributions
-  beyond the exponential family, estimation may be challenging or subject to numerical
-  instabilities."}
-
-  Yes you are right, the sentence is quite ambiguous and we have now completely reworded the
-  paragraph.
-
-\medskip
-
-\item \emph{page 5 line 11 "AICc = 1033.737" and "logLik = -508.7851" both consistent with
-  glm and gam results but AIC of model b is 1042.228. I would like to know how the AIC
-  is calculated.}
-
-  Thank you for pointing this out. The \code{AICc} reported in the summary is the corrected AIC,
-  which is different from the default \fct{AIC} method based on \fct{logLik}. We have now adapted
-  the text accordingly with more information.
-
-\medskip
-
-\item \emph{page 5 line 5 "by the upstream backfitting algorithm". Nothing to backfit here
-  just IWLS.}
-
-  Thank you, fixed.
-
-\medskip
-
-\item \emph{page 6 line 5 "As mentioned above, the user could also increase the number iterations
-  and the burnin-phase, as well as adapt the thinning parameter, to make the significant
-  bar at lag one disappear." Maybe you should show the argument here to make it easier
-  for the user.}
-
-  Yes, thank you. We now show the arguments in the \fct{bamlss} call and also at this
-  position in text.
-
-\medskip
-
-\item \emph{page 7 line 10 "heavily builds upon the \proglang{R} package \pkg{mgcv}" How?}
-
-  Mainly through the \fct{smooth.construct} and \fct{smoothCon} methods. We now note the dependency
-  more explicitly in several places in the text.
-
-\medskip
-
-\item \emph{page 10 l 3 I was wondering whether using the simple AIC would have shown the
-  upward trend in the beginning}
-
-  Yes. We changed the criterion to AIC in this example and mention the BIC, so that it is more
-  consistent with the previous example.
-
-\medskip
-
-\item \emph{page 10 l 9 Not again the Silverman (1985) example! This is also used by the
-  authors in their 2018 paper.}
-
-  Yes. As mentioned above, the example is exchanged now.
-
-\medskip
-
-\item \emph{page 11 l -8 "seem to be less appropriate". In fact a worm plot appears to show
-  that the residuals are OK even in those values.}
-
-  As above, the example is exchanged now.
-
-\medskip
-
-\item \emph{page 12 l4 Maybe a small example of the use of CRPS will help.}
-
-  We have now added the \fct{CRPS} function to the package and removed the corresponding
-  Appendix section. Example 2.1 now describes the supported 
-  extractor functions for information criteria. The usage is the same as for the generic
-  \fct{AIC} and \fct{BIC}, we also give a minimal example now.
-
-\medskip
-
-\item \emph{page 12 l -10 "Umlauf et al. (2018) relax this assumption and let $f_{jk}( \cdot )$ be
-  an unspecified composition of covariate data and regression coefficients. For example, functions
-  $f_{jk}( \cdot )$ could also represent nonlinear growth curves, a regression tree, a neural network
-  or lasso-penalized model terms". Stasinopoulos et al. (2017) Flexible regression and
-  smoothing: using GAMLSS in \proglang{R}, Chapman and Hall/CRC, Chapter 9, were doing
-  this before.}
-
-  Thank you for pointing this out. We added the information and the reference at this position
-  in the text. As mentioned above, we also describe this feature in the introduction now, too.
-
-\medskip
-
-\item \emph{"Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all prior specifications."
-  A set of what? parameters.}
-
-  Thank you, that was certainly very inaccurately formulated. We now write:
-  "Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all fixed prior specifications, i.e.,
-  for GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds the so-called penalty matrices,
-  amongst others."
-
-\medskip
-
-\item \emph{page 13, l 4 I am assuming that the priors are trying to be uninformative. How
-  uninformative are they?}
-
-  This is an interesting point but not correct in general. Rather as an alternative the cited 
-  references refer to possibly well elicited prior distributions based on certain principles for the 
-  variances in the prior distributions for $\boldsymbol{\beta}$.
-
-\medskip
-
-\item \emph{page 13, l 6 "Univariate responses of any type \dots". The references have a "Bayesian"
-  bias since Rigby and Stasinopoulos have covered over the years all the distributional
-  problems mentioned here. Their work and GAMLSS based solutions to the problems
-  are well documented in Rigby et al. (2019).}
-
-  Yes that is of course correct, and we tried to balance better by adding this reference at
-  appropriate places in the text.
-
-\medskip
-
-\item \emph{page 13 l 13 "(Smyth 1996)". Aitkin (1987) used exactly the same zigzag algorithm
-  to model the $\mu$ and $\sigma^2$ in the normal distribution. [Aitkin, M (1987) Modelling
-  variance heterogeneity in normal regression using GLIM, Applied Statistics, pp 332--33,
-  Vol 36.]}
-
-  Thank you, we added the reference now.
-
-\medskip
-
-\item \emph{It was Rigby and Stasinopoulos (2005) Appendix C that showed that the
-  zigzaging equation (4) applied over the parameters leads to the maximisation of the
-  posterior mode. This is a rather crucial point to omit.}
-
-  Thank you for the extremely important objection, that was not intended. We will now write it
-  there explicitly.
-
-\medskip
-
-\item \emph{page 14 l 16 Please define EDF. Is it, equivalent or effective, degrees of freedom?}
-
-  These two terms are often misleadingly equated, but we mean equivalent degrees of freedom. See
-  also \citet{bamlss:Janson:2015}. We have now expanded the text accordingly to describe exactly
-  what is meant by EDF.
-
-\medskip
-
-\item \emph{page 15 l 6 "flexible Bayesian regression models (and beyond)." What is beyond
-  Bayesian regression models?}
-
-  Please see the answer in \ref{itm:beyond}.
-
-\medskip
-
-\item \emph{page 18 l -7 "In addition, all families of the \pkg{gamlss} (Stasinopoulos and
-  Rigby 2019a) and \pkg{gamlss.dist} (Stasinopoulos and Rigby 2019b) package are supported."
-  How this can be done?}
-
-  There is a transformer function that reads all necessary components and then transfers them
-  into a family object for \pkg{bamlss}. We mention this in the text now.
-
-\medskip
-
-\item \emph{page 20 l 18 "However, commonly used distributions are already implemented in
-  \pkg{bamlss}; and the ones from the \pkg{gamlss} package can also be accessed through the
-  \pkg{bamlss} package." Again as above how?}
-
-  Please see the answer above.
-
-\medskip
-
-\item \emph{page 21 table 3 Surely you need also the "p" function for the quantile residuals.}
-
-  Absolutely. In \pkg{bamlss}, for estimation the function is not mandatory, therefore we initially
-  did not add the function to the table. As quantile residuals are very important for
-  model diagnostics, we now added the \code{p()} function.
-
-\medskip
-
-\item \emph{page 21 l 12 What happens for distributions for which the expectation of the
-  second derivative is intractable or does not exist?}
-
-  This is a very good question to which we have two answers. The first option is to simply take
-  the Hessian evaluated at observations and corresponding predictors rather than computing the 
-  theoretical expectation analytically for filling the diagonals of the weight matrices
-  $\mathbf{W}_{kk}$. The second
-  option is to find a good approximation for the expectation. This was for instance done for
-  the overdispersion parameter of a negative binomial or zero-inflated negative binomial model
-  in Klein et al 2015 (JASA). We added details to Section~4.2 in the revised version.
-
-\medskip
-
-\item \emph{page 24 l 6 "In order to capture the truncation of the data and its overdispersion we
-  employ a zero-truncated negative binomial distribution (Cameron and Trivedi 2013),
-  which is specified by two parameters $\mu > 0$ and $\theta > 0$." I understand the zero
-  truncation part and that negative binomial as a starting point but there is no statistical
-  modelling here. For example, the truncated Sichel distribution fits lot better to the
-  data than the truncated negative binomial as it demonstrated by the worm plots
-  displaying both models in Figure 1.}
-
-  We now test the zero-truncated (zt) negative binomial against the zt Sichel. We therefore
-  also adapted the set of explorative  variables.
-  The latter shows the most promising fit---check with worm plot---and is now used for the
-  final model.
-
-\medskip
-
-\item \emph{page 27 l 9 It appears that something is wrong here \code{max(fit\$mu) [1] 2.231437e+14}.
-  Please check the fitted values for both $\mu$ and $\theta$.}
-
-  Correct. The old model produced some odd predictions. Now, we present the zero-truncated
-  Sichel and the predictions are stable.
-
-\medskip
-
-\item \emph{page 30 l 14 I think you need conclusions here.}
-
-  Yes, absolutely, we have now added a conclusion section.
-
-\end{enumerate}
-
-\bibliography{bamlss}
 
 \end{document}
 
