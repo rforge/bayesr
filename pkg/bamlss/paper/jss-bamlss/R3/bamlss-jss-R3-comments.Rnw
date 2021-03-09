@@ -60,14 +60,14 @@ Sys.setenv("TZ" = "UTC")
 \huge\bf Point-to-Point Response to Reviews.
 \end{center}
 
-We thank the two anonymous reviewers for their helpful comments. We agree with almost all points
-raised and considered them in the revised version of the manuscript. In the following, comments
-of the reviewers are highlighted in italics, with our responses directly below.
+Again, we want to thank an anonymous reviewer for the important comments.
+In the following, comments of the reviewer are highlighted in italics, with our responses
+directly below.
 
 \section*{Answers to Reviewer}
 
 \begin{enumerate}
-\item Minor comments:\\
+\item \emph{Minor comments:\\
   page 2, line 13: challgenges\\
   page 11, line -2 and -3: check parentheses and punctuation\\
   page 15, third bullet point: check the reference style.\\
@@ -82,17 +82,14 @@ of the reviewers are highlighted in italics, with our responses directly below.
   page 28, line 1 of text: capital letter after colon\\
   page 29, line 16 of text: extra parenthesis after $\nu$\\
   page 29, line -11: capital letter after colon\\
-  page 35, line 1: capital letter after colon
+  page 35, line 1: capital letter after colon}
 
   \bigskip
 
   Needs to be fixed.
 
-\item I run the code available in the \code{bamlss-R2.R} file. I noticed that: \\
-
-\medskip
-
-1) The code in the file at lines 35-37:
+\item \emph{I run the code available in the \code{bamlss-R2.R} file. I noticed that:
+1) The code in the file at lines 35-37:}
 \begin{Schunk}
 \begin{Sinput}
 nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
@@ -100,9 +97,8 @@ nd$foreign <- "yes"
 nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 \end{Sinput}
 \end{Schunk}
-
-is different from the code in the paper at page 7 (here \code{_} is used for the
-names):
+\emph{is different from the code in the paper at page 7 (here \code{\_} is used for the
+names):}
 \begin{Schunk}
 \begin{Sinput}
 R> nd$p_swiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
@@ -111,10 +107,8 @@ R> nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 \end{Sinput}
 \end{Schunk}
 
-\medskip
-
-2) The following code reported at page 30 of the paper is not reported int
-he R file:
+\item \emph{2) The following code reported at page 30 of the paper is not reported in
+the R file:}
 \begin{Schunk}
 \begin{Sinput}
 R> set.seed(123)
@@ -126,8 +120,8 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
 \end{Sinput}
 \end{Schunk}
 
-More importantly, there is a problem starting from section 5.3 because the
-code
+\item \emph{More importantly, there is a problem starting from section 5.3 because the
+code}
 \begin{Schunk}
 \begin{Sinput}
 resids <- c(
@@ -136,30 +130,29 @@ resids <- c(
 + )
 \end{Sinput}
 \end{Schunk}
-use two objects but in the paper only the code for computing
+\emph{use two objects but in the paper only the code for computing
 \code{flash\_model\_ztSICHEL} is provided (and not for \code{flash\_model\_ztnbinom}).
 It is reported that "model" objects can be provided within the FlashAustria
-package.
+package.}
 \begin{Schunk}
 \begin{Sinput}
 R> data("FlashAustriaModel", package = "FlashAustria")
 \end{Sinput}
 \end{Schunk}
-but I wasn't able to find the necessary objects for computing resids.
+\emph{but I wasn't able to find the necessary objects for computing resids.}
 
-\medskip
-
-Moreover, line 225 of the R code uses "b" in the function pathplot, while in
+\item \emph{Moreover, line 225 of the \proglang{R} code uses "\code{b}" in the function
+\fct{pathplot}, while in
 the paper "\code{flash\_model\_ztnbinom}" is used. The same happens for the following
 lines of code.
 I don't know if the \code{bamlss-R2.R} file will be provided to readers, but in
 this case it was quite difficult to check that the code in the paper works
-properly.
+properly.}
 
 \medskip
 
-3) In Appendix C: the plots corresponding to the following code do not
-appear in the paper:
+\item \emph{3) In Appendix C: the plots corresponding to the following code do not
+appear in the paper:}
 \begin{Schunk}
 \begin{Sinput}
 R> par(mfrow = c(1, 3))
