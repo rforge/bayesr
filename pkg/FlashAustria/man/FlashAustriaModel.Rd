@@ -27,7 +27,7 @@ Journal of Computational and Graphical Statistics, 27(3), 612--627.
 if(require("bamlss") && require("gamlss.dist") && require("gamlss.tr")) {
   data("FlashAustria", package = "FlashAustria")
   data("FlashAustriaModel", package = "FlashAustria")
-  ztSICHEL <- trun(0, family = "SI", local = FALSE)
+  ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
   plot(flash_model_ztSICHEL)
 }
 
@@ -42,7 +42,7 @@ library("gamlss.tr")
 data("FlashAustria", package = "FlashAustria")
 
 ## Generate zero truncated Sichel distribution.
-ztSICHEL <- trun(0, family = "SI", local = FALSE)
+ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
 
 ## Model formula, up to four parameters.
 f <- list(
