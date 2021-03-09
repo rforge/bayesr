@@ -860,10 +860,6 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 {
   theta <- theta[[id[1]]][[id[2]]]
 
-  if(inherits(data, "nnet0.smooth")) {
-    data$X <- data$getZ(data$X, theta)
-  }
-
   if(is.null(attr(theta, "fitted.values")))
     attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
 
@@ -891,6 +887,10 @@ GMCMC_iwls <- function(family, theta, id, eta, y, data, weights = NULL, offset =
 
   ## Compute old log likelihood and old log coefficients prior.
   pibeta <- family$loglik(y, peta)
+
+  if(inherits(data, "nnet0.smooth")) {
+    data$X <- data$getZ(data$X, theta)
+  }
 
   ## Sample variance parameter.
   if(!data$fixed & !data$fxsp & length(data$S)) {

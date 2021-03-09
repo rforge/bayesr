@@ -5808,7 +5808,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), tau2)
+  bw <- runif(length(unlist(object$n.weights)), -0.0001, 0.0001)
+  names(bw) <- names(unlist(object$n.weights))
+  object$state$parameters <- c(object$state$parameters, bw, tau2)
   object$state$edf <- 0
   object$xt$prior <- "hc"
   object[["a"]] <- 1e-04
@@ -5830,7 +5832,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$binning$order <- order(object$binning$match.index)
   object$binning$sorted.index <- object$binning$match.index[object$binning$order]
   if(is.null(object$xt$decay))
-    object$xt$decay <- 1
+    object$xt$decay <- 0.0001
 
   class(object) <- c("nnet0.smooth", "no.mgcv", "special")
 
