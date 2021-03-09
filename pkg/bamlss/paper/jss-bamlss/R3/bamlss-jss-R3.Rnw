@@ -1,0 +1,2491 @@
+\documentclass[nojss]{jss}
+
+%% references with long author lists to always be abbreviated
+\shortcites{bamlss:INLA,bamlss:Waldmann+Taylor+Klein+Kneib+Pressler+Schmid+Mayr:2016,bamlss:stan,zeileis2019colorspace,bamlss:Leon:2020,fouillet2008,westra2014}
+
+%% LaTeX packages
+\usepackage{amsmath,amssymb,amsfonts,multirow,longtable,tikz,thumbpdf,lmodern}
+
+%% tikz
+\usetikzlibrary{fit,backgrounds,arrows,calc,arrows.meta}
+\tikzset{%
+  >={Latex[width=2mm,length=2mm]},
+  % Specifications for style of nodes:
+  base/.style = {rectangle, rounded corners, draw=black,
+                 minimum width=3.2cm, minimum height=0.8cm,
+                 text centered, font=\ttfamily},
+  input/.style = {base, minimum width=2.2cm, fill=blue!30},
+  processing/.style = {base, fill=yellow!30},
+  estimation/.style = {base, fill=red!30},
+  stats/.style = {base, fill=blue!30},
+  output/.style = {base, minimum width=2.2cm, fill=orange!15},
+  outer/.style={draw=gray, dashed, fill=green!1, thick, inner sep=5pt, rounded corners},
+}
+
+\definecolor{rb1}{HTML}{E495A5}
+\definecolor{rb2}{HTML}{BDAB66}
+\definecolor{rb3}{HTML}{65BC8C}
+\definecolor{rb4}{HTML}{55B8D0}
+\definecolor{rb5}{HTML}{C29DDE}
+
+%% additional commands
+\newcommand{\squote}[1]{`{#1}'}
+\newcommand{\dquote}[1]{``{#1}''}
+\newcommand{\fct}[1]{{\texttt{#1()}\index{#1@\texttt{#1()}}}}
+\newcommand{\class}[1]{\dquote{\texttt{#1}}}
+%% for internal use
+\newcommand{\fixme}[1]{\emph{\marginpar{FIXME} (#1)}}
+\newcommand{\readme}[1]{\emph{\marginpar{README} (#1)}}
+
+%% Authors: NU + rest in alphabetical order
+\author{Nikolaus Umlauf\\Universit\"at Innsbruck \And
+        Nadja Klein\\Humboldt Universit\"at\\zu Berlin \And
+        Thorsten Simon\\Universit\"at Innsbruck \And
+        Achim Zeileis\\Universit\"at Innsbruck}
+\Plainauthor{Nikolaus Umlauf, Nadja Klein, Thorsten Simon, Achim Zeileis}
+
+\title{\pkg{bamlss}: A Lego Toolbox for Flexible {B}ayesian Regression (and Beyond)}
+\Plaintitle{bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond)}
+\Shorttitle{\pkg{bamlss}: A Lego Toolbox for Flexible Bayesian Regression}
+	
+\Keywords{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, \proglang{R}}
+\Plainkeywords{Backfitting, distributional regression, gradient boosting, MCMC, penalization, probabilistic forecasting, R}
+
+\Abstract{
+  Over the last decades, the challenges in applied regression and in predictive modeling have
+  been changing considerably: (1)~More flexible regression model specifications are needed 
+  as data sizes and available information are steadily increasing, consequently
+  demanding for more powerful computing infrastructure.
+  (2)~Full probabilistic models by means of distributional regression
+  -- rather than predicting only some underlying individual quantities from the distributions such as means or
+  expectations -- is crucial in many applications.
+  (3)~Availability of Bayesian inference has gained in importance both as an appealing framework for
+  regularizing or penalizing complex models and estimation therein as well as a natural
+  alternative to classical frequentist inference. However, while there has been a lot of
+  research on all  three challenges and the development of corresponding software packages,
+  a modular software implementation that allows to easily combine all three aspects has not yet been 
+  available for the general framework of distributional regression.
+  
+  To fill this gap,
+  the \proglang{R} package \pkg{bamlss} is introduced for Bayesian additive models for location,
+  scale, and shape (and beyond) -- with the name reflecting the most important distributional
+  quantities (among others) that can be modeled with the software.
+  At the core of the package are algorithms for highly-efficient Bayesian
+  estimation and inference that can be applied to generalized additive models (GAMs) or
+  generalized additive models for location, scale, and shape (GAMLSS), or more general
+  distributional regression models. However, its building
+  blocks are designed as ``Lego bricks'' encompassing various distributions (exponential family,
+  Cox, joint models, etc.), regression terms (linear, splines, random effects, tensor
+  products, spatial fields, etc.), and estimators (MCMC, backfitting, gradient boosting, lasso, etc.).
+  It is demonstrated how these can be easily combined to make classical models more
+  flexible or to create new custom models for specific modeling challenges.
+}
+
+\Address{
+  Nikolaus Umlauf, Achim Zeileis, Thorsten Simon\\
+  Department of Statistics\\
+  Faculty of Economics and Statistics\\
+  Universit\"at Innsbruck\\
+  Universit\"atsstr.~15\\
+  6020 Innsbruck, Austria\\
+  E-mail: \email{Nikolaus.Umlauf@uibk.ac.at},\\
+  \phantom{E-mail: }\email{Achim.Zeileis@R-project.org}\\
+  \phantom{E-mail: }\email{Thorsten.Simon@uibk.ac.at}\\
+  URL: \url{https://eeecon.uibk.ac.at/~umlauf/},\\
+  \phantom{URL: }\url{https://www.zeileis.org/}\\
+
+  Nadja Klein\\
+  Humboldt Universit\"at zu Berlin\\
+  School of Business and Economics\\
+  Applied Statistics\\
+  Unter den Linden 6\\
+  10099 Berlin, Germany\\
+  E-mail: \email{nadja.klein@hu-berlin.de}\\
+  URL: \url{https://hu.berlin/NK}
+}
+
+% for \usepackage{Sweave}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+options(width = 70, prompt = "R> ", continue = "+  ",
+  SweaveHooks = list(fig = function() par(mar = c(4.1, 4.1, 1, 1))))
+library("bamlss")
+library("gamlss.dist")
+Sys.setenv("TZ" = "UTC")
+@
+
+\begin{document}
+
+\section{Introduction}
+
+Many modern modeling tasks necessitate flexible regression tools that can deal with:
+(1)~Large data sets that can be both long (many observations) and/or wide (many variables or
+complex effect types).
+(2)~Probabilistic forecasts that capture the entire distribution and not
+only its mean or expectation.
+(3)~Enhanced inference infrastructure, typically Bayesian, broadening classical frequentist 
+methodology. A popular framework to combine flexible regression with probabilistic modeling
+are generalized additive models \citep[GAMs,][]{bamlss:Hastie+Tibshirani:1990}, later extended
+to generalized additive models for location, scale, and shape
+\citep[GAMLSS,][]{bamlss:Rigby+Stasinopoulos:2005},
+also known as Bayesian structured additive distributional regression 
+\citep{bamlss:Klein+Kneib+Lang+Sohn:2015} which
+encompasses (generalized) linear models \citep[GLMs,][]{bamlss:Nelder+Wedderburn:1972} as special cases.
+Bayesian inference in these models can be seen as a natural framework
+for penalizing flexible model terms and to overcome potential problems with $p$~values
+and classical null hypothesis significance testing \citep{bamlss:ASA:2016}. However,
+when fitting such models to big data -- long and/or wide -- classical estimation
+techniques using standard algorithms like iteratively weighted least squares
+(IWLS, \citealp{bamlss:Gamerman:1997}) or
+Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized estimation
+techniques such as lasso or boosting
+\citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
+might be necessary or further advanced custom algorithms \citep{bamlss:Wood:2017}. Hence,
+to facilitate addressing all challgenges and needs simultaneously -- independent of a specific 
+estimation strategy and/or fitting algorithm -- the \pkg{bamlss} package for the \proglang{R}
+system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox'',
+extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
+not only the response distribution is a ``Lego brick'' (as in a classical GLM) or the
+regression terms (as in a GAM) but also the estimation algorithm such as a specific MCMC sampler.
+
+The idea of a ``Lego toolbox'' for regression models has of course been around for some time;
+in some implementations, Bayesian and frequentist, there is not only the possibility to easily 
+implement new distributions, but also model terms, from splines to neural networks to regression 
+trees. In some implementations optimization routines may also be exchanged. The following is a list
+of well-known packages for regression models in the \proglang{R} ecosystem, whose
+implementations are designed to be extremely flexible.
+%
+\begin{itemize}
+
+\item \emph{GAMs and GAMLSSs}
+are available in a number of packages, most notably the \pkg{mgcv} package \citep{bamlss:Wood:2017}
+and also the \pkg{gamlss} family of packages \citep{gamlss:book1, gamlss:book2}
+and \pkg{VGAM} \citep{bamlss:Yee:2009}. The latter two are notable for their support
+of a wide range of response distributions. While \pkg{VGAM} is restrictive with respect to the
+integration of flexible model terms, the \pkg{gamlss} package also
+supports (user-defined) smooth additive terms of general type (e.g., neural networks and
+regression trees), however, inference is mainly supported only
+for linear model terms. In contrast, \pkg{mgcv} excels
+at providing highly-optimized algorithms for general smooth models
+\citep{bamlss:Wood+Pya+Saefken:2016}, including inference,
+as well as the dedicated \fct{bam} function for big data
+that is long and/or wide \citep{bamlss:Wood+Li+Shaddick:2017}. All these packages rely on 
+frequentist estimation strategies. Moreover, the package provides
+sophisticated infrastructure for generating new classes of smooth terms (which is fully
+adopted by the \pkg{bamlss} package).
+
+\item \emph{Bayesian inference} is not only an increasingly popular alternative to classical
+frequentist inference, it is also particularly attractive for hierarchical or multilevel
+models and for penalizing regression effects through suitable prior distributions. Also, fully
+Bayesian approaches using MCMC are appealing in flexible regression models
+for obtaining credible intervals from the posterior samples. The \pkg{brms} package
+\citep{bamlss:Buerkner:2017} is notable for providing a standard \proglang{R} workflow
+for estimating Bayesian multilevel models using \pkg{Stan} \citep{bamlss:stan}.
+Also, the above-mentioned \pkg{mgcv} package supports estimation of Bayesian GAMs via its
+\fct{jagam} function \citep{bamlss:Wood:2016b} based on \pkg{JAGS} \citep{bamlss:Plummer:2013}.
+
+For more flexibility, going beyond these capabilities, it is in principle possible to 
+directly implement custom models using general purpose MCMC software like
+\pkg{JAGS}, \pkg{Stan}, or the \proglang{BUGS} family of packages \citep{bamlss:Lunn+Thomas+Best+Spiegelhalter:2000,bamlss:Goudie+Turner+Angelis:2020}.
+However, for complex models -- e.g., using large data sets, spatial effects, or
+higher-order interactions -- sampling times from these generic MCMC engines can become long, 
+sometimes prohibitively long. This has been addressed by dedicated packages for Bayesian
+additive models, e.g., with the standalone package
+\pkg{BayesX}~\citep{bamlss:Brezger+Kneib+Lang:2005, bamlss:Belitz+Brezger+Kneib+Lang+Umlauf:2017} 
+being the first to provide highly-efficient
+sampling schemes for very large data sets as well as spatial/multilevel models and structured 
+additive distributional regression. An \proglang{R} interface is available in \pkg{R2BayesX} 
+\citep{bamlss:Umlauf:2015}. Instead of fully Bayesian MCMC
+it is also possible to employ posterior mean estimation via the integrated nested Laplace
+approximation to estimate flexible Bayesian regression models. This is provided
+in the comprehensive \proglang{R} package \pkg{INLA} \citep{bamlss:Rue+Martino+Chopin:2009},
+popular for estimating complex spatial Bayesian regression models
+\citep[see e.g.,][]{bamlss:Lindgren+Rue:2015,bamlss:Bivand+GomezRubio+Rue:2015}.
+
+\item \emph{Regularized estimation} and explicit variable selection might be necessary, though,
+for going beyond the models described above, especially for large/wide data with many potential 
+regressors and corresponding effects/interactions/etc. Widely-used approaches for this include
+the lasso, e.g., as available for GLM-type models in the \proglang{R} package \pkg{glmnet} 
+\citep{bamlss:Friedmann+Hastie+Tibshirani:2010}, or gradient boosting as available for
+GAMLSS-type models in the \proglang{R} package \pkg{gamboostLSS}
+\citep{bamlss:Hofner+Mayr+Schmid:2014}. However, many packages do not cover the Bayesian
+posterior estimation parts.
+
+\end{itemize}
+%
+In summary, the discussion above highlights that many different packages with different strengths
+are already available in \proglang{R}. However, a package combining all the aspects above in a single
+framework is not readily available as there are typically limitations with respect to the 
+inferential framework, the distributions and/or complexity of the models supported, or the
+estimation techniques and fitting algorithms. The package \pkg{bamlss}, available from the Comprehensive
+\proglang{R} Archive Network at \url{https://CRAN.R-project.org/package=bamlss}, tries to 
+fill this gap with a modular ``Lego'' approach to flexible Bayesian regression providing:
+%
+\begin{itemize}
+\item The usual \proglang{R} ``look \& feel'' for regression modeling.
+\item Estimation of classic (GAM-type) regression models (Bayesian or frequentist).
+\item Estimation of flexible (GAMLSS-type) distributional regression models.
+\item An extensible ``plug \& play'' approach for regression terms.
+\item Modular combinations of fitting algorithms and samplers.
+\end{itemize}
+%
+Especially the last item is notable because the models in \pkg{bamlss} are not limited to
+a specific estimation algorithm but different engines can be plugged in without necessitating
+changes in other aspects of the model specification (such as response distributions or
+regression terms). By default \pkg{bamlss} is using IWLS-based backfitting for optimizing
+the model and IWLS-based MCMC for sampling from the posterior distribution. However,
+alternative optimizers and samplers are also implemented that support lasso
+or boosting, and more. Moreover, the package builds on the well-established \pkg{mgcv} infrastructure
+for smooth model terms, uses \proglang{R}'s formula syntax for model specification, and provides
+standard extractor methods like \fct{summary}, \fct{plot}, \fct{predict}, etc.
+
+The remainder of this paper is as follows. In Section~\ref{sec:motivation},
+three motivating examples illustrate the first steps using \pkg{bamlss} and show cases the flexibility
+of the provided infrastructure. Section~\ref{sec:flexreg}
+introduces the flexible regression framework in more detail. A thorough introduction of the
+\proglang{R} package \pkg{bamlss}, describing the most important building blocks for developing
+families, model terms and estimation algorithms, is then given in Section~\ref{sec:package}. In
+Section~\ref{sec:application} we highlight the unified modeling approach using a complex
+distributional regression model for lighting counts in complex terrain.
+%
+Further details and examples about the \pkg{bamlss} package can be found online at
+\url{http://www.bamlss.org/}.
+
+
+\section{Motivating examples} \label{sec:motivation}
+
+This section gives a first quick overview of the functionality of the package. The first
+example demonstrates that the usual ``look \& feel'' when using well-established model fitting 
+functions like \fct{glm} is an elementary part of \pkg{bamlss}, i.e., first steps and
+basic handling of the package should be relatively simple. The second example shows that the
+package can deal with a variety of different model terms and that model fitting functions
+can easily be exchanged, here, we exemplify this feature by applying a lasso-type estimation engine.
+The third example then explains how full distributional regression models can be estimated and show
+cases once more the flexibility of the provided modeling infrastructure.
+
+\subsection{Basic Bayesian regression: Logit model} \label{sec:logitmodel}
+
+This example data is taken from the \pkg{AER} package \citep{bamlss:Kleiber+Zeileis:2008} and is about
+labor force participation (yes/no) of women in Switzerland 1981 \citep{bamlss:Gerfin:1996}.
+The \pkg{bamlss} package and the data can be loaded with
+<<>>=
+library("bamlss")
+data("SwissLabor", package = "AER")
+@
+The data frame contains 872 observations of 6 variables, where some of them might have
+a nonlinear influence on the response labor \code{participation}. Now, a standard Bayesian 
+binomial logit model using the default MCMC algorithm can be fitted (sampler function
+\fct{sam\_GMCMC}, see also Section~\ref{sec:package} for other options). The MCMC algorithm
+uses iteratively weighted least squares (IWLS,~\citealp{bamlss:Gamerman:1997}, for more
+details see Section~\ref{sec:algos}) proposals, which have very good mixing properties and
+computational advantages when using very large data sets
+\citep{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014}. First, the model formula
+is specified with
+<<echo=FALSE, results=hide>>=
+if(!file.exists("SwissLaborModel.rda")) {
+  f <- participation ~ income + age + education + youngkids + oldkids + foreign + I(age^2)
+  set.seed(123)
+  b <- bamlss(f, family = "binomial", data = SwissLabor)
+  save(b, file = "SwissLaborModel.rda")
+} else {
+  load("SwissLaborModel.rda")
+}
+@
+<<eval = FALSE>>=
+f <- participation ~ income + age + education +
+  youngkids + oldkids + foreign + I(age^2)
+@
+Then, to reproduce the results the seed of the random number generator is set and
+the model is estimated by
+<<echo=FALSE>>=
+set.seed(123)
+@
+<<eval=FALSE>>=
+set.seed(123)
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  n.iter = 1200, burnin = 200, thin = 1)
+@
+Note that the default number of iterations (\code{n.iter}) for the MCMC sampler is 1200, the
+burnin-phase \code{burnin} is 200 and thinning (\code{thin}) is 1. The reason is that during the
+modeling process, users usually want to obtain first
+results rather quickly. Afterwards, if a final model is estimated the number of iterations of the
+sampler is usually set much higher to get close to i.i.d.\ samples from the posterior distribution.
+To obtain reasonable starting values for the MCMC sampler we run a backfitting algorithm that
+optimizes the posterior mode. Using the main model fitting function \fct{bamlss} all model fitting
+engines can be exchanged, which is explained in detail in Section~\ref{sec:package} and the
+application Section~\ref{sec:application}. The default model fitting engines use family objects
+(see also Section~\ref{sec:package}), similar to the families that can be used
+with the \fct{glm} function, which enables easy implementation of new distributions (models).
+
+Note that the model contains a quadratic term for variable \code{age} in order to capture nonlinearities.
+The resulting object \code{b} is of class \code{"bamlss"} for which standard
+extractor functions like \fct{summary}, \fct{coef}, \fct{plot}, \fct{predict}, etc.\
+are available. \hypertarget{msummary}{}The model summary output is printed
+by~\label{logitmodel_summary}
+<<>>=
+summary(b)
+@
+and is based on MCMC samples, which suggest ``significant'' effects for all covariates, 
+except for variable \code{education}, since the 95\% credible interval contains zero.
+In addition, the acceptance probabilities \code{alpha} are reported, i.e., the acceptance
+probability of the sample candidate based on the proposal and the posterior distribution which is 
+calculated in each iteration, indicating proper behavior of the MCMC algorithm.
+The column \code{parameters} shows respective posterior mode estimates of the regression
+coefficients, which are calculated by the upstream optimizer algorithm (note that the column
+is named parameters, because optimizer functions can in principle return any type of parameters).
+Besides, more results from the optimizer are reported at the very end of the output:
+the corrected AIC (\code{AICc}, \citealp{bamlss:aic1, bamlss:aic2}), the equivalent degrees of freedom
+(\code{edf}), the log-likelihood (\code{logLik}), etc. In addition, there are also extractor 
+functions in \pkg{bamlss} for information criteria like the DIC (function \fct{DIC}) and the widely 
+applicable information criterion (WAIC, \citealp{watanabe2010asymptotic}, function \fct{WAIC}), or 
+the out-of-sample continuous rank probability score
+(CRPS, \citealp{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007}, function
+\fct{CRPS}).
+Note that \fct{CRPS} approximates numerically, while the \pkg{scoringRules} package 
+\citep{bamlss:Jordan+Krueger+Lerch:2018} can compute the CRPS 
+very efficiently for some distributions. The usage of the provided functions is similar to the
+generic \fct{AIC} and \fct{BIC}, e.g., the DIC can be computed with
+<<>>=
+DIC(b)
+@
+Before proceeding the analysis, users usually perform additional convergence checks of the
+MCMC chains by looking at traceplots and autocorrelation (besides acceptance probabilities).
+<<eval=FALSE>>=
+plot(b, which = c("samples", "max-acf"))
+@
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=1\textwidth}
+<<echo=FALSE, fig=TRUE, height=3, width=8>>=
+par(mfrow = c(1, 3), mar = c(4.1, 4.1, 4.1, 1.1))
+bsp <- b
+bsp$samples <- bsp$samples[, c("pi.p.(Intercept)"), drop = FALSE]
+plot(bsp, which = "samples", spar = FALSE, ask = FALSE)
+plot(b, which = "max-acf", spar = FALSE, ask = FALSE)
+@
+\caption{\label{fig:logit_traceplots} Logit model, MCMC trace (left panel),
+  autocorrelation for the intercept (middle panel), maximum autocorrelation for all
+  parameters (right panel).}
+\end{figure}
+These are visualized in Figure~\ref{fig:logit_traceplots} and reveal approximate convergence of
+the MCMC chains, i.e., there is no visible trend, and the very low autocorrelation shown for
+the intercept and the maximum autocorrelation calculated as the maximum for each lag across all 
+parameters suggest close to i.i.d.\ samples from the posterior distribution.
+As mentioned above, the
+user could also increase the number iterations and the burnin-phase, as well as adapt the thinning
+parameter (arguments \code{n.iter}, \code{burnin} and \code{thin}), to make the significant bar at lag one disappear.
+Note that the function call would compute all trace and autocorrelation plots, however,
+for convenience we only show plots for the intercept. In addition, samples can also be
+extracted using function \fct{samples}, which returns an object of class \code{"mcmc"},
+a class provided by the \pkg{coda} package \citep{bamlss:Plummer+Best+Cowles+Vines:2006}
+which includes a rich infrastructure for further convergence diagnostic checks,
+e.g., Gelman and Rubin's convergence diagnostic
+\citep{bamlss:Gelman+Rubin:1992, bamlss:Brooks+Gelman:1998} or
+Heidelberger and Welch's convergence diagnostic
+\citep{bamlss:Heidelberger+Welch:1981, bamlss:Heidelberger+Welch:1983}.
+
+Model predictions on the probability scale can be obtained by the \fct{predict} method, e.g.,
+to visualize the effect of covariate \code{age} on the probability we can create a new
+data frame for prediction
+<<>>=
+nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
+  education = 12, youngkids = 1, oldkids = 1, foreign = "no")
+@
+Afterwards, we predict for both cases of variable \code{foreign}
+<<>>=
+nd$p_swiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$foreign <- "yes"
+nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+@
+The \fct{predict} method is applied on all MCMC samples and argument \code{FUN} specifies a function
+that can be applied on the predictor or distribution parameter samples. The default is the \fct{mean} function,
+however, in this case we additionally extract the empirical 2.5\% and 97.5\% quantiles
+using function \fct{c95} to obtain credible intervals (note, individual samples can be
+extracted by passing \code{FUN = identity}, i.e., this way users can
+easily generate their own statistics). Then, the estimated effect can be visualized with
+<<plot2d, eval=FALSE>>=
+blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
+plot2d(p_swiss ~ age, data = nd, ylab = "participation",
+  ylim = range(c(nd$p_swiss, nd$p_foreign)), fill.select = c(0, 1, 0, 1))
+plot2d(p_foreign ~ age, data = nd, add = TRUE,
+  fill.select = c(0, 1, 0, 1), axes = FALSE,
+  s2.col = blues, col.lines = blues(1))
+@
+The estimates are shown in Figure~\ref{fig:logit_effects} and suggest a clear difference 
+for the effect of \code{age} between both cases of factor variable \code{foreign}.
+
+\begin{figure}[!t]
+\centering
+\setkeys{Gin}{width=0.49\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+<<plot2d>>
+legend("topright", c("Foreign", "Swiss"), lwd = 1,
+  col = c(blues(1), "black"), bty = "n")
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8, results=hide>>=
+f <- participation ~ income + education +
+  youngkids + oldkids + foreign + s(age, k = 10)
+
+if(!file.exists("SwissLaborModel-spline.rda")) {
+  set.seed(123)
+  b <- bamlss(f, family = "binomial", data = SwissLabor)
+  save(b, file = "SwissLaborModel-spline.rda")
+} else {
+  load("SwissLaborModel-spline.rda")
+}
+
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(b, term = "s(age)", spar = FALSE, ylab = expression(paste("Effect on Logi", t^-1, (pi))))
+@
+\caption{\label{fig:logit_effects} Left panel, quadratic polynomial effect of covariate \code{age}
+  on estimated probabilities for both cases, \code{foreign} \code{"yes"} and \code{"no"}.
+  Right panel, effect on $\text{Logit}^{-1}(\pi)$ of variable \code{age} using regression splines
+  (see Section~\ref{sec:flexm}).
+  The solid lines represent mean estimates, the shaded areas show 95\% credible intervals.}
+\end{figure}
+
+
+\subsection{Flexible model terms and estimators} \label{sec:flexm}
+
+Using the flexible infrastructure of \pkg{bamlss}, model terms can be easily exchanged. To give a
+first impression of the modeling capabilities, we again use the \code{SwissLabor} data and binomial
+logit model of Section~\ref{sec:logitmodel}, however, in this example we use
+regression splines to capture the nonlinear effect variable \code{age}.
+
+As noted in the introduction, the \pkg{bamlss} package leverage the infrastructure from the 
+\proglang{R} package \pkg{mgcv} \citep{bamlss:Wood:2019} for setting up the design
+and penalty matrices for smooth terms by calling \pkg{mgcv}'s \fct{smooth.construct} or 
+\fct{smoothCon}, i.e., new user-defined smooth terms can also be added by providing new classes
+for the generic functions.
+To estimate a spline model instead of a polynomial model for variable \code{age} the model
+formula only needs to be slightly adapted
+<<>>=
+f <- participation ~ income + education +
+  youngkids + oldkids + foreign + s(age, k = 10)
+@
+The function \fct{s} is the smooth term constructor from the \pkg{mgcv} package, the default of
+\fct{s} are thin-plate regression splines with \code{k = 10} basis functions. The model is again
+fitted by
+<<eval=FALSE>>=
+set.seed(123)
+b <- bamlss(f, family = "binomial", data = SwissLabor)
+@
+The estimated nonlinear effect can be plotted instantly by typing
+<<eval=FALSE>>=
+plot(b, term = "s(age)")
+@
+The estimated effect based on regression splines is shown in the right panel of
+Figure~\ref{fig:logit_effects} and reveals that the quadratic polynomial seems to capture the
+nonlinearity appropriately. 
+
+To give a better impression what type of model terms can be used with the \pkg{bamlss} framework
+Table~\ref{tab:modelterms} lists commonly-used specifications.
+\begin{table}[t!]
+\centering
+\begin{tabular}{p{6cm}p{8.3cm}}
+\hline
+Description & Formula \\ \hline
+Linear effects: $\mathbf{X}\boldsymbol{\beta}$ & \code{x1 + x2 + x3} \\ \hline
+Nonlinear effects of continuous\newline covariates: $f(\mathbf{x}) = f(x_1)$ & \multirow{2}{*}{\code{s(x1)}} \\ \hline
+Two-dimensional surfaces:\newline $f(\mathbf{x}) = f(x_1, x_2)$ & \code{s(x1,x2)}, \code{te(x1,x2)} or \code{ti(x1,x2)} 
+\newline(higher dimensional terms possible). \\ \hline
+Spatially correlated effects:\newline $f(\mathbf{x}) = f_{spat}(x_s)$ & \code{s(xs, bs = "mrf", xt = list(penalty = K))}, where \code{xs} is a factor indicating the discrete regional information and \code{K} is a supplied penalty matrix. Other options within the \code{xt} argument are possible, please see the documentation of \code{smooth.construct.mrf.smooth.spec()}. \\ \hline
+Varying coefficients:\newline $f(\mathbf{x}) = x_1f(x_2)$ & \multirow{2}{*}{\code{s(x2, by = x1)}} \\ \hline
+Spatially varying effects:\newline $f(\mathbf{x}) = x_1f_{spat}(x_s)$ or\newline $f(\mathbf{x}) = x_1f(x_2, x_3)$ &
+  \code{s(xs, bs = "mrf", xt = list(penalty = K), by = x1)}, \code{s(x2, x3, by = x1)} or\newline \code{te(x2, x3, by = x1)} \\ \hline
+Random intercepts with cluster\newline index $c$: $f(\mathbf{x}) = \beta_c$ & \code{s(id, bs = "re")}, where \code{id} is a factor of cluster indices. \\ \hline
+Random slopes with cluster index $c$: $f(\mathbf{x}) = x_1\beta_c$ & \code{s(id, x1, bs = "re")}, as above with continuous covariate \code{x1}. \\ \hline
+\end{tabular}
+\caption{\label{tab:modelterms} Commonly used model term specifications with respective \proglang{R}
+  formula syntax.}
+\end{table}
+
+<<echo=FALSE, results=hide>>=
+SwissLabor$cage <- cut(SwissLabor$age,
+  breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
+  include.lowest = TRUE, ordered_result = TRUE)
+
+if(!file.exists("SwissLaborModel-lasso.rda")) {
+  f <- participation ~ income + education + youngkids + oldkids + foreign + 
+    la(cage, fuse = 2)
+    
+  b <- bamlss(f, family = "binomial", data = SwissLabor,
+    optimizer = opt_lasso, sampler = FALSE, upper = exp(5), lower = 1,
+    criterion = "AIC")
+
+  save(b, file = "SwissLaborModel-lasso.rda")
+} else {
+  load("SwissLaborModel-lasso.rda")
+}
+@
+
+Besides the supported infrastructure from the \pkg{mgcv} package, it is also possible to
+implement completely new model terms that may follow different setups compared to the basis
+functions approach (see also Appendix~\ref{appendix:specialterms} for an example using growth curves).
+Moreover, using \pkg{bamlss}, estimation engines can also be exchanged. To give
+an example we estimate the nonlinear \code{age} effect in the \code{SwissLabor} example using
+a fused lasso algorithm (see also Section~\ref{sec:application} for a complex example using gradient
+boosting optimization).
+The algorithm performs variable selection in combination with factor fusion (clustering) and can also
+be used to identify interpretable nonlinearities. Methodological details on lasso-type penalization
+using \pkg{bamlss} are provided in \citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019}.
+To apply the fused lasso, the numeric variable \code{age} is categorized using empirical quantiles,
+e.g., with
+<<eval=FALSE>>=
+SwissLabor$cage <- cut(SwissLabor$age,
+  breaks = quantile(SwissLabor$age, prob = seq(0, 1, length = 10)),
+  include.lowest = TRUE, ordered_result = TRUE)
+@
+The formula for the fused lasso model is then specified with the
+special \fct{la} model term constructor function provided in \pkg{bamlss}:
+
+<<>>=
+f <- participation ~ income + education + youngkids + oldkids + foreign + 
+  la(cage, fuse = 2)
+@
+where argument \code{fuse} specifies the type of fusion (nominal fusion \code{fuse = 1},
+ordered fusion \code{fuse = 2}). To estimate the fused lasso model only the default \code{optimizer}
+function in the \fct{bamlss} wrapper function call needs to exchanged
+<<eval=FALSE>>=
+b <- bamlss(f, family = "binomial", data = SwissLabor,
+  optimizer = opt_lasso, sampler = FALSE,
+  criterion = "AIC", upper = exp(5), lower = 1)
+@
+The optimum shrinkage parameter $\lambda$ is selected by the AIC (another option is
+\code{criterion = "BIC"}). Arguments \code{upper} and
+\code{lower} determine the search interval of $\lambda$, per default \code{nlambda = 100} values
+are generated.
+Note that no MCMC sampling is used after the \fct{opt\_lasso} estimation engine is applied,
+argument \code{sampler = FALSE} in the \fct{bamlss} call.
+
+\begin{figure}[t!]
+\centering
+\setkeys{Gin}{width=0.24\textwidth}
+<<echo=FALSE, fig=TRUE, width=3, height=5>>=
+par(mar = c(4.1, 4.1, 4.1, 0.5))
+pathplot(b, 1, spar = FALSE, main = "Criterion", lwd = 2)
+@
+\setkeys{Gin}{width=0.36\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=5, results=hide>>=
+par(mar = c(4.1, 4.1, 4.1, 7.3))
+pathplot(b, 2, spar = FALSE, name = "pi.s.la(cage).cage", main = "Coefficient paths age", lwd = 2)
+@
+\setkeys{Gin}{width=0.32\textwidth}
+<<echo=FALSE, fig=TRUE, width=4, height=5, results=hide>>=
+par(mar = c(4.1, 4.1, 4.1, 0.5))
+page <- predict(b, term = "cage", intercept = FALSE, mstop = lasso_stop(b))
+plot2d(page ~ age, data = SwissLabor, rug = TRUE, lwd = 2,
+  ylab = expression(paste("Effect on Logi", t^-1, (pi))))
+mtext("Estimated\nnonlinear effect", side = 3, line = 1.5, cex = 1.2, font = 2)
+@
+\caption{\label{fig:lasso} Left panel, AIC curve with optimum shrinkage parameter $\lambda$
+  of the lasso example model. The middle panel shows the corresponding coefficient paths for
+  variable \code{cage}. The right panel displays the respective estimated effect.}
+\end{figure}
+
+The AIC curve and the coefficient paths including the optimum shrinkage parameter $\lambda$ can
+be visualized with
+<<eval=FALSE>>=
+pathplot(b)
+@
+Figure~\ref{fig:lasso} shows the AIC curve and coefficient paths for \code{cage}. The AIC curve
+assumes a minimum at the vertical gray dashed line. The coefficient paths obviously depict that
+the algorithm can either shrink categories out of the model (shrink to zero), or even fuses them.
+In the right panel of Figure~\ref{fig:lasso}, the estimated effect of the categorized variable
+\code{age} is shown. The effect is computed by predicting without
+intercept using the optimum stopping iteration, which is selected by AIC and can be extracted with
+function \fct{lasso\_stop}. The stopping iteration is passed to the \fct{predict} method by specifying
+the \code{mstop} argument.
+<<eval=FALSE>>=
+page <- predict(b, term = "cage", intercept = FALSE,
+  mstop = lasso_stop(b))
+@
+The figure is then created using the untransformed original covariate on the x-axis.
+<<eval=FALSE>>=
+plot2d(page ~ age, data = SwissLabor, rug = TRUE)
+@
+Using the fused lasso estimation nonlinearities can be identified again, similar to the
+spline based estimate in the right panel of Figure~\ref{fig:logit_effects}.
+
+\subsection{Location-scale model} \label{sec:distmodel}
+
+Here, we extend the framework and estimate a distributional regression model that not
+only captures the mean (or location) of the response variable but also its variance
+(or scale). As an example, we employ the number of weekly fatalities in Austria from
+2000--2020 (up to week~46 in 2020) as obtained from the Eurostat data base
+(\url{https://ec.europa.eu/eurostat/}). The data is available in the \pkg{bamlss} package
+as \code{fatalities}, providing the number (\code{num}) of fatalities in each
+\code{year} and \code{week}. It can be loaded with
+<<>>=
+data("fatalities", package = "bamlss")
+@
+The idea of the subsequent analysis is to estimate a reference mortality model based
+on the data from 2000--2019 prior to the COVID-19 (Corona virus disease 2019) crisis
+in order to bring out graphically the excess mortality in 2020. Excess mortalities are
+often employed for assessing the effects of exceptional events such as
+pandemics \citep{bamlss:Leon:2020} or natural catastrophes \citep{fouillet2008}.
+First, we split the data into the corresponding subsets.
+<<eval=TRUE,echo=TRUE>>=
+d19 <- subset(fatalities, year <= 2019)
+d20 <- subset(fatalities, year >= 2020)
+@
+To capture the long-term seasonal trend of the fatality number distribution,
+we employ a simple model here: log-fatalities are assumed to be
+normally distributed with smooth seasonal variations in both mean and variance.
+As shown below the log-transformation stabilizes skewness and variance in the data
+somewhat so that a normal model works sufficiently well. Cyclic splines with respect
+to the week of the year are employed to capture the smooth seasonal trends while assuring
+that the values at the beginning and the end of the year match. The model formula
+is now a list with elements for the mean of \code{log(num)} (corresponding to parameter
+\code{mu}) and standard deviation \code{sigma} of the normal distribution.
+<<>>=
+f <- list(
+  log(num) ~ s(week, bs = "cc", k = 20),
+  sigma    ~ s(week, bs = "cc", k = 20)
+)
+@
+Function \fct{s} is again the smooth term constructor from the \pkg{mgcv} package
+\citep{bamlss:Wood:2019} and \code{bs = "cc"} specifies a penalized cyclic cubic
+regression spline. (Other smooth terms such as \fct{te} or \fct{ti} could be included
+in the same way.) Based on this \fct{bamlss} is used to estimate a full Bayesian
+regression model using the \fct{NO} normal family from the \pkg{gamlss.dist} package.
+<<echo=FALSE, results=hide>>=
+if(!file.exists("FatModel.rda")) {
+  set.seed(456)
+  b <- bamlss(f, data = d19, family = NO)
+  save(b, file = "FatModel.rda")
+} else {
+  load("FatModel.rda")
+}
+@
+<<eval=FALSE>>=
+library("gamlss.dist")
+set.seed(456)
+b <- bamlss(f, data = d19, family = NO)
+@
+The resulting estimated effects along with their 95\% credible intervals can be easily
+visualized using the \fct{plot} method:
+<<eval=FALSE>>=
+plot(b, model = c("mu", "sigma"))
+@
+\begin{figure}[t!]
+\centering
+\setkeys{Gin}{width=0.49\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(b, model = "mu", spar = FALSE)
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=3.8>>=
+par(mar = c(4.1, 4.1, 0.4, 1.1))
+plot(b, model = "sigma", spar = FALSE)
+@
+\caption{\label{fig:fatmodel_effects} Estimated effects of \code{week} on the mean \code{mu}
+  and standard deviation \code{sigma} of the normal model. The gray shaded areas represent 95\% credible intervals.}
+\end{figure}
+The resulting displays are shown in Figure~\ref{fig:fatmodel_effects} depicting a clear nonlinear
+relationship for both distribution parameters. The left panel shows that mean log-fatalities are much higher in winter
+than in summer with a peak around February matching the highest risk for influenza and other viral
+infections in Austria. The right panel shows that the standard deviation is also highest at around
+the same time but that there is another local maximum in the summer months, possibly related to 
+recurrent heat waves that can be quite stressful for the cardiovascular system \citep{fouillet2008}.
+
+\begin{figure}[t!]
+\centering
+\setkeys{Gin}{width=0.75\textwidth}
+<<echo=FALSE, fig=TRUE, height=4.5, width=7>>=
+nd <- data.frame(week = 1:53)
+par <- predict(b, newdata = nd, type = "parameter")
+nd$fit <- sapply(c(0.05, 0.5, 0.95),
+  FUN = function(p) { exp(family(b)$q(p, par)) })
+d19w <- reshape(d19, idvar = "week",
+  timevar = "year", direction = "wide")
+par(mar = c(4.1, 4.1, 0.1, 0.1))
+matplot(d19w$week, d19w[, -1],
+  type = "o", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "Number of fatalities")
+grid()
+matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
+  col = 1, lwd = 2, add = TRUE)
+lines(num ~ week, data = d20, col = 2, lwd = 2, type = "o", pch = 16)
+@
+\caption{\label{fig:fatmodel_compare} Predicted 5\%, 50\%, and 95\% quantiles (in black) of
+  the cyclic seasonal model along with the observed number of fatalities in 2000--2019
+  (in light gray) and in 2020 (in red).}
+\end{figure}
+
+Figure~\ref{fig:fatmodel_compare} shows the predicted 5\%, 50\%, and 95\% quantiles (in black)
+of the corresponding normal distributions along with the observed fatalities in 2000--2019
+(in light gray) and in 2020 (in red, up to week 46), respectively. Thus, the quantiles reflect
+the effects already conveyed by the predicted parameters in Figure~\ref{fig:fatmodel_effects}.
+This shows that the fatalities in 2020 are above the median almost throughout all weeks
+and above the 95\% quantile for a couple of weeks in spring and in the fall/winter, respectively.
+While the mortality in the spring period is only moderately increased, it is much higher
+than in previous years in fall/winter during the second COVID-19 wave in Austria.
+
+In the following, we show how to draw Figure~\ref{fig:fatmodel_compare} using the
+\pkg{bamlss} infrastructure. First, we set up a new data frame
+and predict the distribution parameters for each week of the year.
+<<eval=FALSE>>=
+nd <- data.frame(week = 1:53)
+par <- predict(b, newdata = nd, type = "parameter")
+@
+Based on these, the fitted quantiles can be computed using the quantile function
+from the family of the model (see Section~\ref{sec:families} for details). The \fct{exp} transformation
+maps the fitted values from the log-scale back to the original frequency scale.
+<<eval=FALSE>>=
+nd$fit <- sapply(c(0.05, 0.5, 0.95),
+  FUN = function(p) { exp(family(b)$q(p, par)) })
+@
+Finally, the estimated quantiles and observed data can be visualized using \fct{matplot}
+after reshaping the data to ``wide'' format with a separate column for every year.
+<<echo=TRUE,eval=FALSE>>=
+d19w <- reshape(d19, idvar = "week",
+  timevar = "year", direction = "wide")
+matplot(d19w$week, d19w[, -1],
+  type = "o", lty = 1, pch = 16, col = gray(0.1, alpha = 0.1),
+  xlab = "Week", ylab = "Number of fatalities")
+grid()
+matplot(nd$week, nd$fit, type = "l", lty = c(2, 1, 2),
+  col = 1, lwd = 2, add = TRUE)
+lines(num ~ week, data = d20, col = 2, lwd = 2, type = "o", pch = 16)
+@
+
+\begin{figure}[t!]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "hist-resid", spar = FALSE, col = "lightgray")
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, which = "qq-resid", spar = FALSE, c95 = TRUE)
+@
+\caption{\label{fig:fatmodel_resids} Histogram and Q-Q plot including 95\% credible
+  intervals (dashed lines) of the randomized quantile residuals for the distributional
+  regression model.}
+\end{figure}
+
+For judging how well the distributional model captures the observed data, the \fct{plot}
+method includes some diagnostic graphics such as histograms or quantile-quantile (Q-Q) plots
+of randomized quantile residuals \citep{bamlss:Dunn+Smyth:1996}, shown in Figure~\ref{fig:fatmodel_resids}.
+<<eval=FALSE>>=
+plot(b, which = c("hist-resid", "qq-resid"), c95 = TRUE)
+@
+By setting \code{c95 = TRUE}, the Q-Q plot includes 95\% credible intervals.
+Both plots show that the log-transformation of the fatality numbers only partially captures
+the right-skewed observations and that therefore the model fit is not ideal in the upper tail.
+In an accompanying online vignette at \url{http://www.bamlss.org/articles/fatalities.html}
+we show how to find a better probabilistic model by considering more flexible distributions
+(beyond the normal case) and general Box-Cox transformations (instead of hard-coding the log-transformation).
+While this improves the distributional model, the qualitative insights regarding the
+excess mortality in Austria during the COVID-19 crisis remain unchanged.
+
+
+\section{A flexible Bayesian model framework} \label{sec:flexreg}
+
+This section briefly summarizes the BAMLSS modeling framework. For a detailed
+methodological description please refer to \citet{bamlss:Umlauf+Klein+Zeileis:2018},
+as well as to the \hyperlink{somerefs}{references} given below on page \pageref{somerefs2}
+that discuss various applications and extensions that are also implemented in \pkg{bamlss}.
+The following outlines the framework from the viewpoint of distributional regression models,
+however, please note that model classes like, e.g., GLMs and GAMs or even survival joint models
+\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}
+are special cases in this setup.
+
+\subsection{Model structure} \label{sec:mstruct}
+
+Within the framework of GAMLSS or distributional regression models
+all parameters of the response distribution can be modeled by
+explanatory variables such that
+\begin{equation} \label{eqn:dreg}
+y \sim \mathbf{\mathcal{D}}\left(h_{1}(\theta_{1}) = \eta_{1}, \,\,
+  h_{2}(\theta_{2}) = \eta_{2}, \dots, \,\, h_{K}(\theta_{K}) =
+  \eta_{K}\right),
+\end{equation}
+where $\mathbf{\mathcal{D}}$ denotes a parametric distribution for the response
+variable $y$ with $K$ parameters $\theta_k$, $k = 1, \ldots, K$, that are linked to 
+additive predictors using known monotonic and twice differentiable functions
+$h_{k}(\cdot)$. Note that the response may also be a
+$q$-dimensional vector $\mathbf{y} = (y_{1}, \ldots, y_{q})^\top$, e.g., when
+$\mathbf{\mathcal{D}}$ is a multivariate distribution
+(see, e.g., \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
+The additive predictor for the $k$-th parameter is given by
+\begin{equation} \label{eqn:addpred}
+\boldsymbol{\eta}_k = \eta_k(\mathbf{X}; \boldsymbol{\beta}_k) =
+  f_{1k}(\mathbf{X}; \boldsymbol{\beta}_{1k}) + \ldots + f_{J_kk}(\mathbf{X}; \boldsymbol{\beta}_{J_kk}),
+\end{equation}
+based on $j = 1, \ldots, J_k$ unspecified (possibly nonlinear) functions $f_{jk}(\cdot)$, 
+applied to each row of the generic data matrix $\mathbf{X}$, encompassing all available 
+covariate information. The corresponding parameters
+$\boldsymbol{\beta}_k = (\boldsymbol{\beta}_{1k}, \ldots, \boldsymbol{\beta}_{J_kk})^\top$ 
+are typically regression coefficients pertaining to model matrices
+$\mathbf{X}_k = (\mathbf{X}_{1k}, \ldots, \mathbf{X}_{J_kk})^\top$,
+whose structure only depend on the type of covariate(s) and prior assumptions about
+$f_{jk}( \cdot )$.
+
+Usually, functions $f_{jk}( \cdot )$ are based on a basis function approach, where $\eta_k$ then
+is a typical GAM-type or so-called structured additive predictor
+(STAR,~\citealp{bamlss:Fahrmeir+Kneib+Lang:2004}). Similar to \citet{gamlss:book1},
+\citet{bamlss:Umlauf+Klein+Zeileis:2018} relax this assumption and let $f_{jk}(\cdot)$ be an
+unspecified composition of covariate data and regression coefficients. For example, functions
+$f_{jk}(\cdot)$ could also represent nonlinear growth curves, a regression tree, a neural network or
+lasso-penalized model terms as shown in Section~\ref{sec:flexm}.
+
+For full Bayesian inference, priors need to be assigned to the regression coefficients
+$\boldsymbol{\beta}_{jk}$. To be as flexible as possible, \citet{bamlss:Umlauf+Klein+Zeileis:2018}
+use the rather general prior $
+p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk}) 
+$ for the $j$-th model term of the $k$-th parameter, where the form of $p_{jk}( \cdot )$ depends
+on the type of function $f_{jk}( \cdot )$. Here,
+$\boldsymbol{\tau} =
+(\boldsymbol{\tau}_{11}^\top, \ldots, \boldsymbol{\tau}_{J_11}^\top, \ldots,
+\boldsymbol{\tau}_{1K}^\top, \ldots, \boldsymbol{\tau}_{J_KK}^\top)^\top$ is
+the vector of all assigned hyper-parameters, e.g., representing smoothing variances (shrinkage parameters).
+Similarly, $\boldsymbol{\alpha}_{jk}$ is the set of all fixed prior specifications, i.e., for
+GAM-type models $\boldsymbol{\alpha}_{jk}$ usually holds the so-called penalty matrices,
+amongst others. In most
+situations the prior $p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$
+is based on a multivariate normal kernel for $\boldsymbol{\beta}_{jk}$ and on inverse gamma
+distributions for each $\boldsymbol{\tau}_{jk} = (\tau_{1jk}, \ldots, \tau_{L_{jk}jk})^\top$,
+but as indicated previously, in principle any type of prior can be used
+(see \citealp{bamlss:Gelman:2006, bamlss:Polson+Scott:2012, bamlss:Klein+Kneib:2016,
+bamlss:Umlauf+Klein+Zeileis:2018} for
+more detailed discussions on priors for $\boldsymbol{\tau}_{jk}$
+and principled constructions for such priors).
+
+\hypertarget{somerefs}{}Examples of distributional models that fit well in this
+framework are the ones for: \label{somerefs2}
+\begin{itemize}
+  \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as
+    proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz+Klein+Strumann:2016, bamlss:Stasinopoulos+Rigby:2019},
+    continuous responses with spikes, skewness, heavy tails or bounded support as in
+    \citet{bamlss:Klein+Denuit+Kneib+Lang:2014,bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Stasinopoulos+Rigby:2019}, as well as
+    responses for extreme events \citep{bamlss:Umlauf+Kneib:2018}.
+ \item Multivariate responses such as multivariate normal, multivariate t or Dirichlet regression
+   (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
+ \item Multivariate responses with more complex dependence structures modeled through copulas
+   \citet{bamlss:Klein+Kneib:2016b}.
+ \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
+\end{itemize}
+
+\subsection{Posterior estimation} \label{sec:algos}
+
+Estimation typically requires to evaluate the log-likelihood
+$\ell(\boldsymbol{\beta}; \mathbf{y}, \mathbf{X})$ function and its derivatives w.r.t.\
+all regression coefficients $\boldsymbol{\beta}$ a number of times. For Bayesian inference
+the log-posterior is either used for posterior mode estimation, or for solving
+high-dimensional integrals. e.g., for posterior mean estimation MCMC samples need to be computed.
+
+Although the types of models that can be fitted within the flexible BAMLSS framework
+can be quite complex, \citet{bamlss:Umlauf+Klein+Zeileis:2018} show that there are a number
+of similarities between optimization and sampling concepts. Fortunately, and albeit the different
+model term complexity, algorithms for posterior mode and
+mean estimation can be summarized into a partitioned updating scheme with
+separate updating equations using leapfrog or zigzag iteration
+\citep{bamlss:Aitkin:1987, bamlss:Smyth:1996}, e.g., with updating equations
+\begin{equation} \label{eqn:blockblockupdate}
+(\boldsymbol{\beta}_{jk}^{(t + 1)}, \boldsymbol{\tau}_{jk}^{(t + 1)}) =
+  U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}, \boldsymbol{\tau}_{jk}^{(t)}; \, \cdot \,) \qquad
+    j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
+\end{equation}
+where function $U_{jk}( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson
+step or for getting the next step in an MCMC simulation, a.o.
+
+\citet{bamlss:Rigby+Stasinopoulos:2005} showed that using a basis function approach, i.e.,
+each function $f_{jk}( \cdot )$ can be represented by a linear combination of a design matrix and
+regression coefficients, the updating functions $U_{jk}( \cdot )$ for posterior mode (frequentist penalized likelihood) estimation for
+$\boldsymbol{\beta}_{jk}$ share an iteratively
+weighted least squares updating step (IWLS,~\citealp{bamlss:Gamerman:1997})
+\begin{equation} \label{eqn:blockbackfit}
+  \boldsymbol{\beta}_{jk}^{(t+1)}
+  = U_{jk}(\boldsymbol{\beta}_{jk}^{(t)}; \, \cdot \,) =
+    (\mathbf{X}_{jk}^\top\mathbf{W}_{kk}\mathbf{X}_{jk} +
+      \mathbf{G}_{jk}(\boldsymbol{\tau}_{jk}))^{-1}\mathbf{X}_{jk}^\top\mathbf{W}_{kk}(
+      \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}),
+\end{equation}
+with weight matrices $\mathbf{W}_{kk}$ and working responses $\mathbf{z}_k$, similarly to the
+well-known IWLS updating scheme for generalized linear models (GLM,~\citealp{bamlss:Nelder+Wedderburn:1972}). In the same way, approximate full conditionals
+$\pi(\boldsymbol{\beta}_{jk} | \cdot)$ for MCMC are constructed with this
+updating step \citep{bamlss:Gamerman:1997, bamlss:Fahrmeir+Kneib+Lang:2004, bamlss:Brezger+Lang:2006, bamlss:Klein+Kneib:2016b}.
+The matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ are derivative matrices of the priors
+$p_{jk}(\boldsymbol{\beta}_{jk}; \boldsymbol{\tau}_{jk}, \boldsymbol{\alpha}_{jk})$ w.r.t.\ the
+regression coefficients $\boldsymbol{\beta}_{jk}$, e.g., using basis function for $f_{jk}( \cdot )$
+matrices $\mathbf{G}_{jk}(\boldsymbol{\tau}_{jk})$ can be a penalty matrices that penalize the
+complexity using a P-spline representation \citep{bamlss:Eilers+Marx:1996}.
+
+Even if the functions $f_{jk}( \cdot )$ are not based on a basis function approach, the
+updating scheme (\ref{eqn:blockbackfit}) can be further generalized to
+$$
+\boldsymbol{\beta}_{jk}^{(t + 1)} = U_{jk}\left(\boldsymbol{\beta}_{jk}^{(t)},
+  \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}; \, \cdot \,\right),
+$$
+i.e., theoretically any updating function applied to the ``partial residuals''
+$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. (For detailed derivations see also
+\citealp{bamlss:Umlauf+Klein+Zeileis:2018}.)
+
+The great advantage of this modular architecture is, that the concept does not limit to modeling
+of the distributional parameters $\theta_k$ in (\ref{eqn:dreg}), e.g.\ as mentioned above,
+based on the survival function,
+\citet{bamlss:Koehler+Umlauf+Greven:2016} and \citet{bamlss:Koehler+Umlauf+Greven:2018} implement
+Bayesian joint models for survival and longitudinal data. Moreover, the updating schemes do not
+restrict to any particular estimation engine, e.g.,
+\citet{bamlss:Groll+Hambuckers+Kneib+Umlauf:2019} use the framework to implement lasso-type
+penalization for GAMLSS and \citet{bamlss:Simon+Fabsic+Mayr+Umlauf+Zeileis:2018}
+investigate gradient boosting with stability selection algorithms
+(see also Section~\ref{sec:application}). Very recently, \citet{bamlss:Umlauf+Klein:2019}
+implement neural network distributional regression models.
+
+\subsection{Model choice and evaluation}
+
+\subsubsection{Measures of performance}
+
+Model choice and variable selection is important in distributional regression due to the large
+number of candidate models. The following lists commonly-used tools:
+\begin{itemize}
+\item \emph{Information criteria} can be used to compare different model specifications.  
+  For posterior mode estimation, the Akaike information criterion (AIC), or the corrected
+  AIC, as well as the Bayesian information criterion (BIC), can be used. Estimation of model
+  complexity is based on the so-called equivalent degrees of freedom (EDF), i.e., for each
+  model term the trace of the smoother matrix is computed (see, e.g.,
+  \citealp{bamlss:Hastie+Tibshirani:1990}) is computed and the total degrees of freedom
+  are approximated by the sum over all distributional parameters and model terms.
+
+  For MCMC based estimation, model choice mainly relies on the deviance information criterion
+  (DIC, \citealp{SpiBesCarLin2002}) and the widely applicable information criterion
+  (WAIC, \citealp{watanabe2010asymptotic}). 
+\item \emph{Quantile residuals} \citep{bamlss:Dunn+Smyth:1996} can be used to evaluate the model
+  fit. The residuals can be assessed by quantile-quantile-plots, probability integral transforms
+  (PIT) histograms \citep{bamlss:Gneiting+Balabdaoui+Raftery:2007} or worm plots
+  \citep{bamlss:Buuren+Miranda:2001}.
+\item \emph{Scoring rules}: Sometimes it is helpful to evaluate the performance on a test data set
+  (or for instance based on cross validation). For this, proper scoring rules
+  \citep{bamlss:Gneiting+Raftery:2007, bamlss:Gneiting+Balabdaoui+Raftery:2007} can be utilized.
+\end{itemize}
+
+\subsubsection{Evaluation and interpretation}
+ \begin{itemize}
+\item \emph{Plotting}: Estimated functions $\hat{f}_{jk}( \cdot )$ are usually subject to a
+  centering constraint (e.g., $\sum \hat{f}_{jk}( x_i ) = 0$), therefore, simple effect plots are
+  a straightforward method to evaluate individual model
+  term importance and can also be used for respective interpretations. Sometimes it can be useful in
+  distributional regression to look at transformations of the original model parameters such as
+  expected value or variance of the response variable $\mathbf{y}$.
+\item \emph{Predictions}: For obtaining such transformations model predictions need to
+  be computed. This can be done either manually by the corresponding \fct{predict} method, or by
+  the \proglang{R} package \pkg{distreg.vis} \citep{bamlss:distreg.vis}, which provides a
+  graphical user interface for visualization of distributional regression models.
+ \end{itemize}
+
+\section[The bamlss package]{The \pkg{bamlss} package} \label{sec:package}
+
+The \proglang{R} package \pkg{bamlss} provides a modular software architecture for
+flexible Bayesian regression models (and beyond). The implementation follows the 
+conceptional framework presented in \citet{bamlss:Umlauf+Klein+Zeileis:2018}, which 
+supports Bayesian and/or frequentist estimation engines using complex possibly nonlinear 
+model terms of any type. The highlights of the package are:
+\begin{itemize}
+\item A unified model description where a \code{formula} specifies how to set up the predictors
+  from the \code{data} and the \code{family}, which holds information about the response
+  distribution, the model.
+\item A generic method for setting up model terms and a \fct{model.frame} for BAMLSS, the
+  \fct{bamlss.frame}, along with the corresponding prior structures. A \fct{transform}
+  function can
+  optionally set up modified terms, e.g., using mixed model representation for smooth terms.
+\item Support for modular and exchangeable updating functions or complete model fitting engines
+  in order to optionally implement either algorithms for maximization of the log-posterior for
+  posterior mode estimation or for solving high-dimensional integrals, e.g., for posterior mean
+  or median estimation.
+  First, an (optional) \fct{optimizer} function can be run, e.g., for computing posterior mode
+  estimates. Second, a \fct{sampler} is employed for full Bayesian inference with MCMC, which uses the
+  posterior mode estimates from the \fct{optimizer} as staring values. An additional step can be used
+  for preparing the \fct{results}, e.g., for creating model term effect plots.
+\item Standard post-modeling extractor functions to create sampling statistics, visualizations,
+  predictions, amongst others.
+\end{itemize}
+%
+\begin{figure}[p!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm,
+    every node/.style={fill=white, font=\sffamily}, align=center]
+  % Specification of nodes (position, etc.)
+  \node (data)        [input,fill=rb1]                               {\texttt{data}};
+  \node (formula)     [input, left of=data, xshift=-4.5cm,fill=rb1]  {\texttt{formula}};
+  \node (family)      [input, right of=data, xshift=-4.5cm,fill=rb1]   {\texttt{family}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(data) (formula) (family)] (A) {};
+  \node (text) [right of=A, xshift=-6.5cm] {Input};
+  \end{pgfonlayer}
+
+  \node (bframe) [processing, below of=family, yshift=-0.3cm,fill=rb2] {\texttt{bamlss.frame()}};
+  \node (trans)  [processing, below of=bframe, yshift=0.3cm,fill=rb2] {\texttt{transform()}};
+
+  \coordinate[below of=family, yshift=0.6cm] (invisible6);
+  \draw[->, shorten >=3pt] (invisible6) -- (bframe);
+
+  \draw[] (data)    -- (invisible6);
+  \draw[] (family)  -- (invisible6);
+  \draw[] (formula) -- (invisible6);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (bframe)  -- (trans);
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(bframe) (trans), minimum width=8.55cm] (B) {};
+  \node (text) [right of=B, xshift=-7.2cm] {Pre-processing};
+  \end{pgfonlayer}
+
+  \node (opt) [estimation, below of=trans,fill=rb3] {\texttt{optimizer()}};
+  \node (sampler) [estimation, below of=opt, yshift=0.3cm,fill=rb3] {\texttt{sampler()}};
+
+  \coordinate[right of=sampler, yshift=0.15cm] (invisible5);
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (trans) -- (opt);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (opt)   -- (sampler);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (trans.west) to [out=-180,in=180] (sampler.west);
+  \draw[->, shorten >=6pt, line width=0.8mm, gray] (bframe.east) to [out=10,in=10] (invisible5);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (bframe.east) to [out=10,in=10] (opt.east);
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(opt) (sampler), minimum width=8.55cm] (C) {};
+  \node (text) [right of=C, xshift=-6.9cm] {Estimation};
+  \end{pgfonlayer}
+
+  \node (sstats) [stats, below of=sampler,fill=rb4] {\texttt{samplestats()}};
+  \node (results) [stats, below of=sstats, yshift=0.3cm,fill=rb4] {\texttt{results()}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(sstats) (results), minimum width=8.55cm] (D) {};
+  \node (text) [right of=D, xshift=-7.25cm] {Post-processing};
+  \end{pgfonlayer}
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (sampler) -- (sstats);
+  \draw[->, shorten >=1pt, line width=0.8mm, gray] (sstats)  -- (results);
+
+  \node (plot) [output, below of=results, yshift=-0.5cm,fill=rb5] {\texttt{plot()}};
+  \node (summary) [output, left of=plot, xshift=-1.5cm,fill=rb5]  {\texttt{summary()}};
+  \node (predict) [output, right of=plot, xshift=1.5cm,fill=rb5]  {\texttt{predict()}};
+
+  \begin{pgfonlayer}{background}
+  \node[outer,fit=(summary) (plot) (predict)] (E) {};
+  \node (text) [right of=E, xshift=-6.6cm] {Output};
+  \end{pgfonlayer}
+
+  \coordinate[below of=results, yshift=0.55cm] (invisible);
+  \coordinate[below of=results, yshift=0.7cm] (invisible3);
+
+  \draw[->, shorten >=3pt] (invisible) -- (plot);
+  \draw[->, shorten >=3pt] (invisible) -- (summary);
+  \draw[->, shorten >=3pt] (invisible) -- (predict);
+  \draw[] (results) -- (invisible);
+
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (opt.west) to [out=-180,in=180] (results.west);
+
+  \coordinate[left of=opt, xshift=-2cm] (invisible2);
+  \coordinate[right of=sampler, xshift=2cm] (invisible4);
+  \draw[line width=0.8mm, gray] (opt.west) |- (invisible2);
+  \draw[line width=0.8mm, gray] (sampler.east) |- (invisible4);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (invisible2) |- (invisible3);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (invisible4) |- (invisible3);
+
+  %%\draw[->, shorten >=3pt, line width=0.8mm, gray, -stealth] (opt.west) to [out=-180,in=180] (invisible.west);
+  \draw[->, shorten >=3pt, line width=0.8mm, gray] (sampler.east) to [out=10,in=10] (results.east);
+
+  \end{tikzpicture}
+\caption{\label{fig:flowchart} Flow chart of the \pkg{bamlss} modeling architecture. Thick gray
+  lines represent optional paths, e.g., after building the \fct{bamlss.frame} the user can either
+  run an \fct{optimizer} function prior running the \fct{sampler}, or run the \fct{sampler}
+  function directly.}
+\end{figure}
+%
+\begin{table}[p!]
+\centering
+\begin{tabular}{lll}
+\hline
+Step & Type        & Function \\ \hline
+\multirow{3}{*}{Pre-processing} & Parser      & \code{bamlss.frame()} \\ \cline{2-3}
+ & \multirow{2}{*}{Transformer} & \code{bamlss.engine.setup()}, \code{randomize()} \\
+ & & \code{lasso\_transform()} \\ \hline
+\multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{opt\_bfit()}, \code{opt\_bbfit()},
+                              \code{opt\_boost()}, \code{opt\_lasso()} \\
+ & &\code{opt\_Cox()}, \code{opt\_JM()}  \\ \cline{2-3}
+ & \multirow{2}{*}{Sampler} & \code{sam\_GMCMC()}, \code{sam\_BayesX()}, \code{sm\_JAGS()} \\
+ & & \code{sam\_Cox()}, \code{sam\_JM()} \\ \hline
+Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
+\end{tabular}
+\caption{\label{tab:functions} Current available functions that can be used for
+  pre-processing, estimation and post-processing within the \pkg{bamlss} framework.}
+\end{table}
+%
+The modular architecture of \pkg{bamlss} is illustrated in Figure~\ref{fig:flowchart}. As
+mentioned above, the first
+step in model development is to setup design and penalty matrices for a model that is specified
+by the \code{family} object. Therefore a \code{formula} is processed together with the \code{data}
+using the \fct{bamlss.frame} function. In a second pre-processing step, the returned model frame
+may also be transformed. The BAMLSS model frame can then be used with \fct{optimizer} and/or
+\fct{sampler} functions in the estimation step. This is probably the main advantage of the
+architecture, users can easily exchange and integrate user defined estimation functions.
+The only requirement is to keep the structure of the \fct{bamlss.frame} function, as well for
+\fct{optimizer} and \fct{sampler} functions. Note that there is naming convention, optimizer
+functions start with prefix \code{opt\_*} and sampler functions with \code{sam\_*}.
+After the estimation step optional post-processing
+functions can be applied to create additional sampling statistics, function \fct{samplestats},
+or results that can be used for plotting the estimated effects, function \fct{results}. The
+post-processing step is optional since it is not necessarily needed in the last
+output step, e.g., for computing predictions. This feature is especially important when using
+large data sets, because the run time for computing \fct{samplestats} or \fct{results} can be
+quite long or computations can even lead to memory problems.
+
+In summary, besides implementing models using the family infrastructure
+(see Section~\ref{sec:families}) the architecture is very 
+flexible such that also users interested in implementing new and non-standard models or
+algorithms only need to focus on the estimation step, i.e., write \fct{optimizer} or
+\fct{sampler} functions and get all post-processing and extractor functionalities ``for free''.
+This way, prototyping becomes relatively easy, but also the integration high-performance
+estimation engines is facilitated.
+%
+Table~\ref{tab:functions} provides an overview of current available functions. Note that
+sampler functions \fct{sam\_BayesX} and \fct{sam\_JAGS} need installation of the
+\pkg{BayesXsrc} \citep{bamlss:BayesXsrc}  and the \pkg{rjags} \citep{bamlss:rjags} package.
+To have a better overview of various functionalities, function \fct{engines} provides information
+about which optimizer and sampler functions can be used with which family. For example, to look up
+compatibility for the normal distribution of the \pkg{gamlss.dist} package and the family
+implemented in \pkg{bamlss} the user can type
+<<eval=TRUE, echo=TRUE>>=
+engines(NO, gaussian_bamlss, cox_bamlss)
+@
+The table shows that the \fct{NO} family is compatible with all pure \proglang{R} implementations of 
+optimizer and sampler functions, but not with special samplers like \pkg{BayesX} and \pkg{JAGS}. 
+These can only be used with the \fct{gaussian\_bamlss} family. In addition, neither \fct{NO} or
+\fct{gaussian\_bamlss} has its own special optimizer or sampler implemented, such as the \fct{cox\_bamlss} family.
+
+To exemplify the presented ``Lego toolbox'', the following \proglang{R} code estimates the
+logit model using the \code{SwissLabor} data presented in Section~\ref{sec:logitmodel}. First,
+the data is loaded and the model formula is specified with
+<<>>=
+data("SwissLabor", package = "AER")
+f <- participation ~ income + age + education +
+  youngkids + oldkids + foreign + I(age^2)
+@
+In the second step, the necessary design matrices are constructed using the model frame
+parser function \fct{bamlss.frame}
+<<>>=
+bf <- bamlss.frame(f, data = SwissLabor, family = "binomial")
+@
+Then, posterior mode estimates are obtained by using the implemented backfitting estimation
+function \fct{opt\_bfit}
+<<results=hide>>=
+pm <- with(bf, opt_bfit(x, y, family))
+@
+The estimated parameters returned from function \fct{opt\_bfit} can then be used as starting
+values for the MCMC sampler function \fct{sam\_GMCMC}
+<<results=hide>>=
+set.seed(123)
+samps <- with(bf, sam_GMCMC(x, y, family, start = pm$parameters))
+@
+Using the parameters samples returned from function \fct{sam\_GMCMC}, statistics like the DIC are
+computed using the \fct{samplestats} function
+<<>>=
+stats <- with(bf, samplestats(samps, x, y, family))
+print(unlist(stats))
+@
+As one can see in the code above, estimation engines have common arguments \code{x} (holding the
+design and penalty matrices), \code{y} (the response data) and \code{family} (the \pkg{bamlss}
+family object). For implementing new estimation engines, users only need to keep the argument
+structures and the return values, i.e., for \fct{optimizer} functions a named numeric vector
+of estimated parameters and for \fct{sampler} functions parameter samples of class \code{"mcmc"}
+or \code{"mcmc.list"} (see package \pkg{coda}, \citealp{bamlss:Plummer+Best+Cowles+Vines:2006}).
+More details on the naming convention and the structure of the return value of \fct{bamlss.frame}
+are given in Section~\ref{sec:bf}.
+
+To ease the modeling process, all the single modeling steps presented in the above can be executed
+using the \pkg{bamlss} wrapper function \fct{bamlss}. The main arguments of \fct{bamlss} are
+\begin{Code}
+  bamlss(formula, family = "gaussian", data = NULL,
+    transform = NULL,                         ## Pre-processing
+    optimizer = NULL, sampler = NULL,         ## Estimation
+    samplestats = NULL, results = NULL, ...)  ## Post-processing
+\end{Code}
+where the first line basically represents the standard model frame specifications
+\citep[see][]{bamlss:Chambers+Hastie:1992}. All other arguments represent functions presented
+in Table~\ref{tab:functions} and can be exchanged. Note that the default for argument
+\code{optimizer} is the backfitting estimation function \fct{opt\_bfit} and the default for argument
+\code{sampler} is the \fct{sam\_GMCMC} sampling function, which is a quite generic implementation.
+More specifically, \fct{sam\_GMCMC} accepts proposal functions for each model term which do not
+necessarily have to be the same and can be exchanged, e.g., the core proposal function is
+implemented in \proglang{C} and is additionally optimized for large design and penalty matrices
+such that sampling using very large data sets is possible
+(see \citealp{bamlss:Lang+Umlauf+Wechselberger+Harttgen+Kneib:2014} for details on algorithms,
+e.g., using \fct{sam\_JAGS} is only suitable for moderate sized data and low
+complexity model terms). For more details on \fct{sam\_GMCMC} please see the \pkg{bamlss}
+manual.
+
+The returned fitted model object is a list of class \class{bamlss}, which is supported by several
+standard methods and extractor functions, such as \fct{plot}, \fct{summary} and \fct{predict}.
+
+As already exemplified in Section~\ref{sec:motivation}, using the model fitting wrapper function
+\fct{bamlss} it is straightforward to use different modeling approaches by simply exchanging
+the estimation engines. This feature can be particularly important in complex modeling situation,
+where good mixing of the MCMC algorithm requires very good starting values. One use case is presented
+in Section~\ref{sec:application}, where for stability reasons posterior mode estimates are obtained
+using the gradient boosting optimizer function \fct{boost}. Afterwards the MCMC sampling engine
+\fct{sam\_GMCMC} is applied with the boosting estimates as starting values.
+
+\subsection{The BAMLSS model frame} \label{sec:bf}
+
+Similar to the well-known \fct{model.frame} function that is used, e.g., by the linear model 
+fitting function \fct{lm}, or for generalized linear models \fct{glm}, the \fct{bamlss.frame}
+function extracts a ``model frame'' for fitting distributional regression models. 
+Internally, the function parses model formulae, one for each parameter of the distribution,
+using the \pkg{Formula} package infrastructure \citep{bamlss:Zeileis+Croissant:2010} in combination
+with \fct{model.matrix} processing for linear effects and \fct{smooth.construct} processing of
+the \pkg{mgcv} package to setup design and penalty matrices for unspecified smooth function 
+estimation (\citealp{bamlss:Wood:2019}, see also, e.g., the documentation of function \fct{s} and
+\fct{te}).
+
+\pagebreak
+
+The most important arguments are
+\begin{Code}
+  bamlss.frame(formula, data = NULL, family = "gaussian",
+    weights = NULL, subset = NULL, offset = NULL,
+    na.action = na.omit, contrasts = NULL, ...)
+\end{Code}
+The argument \code{formula} can be a classical model formulae, e.g., as used by the \fct{lm} function,
+or an extended \pkg{bamlss} formula including smooth term specifications like \fct{s} or \fct{te},
+that is internally parsed by function \fct{bamlss.formula}.
+Note that the \pkg{bamlss} package uses special \code{family} objects, that can be passed either as
+a character without the \code{"\_bamlss"} extension of the \pkg{bamlss} family name (see the manual
+\code{?bamlss.family} for a list of available families), or the family function itself.
+In addition, all families of the \pkg{gamlss} \citep{bamlss:Stasinopoulos+Rigby:2019} and
+\pkg{gamlss.dist} \citep{bamlss:gamlss.dist} package are supported, i.e., there is a transformer 
+function that reads all necessary components and then transfers them into a family object for
+\pkg{bamlss}.
+
+The returned object, a named list of class \code{"bamlss.frame"}, can be employed with the model
+fitting engines listed in Table~\ref{tab:functions}. The most important elements used for
+estimation are:
+\begin{itemize}
+\item \code{x}: A named list, the elements correspond to the parameters that are specified within
+  the \code{family} object. For each distribution parameter, the list contains all design and
+  penalty matrices needed for modeling (see the upcoming example).
+\item \code{y}: The response data.
+\item \code{family}: The processed \pkg{bamlss} \code{family}.
+\end{itemize}
+To better understand the structure of the \code{"bamlss.frame"} object a print method is provided.
+For illustration, we simulate data
+<<>>=
+set.seed(111)
+d <- GAMart()
+@
+and set up a \code{"bamlss.frame"} object for a Gaussian
+distributional regression model including smooth terms. First, a model formula is needed
+<<>>=
+f <- list(
+  num ~ x1 + s(x2) + s(x3) + te(lon,lat),
+  sigma ~ x1 + s(x2) + s(x3) + te(lon,lat)
+)
+@
+Afterwards the model frame can be computed with
+<<>>=
+bf <- bamlss.frame(f, data = d, family = "gaussian")
+@
+To keep the overview, there is also an implemented print method for \code{"bamlss.frame"} objects.
+<<>>=
+print(bf)
+@
+For writing a new estimation engine, the user can directly work with the \code{model.matrix}
+elements, for linear effects, and the \code{smooth.construct} list, for smooth effects respectively.
+The \code{smooth.construct} is a named list which is compiled using the \fct{smoothCon} function
+of the \pkg{mgcv} package using the generic \fct{smooth.construct} method for setting up
+smooth terms.
+<<>>=
+print(names(bf$x$mu$smooth.construct))
+@
+In this example, the list contains three smooth term objects for parameter \code{mu} and
+\code{sigma}.
+
+As shown in Appendix~\ref{appendix:specialterms} the \fct{bamlss.frame} function can also
+process special model terms, i.e., model terms that are not necessarily represented by
+a linear matrix vector product.
+
+\subsection{Family objects} \label{sec:families}
+
+Family objects are important building blocks in the design of BAMLSS models.
+The implementation in \pkg{bamlss} follows the well-established structures for family objects
+that are supported, e.g., by the base \proglang{R} model fitting function \fct{glm}, or family
+objects of the \pkg{gamlss} and \pkg{VGAM} package. This means, that users can also easily write
+new family objects to be used with \pkg{bamlss}. Such family objects specify the distribution by
+collecting functions of the density, respective log-likelihood, first-order derivatives of the
+log-likelihood w.r.t.\ predictors (the score function), and (optionally) second-order derivatives of
+the log-likelihood w.r.t.\ predictors or their expectation (the Hessian). Commonly used
+distributions are already implemented in \pkg{bamlss}; and note that the ones
+from the \pkg{gamlss} and \pkg{gamlss.dist} package can also be accessed through the
+\pkg{bamlss} package (see Section~\ref{sec:distmodel} for an example).
+
+We illustrate how to build a \pkg{bamlss} family by hand along the Gaussian
+distribution, with density
+$$
+f(y\,|\,\mu,\sigma) = \frac{1}{\sqrt{2\pi}\sigma} \cdot \exp
+\left( \frac{-(y-\mu)^2}{2\sigma^2} \right),
+$$
+and log-likelihood function
+$$
+\ell(\mu,\sigma\,|\,y) = - \frac{1}{2} \log(2\pi) - \log(\sigma) -
+\frac{(y-\mu)^2}{2\sigma^2},
+$$
+for an individual observation. The sum of the log-likelihood function
+over all observations is the target function of the optimization problem.
+
+In the distributional regression framework the parameters are linked
+to predictors by link functions,
+$$
+\mu = \eta_\mu, \qquad \log(\sigma) = \eta_\sigma.
+$$
+For the Gaussian $\mu$ and $\sigma$ are linked to $\eta_\mu$ and $\eta_\sigma$
+by the identity function and the logarithm, respectively.
+
+The score functions in \pkg{bamlss} are the first derivatives of the log-likelihood w.r.t.\
+the predictors:
+$$
+s_\mu = \frac{\partial\ell}{\partial\eta_\mu} = \frac{\partial\ell}{\partial\mu} \cdot
+\frac{\partial\mu}{\partial\eta_\mu} = \frac{y-\mu}{\sigma^2},
+$$
+and
+$$
+s_\sigma = \frac{\partial\ell}{\partial\eta_\sigma} = \frac{\partial\ell}{\partial\sigma} \cdot
+\frac{\partial\sigma}{\partial\eta_\sigma} = -1 + \frac{(y-\mu)^2}{\sigma^2}.
+$$
+%
+\begin{table}[ht!]
+\centering
+\begin{tabular}{lp{12cm}}
+\hline
+Name of element & Value \\ \hline
+\code{family} & Character string with the name of the family. \\
+\code{names} & Vector of character strings with the names of the parameters. \\
+\code{links} & Vector of character strings with the names of the link functions \\
+\code{d} & A function returning the density with arguments \code{d(y, par, log = FALSE)}
+  (see below). \\
+\code{p} & The cumulative distribution function \code{p(y, par, ...)}. \\
+\code{score} & A list with functions (one for each parameter) returning the first derivatives of
+  the log-likelihood w.r.t.\ predictors. \\
+\code{hess} & A list with functions (one for each parameter) returning the negative second
+  derivatives of the log-likelihood w.r.t.\ predictors. \\ \hline
+\end{tabular}
+\caption{\label{tab:families} Elements of the Gaussian distribution \code{"bamlss.family"} object.}
+\end{table}
+%
+For the second derivative of the log-likelihood we are able to obtain the
+negative expectation,
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\mu}^{2} ) = \sigma^{-2},
+$$
+and
+$$
+\mathsf{E}(-\partial^2\ell / \partial\eta_{\sigma}^{2} ) = 2.
+$$
+In more detail, the default \pkg{bamlss} estimation engines are based on IWLS updating functions
+and do not require the mixed elements of the Hessian, i.e., the backfitting optimizer
+function \fct{opt\_bfit} uses leapfrog or zizag iterations \citep{bamlss:Smyth:1996} and
+the MCMC sampler function \fct{sam\_GMCMC} also only updates one model term $f_{jk}( \cdot )$ at
+a time, hence, only the diagonal elements of the Fisher information matrix are needed.
+Furthermore, it is not mandatory to use the expected Fisher information, but for numerical
+stability it is recommended. If the information on the second derivatives is not provided the
+\fct{bamlss.frame} will set up approximate versions by numerical differentiation of the score
+functions, the same mechanism is applied for first order derivatives. Hence, in quite a few cases
+implementing a new family can only be based on the specification of the density function, however,
+in terms of optimization runtime this is certainly not the most efficient choice.
+For distributions for which the expectation of the second derivative is intractable or does not
+exist, the user can rely on two options: The first option is to simply take
+the Hessian evaluated at observations and corresponding predictors rather than computing the 
+theoretical expectation analytically for filling the diagonals of the weight matrices
+$\mathbf{W}_{kk}$. The second option is to find a good approximation for the expectation (see,
+e.g., \citealp{bamlss:Klein+Kneib+Lang:2015}, for the case of the overdispersion parameter
+of the negative binomial distribution).
+
+Now we have to write a function that returns a \code{family.bamlss} object (S3)
+which encapsulates functions for density, score and Hessian, and the names of
+the family, parameter and link functions. The required elements are listed
+in Table~\ref{tab:families}. Note that there are no other specifications to follow, for example
+one could also build a family that allows for flexible link functions (like the families from the
+\pkg{gamlss} package).
+
+
+
+Merely all functions take as first argument the response \code{y} and as second
+argument a named list holding the evaluated parameters \code{par} of the
+distribution. The example implementation is shown in Appendix~\ref{appendix:families}.
+
+Optionally, the \code{"family.bamlss"} object can be extended by functions for
+\begin{itemize}
+\item the quantile function (the inverse cdf) \code{q(p, par)},
+\item a random number generator \code{r(n, par)},
+\item the log-likelihood \code{loglik(y, par)},
+\item the expectation \code{mu(par, ...)},
+\item initial values for optimization, which has to be a list containing a
+  function for each parameter,
+\item \code{...},
+\end{itemize}
+which can help to speed up optimization, or be convenient for
+predictions and simulations.
+
+When all formulas for a family are worked out, it usually takes about an hour to create a new
+family object. Of course, this also depends on the complexity of the density function. With some
+families it can be meaningful for speed reasons to port the functions for example to \proglang{C}.
+In our experience, programming then takes only slightly longer, about 2 to 3 hours.
+
+For a list of all implemented families, please see the documentation of \code{?bamlss.family}.
+
+\pagebreak
+
+\subsection{Estimation engines} \label{sec:engines}
+
+Estimation engines in \pkg{bamlss} are usually based on the model frame setup function\linebreak
+\fct{bamlss.frame} (see Section~\ref{sec:bf}), i.e., the functions all have a \code{x} argument,
+which contains all the necessary model and penalty matrices, and a \code{y} argument, which is the
+response (univariate or multivariate). In addition, an estimation engine usually has a \code{family}
+argument, which specifies the model to be estimated. However, this is not a mandatory
+argument, i.e., one could write an estimation function that is designed for one specific
+problem, only. As mentioned at the beginning of Section~\ref{sec:package}, there is naming
+convention, optimizer functions start with prefix \code{opt\_*} and sampler functions with
+\code{sam\_*}. The naming convention is not mandatory, but it gives the user a better overview of
+the many functions of the package.
+
+The modeling setup is best explained by looking at the main estimation engines provided by
+\pkg{bamlss}. The default optimizer using the \fct{bamlss} wrapper function is \fct{opt\_bfit}, which is a
+backfitting routine. The most important arguments are
+\begin{Code}
+  opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+\end{Code}
+The default sampling engine in \pkg{bamlss} is \fct{sam\_GMCMC}, again the most important
+arguments are
+\begin{Code}
+  sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL, ...)
+\end{Code}
+So basically, the arguments of the optimizer and the sampling function are the same, the
+main difference is the return value. In \pkg{bamlss} optimizer functions usually return
+a vector of estimated regression coefficients (parameters), while sampling functions 
+return a matrix of parameter samples of class \code{"mcmc"} or \code{"mcmc.list"} (for details
+see the  documentation of the \pkg{coda} package).
+
+Internally, what the optimizer or sampling function is actually processing is not important
+for the \fct{bamlss} wrapper function as long as a vector or matrix of parameters is
+returned. For optimizer functions the return value needs to be named list with an element
+\code{"parameters"}, the vector (also a matrix, e.g., for \fct{lasso} and \fct{boost} optimizers)
+of estimated parameters. The most important requirement to make use of all extractor
+functions like \fct{summary.bamlss}, \fct{predict.bamlss}, \fct{plot.bamlss},
+\fct{residuals.bamlss}, etc., is to follow the naming convention of the returned estimates.
+The parameter names are based on the names of the distribution parameters as specified in
+the family object. For example, the family object \fct{gaussian\_bamlss} has parameter names
+\code{"mu"} and \code{"sigma"}
+<<>>=
+gaussian_bamlss()$names
+@
+Then, each distributional parameter can be modeled by parametric (linear) and
+nonlinear smooth effect terms. The parametric part is indicated with \code{"p"} and the smooth part with
+\code{"s"}. The names of the parametric coefficients are the names of the corresponding model
+matrices as returned from \fct{bamlss.frame}. E.g., if two linear effects, with variables \code{"x1"}
+and \code{"x2"}, enter the model for 
+distributional parameter \code{"mu"}, then the final names are \code{"mu.p.x1"} and \code{"mu.p.x2"}.
+Similarly for the smooth parts, if we model a variable \code{"x3"} using a regression spline as
+provided by the \fct{s} function of the \pkg{mgcv} package, the
+name is based on the names that are used by \fct{bamlss.frame} for the \fct{smooth.construct}
+object. In this case the parameter names start with \code{"mu.s.s(x3)"}. If this smooth
+term has 10 regression coefficients, then the final name must be
+<<>>=
+paste0("mu.s.s(x3)", ".b", 1:10)
+@
+i.e., all smooth term parameters are named with \code{"b"} and a numerated.
+
+An example of how to setup an estimation engine for \pkg{bamlss} for linear regression models is
+given in Appendix~\ref{appendix:engine}. The example also provides details on the naming convention
+and return values of optimizer and sampler functions.
+
+\section{Flexible count regression for lightning reanalysis} \label{sec:application}
+
+This section illustrates the workflow with \pkg{bamlss} along a small case study.
+We want to build a statistical model linking positive counts of cloud-to-ground
+lightning discharges to atmospheric quantities from a reanalysis dataset.
+
+\subsection{Motivation and data}
+
+The region we focus on are the European Eastern Alps. Cloud-to-ground lightning
+discharges -- detected by the Austrian Lightning Detection and Information System
+\citep[ALDIS, ][]{schulz2005} -- are counted on grids with a mesh size of $32~km$.
+The lightning observations are available for the period 2010--2018.
+The reanalysis data come from ERA5, the fifth generation of the ECMWF (European
+Centre for Medium-Range Weather Forecasts) atmosphheric reanalyses of the
+global climate \citep{era5a, era5b}. ERA5 provides globally complete and consistent
+pseudo-observations of the atmosphere using the laws of physics. The horizontal
+resolution is approx.\ $32~km$, while the temporal resolution is hourly and covers the years
+from 1979 to present.
+In this example application we work only with a small subset of the data, which
+can be assessed from the accompanying \proglang{R} package \pkg{FlashAustria}
+\citep{FlashAustria}. The data are loaded with
+%
+<<echo=FALSE>>=
+data("FlashAustria", package = "FlashAustria")
+data("FlashAustriaModel", package = "FlashAustria")
+FlashAustriaModel <- b <- flash_model_ztSICHEL
+@
+%
+<<>>=
+data("FlashAustria", package = "FlashAustria")
+head(FlashAustriaTrain)[, c("counts", "q_prof_PC1", "sqrt_cape",
+  "sqrt_lsp", "d2m", "cswc_prof_PC4")]
+nrow(FlashAustriaTrain)
+@
+%
+The motivation for this application is as follows: Lightning counts are not
+modeled within the atmospheric reanalyses, as their spatial resolution is too
+coarse for resolving convective events that lead to lightning discharges.
+Homogeneous lightning observations are only available for the period in the
+order of a decade, here 2010--2018. Thus, based on a probabilistic statistical
+model, lightning counts for the time before 2010 could be fitted, thus enabling
+the analysis of lightning events in the past for which no observations are available.
+On the one hand this will increase our knowledge about physical processes leading
+to such events, and on the other it will enable quantification how
+these extreme short-term events are affected by changing climate \citep{westra2014}.
+
+Table~\ref{tab:desc} lists the covariates considered which are based on a
+small subset of ERA5 quantities \citep{era5a, era5b} and include variables that
+are known to be good predictors for convective events
+\citep[e.g.,][]{bamlss:Simon+Fabsic+Mayr+Umlauf+Zeileis:2018}.
+
+\begin{table}[t!]
+\centering
+\begin{tabular}{p{2.5cm}p{11.5cm}}
+\hline
+Abbreviation & Description \\ \hline
+\code{d2m} & 2 metre dewpoint temperature is a measure of the humidity of the air.
+	The temperature to which the air, at 2 metres above the surface of the Earth,
+	would have to be cooled for saturation to occur. \\
+\code{q\_prof\_PC1} & The vertical profile of specific humidity \code{q} has been decomposed
+	by principal component analysis (PCA). This is the first principal component. \\
+\code{cswc\_prof\_PC4} & The vertical profile of specific snow water content \code{cswc} has
+	been decomposed by PCA. This is the forth principal component. \\
+\code{t\_prof\_PC1} & The vertical profile of temperature \code{t} has
+    been decomposed by PCA. This is the first principal component. \\
+\code{v\_prof\_PC2} & The vertical profile of the v-component of the wind \code{v} has
+    been decomposed by PCA. This is the second principal component. \\
+\code{sqrt\_cape} & The square root of convective available potential energy. This is an indication 
+                    of the (in)stability of the atmosphere. \\
+\code{sqrt\_lsp} & Large-scale precipitation. Accumulated liquid and frozen water, comprising
+                   rain and snow, which is generated by the cloud scheme of the numerical model. \\
+\hline
+\end{tabular}
+\caption{\label{tab:desc} Quantities taken directly or derived from ERA5.}
+\end{table}
+
+\subsection{Model specification}
+
+The response of our statistical model are positive counts, with a mean of
+\Sexpr{round(mean(FlashAustriaTrain$counts), 2)}, and a variance of
+\Sexpr{round(var(FlashAustriaTrain$counts), 2)}. Thus, we are facing a
+truncated count data distribution which is highly
+overdispersive \citep{cameron2013count}.
+\citet{bamlss:Simon+Mayr+Umlauf+Zeileis:2019} employed a
+zero-truncated negative binomial distribution, which
+is specified by two parameters $\mu > 0$ and $\theta > 0$. $\mu$ is the
+expectation of the underlying untruncated negative binomial, and $\theta$
+modifies the variance of the untruncated negative binomial by
+$\mathrm{VAR}(\tilde{Y}) = \mu + \mu^2/\theta$, where $\tilde{Y}$ is a latent
+random variable following the underlying untruncated negative binomial
+distribution. 
+
+The spatial and temporal scale of aggregation of the lightning discharges here differs
+from the one in \citet{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. Therefore, it is worth comparing
+the zero-truncated negative binomial against other distributions that could capture the
+truncation of the count data and its overdispersion. Hence, we also consider the
+zero-truncated Sichel distribution which can also capture skewed count data.
+
+The zero-truncated negative binomial distribution is implemented as
+\fct{ztnbinom\_bamlss} within \pkg{bamlss} while the Sichel is available as
+\fct{SICHEL} within \pkg{gamlss.dist}. Using the \pkg{gamlss.tr} package the latter
+is truncated at zero so that it can be readily plugged into the \code{family}
+argument of \fct{bamlss}.
+%
+<<>>=
+library("gamlss.dist")
+library("gamlss.tr")
+ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
+@
+%
+In the following we illustrate how to set up and model the lightning counts with one
+of the two distributions. To specify smooth terms for all distributional parameters
+-- for \fct{ztnbinom\_bamlss} parameters $\mu$ and $\theta$ and for \fct{ztSICHEL}
+parameters $\mu$, $\sigma$ and $\nu$) -- we set up a \code{list} of three formulas.
+Smooth P-splines \citep{bamlss:Eilers+Marx:1996}, known for their good sampling properties,
+are employed for all predictors in the formula for $\mu$. For the (over)dispersion
+model large-scale precipitation is used in the second formula (without a parameter
+name on the left-hand side in order to be applicable to both distributional models).
+Finally, for the Sichel distribution a constant shape parameter is added in the third
+formula (which is ignored when using the formula list with the zero-truncated negative
+binomial distribution).
+%
+<<eval=FALSE>>=
+f <- list(
+  counts ~ s(d2m, bs = "ps") + s(q_prof_PC1, bs = "ps") +
+           s(cswc_prof_PC4, bs = "ps") + s(t_prof_PC1, bs = "ps") +
+           s(v_prof_PC2, bs = "ps") + s(sqrt_cape, bs = "ps"), 
+         ~ s(sqrt_lsp, bs = "ps"),
+         ~ 1
+)
+@
+%
+Now, we have all ingredients on hand to feed the standard interface for
+statistical models in \proglang{R}: A formula \code{f}, families
+\fct{ztnbinom\_bamss}, \fct{ztSICHEL}, and a data set
+\code{FlashAustriaTrain}. Within the
+\fct{bamlss} call we also provide arguments which are passed forward to the
+optimizer and the sampler. We choose the gradient boosting optimizer
+\code{opt\_boost()} in order to find initial values for the default sampler
+\code{sam\_GMCMC()}. Gradient boosting proved to offer a very stable method for
+finding regression coefficients that serve as initial values for a MCMC sampler
+\citep{bamlss:Simon+Mayr+Umlauf+Zeileis:2019}. In the following, we illustrate the estimation of the 
+models with the \fct{ztSICHEL} family.
+We set the number of iterations to \code{maxit = 1000}. For the sampling we allow $1000$
+iterations as burn-in phase, and apply a thinning of the resulting chain of $3$. Running
+\code{n.iter = 2000} iterations on 3 cores in parallel leads to $1000$ MCMC samples in the
+end (note that parallel chains are started using function \fct{mclapply} of the
+base \proglang{R} \pkg{parallel} package by setting argument \code{cores}, see the manual of
+sampler function \fct{sam\_MCMC}).
+%
+\begin{Schunk}
+\begin{Sinput}
+R> set.seed(123)
+R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
++    family = ztSICHEL, binning = TRUE,
++    optimizer = opt_boost, maxit = 1000,
++    thin = 3, burnin = 1000, n.iter = 2000,
++    light = TRUE, cores = 3)      
+\end{Sinput}
+\begin{Soutput}
+logLik -36636.9 eps 0.0003 iteration 1000 qsel 7
+elapsed time: 28.99min
+Starting the sampler...
+|********************| 100%  0.00sec 109.24min
+|********************| 100%  0.00sec 112.98min
+|********************| 100%  0.00sec 115.67min
+\end{Soutput}
+\end{Schunk}
+%
+The model was fitted on three Intel Xeon CPU E5-4660 v4 cores with 2.20GHz
+on which the boosting took about 28.99~minutes and the average sampling time about 1.9~hours.
+This is relatively slow as the \fct{ztSICHEL} uses a rather generic high-level \proglang{R}
+implementation. Computation times for the more efficient \fct{ztnbinom\_bamlss} family are much lower
+with about 7 and 9~minutes for boosting and sampling, respectively.
+
+By setting the argument \code{binning = TRUE} only unique observations are being used 
+internally to create the design matrices. This can have two advantages, (a) for large data sets one 
+does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
+faster, because fewer floating point operations need to be performed. In addition, when setting
+\code{light = TRUE}, no design or penalty matrices, model frames, results, etc.,
+are stored. Hence, memory requirements when storing the model objects are much lower
+so that the fitted model objects can be provided within the \pkg{FlashAustria} package.
+<<eval=FALSE>>=
+data("FlashAustriaModel", package = "FlashAustria")
+@
+The corresponding \proglang{R} code is provided in the supplemental materials.
+
+
+\subsection{Model diagnostics}
+
+To select one of the two models, we examine their calibration using a worm plot
+\citep{bamlss:Buuren+Miranda:2001}. The worm plot is implemented within \pkg{bamlss}
+for objects of class \code{bamlss.residuals} and can be selected via the \code{which}
+argument of the plot method for these objects:
+%
+<<eval=FALSE>>=
+resids <- c(
+  "ztnbinom" = residuals(flash_model_ztnbinom),
+  "ztSICHEL" = residuals(flash_model_ztSICHEL)
+)
+plot(resids, which = "wp", main = "Worm plot")
+@
+\setkeys{Gin}{width=.7\textwidth}
+\begin{figure}[t!]
+\centering
+<<fig=TRUE, height=4.5, width=6, echo=FALSE, pdf=FALSE, png=TRUE>>=
+resids <- c(
+	"ztnbinom" = residuals(flash_model_ztnbinom, newdata = FlashAustriaTrain),
+	"ztSICHEL" = residuals(flash_model_ztSICHEL, newdata = FlashAustriaTrain)
+)
+par(mar = c(4.1, 4.1, 4.1, 0.1))
+plot(resids, which = "wp", main = "Worm plot",
+  col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
+@
+\caption{Worm plots for the two distributional models.}
+\label{fig:appworm}
+\end{figure}
+%
+The worm plots (Figure~\ref{fig:appworm}) reveal that both \code{ztSICHEL} and \code{ztnbinom} 
+somewhat underestimate the mass of the upper tail. However, for \code{ztSICHEL} the effect
+is less pronounced and overall calibration is much better than for \code{ztnbinom}.
+Hence, we focus on the \fct{ztSICHEL} model but remark that most qualitative insights
+are very similar for \code{ztnbinom}.
+
+As a next diagnostic we check the log-likelihood contributions of the
+individual terms during the boosting optimization (Figure~\ref{fig:appboost}).
+%
+<<eval=FALSE>>=
+pathplot(flash_model_ztnbinom, which = "loglik.contrib")
+@
+%
+\setkeys{Gin}{width=.7\textwidth}
+\begin{figure}[p!]
+\centering
+<<fig=TRUE, height=4.5, width=6, echo=FALSE>>=
+par(mar = c(4.1, 4.1, 2.1, 9.5))
+pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
+## missing <- c("s(hcc).nu", "(Intercept).sigma")
+## at_missing <- flash_model_ztSICHEL$model.stats$optimizer$boost_summary$loglik[1000, missing]
+## axis(4, at = at_missing + c(2.8), labels = missing, las = 1, tick = FALSE)
+@
+\caption{Contribution to the log-likelihood of individual terms during
+gradient boosting.}
+\label{fig:appboost}
+\end{figure}
+%
+After 1000~iterations the term \code{s(q_prof_PC1).mu} has the highest contribution
+to the log-likelihood with %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(q_prof_PC1)",2])} %
+followed by \code{s(sqrt_cape).mu} with %
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(sqrt_cape)",2])}
+and \code{s(d2m).mu} with
+\Sexpr{round(FlashAustriaModel$model.stats$optimizer$boost_summary$summary$mu["s(d2m)",2])}.
+%% These three terms as well as all other terms with a strong contribution
+%% act on the distributional parameter \code{mu}.
+Overall contributions to the log-likelihood at the end of the boosting procedure
+are very small signalling that the algorithm approach a state that is suitable
+for initializing the MCMC sampling.
+
+\begin{figure}[p!]
+\centering
+<<echo=FALSE, fig=TRUE>>=
+b2 <- b
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(q_prof_PC1).b1", "mu.s.s(q_prof_PC1).b2")]
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b2, which = "samples", ask = FALSE)
+@
+\caption{MCMC trace (left panels) and autocorrelation (right panels) for two
+parameters from the term \code{s(q\_prof\_PC1)} of the model \code{mu}.}
+\label{fig:apptrace}
+\end{figure}
+
+The MCMC chains can be assessed by visualizations of their traces and autocorrelation functions (ACFs),
+exemplified in Figure~\ref{fig:apptrace} for the term \code{s(q\_prof\_PC1)} (for parameter
+$\mu$ of the Sichel distribution).
+%
+<<fig=FALSE, eval=FALSE>>=
+plot(flash_model_ztSICHEL, model = "mu", term  = "s(q_prof_PC1)",
+  which = "samples")
+@
+%
+The traces reveal samples around stables means, confirming that the 1000 boosting
+iterations and the 1000 burn-in samples were sufficient. The ACFs
+reveal quite some autocorrelation after the thinning, suggesting that sampling efforts
+should be increased further in a final model run.
+
+
+\subsection{Predictions and visualizations}
+
+%% As these diagnostics suggest that a reasonable initial state for the sampling
+%% has been found,
+%% and the samples are independent draws from the posterior
+%% one can go further and investigate the estimated effects.
+
+As the boosting summary (Figure~\ref{fig:appboost}) reveals that the terms
+\code{s(q_prof_PC1)}, \code{s(sqrt_cape)} and \code{s(d2m)}
+have the largest contribution for improving the fit, the corresponding
+effects are shown in Figure~\ref{fig:appeffect} to illustrate how the
+atmospheric quantities of the reanalyses are related to lightning events.
+The effects are presented on the scale of the additive predictor of the
+distributional parameter $\mu$, i.e., the log scale. A higher
+$\log(\mu)$ would result in a higher expectation of the count data distribution.
+%
+<<fig=FALSE, eval=FALSE>>=
+plot(flash_model_ztSICHEL, model = "mu",
+  term  = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"))
+@
+%
+\begin{figure}[t!]
+\centering
+\setkeys{Gin}{width=1\textwidth}
+<<echo=FALSE, fig=TRUE, height=3, width=6, png=TRUE, pdf=FALSE>>=
+par(mfrow = c(1, 3))
+plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
+  ask = FALSE, spar = FALSE,
+  rug = TRUE, col.rug = "#39393919")
+@
+\caption{Effect of the terms \code{s(q\_prof\_PC1)}, \code{s(sqrt\_cape)},
+  and term \code{s(d2m)} from model \code{mu}. Credible intervals derived from MCMC
+  samples.}
+\label{fig:appeffect}
+\end{figure}
+%
+\code{s(q_prof_PC1)} shows a clear decrease.
+As \code{q_prof_PC1} is the leading principal component of the vertical profile
+of specific humidity, one has to consider the corresponding spatial mode (not
+shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
+more moisture in the lower atmosphere (below 850~hPa) and less moisture in the
+mid atmosphere (between 850~hPa and 600~hPa). Thus, smaller values of the
+principal component mean that more moisture is available in the mid atmosphere,
+a source of \emph{latent energy}, energy that becomes free when water
+transfers from the gas to the liquid phase. This energy supports the occurrence
+of deep convection and thus of heavy lightning events.
+%
+\code{s(sqrt_cape)} reveals an increasing shape.
+This means a higher \textit{convective available potential energy} (CAPE)
+increases $\mu$, which increases the expectation of the distribution and
+thus is associated with higher probabilities for events with high counts.
+Physically the shape of the effect is meaningful as more convective available
+potential energy has the potential to lead to heavier lightning events.
+The similar is true for the increasing effect of \code{s(d2m)}.
+%%% 
+%%% Finally it is interesting to look at the effect acting on the link scale of
+%%% the parameter $\theta$, \code{s(sqrt_lsp)} (right panel in Figure~\ref{fig:appeffect}).
+%%% \code{sqrt_lsp} is the square root of large scale precipitation, i.e.,
+%%% precipitation that is not linked to convective processes and thus it is
+%%% not related to strong lightning events. The effect shows following relationship:
+%%% Higher values of \code{sqrt_lsp} lead to smaller $\theta$, which increases the
+%%% variance of the distribution.
+%
+%%% Before applying the model, i.e., predicting lightning cases before 2010, we
+%%% check the marginal calibration of the distribution. This is commonly done by
+%%% displaying a qq-plot or a worm plot \citep{bamlss:Buuren+Miranda:2001}.  For
+%%% evaluating count data regression model the hanging rootogram serves as popular
+%%% tool \citep{kleiber2016visualizing}. First we predict the distributional
+%%% parameter on out-of-sample data \code{FlashAustriaEval} for which lightning
+%%% observations are on hand
+%%% %
+%%% <<>>=
+%%% fit <- predict(b, newdata = FlashAustriaEval, type = "parameter")
+%%% str(fit)
+%%% @
+%%% %
+%%% \code{predict()} returns a \code{list}, of which each element is named
+%%% as a distributional parameter and contains by default a vector of
+%%% predictions. Each prediction is the average of the predictions obtained
+%%% by all MCMC samples. The resulting \code{list} can be used to
+%%% derive further quantities by employing the functions of the \pkg{bamlss}
+%%% family that can be extracted using \code{family()},
+%%% %
+%%% <<>>=
+%%% fam <- family(b)
+%%% fam
+%%% @
+%%% %
+%%% The family contains functions to map the predictors to the parameter
+%%% scale, density, cumulative distribution function, log-likelihood, and
+%%% scores and Hessian. We apply the density to compute the expected
+%%% frequencies of the positive counts. The function \code{...$d()} takes the
+%%% quantile as first argument, and the \code{list} with the parameters,
+%%% as returned by \code{predict()}, as a second argument. The expected frequencies can then be computed
+%%% by
+%%% %
+%%% <<>>=
+%%% expect <- sapply(1:50, function(j) sum(fam$d(j, fit)))
+%%% @
+%%% %
+%%% In order to plot the rootogram, we have to name the vector and
+%%% coerce it to an object of class \code{table}. The verifying
+%%% observed frequencies can be directly obtained by \code{table}.
+%%% %
+%%% <<>>=
+%%% names(expect) <- 1:50
+%%% expect <- as.table(expect)
+%%% obsrvd <- table(FlashAustriaEval$counts)[1:50]
+%%% @
+%%% 
+%%% \begin{figure}[p!]
+%%% \setkeys{Gin}{width=.7\textwidth}
+%%% \centering
+%%% <<fig=TRUE, height=5, width=6, echo=FALSE>>=
+%%% par(mar = c(4.1, 4.1, 3.1, 0.1))
+%%% library("countreg")
+%%% rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
+%%% @
+%%% \caption{Hanging rootogram for evaluating calibration of count data model
+%%% on out-of-sample data. Red line indicates the expected frequencies on the
+%%% square root scale. Gray bars indicate observed frequencies on square root
+%%% scale hanging from the red line.}
+%%% \label{fig:approoto}
+%%% \end{figure}
+%
+\begin{figure}
+\setkeys{Gin}{width=0.8\textwidth}
+\centering
+<<echo=FALSE, eval=TRUE, results=hide>>=
+sf::st_crs(FlashAustriaCase) <- 4326
+@
+<<fig=TRUE, echo=FALSE, width=7, height=5, png=TRUE, pdf=FALSE>>=
+library("sf")
+fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(b)
+FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
+
+library("ggplot2")
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE, p1 = .85) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+  facet_wrap(~time, nrow = 2) + theme_minimal() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+@
+\caption{\label{fig:appcase} A probabilistic reconstruction of lightning counts occured on
+September 15 2001 at 12~UTC and at 18~UTC and on September 16 2001 at
+6~UTC and 12~UTC, i.e., the probability of having observed $10$ or more counts within one
+grid box.}
+\end{figure}
+%
+%%% The observed and expected frequencies can be plugged into the
+%%% default method of \code{rootogram} from the \pkg{countreg}
+%%% package \citep{zeileis2008regression}.
+%%% %
+%%% <<eval=FALSE>>=
+%%% library("countreg")
+%%% rootogram(obsrvd, expect, xlab = "# Lightning Counts", main = "Rootogram")
+%%% @
+%%% %
+%%% The rootogram reveals reasonable calibration of the model though it is slightly
+%%% underestimating the number of events with a single lightning discharge.
+
+%% Now given good calibration of the count data distribution,
+%% good convergence and sample characteristics of the gradient
+%% boosting optimizer and MCMC sampler, and physically interpretable effects,
+Finally, the model is leveraged to predict a case
+for the period before 2010, for which no lightning data are available.
+The case of interest is a front moving from the West to the East on the
+Northern side of the Alps on 2001-09-15 and 2001-09-16.
+The case data \code{FlashAustriaCase} contains additional columns containing
+time and space information, and is of class \code{sf} \citep{pebesma2018sf}.
+We predict the parameters for this case, and derive the probability of
+observing 10 or more flashes within a grid box conditioned on thunderstorm activity,
+by applying the cumulative distribution function \code{...$p()} of the family
+which can be extracted from the fitted model using \code{family()}.
+The family contains functions to map the predictors to the parameter
+scale, density, cumulative distribution function, log-likelihood, and
+scores and Hessian. We apply the cdf to compute the probability of
+observing more than 10 flashes in a box and hour given a lightning event.
+The function \code{...$p()} takes the
+quantile as first argument, and the \code{list} with the parameters,
+as returned by \code{predict()}, as a second argument.
+%
+<<eval=FALSE>>=
+library("sf")
+fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(b)
+FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
+@
+%
+We visualize this case by employing \code{ggplot()} \citep{wickham2016gg},
+and the Oslo color scale from the \pkg{colorspace} package
+\citep{zeileis2019colorspace}. The country borders \code{world} are retrieved
+from the \pkg{rnaturalearth} package \citep{south2017rnaturalearth}. 
+%
+<<eval=FALSE>>=
+library("ggplot2")
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+ggplot() + geom_sf(aes(fill = P10), data = FlashAustriaCase) +
+  scale_fill_continuous_sequential("Oslo", rev = TRUE) +
+  geom_sf(data = world, col = "white", fill = NA) +
+  coord_sf(xlim = c(7.95, 17), ylim = c(45.45, 50), expand = FALSE) +
+  facet_wrap(~time) + theme_minimal()
+@
+%
+The case gives an example for a reconstructed lightning
+event: On 2001-09-15 (top row of Figure~\ref{fig:appcase})
+it reveals moderate probabilities for observing 10 or more
+lightning counts within a grid cell and hour. Over night the situation is still unstable,
+around 6~UTC on 2001-09-16 there is still quite high activity on the northern parts of the Alps.
+(bottom left panel of Figure~\ref{fig:appcase}). Finally, strong lightning events were
+reconstructed for the afternoon of the second day (2001-09-16) in particular on the Southern
+side of the main Alpine ridge (bottom right panel of Figure~\ref{fig:appcase}).
+
+\section{Conclusion}
+
+The \proglang{R} package \pkg{bamlss} is a very comprehensive software to estimate Bayesian 
+distributional regression models. The package is primarily based on the typical \proglang{R}
+``look \& feel'', which makes it easy to get started with the package. Similar to other 
+implementations, \pkg{bamlss} is a modular ``Lego toolbox'', however, the package stands out from
+others in that it makes complete sampling and or optimizer functions exchangeable,
+so that users who are interested in extensions can easily set up new models, where all
+elaborate data processing infrastructure and extractor functions are completely provided by
+the package.
+Several examples illustrate the functionality of the package. For the future it is planned to 
+provide algorithms for Gigadata, a topic that the package so far treats only very superficially.
+In addition, it is planned to expand the family infrastructure to support families from other
+implementations more easily.
+
+\section*{Acknowledgments}
+
+We thank two anonymous reviewers for critically reading the manuscript and suggesting
+substantial improvements. 
+
+\textbf{Nadja Klein acknowledges
+support through the Emmy Noether grant KL 3037/1-1 of the German research
+foundation (DFG). 
+Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P31836)}
+
+\bibliography{bamlss}
+
+\newpage
+
+\begin{appendix}
+
+\section[Gaussian family object]{Gaussian family object} \label{appendix:families}
+
+The following \proglang{R} code shows an example implementation of the Gaussian distribution
+as presented in Section~\ref{sec:families}.
+<<>>=
+Gauss_bamlss <- function(...) {
+  f <- list(
+    "family" = "mygauss",
+    "names"  = c("mu", "sigma"),
+    "links"  = c(mu = "identity", sigma = "log"),
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+    },
+    "p" = function(y, par, ...) {
+      pnorm(y, mean = par$mu, sd = par$sigma, ...)
+    },
+    "r" = function(n, par) {
+      rnorm(n, mean = par$mu, sd = par$sigma)
+    },
+    "q" = function(p, par) {
+      qnorm(p, mean = par$mu, sd = par$sigma)
+    },
+    "score" = list(
+      mu = function(y, par, ...) {
+        drop((y - par$mu) / (par$sigma^2))
+      },
+      sigma = function(y, par, ...) {
+        drop(-1 + (y - par$mu)^2 / (par$sigma^2))
+      }
+    ),
+    "hess" = list(
+      mu = function(y, par, ...) {
+        drop(1 / (par$sigma^2))
+      },
+      sigma = function(y, par, ...) { 
+        rep(2, length(y))
+      }
+    )
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+@
+
+
+\section[Special model terms]{Special model terms} \label{appendix:specialterms}
+
+The default estimation engines \fct{opt\_bfit} and \fct{sam\_GMCMC} (also the gradient boosting optimizer function
+\fct{boost}) in \pkg{bamlss} provide support for the implementation of special model terms, i.e.,
+model terms that cannot be represented by the \pkg{mgcv} smooth term constructor infrastructure.
+One simple example of such a special model term is a nonlinear growth curve, e.g., a nonlinear
+Gompertz curve
+$$
+f(x; \boldsymbol{\beta}) = \beta_1 \cdot \exp(-\beta_2 \cdot \exp(-\beta_3 \cdot x)),
+$$
+but also the lasso model term constructor \fct{la} presented in Section~\ref{sec:flexm} is a
+special \pkg{bamlss} model term. The special model term constructor is needed in this case, since
+the growth curve is nonlinear in the parameters $\boldsymbol{\beta}$, hence, the default backfitting
+and sampling strategies cannot be applied. Fortunately, estimation algorithms in distributional
+regression can be split into separate updating equations (see also Section~\ref{sec:algos}). This
+means that each model term can have its own updating function. The user interested in this feature
+only needs to write a new \fct{smooth.construct} and \fct{Predict.matrix} method.
+
+The following \proglang{R} code implements a Gompertz growth model term
+which can be used by the default optimizer function \fct{opt\_bfit} and sampling function \fct{sam\_GMCMC}
+of the \pkg{bamlss} package. The new \fct{smooth.construct} method is
+<<>>=
+smooth.construct.gc.smooth.spec <- function(object, data, knots) 
+{
+  object$X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  center <- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else TRUE
+  object$by.done <- TRUE
+  if(object$by != "NA")
+    stop("by variables not supported!")
+
+  ## Begin special elements to be used with opt_bfit() and sam_GMCMC().
+  object$fit.fun <- function(X, b, ...) {
+    f <- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
+    if(center)
+      f <- f - mean(f)
+    f
+  }
+  object$update <- bfit_optim
+  object$propose <- GMCMC_slice
+  object$prior <- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
+  object$fixed <- TRUE
+  object$state$parameters <- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
+  object$state$fitted.values <- rep(0, length(object$X))
+  object$state$edf <- 3
+  object$special.npar <- 3 ## Important!
+  ## End special elements.
+
+  ## Important, This is a special smooth constructor!
+  class(object) <- c("gc.smooth", "no.mgcv", "special")
+
+  object
+}
+@
+In principle, the setup is very similar to the smooth constructor functions provided by the
+\pkg{mgcv} package. Only few elements need to be added:
+\begin{itemize}
+\item \fct{fit.fun}: A function of the data \code{X} and parameter vector \code{b} that
+  evaluates the fitted values.
+\item \fct{update}: An updating function to be used with optimizer \fct{opt\_bfit}.
+\item \fct{propose}: A MCMC propose function to be used with sampler \fct{sam\_GMCMC}.
+\item \fct{prior}: Function of the parameters \code{b} that evaluates the log-prior. Note,
+  additional functions can be \fct{grad} and \code{hess} that evaluate the first and second
+  derivative of the log-prior w.r.t.\ the parameters \code{b}.
+\item \code{fixed}: Is the number of degrees of freedom fixed or not?
+\item \code{state}: This is a named list with starting values for the \code{"parameters"},
+  the \code{"fitted.values"} and degrees of freedom \code{"edf"}. Note that regression
+  coefficients are always named with \code{"b*"} and shrinkage or smoothing variances with
+  \code{"tau2*"} in the \code{"parameters"} vector.
+\item \code{special.npar}: How many parameters does this model term have in total? This is needed
+  for internal setup, because the Gompertz function has three parameters but the design matrix only one
+  column.
+\end{itemize}
+To compute predictions of this model term a new method for the \fct{Predict.matrix} function needs
+to be implemented, too.
+<<>>=
+Predict.matrix.gc.smooth <- function(object, data, knots) 
+{
+  X <- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  X
+}
+@
+
+Special model terms can then be used with the constructor function \fct{s2}. To illustrate the
+this feature in \pkg{bamlss}, we simulate heteroskedastic growth data with
+$$
+\texttt{y} \sim \mathcal{N}(\mu = 2 + 1 / (1 + \exp(0.5 \cdot (15 - \texttt{time}))),
+  \log(\sigma) = -3 + 2 \cdot \cos(\texttt{time}/30 \cdot 6 - 3))
+$$
+and subsequently estimate the model with slice sampling \citep{bamlss:Neal:2003} for $\boldsymbol{\beta}$ in the
+MCMC algorithm using the following \proglang{R} code
+<<echo=FALSE, results=hide>>=
+set.seed(111)
+
+d <- data.frame("time" = 1:30)
+d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
+
+f <- list(
+  y ~ s2(time, bs = "gc"),
+  sigma ~ s(time)
+)
+
+if(!file.exists("GrowthCurveModel.rda")) {
+  b <- bamlss(f, data = d, optimizer = opt_bfit, sampler = sam_GMCMC)
+  save(b, file = "GrowthCurveModel.rda")
+} else {
+  load("GrowthCurveModel.rda")
+}
+@
+\begin{figure}[!t]
+\centering
+\setkeys{Gin}{width=0.4\textwidth}
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+p <- predict(b, model = "mu", FUN = c95)
+plot(y ~ time, data = d, main = expression(mu))
+plot2d(p ~ time, data = d, add = TRUE, axes = FALSE,
+  fill.select = c(0, 1, 0, 1))
+points(d$time, d$y)
+@
+<<echo=FALSE, fig=TRUE, width=4.5, height=4.7>>=
+par(mar = c(4.1, 4.1, 4.1, 1.1))
+plot(b, model = "sigma", spar = FALSE, main = expression(log(sigma)))
+@
+\caption{\label{fig:gcurve} Estimated nonlinear effects on parameter $\mu$ and $\sigma$ of the
+  simulated growth curve example. Gray shaded areas represent 95\% credible intervals.}
+\end{figure}
+<<eval=FALSE>>=
+set.seed(111)
+d <- data.frame("time" = 1:30)
+d$y <- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
+f <- list(
+  y ~ s2(time, bs = "gc"),
+  sigma ~ s(time)
+)
+b <- bamlss(f, data = d, optimizer = opt_bfit, sampler = sam_GMCMC)
+plot(b)
+@
+The estimated effects are shown in Figure~\ref{fig:gcurve}.
+The growth curve mean function estimate seems to fit the data quite well. Also, the nonlinear
+relationship for parameter $\sigma$ could be captured by the model.
+
+In summary, in order to build up special \pkg{bamlss} model terms only a few things have to be
+considered. The example \proglang{R} code for the Gompertz smooth constructor given here is a good
+starting point for readers interested in using this feature.
+
+
+\section[Engines for linear regression]{Model fitting engines for linear regression} \label{appendix:engine}
+
+In the following, to explain the setup and the naming convention of estimation engines in
+more detail, we implement
+\begin{itemize}
+\item a new family object for simple linear models $y = x^{\top}\boldsymbol{\beta} + \varepsilon$ with
+  $\varepsilon \sim N(0, \sigma^2)$,
+\item and set up an optimizer function,
+\item and additionally a MCMC sampling function.
+\end{itemize}
+For illustration, the family object is kept very simple, we only model the mean function 
+in terms of covariates.
+<<>>=
+lm_bamlss <- function(...) {
+  f <- list(
+    "family" = "LM",
+    "names" = "mu",
+    "links" = "identity",
+    "d" = function(y, par, log = FALSE) {
+      sigma <- sqrt(sum((y - par$mu)^2) / (length(y) - .lm_bamlss.p))
+      dnorm(y, mean = par$mu, sd = sigma, log = log)
+    },
+    "p" = function(y, par, ...) {
+      sigma <- sqrt(sum((y - par$mu)^2) / (length(y) - .lm_bamlss.p))
+      pnorm(y, mean = par$mu, sd = sigma, ...)
+    }
+  )
+  class(f) <- "family.bamlss"
+  return(f)
+}
+@
+Now, for setting up the estimation functions we first simulate some data using the
+\fct{GAMart} function, afterwards the necessary \code{"bamlss.frame"} can be created with
+<<>>=
+d <- GAMart()
+bf <- bamlss.frame(num ~ x1 + x2, data = d, family = "lm")
+print(bf)
+@
+As noted above, the object is a named list with elements \code{"x"} and \code{"y"}, which will be
+passed to the estimation functions. For the moment, since we only implement a linear 
+model, we need to work with the linear model matrix that is part of the \code{bf} object.
+<<>>=
+head(bf$x$mu$model.matrix)
+@
+and the response \code{y}
+<<>>=
+head(bf$y)
+@
+to setup the optimizer function with:
+<<>>=
+opt_LM <- function(x, y, ...)
+{
+  ## Only univariate response.
+  y <- y[[1L]]
+
+  ## For illustration this is easier to read.
+  X <- x$mu$model.matrix
+
+  ## Estimate model parameters.
+  par <- drop(chol2inv(chol(crossprod(X))) %*% crossprod(X, y))
+
+  ## Set parameter names.
+  names(par) <- paste0("mu.p.", colnames(X))
+
+  ## Return estimated parameters and fitted values.
+  rval <- list(
+    "parameters" = par,
+    "fitted.values" = drop(X %*% par),
+    "edf" = length(par),
+    "sigma" = drop(sqrt(crossprod(y - X %*% par) / (length(y) - ncol(X))))
+  )
+
+  ## Set edf within .GlobalEnv for the
+  ## loglik() function in the lm_bamlss() family.
+  .lm_bamlss.p <<- length(par)
+
+  return(rval)
+}
+@
+This optimizer function can already be used with the \fct{bamlss} wrapper function and
+all extractor functions are readily available.
+<<>>=
+f <- num ~ x1 + poly(x2, 5) + poly(x3, 5)
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = FALSE)
+summary(b)
+nd <- data.frame("x2" = seq(0, 1, length = 100))
+nd$p <- predict(b, newdata = nd, term = "x2")
+@
+Plot the estimated effect of variable \code{x2}.
+<<eval=FALSE>>=
+plot2d(p ~ x2, data = nd)
+@
+
+The next step is to setup a full Bayesian MCMC sampling function. Fortunately, if we
+assume multivariate normal priors for the regression coefficients and an inverse Gamma prior
+for the variance, a Gibbs sampler with multivariate normal and inverse Gamma full conditionals
+can be created. The MCMC algorithm consecutively samples for $t = 1, \ldots, T$ from the full
+conditionals
+$$
+\boldsymbol{\beta}^{(t)} | \cdot \sim N\left(\boldsymbol{\mu}_{\boldsymbol{\beta}}^{(t - 1)}, 
+  \boldsymbol{\Sigma}_{\boldsymbol{\beta}}^{(t - 1)}\right)
+$$
+and
+$$ 
+{\sigma^2}^{(t)} | \cdot \sim IG\left({a^{\prime}}^{(t - 1)}, {b^{\prime}}^{(t - 1)}\right),
+$$
+where $IG( \cdot )$ is the inverse Gamma distribution for sampling the variance parameter.
+The covariance matrix for $\boldsymbol{\beta}$ is given by
+$$
+\boldsymbol{\Sigma}_{\boldsymbol{\beta}} = \left(\frac{1}{\sigma^2}\mathbf{X}^\top\mathbf{X} +
+  \frac{1}{\sigma^2}\mathbf{M}^{-1}\right)^{-1}
+$$
+and the mean
+$$
+\boldsymbol{\mu}_{\boldsymbol{\beta}} = \boldsymbol{\Sigma}_{\boldsymbol{\beta}}
+  \left(\frac{1}{\sigma^2}\mathbf{X}^\top\mathbf{y} +
+  \frac{1}{\sigma^2}\mathbf{M}^{-1}\mathbf{m}\right),
+$$
+where $\mathbf{m}$ is the prior mean and $\mathbf{M}$ the prior covariance matrix.
+Similarly, for $\sigma^2$ paramaters $a^{\prime}$ and $b^{\prime}$ are computed by
+$$
+a^{\prime} = a + \frac{n}{2} + \frac{p}{2}
+$$
+and
+$$
+b^{\prime} = b + \frac{1}{2}(\mathbf{y} -
+  \mathbf{X}\boldsymbol{\beta})^\top(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) +
+  \frac{1}{2} (\boldsymbol{\beta} - \mathbf{m})^\top \mathbf{M}^{-1}(\boldsymbol{\beta}
+  - \mathbf{m}),
+$$
+where $a$ and $b$ are usually set small, e.g., with $a = 1$ and $b = 0.0001$, such that the prior is
+flat and uninformative.
+
+We can implement the MCMC algorithm in the following sampling function
+<<>>=
+sam_LM <- function(x, y, start = NULL,
+  n.iter = 12000, burnin = 2000, thin = 10,
+  m = 0, M = 1e+05,
+  a = 1, b = 1e-05,
+  verbose = TRUE, ...)
+{
+  ## How many samples are saved?
+  itrthin <- seq.int(burnin, n.iter, by = thin)
+  nsaves <- length(itrthin)
+
+  ## Only univariate response.
+  y <- y[[1L]]
+
+  ## For illustration this is easier to read.
+  X <- x$mu$model.matrix
+
+  ## Again, set edf within .GlobalEnv for the
+  ## loglik() function in the lm_bamlss() family.
+  .lm_bamlss.p <<- ncol(X)
+
+  ## Number of observations and parameters.
+  n <- length(y)
+  p <- ncol(X)
+
+  ## Matrix saving the samples.
+  samples <- matrix(0, nsaves, p + 1L)
+
+  ## Stick to the naming convention.
+  pn <- paste0("mu.p.", colnames(X))
+  colnames(samples) <- c(
+    pn,      ## Regression coefficients and
+    "sigma"  ## variance samples.
+  )
+
+  ## Setup coefficient vector,
+  ## again, use correct names.
+  beta <- rep(0, p)
+  names(beta) <- pn
+  sigma <- sd(y)
+
+  ## Check for starting values obtained,
+  ## e.g., from lm.opt() from above.
+  if(!is.null(start)) {
+    sn <- names(start)
+    for(j in names(beta)) {
+      if(j %in% sn)
+        beta[j] <- start[j]
+    }
+  }
+
+  ## Process prior information.
+  m <- rep(m, length.out = p)
+  if(length(M) < 2)
+    M <- rep(M, length.out = p)
+  if(!is.matrix(M))
+    M <- diag(M)
+  Mi <- solve(M)
+
+  ## Precompute cross products.
+  XX <- crossprod(X)
+  Xy <- crossprod(X, y)
+
+  ## Inverse gamma parameter.
+  a <- a + n / 2 + p / 2
+
+  ## Start sampling.
+  ii <- 1
+  for(i in 1:n.iter) {
+    ## Sampling sigma
+    b2 <- b + 1 / 2 * t(y - X %*% beta) %*% (y - X %*% beta) +
+      1 / 2 * t(beta - m) %*% Mi %*% (beta - m)
+    sigma2 <- sqrt(1 / rgamma(1, a, b2))
+
+    ## Sampling beta.
+    sigma2i <- 1 / sigma2
+    Sigma <- chol2inv(chol(sigma2i * XX + sigma2i * Mi))
+    mu <- Sigma %*% (sigma2i * Xy + sigma2i * Mi %*% m)
+    beta <- MASS::mvrnorm(1, mu, Sigma)
+      
+    if(i %in% itrthin) {
+      samples[ii, pn] <- beta
+      samples[ii, "sigma"] <- sqrt(sigma2)
+      ii <- ii + 1
+    }
+    if(verbose) {
+      if(i %% 1000 == 0)
+        cat("iteration:", i, "\n")
+    }
+  }
+
+  ## Convert to "mcmc" object.
+  samples <- as.mcmc(samples)
+
+  return(samples)
+}
+@
+The new sampling function can be directly used with the \fct{bamlss} wrapper
+<<>>=
+b <- bamlss(f, data = d, family = "lm", optimizer = opt_LM, sampler = sam_LM)
+
+summary(b)
+
+## Predict for all terms including 95% credible intervals
+nd$x1 <- nd$x3 <- seq(0, 1, length = 100)
+for(j in c("x1", "x2", "x3")) {
+  nd[[paste0("p.", j)]] <- predict(b, newdata = nd, term = j,
+    FUN = c95, intercept = FALSE)
+}
+@
+The estimated effects can be plotted with:
+<<eval=FALSE>>=
+par(mfrow = c(1, 3))
+plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+@
+
+\end{appendix}
+
+\end{document}
+
