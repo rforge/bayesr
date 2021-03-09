@@ -5724,9 +5724,18 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
       f <- 1 / (1 + exp2(-x))
       return(f - mean(f))
     },
-    "tanh" = tanh,
-    "sin" = sin,
-    "cos" = cos,
+    "tanh" = function(x) {
+      f <- tanh(x)
+      return(f - mean(f))
+    },
+    "sin" = function(x) {
+      f <- sin(x)
+      return(f - mean(f))
+    },
+    "cos" = function(x) {
+      f <- cos(x)
+      return(f - mean(f))
+    },
     "gauss" = function(x) {
       f <- exp2(-x^2)
       return(f - mean(f))
@@ -5791,7 +5800,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   ##attr(object$fit.fun, ".internal") <- TRUE
 
   object$state <- list()
-  tau2 <- rep(0.001, length(object$S))
+  tau2 <- rep(0.1, length(object$S))
   names(tau2) <- paste0("tau2", 1:length(object$S))
   object$state$parameters <- c(rep(0, nodes))
   names(object$state$parameters) <- paste0("bb", 1:nodes)
@@ -5801,9 +5810,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$state$parameters <- c(object$state$parameters, unlist(object$n.weights), tau2)
   object$state$edf <- 0
-  object$xt$prior <- "ig"
-  object[["a"]] <- 0.0001
-  object[["b"]] <- 0.0001
+  object$xt$prior <- "hc"
+  object[["a"]] <- 1e-04
+  object[["b"]] <- 1e-04
   object$rank <- qr(object$S[[1]])$rank
   pf <- make.prior(object)
   object$prior <- pf$prior
@@ -5821,7 +5830,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$binning$order <- order(object$binning$match.index)
   object$binning$sorted.index <- object$binning$match.index[object$binning$order]
   if(is.null(object$xt$decay))
-    object$xt$decay <- 0.00001
+    object$xt$decay <- 1
 
   class(object) <- c("nnet0.smooth", "no.mgcv", "special")
 
