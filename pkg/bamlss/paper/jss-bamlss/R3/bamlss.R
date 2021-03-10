@@ -32,9 +32,9 @@ plot(b, which = c("samples", "max-acf"))
 ## Predictions on probability scale.
 nd <- data.frame(income = 11, age = seq(2, 6.2, length = 100),
   education = 12, youngkids = 1, oldkids = 1, foreign = "no")
-nd$pSwiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$p_swiss <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 nd$foreign <- "yes"
-nd$pForeign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
+nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 
 ## Plot effect of age on probability.
 blues <- function(n, ...) hcl.colors(n, "Blues", rev = TRUE)
@@ -208,8 +208,28 @@ f <- list(
          ~ 1
 )
 
-## Estimate models, use:
-## source("aldis_era5_models.R")
+## Models are estimated with:
+if(FALSE) {
+  set.seed(123)
+  flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain, ## Standard interface.
+    family = "ztnbinom", binning = TRUE,                      ## General arguments.
+    optimizer = opt_boost, maxit = 1000,                      ## Boosting arguments.
+    thin = 3, burnin = 1000, n.iter = 2000,                   ## Sampler arguments.
+    light = TRUE, cores = 3)
+
+  set.seed(123)
+  flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
+    family = ztSICHEL, binning = TRUE,
+    optimizer = opt_boost, maxit = 1000,
+    thin = 3, burnin = 1000, n.iter = 2000,
+    light = TRUE, cores = 3)
+
+  save(
+    flash_model_ztnbinom,
+    flash_model_ztSICHEL,
+    file = "FlashAustriaModel.rda"
+  )
+}
 
 ## Compute quantile residuals.
 resids <- c(
@@ -222,16 +242,17 @@ plot(resids, which = "wp", main = "Worm plot",
   col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 
 ## Show coefficient paths of the boosting iterations of the best model.
-pathplot(b, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
+pathplot(flash_model_ztnbinom, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
 
 ## Show some samples.
-b2 <- b
+b2 <- flash_model_ztnbinom
 b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "sigma.s.s(sqrt_cape).b1", "nu.s.s(sqrt_cape).b1")]
 plot(b2, which = "samples", ask = FALSE)
 
 ## Plot selection of estimated effects.
 par(mfrow = c(1, 2))
-plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
+plot(flash_model_ztnbinom,
+  term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
   ask = FALSE, spar = FALSE,
   rug = TRUE, col.rug = "#39393919")
 
@@ -239,8 +260,8 @@ plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
 ## sf::st_crs(FlashAustriaCase) <- 4326
 
 ## Compute estimated probabilities.
-fit <- predict(b, newdata = FlashAustriaCase, type = "parameter")
-fam <- family(b)
+fit <- predict(flash_model_ztnbinom, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(flash_model_ztnbinom)
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")

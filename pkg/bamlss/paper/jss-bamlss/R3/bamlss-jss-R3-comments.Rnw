@@ -68,25 +68,25 @@ directly below.
 
 \begin{enumerate}
 \item \emph{Minor comments:\\
-  page 2, line 13: challgenges\\
-  page 11, line -2 and -3: check parentheses and punctuation\\
-  page 15, third bullet point: check the reference style.\\
-  page 15, line -1: check punctuation\\
-  page 16, line 9: a.o.? and the empty space that follows?\\
-  page 16, line 2 after the third equation: check punctuation and capital letter\\
-  page 16, line 3 after the third equation: remove comma after "is"\\
-  page 17, line 7: "is computed" is repeated twice\\
-  page 18, line 11: staring values\\
-  page 25, line 13: capital letter after colon\\
-  page 25, last bullet point: the meaning of "...," is not clear\\
-  page 28, line 1 of text: capital letter after colon\\
-  page 29, line 16 of text: extra parenthesis after $\nu$\\
-  page 29, line -11: capital letter after colon\\
-  page 35, line 1: capital letter after colon}
+  page 2, line 13: challgenges\\ %% fixed
+  page 11, line -2 and -3: check parentheses and punctuation\\ %% ??
+  page 15, third bullet point: check the reference style.\\ %% fixed
+  page 15, line -1: check punctuation\\ %% ?
+  page 16, line 9: a.o.? and the empty space that follows?\\ %% fixed
+  page 16, line 2 after the third equation: check punctuation and capital letter\\ %% fixed
+  page 16, line 3 after the third equation: remove comma after "is"\\ %% fixed
+  page 17, line 7: "is computed" is repeated twice\\ %% fixed
+  page 18, line 11: staring values\\ %% fixed
+  page 25, line 13: capital letter after colon\\ %% fixed
+  page 25, last bullet point: the meaning of "...," is not clear\\ %% fixed
+  page 28, line 1 of text: capital letter after colon\\ %% fixed
+  page 29, line 16 of text: extra parenthesis after $\nu$\\ %% fixed
+  page 29, line -11: capital letter after colon\\ %% fixed
+  page 35, line 1: capital letter after colon} %% fixed
 
   \bigskip
 
-  Needs to be fixed.
+  Thank you, we have fixed all points now.
 
 \item \emph{I run the code available in the \code{bamlss-R2.R} file. I noticed that:
 1) The code in the file at lines 35-37:}
@@ -107,6 +107,10 @@ R> nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 \end{Sinput}
 \end{Schunk}
 
+  \bigskip
+
+  Thank you, we fixed this in the \code{bamlss.R} script.
+
 \item \emph{2) The following code reported at page 30 of the paper is not reported in
 the R file:}
 \begin{Schunk}
@@ -119,6 +123,9 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
 + light = TRUE, cores = 3)
 \end{Sinput}
 \end{Schunk}
+
+  Yes, we initially provided the script \code{aldis\_era5\_models.R} including the model code.
+  We agree, this is unnecessary, the code is now part of the \code{bamlss.R} script.
 
 \item \emph{More importantly, there is a problem starting from section 5.3 because the
 code}
@@ -141,6 +148,12 @@ R> data("FlashAustriaModel", package = "FlashAustria")
 \end{Schunk}
 \emph{but I wasn't able to find the necessary objects for computing resids.}
 
+\bigksip
+
+  Thank you, we now also added the code for the second model \code{flash\_model\_ztnbinom}.
+  Unfortunately, the models in the \proglang{R} package \pkg{FlashAustria} where saved under
+  a different name, this is now fixed and the code runs smoothly.
+
 \item \emph{Moreover, line 225 of the \proglang{R} code uses "\code{b}" in the function
 \fct{pathplot}, while in
 the paper "\code{flash\_model\_ztnbinom}" is used. The same happens for the following
@@ -149,7 +162,9 @@ I don't know if the \code{bamlss-R2.R} file will be provided to readers, but in
 this case it was quite difficult to check that the code in the paper works
 properly.}
 
-\medskip
+\bigskip
+
+  Yes, this was a bit confusing. We now changed the code in the \code{bamlss.R} script accordingly.
 
 \item \emph{3) In Appendix C: the plots corresponding to the following code do not
 appear in the paper:}
@@ -161,6 +176,10 @@ R> plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 R> plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 \end{Sinput}
 \end{Schunk}
+
+\bigskip
+
+  We fixed this, the Figure is now included in the paper.
 
 \end{enumerate}
 

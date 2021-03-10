@@ -142,7 +142,7 @@ Markov chain Monte Carlo (MCMC) might not be feasible. Instead, regularized esti
 techniques such as lasso or boosting
 \citep{bamlss:Friedmann+Hastie+Tibshirani:2010,bamlss:Mayr+Fenske+Hofner:2012}
 might be necessary or further advanced custom algorithms \citep{bamlss:Wood:2017}. Hence,
-to facilitate addressing all challgenges and needs simultaneously -- independent of a specific 
+to facilitate addressing all challenges and needs simultaneously -- independent of a specific 
 estimation strategy and/or fitting algorithm -- the \pkg{bamlss} package for the \proglang{R}
 system for statistical computing \citep{bamlss:R} implements a modular ``Lego toolbox'',
 extending the work of \citet{bamlss:Umlauf+Klein+Zeileis:2018}. In this framework
@@ -867,7 +867,7 @@ framework are the ones for: \label{somerefs2}
  \item Multivariate responses such as multivariate normal, multivariate t or Dirichlet regression
    (for analyzing compositional data, \citealp{bamlss:Klein+Kneib+Klasen+Lang:2015}).
  \item Multivariate responses with more complex dependence structures modeled through copulas
-   \citet{bamlss:Klein+Kneib:2016b}.
+   \citep{bamlss:Klein+Kneib:2016b}.
  \item Survival data and joint modeling~\citep{bamlss:Koehler+Umlauf+Greven:2016, bamlss:Koehler+Umlauf+Greven:2018}.
 \end{itemize}
 
@@ -892,7 +892,7 @@ separate updating equations using leapfrog or zigzag iteration
     j = 1, \ldots, J_k, \quad k = 1, \ldots, K,
 \end{equation}
 where function $U_{jk}( \cdot )$ is an updating function, e.g., for generating one Newton-Raphson
-step or for getting the next step in an MCMC simulation, a.o.
+step or for getting the next step in an MCMC simulation.
 
 \citet{bamlss:Rigby+Stasinopoulos:2005} showed that using a basis function approach, i.e.,
 each function $f_{jk}( \cdot )$ can be represented by a linear combination of a design matrix and
@@ -923,10 +923,10 @@ $$
   \mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}; \, \cdot \,\right),
 $$
 i.e., theoretically any updating function applied to the ``partial residuals''
-$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used. (For detailed derivations see also
-\citealp{bamlss:Umlauf+Klein+Zeileis:2018}.)
+$\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used (for detailed derivations see also
+\citealp{bamlss:Umlauf+Klein+Zeileis:2018}).
 
-The great advantage of this modular architecture is, that the concept does not limit to modeling
+The great advantage of this modular architecture is that the concept does not limit to modeling
 of the distributional parameters $\theta_k$ in (\ref{eqn:dreg}), e.g.\ as mentioned above,
 based on the survival function,
 \citet{bamlss:Koehler+Umlauf+Greven:2016} and \citet{bamlss:Koehler+Umlauf+Greven:2018} implement
@@ -950,7 +950,7 @@ number of candidate models. The following lists commonly-used tools:
   AIC, as well as the Bayesian information criterion (BIC), can be used. Estimation of model
   complexity is based on the so-called equivalent degrees of freedom (EDF), i.e., for each
   model term the trace of the smoother matrix is computed (see, e.g.,
-  \citealp{bamlss:Hastie+Tibshirani:1990}) is computed and the total degrees of freedom
+  \citealp{bamlss:Hastie+Tibshirani:1990}) and the total degrees of freedom
   are approximated by the sum over all distributional parameters and model terms.
 
   For MCMC based estimation, model choice mainly relies on the deviance information criterion
@@ -1000,7 +1000,7 @@ model terms of any type. The highlights of the package are:
   or median estimation.
   First, an (optional) \fct{optimizer} function can be run, e.g., for computing posterior mode
   estimates. Second, a \fct{sampler} is employed for full Bayesian inference with MCMC, which uses the
-  posterior mode estimates from the \fct{optimizer} as staring values. An additional step can be used
+  posterior mode estimates from the \fct{optimizer} as starting values. An additional step can be used
   for preparing the \fct{results}, e.g., for creating model term effect plots.
 \item Standard post-modeling extractor functions to create sampling statistics, visualizations,
   predictions, amongst others.
@@ -1398,7 +1398,7 @@ functions, the same mechanism is applied for first order derivatives. Hence, in 
 implementing a new family can only be based on the specification of the density function, however,
 in terms of optimization runtime this is certainly not the most efficient choice.
 For distributions for which the expectation of the second derivative is intractable or does not
-exist, the user can rely on two options: The first option is to simply take
+exist, the user can rely on two options: the first option is to simply take
 the Hessian evaluated at observations and corresponding predictors rather than computing the 
 theoretical expectation analytically for filling the diagonals of the weight matrices
 $\mathbf{W}_{kk}$. The second option is to find a good approximation for the expectation (see,
@@ -1426,7 +1426,9 @@ Optionally, the \code{"family.bamlss"} object can be extended by functions for
 \item the expectation \code{mu(par, ...)},
 \item initial values for optimization, which has to be a list containing a
   function for each parameter,
-\item \code{...},
+\item a customized \fct{predict} function which will be called by \fct{predict.bamlss}, e.g., as
+  implemented in the family \fct{cox\_bamlss},
+\item similarly, a customized \fct{residuals} function that should be used by \fct{rediduals.bamlss},
 \end{itemize}
 which can help to speed up optimization, or be convenient for
 predictions and simulations.
@@ -1538,7 +1540,7 @@ head(FlashAustriaTrain)[, c("counts", "q_prof_PC1", "sqrt_cape",
 nrow(FlashAustriaTrain)
 @
 %
-The motivation for this application is as follows: Lightning counts are not
+The motivation for this application is as follows: lightning counts are not
 modeled within the atmospheric reanalyses, as their spatial resolution is too
 coarse for resolving convective events that lead to lightning discharges.
 Homogeneous lightning observations are only available for the period in the
@@ -1616,7 +1618,7 @@ ztSICHEL <- trun(0, family = "SICHEL", local = FALSE)
 In the following we illustrate how to set up and model the lightning counts with one
 of the two distributions. To specify smooth terms for all distributional parameters
 -- for \fct{ztnbinom\_bamlss} parameters $\mu$ and $\theta$ and for \fct{ztSICHEL}
-parameters $\mu$, $\sigma$ and $\nu$) -- we set up a \code{list} of three formulas.
+parameters $\mu$, $\sigma$ and $\nu$ -- we set up a \code{list} of three formulas.
 Smooth P-splines \citep{bamlss:Eilers+Marx:1996}, known for their good sampling properties,
 are employed for all predictors in the formula for $\mu$. For the (over)dispersion
 model large-scale precipitation is used in the second formula (without a parameter
@@ -1636,7 +1638,7 @@ f <- list(
 @
 %
 Now, we have all ingredients on hand to feed the standard interface for
-statistical models in \proglang{R}: A formula \code{f}, families
+statistical models in \proglang{R}: a formula \code{f}, families
 \fct{ztnbinom\_bamss}, \fct{ztSICHEL}, and a data set
 \code{FlashAustriaTrain}. Within the
 \fct{bamlss} call we also provide arguments which are passed forward to the
@@ -1677,9 +1679,29 @@ on which the boosting took about 28.99~minutes and the average sampling time abo
 This is relatively slow as the \fct{ztSICHEL} uses a rather generic high-level \proglang{R}
 implementation. To fit the model \code{flash\_model\_ztnbinom} we rather used
 \code{family = ztnbinom\_bamlss()} than \code{family = ztSICHEL}, all other specifications for
-optimization left untouched. Computation times for the more efficient \fct{ztnbinom\_bamlss}
+optimization left untouched.
+%
+\begin{Schunk}
+\begin{Sinput}
+> set.seed(123)
+> flash_model_ztnbinom <- bamlss(f, data = FlashAustriaTrain,
++   family = "ztnbinom", binning = TRUE,
++   optimizer = opt_boost, maxit = 1000,
++   thin = 3, burnin = 1000, n.iter = 2000,
++   light = TRUE, cores = 3)
+\end{Sinput}
+\begin{Soutput}
+logLik -36700.7 eps 0.0006 iteration 1000 qsel 7
+elapsed time:  7.47min
+Starting the sampler...
+|********************| 100%  0.00sec  9.04min
+|********************| 100%  0.00sec  9.03min
+|********************| 100%  0.00sec  9.12min
+\end{Soutput}
+\end{Schunk}
+%
+Computation times for the more efficient \fct{ztnbinom\_bamlss}
 family are much lower with about 7 and 9~minutes for boosting and sampling, respectively.
-
 By setting the argument \code{binning = TRUE} only unique observations are being used 
 internally to create the design matrices. This can have two advantages, (a) for large data sets one 
 does not run into memory problems so easily, (b) the estimation algorithms are sometimes much 
@@ -1831,7 +1853,7 @@ plot(b, term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
 \code{s(q_prof_PC1)} shows a clear decrease.
 As \code{q_prof_PC1} is the leading principal component of the vertical profile
 of specific humidity, one has to consider the corresponding spatial mode (not
-shown) for interpretation: Positive values of \code{q_prof_PC1} are linked to
+shown) for interpretation: positive values of \code{q_prof_PC1} are linked to
 more moisture in the lower atmosphere (below 850~hPa) and less moisture in the
 mid atmosphere (between 850~hPa and 600~hPa). Thus, smaller values of the
 principal component mean that more moisture is available in the mid atmosphere,
@@ -1894,7 +1916,8 @@ as returned by \code{predict()}, as a second argument.
 %
 <<eval=FALSE>>=
 library("sf")
-fit <- predict(flash_model_ztSICHEL, newdata = FlashAustriaCase, type = "parameter")
+fit <- predict(flash_model_ztSICHEL,
+  newdata = FlashAustriaCase, type = "parameter")
 fam <- family(flash_model_ztSICHEL)
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 @
@@ -2392,13 +2415,25 @@ for(j in c("x1", "x2", "x3")) {
     FUN = c95, intercept = FALSE)
 }
 @
-The estimated effects can be plotted with:
+The estimated effects are shown in Figure~\ref{fig:GAMart} and can be plotted with:
 <<eval=FALSE>>=
 par(mfrow = c(1, 3))
 plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 @
+\begin{figure}[!ht]
+\centering
+\setkeys{Gin}{width=1\textwidth}
+<<echo=FALSE, fig=TRUE, height=3, width=8>>=
+par(mfrow = c(1, 3), mar = c(4.1, 4.1, 4.1, 1.1))
+plot2d(p.x1 ~ x1, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x2 ~ x2, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
+@
+\caption{\label{fig:GAMart} Estimated effects for covariates \code{x1},
+  \code{x2} and \code{x3} in the simulated data example.}
+\end{figure}
 
 \end{appendix}
 
