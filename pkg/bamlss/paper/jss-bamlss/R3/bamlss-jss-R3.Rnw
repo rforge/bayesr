@@ -1535,8 +1535,7 @@ FlashAustriaModel <- b <- flash_model_ztSICHEL
 %
 <<>>=
 data("FlashAustria", package = "FlashAustria")
-head(FlashAustriaTrain)[, c("counts", "q_prof_PC1", "sqrt_cape",
-  "sqrt_lsp", "d2m", "cswc_prof_PC4")]
+head(FlashAustriaTrain)[, 1:6]
 nrow(FlashAustriaTrain)
 @
 %
