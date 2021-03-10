@@ -148,7 +148,7 @@ R> data("FlashAustriaModel", package = "FlashAustria")
 \end{Schunk}
 \emph{but I wasn't able to find the necessary objects for computing resids.}
 
-\bigksip
+\bigskip
 
   Thank you, we now also added the code for the second model \code{flash\_model\_ztnbinom}.
   Unfortunately, the models in the \proglang{R} package \pkg{FlashAustria} where saved under
