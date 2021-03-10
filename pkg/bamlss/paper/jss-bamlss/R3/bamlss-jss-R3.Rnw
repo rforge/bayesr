@@ -1668,8 +1668,6 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
 logLik -36636.9 eps 0.0003 iteration 1000 qsel 7
 elapsed time: 28.99min
 Starting the sampler...
-|********************| 100%  0.00sec 109.24min
-|********************| 100%  0.00sec 112.98min
 |********************| 100%  0.00sec 115.67min
 \end{Soutput}
 \end{Schunk}
@@ -1694,8 +1692,6 @@ optimization left untouched.
 logLik -36700.7 eps 0.0006 iteration 1000 qsel 7
 elapsed time:  7.47min
 Starting the sampler...
-|********************| 100%  0.00sec  9.04min
-|********************| 100%  0.00sec  9.03min
 |********************| 100%  0.00sec  9.12min
 \end{Soutput}
 \end{Schunk}
@@ -1964,11 +1960,9 @@ implementations more easily.
 \section*{Acknowledgments}
 
 We thank two anonymous reviewers for critically reading the manuscript and suggesting
-substantial improvements. 
-
-\textbf{Nadja Klein acknowledges
+substantial improvements. Nadja Klein acknowledges
 support through the Emmy Noether grant KL 3037/1-1 of the German research foundation (DFG). 
-Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P\,31836)}
+Thorsten Simon acknowledges the funding by the Austrian Science Fund (FWF, grant no.~P\,31836)
 
 \bibliography{bamlss}
 
