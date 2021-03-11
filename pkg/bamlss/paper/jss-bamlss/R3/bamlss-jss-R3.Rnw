@@ -1428,7 +1428,7 @@ Optionally, the \code{"family.bamlss"} object can be extended by functions for
   function for each parameter,
 \item a customized \fct{predict} function which will be called by \fct{predict.bamlss}, e.g., as
   implemented in the family \fct{cox\_bamlss},
-\item similarly, a customized \fct{residuals} function that should be used by \fct{rediduals.bamlss},
+\item similarly, a customized \fct{residuals} function that should be used by \fct{residuals.bamlss},
 \end{itemize}
 which can help to speed up optimization, or be convenient for
 predictions and simulations.
