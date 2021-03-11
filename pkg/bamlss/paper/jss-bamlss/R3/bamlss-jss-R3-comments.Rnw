@@ -60,7 +60,7 @@ Sys.setenv("TZ" = "UTC")
 \huge\bf Point-to-Point Response to Reviews.
 \end{center}
 
-Again, we want to thank an anonymous reviewer for the important comments.
+We want to thank an anonymous reviewer for the important comments.
 In the following, comments of the reviewer are highlighted in italics, with our responses
 directly below.
 
@@ -84,9 +84,11 @@ directly below.
   page 29, line -11: capital letter after colon\\ %% fixed
   page 35, line 1: capital letter after colon} %% fixed
 
-  \bigskip
+  \medskip
 
   Thank you, we have fixed all points now.
+
+  \bigskip
 
 \item \emph{I run the code available in the \code{bamlss-R2.R} file. I noticed that:
 1) The code in the file at lines 35-37:}
@@ -107,9 +109,11 @@ R> nd$p_foreign <- predict(b, newdata = nd, type = "parameter", FUN = c95)
 \end{Sinput}
 \end{Schunk}
 
-  \bigskip
+  \medskip
 
   Thank you, we fixed this in the \code{bamlss.R} script.
+
+  \bigskip
 
 \item \emph{2) The following code reported at page 30 of the paper is not reported in
 the R file:}
@@ -124,8 +128,12 @@ R> flash_model_ztSICHEL <- bamlss(f, data = FlashAustriaTrain,
 \end{Sinput}
 \end{Schunk}
 
+  \medskip
+
   Yes, we initially provided the script \code{aldis\_era5\_models.R} including the model code.
   We agree, this is unnecessary, the code is now part of the \code{bamlss.R} script.
+
+  \bigskip
 
 \item \emph{More importantly, there is a problem starting from section 5.3 because the
 code}
@@ -148,11 +156,13 @@ R> data("FlashAustriaModel", package = "FlashAustria")
 \end{Schunk}
 \emph{but I wasn't able to find the necessary objects for computing resids.}
 
-\bigskip
+  \medskip
 
-  Thank you, we now also added the code for the second model \code{flash\_model\_ztnbinom}.
-  Unfortunately, the models in the \proglang{R} package \pkg{FlashAustria} where saved under
-  a different name, this is now fixed and the code runs smoothly.
+  Thank you, we now also added the code for the second model \code{flash\_model\_ztnbinom}
+  in the paper. Unfortunately, the models in the \proglang{R} package \pkg{FlashAustria} where
+  saved under a different name, this is now fixed and the code runs smoothly.
+
+  \bigskip
 
 \item \emph{Moreover, line 225 of the \proglang{R} code uses "\code{b}" in the function
 \fct{pathplot}, while in
@@ -162,9 +172,11 @@ I don't know if the \code{bamlss-R2.R} file will be provided to readers, but in
 this case it was quite difficult to check that the code in the paper works
 properly.}
 
-\bigskip
+  \medskip
 
   Yes, this was a bit confusing. We now changed the code in the \code{bamlss.R} script accordingly.
+
+  \bigskip
 
 \item \emph{3) In Appendix C: the plots corresponding to the following code do not
 appear in the paper:}
@@ -177,7 +189,7 @@ R> plot2d(p.x3 ~ x3, data = nd, fill.select = c(0, 1, 0, 1), lty = c(2, 1, 2))
 \end{Sinput}
 \end{Schunk}
 
-\bigskip
+  \medskip
 
   We fixed this, the Figure is now included in the paper.
 
