@@ -255,7 +255,7 @@ plot(flash_model_ztSICHEL,
   ask = FALSE, rug = TRUE, col.rug = "#39393919")
 
 ## Projection issues may happen, in this case try
-sf::st_crs(FlashAustriaCase) <- 4326
+## sf::st_crs(FlashAustriaCase) <- 4326
 
 ## Compute estimated probabilities.
 fit <- predict(flash_model_ztnbinom, newdata = FlashAustriaCase, type = "parameter")
