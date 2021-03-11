@@ -250,9 +250,10 @@ b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(q_prof_PC1).b1", "mu.s.s(q_prof_P
 plot(b2, which = "samples", ask = FALSE)
 
 ## Plot selection of estimated effects.
+par(mfrow = c(1, 3))
 plot(flash_model_ztSICHEL,
   term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
-  ask = FALSE, rug = TRUE, col.rug = "#39393919")
+  ask = FALSE, rug = TRUE, col.rug = "#39393919", spar = FALSE)
 
 ## Projection issues may happen, in this case try
 ## sf::st_crs(FlashAustriaCase) <- 4326
