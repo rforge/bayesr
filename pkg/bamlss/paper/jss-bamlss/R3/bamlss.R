@@ -242,22 +242,20 @@ plot(resids, which = "wp", main = "Worm plot",
   col = hcl.colors(2, "Dark 3"), cex = 0.5, ylim2 = c(-0.5, 0.5)) 
 
 ## Show coefficient paths of the boosting iterations of the best model.
-pathplot(flash_model_ztnbinom, which = "loglik.contrib", intercept = TRUE, spar = FALSE)
+pathplot(flash_model_ztSICHEL, which = "loglik.contrib", intercept = TRUE)
 
 ## Show some samples.
-b2 <- flash_model_ztnbinom
-b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(sqrt_cape).b1", "sigma.s.s(sqrt_cape).b1", "nu.s.s(sqrt_cape).b1")]
+b2 <- flash_model_ztSICHEL
+b2$samples[[1]] <- b2$samples[[1]][, c("mu.s.s(q_prof_PC1).b1", "mu.s.s(q_prof_PC1).b2")]
 plot(b2, which = "samples", ask = FALSE)
 
 ## Plot selection of estimated effects.
-par(mfrow = c(1, 2))
-plot(flash_model_ztnbinom,
+plot(flash_model_ztSICHEL,
   term = c("s(q_prof_PC1)", "s(sqrt_cape)", "s(d2m)"),
-  ask = FALSE, spar = FALSE,
-  rug = TRUE, col.rug = "#39393919")
+  ask = FALSE, rug = TRUE, col.rug = "#39393919")
 
 ## Projection issues may happen, in this case try
-## sf::st_crs(FlashAustriaCase) <- 4326
+sf::st_crs(FlashAustriaCase) <- 4326
 
 ## Compute estimated probabilities.
 fit <- predict(flash_model_ztnbinom, newdata = FlashAustriaCase, type = "parameter")
