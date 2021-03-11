@@ -258,8 +258,8 @@ plot(flash_model_ztSICHEL,
 ## sf::st_crs(FlashAustriaCase) <- 4326
 
 ## Compute estimated probabilities.
-fit <- predict(flash_model_ztnbinom, newdata = FlashAustriaCase, type = "parameter")
-fam <- family(flash_model_ztnbinom)
+fit <- predict(flash_model_ztSICHEL, newdata = FlashAustriaCase, type = "parameter")
+fam <- family(flash_model_ztSICHEL)
 FlashAustriaCase$P10 <- 1 - fam$p(9, fit)
 
 world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
