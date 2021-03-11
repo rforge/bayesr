@@ -1110,7 +1110,7 @@ Step & Type        & Function \\ \hline
 \multirow{4}{*}{Estimation} & \multirow{2}{*}{Optimizer} & \code{opt\_bfit()}, \code{opt\_bbfit()},
                               \code{opt\_boost()}, \code{opt\_lasso()} \\
  & &\code{opt\_Cox()}, \code{opt\_JM()}  \\ \cline{2-3}
- & \multirow{2}{*}{Sampler} & \code{sam\_GMCMC()}, \code{sam\_BayesX()}, \code{sm\_JAGS()} \\
+ & \multirow{2}{*}{Sampler} & \code{sam\_GMCMC()}, \code{sam\_BayesX()}, \code{sam\_JAGS()} \\
  & & \code{sam\_Cox()}, \code{sam\_JM()} \\ \hline
 Post-processing & Stats \& Results & \code{samplestats()}, \code{results.bamlss.default()} \\ \hline
 \end{tabular}
