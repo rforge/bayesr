@@ -121,20 +121,27 @@ f <- list(
 batch_ids <- c("nobs" = 1000, "nbatch" = 50)
 
 ## Note, can also be a list of indices, e.g.
-## batch_ids <- lapply(sample(1:nrow(d), size = 1000))
+## batch_ids <- lapply(1:50, function(i) { sample(1:nrow(d), size = 1000) })
 
 ## Different flavors:
-## (1) Using out-of-sample aic for smoothing
+## (1) Using "out-of-sample" aic for smoothing
 ##     variance estimation. Update is only accepted
 ##     if the "out-of-sample" log-likelihood is
-##     increased.
+##     increased. If data is a filepath, the data set is
+##     read into R using package ff and model and
+##     design matrices are processed with ff. This may
+##     take some time depending on the size of the data.
 set.seed(1)
-b1 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
+b1 <- bamlss(f, data = file.path(tf, "d.raw"),
+  sampler = FALSE, optimizer = opt_bbfit,
   batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
   always = FALSE)
 
 ## Plot estimated effects.
 plot(b1)
+
+## Plot coefficient paths for x3 in mu.
+pathplot(b1, name = "mu.s.s(x3).b")
 
 ## (2) Same but always update, this mimics the classic SGD.
 ##     Note, for prediction only the last iteration is
@@ -143,7 +150,8 @@ plot(b1)
 ##     predict using the burnin argment, e.g.,
 ##     p <- predict(b2, model = "mu", burnin = 35)
 set.seed(2)
-b2 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
+b2 <- bamlss(f, data = file.path(tf, "d.raw"),
+  sampler = FALSE, optimizer = opt_bbfit,
   batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
   always = TRUE)
 
@@ -158,13 +166,29 @@ pathplot(b2, name = "mu.s.s(x3).b")
 ##     behavior is controlled by argument eps_loglik, the
 ##     higher eps_loglik, the more restrictive is the
 ##     updating step.
+
+## Initialize intercepts.
+set.seed(0)
+b0 <- bamlss(num ~ 1, data = d, sampler = FALSE, optimizer = opt_bbfitp,
+  batch_ids = batch_ids, slice = TRUE)
+
+## Compute starting values, remove the first
+## 10 iterates and compute the mean of the
+## remaining iterates.
+start <- coef(b0, FUN = mean, burnin = 10)
+
+## Start boosting, only update if change in
+## "out-of-sample" log-likelihood is 0.1%, i.e.,
+## eps_loglik = 0.001.
 set.seed(3)
 b3 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
-    batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = 0.01,
-    select = TRUE, always = FALSE)
+    batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = 0.001,
+    select = TRUE, always = FALSE, start = start)
 
 ## Plot log-likelihood contributions.
 contribplot(b3)
+## In this case, the algorithm did not converge,
+## we need more iterations/batches.
 
 ## Note, prediction uses last iterate.
 p3 <- predict(b3, model = "mu")
