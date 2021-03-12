@@ -5944,7 +5944,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #stop()
 
     if(!inherits(opt, "try-error")) {
-      if((-1* opt$value) > ll0) {
+      if((-1 * opt$value) > ll0) {
         par[i] <- opt$par[-1L]
         par[j] <- opt$par[1L]
         Z[, j] <- x$activ_fun(drop(x$X %*% opt$par[-1L]))
