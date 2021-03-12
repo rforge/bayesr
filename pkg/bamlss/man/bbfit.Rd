@@ -81,7 +81,8 @@ contribplot(x, ...)
     \item \code{slice}, defaults to \code{slice = FALSE}. If set to \code{slice = TRUE},
       slice sampling using the "out-of-sample" log-likelihood or AIC is used for smoothing
       variance estimation. Moreover, \code{always = TRUE}, \code{eps_loglik = -Inf} and
-      \code{nu = 1}.
+      \code{nu = 1}. If \code{slice} is an integer \code{n}, slice sampling is started after
+      \code{n} iterations, before smoothing variances are optimized.
   }
 
   When using function \code{opt_bbfitp}, the parameter updates are stored as \code{"mcmc"}
@@ -116,30 +117,75 @@ f <- list(
   sigma ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
 )
 
+## Specify batches.
+batch_ids <- c("nobs" = 1000, "nbatch" = 50)
+
 ## Different flavors:
 ## (1) Using out-of-sample aic for smoothing
 ##     variance estimation. Update is only accepted
 ##     if the "out-of-sample" log-likelihood is
 ##     increased.
-
-## Specify batches.
-batch_ids <- c("nobs" = 2000, "nbatch" = 20)
-
+set.seed(1)
 b1 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
   batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
   always = FALSE)
 
+## Plot estimated effects.
 plot(b1)
 
 ## (2) Same but always update, this mimics the classic SGD.
-##     Note that we use opt_bbfitp() to inspect the coefficient
-##     paths. Note, for prediction only the last iterations should
-##     be used.
-b2 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfitp,
+##     Note, for prediction only the last iteration is
+##     used in this case. To use more iterations use opt_bbfitp(),
+##     Then iterations are stored as "mcmc" object and we can
+##     predict using the burnin argment, e.g.,
+##     p <- predict(b2, model = "mu", burnin = 35)
+set.seed(2)
+b2 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
   batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
   always = TRUE)
 
-plot(b2, which = "samples")
+## Plot coefficient paths for x3 in mu.
+pathplot(b2, name = "mu.s.s(x3).b")
+
+## (3) Boosting type flavor, only update model term with
+##     the largest contribution in the "out-of-sample"
+##     log-likelihood. In this case, if edf = 0 during
+##     runtime of the algorithm, no model has an additional
+##     contribution and the algorithm converges. This
+##     behavior is controlled by argument eps_loglik, the
+##     higher eps_loglik, the more restrictive is the
+##     updating step.
+set.seed(3)
+b3 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
+    batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = 0.01,
+    select = TRUE, always = FALSE)
+
+## Plot log-likelihood contributions.
+contribplot(b3)
+
+## Note, prediction uses last iterate.
+p3 <- predict(b3, model = "mu")
+
+## (4) Use slice sampling under the "out-of-sample"
+##     log likelihood for estimation of smoothing
+##     variances. In this case model terms are always
+##     updated ad parameter paths behave like a MCMC
+##     chain. Therefore, use opt_bbfitp(), which stores
+##     parameter paths as "mcmc" objects and we can
+##     inspect using traceplots. Note nu = 1 if
+##     slice = TRUE.
+set.seed(4)
+b4 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfitp,
+  batch_ids = batch_ids, aic = TRUE, slice = TRUE)
+
+plot(b4)
+
+## Plot parameter updates.
+plot(b4, which = "samples")
+
+## Predict with burnin and compute mean
+## prediction of the last 20 iterates.
+p4 <- predict(b4, model = "mu", burnin = 30, FUN = mean)
 }
 }
 
