@@ -3656,6 +3656,8 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
   }
   if(!is.null(attr(object, "fixed.names")))
     names(newdata) <- rmf(names(newdata))
+  if(inherits(newdata, "ffdf"))
+    newdata <- as.data.frame(newdata)
   nn <- names(newdata)
   rn_nn <- rownames(newdata)
   nn <- all.vars(as.formula(paste("~", paste(nn, collapse = "+")), env = NULL))

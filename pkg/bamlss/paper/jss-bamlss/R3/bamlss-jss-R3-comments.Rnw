@@ -60,8 +60,8 @@ Sys.setenv("TZ" = "UTC")
 \huge\bf Point-to-Point Response to Reviews.
 \end{center}
 
-We want to thank an anonymous reviewer for the important comments.
-In the following, comments of the reviewer are highlighted in italics, with our responses
+We want to thank the SI editor for the important comments.
+In the following, comments of the SI editor are highlighted in italics, with our responses
 directly below.
 
 \section*{Answers to Reviewer}
