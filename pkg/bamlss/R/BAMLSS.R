@@ -5957,7 +5957,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   ZWZ <- crossprod(Z * hess, Z)
   edf0 <- args$edf - x$state$edf
 
-  objfun <- function(tau2) {
+  objfun2 <- function(tau2) {
     P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
     edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
     g <- P %*% crossprod(Z * hess, e)
@@ -5966,7 +5966,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     return(ic)
   }
 
-  tau2 <- tau2.optim(objfun, start = tau2)
+  tau2 <- tau2.optim(objfun2, start = tau2)
 
   P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
   par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
@@ -6121,21 +6121,21 @@ nnet00_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #print(b)
 #stop()
 
-#    opt <- optim(par[i], fn = objfun, gr = gradfun,
-#      method = "L-BFGS-B", i = i, j = j)
+    opt <- optim(par[i], fn = objfun, gr = gradfun,
+      method = "L-BFGS-B", i = i, j = j)
 
-    opt <- try(nlm(f = objfun, p = par[i], i = i, j = j,
-      check.analyticals = TRUE, hessian = TRUE), silent = TRUE)
+#    opt <- try(nlm(f = objfun, p = par[i], i = i, j = j,
+#      check.analyticals = TRUE, hessian = TRUE), silent = TRUE)
 
-oo <- optimHess(opt$estimate, objfun, gr = gradfun, i = i, j = j)
+#oo <- optimHess(opt$estimate, objfun, gr = gradfun, i = i, j = j)
 
-print(oo)
+#print(oo)
 
-print(opt)
-cat("---\n")
-#print(gradfun(opt$estimate, i, j))
-print(hessfun(opt$estimate, i, j))
-stop()
+#print(opt)
+#cat("---\n")
+##print(gradfun(opt$estimate, i, j))
+#print(hessfun(opt$estimate, i, j))
+#stop()
 
     if(inherits(opt, "try-error"))
       next

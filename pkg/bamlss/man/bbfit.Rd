@@ -117,8 +117,11 @@ f <- list(
   sigma ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
 )
 
-## Specify batches.
+## Specify 50 batches with 1000 observations.
 batch_ids <- c("nobs" = 1000, "nbatch" = 50)
+
+## Note, can also be a list of indices, e.g.
+## batch_ids <- lapply(sample(1:nrow(d), size = 1000))
 
 ## Different flavors:
 ## (1) Using out-of-sample aic for smoothing
@@ -180,7 +183,7 @@ b4 <- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfitp,
 
 plot(b4)
 
-## Plot parameter updates.
+## Plot parameter updates/samples.
 plot(b4, which = "samples")
 
 ## Predict with burnin and compute mean
