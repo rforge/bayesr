@@ -66,7 +66,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">bamlss</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
       </span>
     </div>
 
@@ -246,13 +246,44 @@
 
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>The algorithm uses batch-wise estimation of smoothing variances, which are estimated on an
-  hold-out batch. This way, models for very large data sets can be estimated. Note, the algorithm
-  only works in combination withe the <span class="pkg">ff</span> and <span class="pkg">ffbase</span> package. The data needs to be stored
-  as comma separated file on disc, see the example.</p>
+    <p>The algorithm uses batch-wise estimation of regression coefficients and smoothing variances.
+  The smoothing variances are estimated on an hold-out batch. This way, models for very large
+  data sets can be estimated. Note, the algorithm can work in combination with the <span class="pkg">ff</span>
+  and <span class="pkg">ffbase</span> package, i.e., the entire data is never in the computer RAM. Therefore, the
+  data can either to be stored as comma separated file on disc or provided as <code>"ffdf"</code>
+  data frame, see also the examples.</p>
+<p>The optimizer functions use additional arguments:</p><ul>
+<li><p><code>batch_ids</code>. This argument can either be a list of indices specifying the
+      batches that should be used for estimation, or a vector of length 2, where the
+      first element specifies the number of observations that should be sampled for each
+      batch and the second argument specifies the number of batches, see the example.</p></li>
+<li><p><code>nu</code>, the step length control parameter. Defaults to <code>nu = 0.05</code>.
+      If argument <code>slice = TRUE</code> then <code>nu = 1</code>.</p></li>
+<li><p><code>loglik</code>, defaults to <code>loglik = FALSE</code>. If set to <code>loglik = TRUE</code>
+      the "out-of-sample" log-likelihood is used for smoothing variance estimation.</p></li>
+<li><p><code>aic</code>, defaults to <code>aic = FALSE</code>, If set to <code>aic = TRUE</code>
+      the "out-of-sample" AIC is used for smoothing variance estimation.</p></li>
+<li><p><code>eps_loglik</code>, defaults to <code>eps_loglik = 0.01</code>. This argument specifies
+      the relative change in the "out-of-sample" log-likelihood that is needed such that
+      a model term gets updated.</p></li>
+<li><p><code>select</code>, defaults to <code>select = FALSE</code>. If set to <code>select = TRUE</code>,
+      the algorithm only selects the model term with the largest contribution in the
+      "out-of-sample" log-likelihood for updating in each iteration/batch.</p></li>
+<li><p><code>always</code>, defaults to <code>always = FALSE</code>. If set to <code>always = TRUE</code>
+      no log-likelihood contribution checks will be used and model terms are always updated.</p></li>
+<li><p><code>K</code>, defaults to <code>K = 2</code>. This argument controls the penalty on the
+      degrees of freedom in the computation of the AIC.</p></li>
+<li><p><code>slice</code>, defaults to <code>slice = FALSE</code>. If set to <code>slice = TRUE</code>,
+      slice sampling using the "out-of-sample" log-likelihood or AIC is used for smoothing
+      variance estimation. Moreover, <code>always = TRUE</code>, <code>eps_loglik = -Inf</code> and
+      <code>nu = 1</code>. If <code>slice</code> is an integer <code>n</code>, slice sampling is started after
+      <code>n</code> iterations, before smoothing variances are optimized.</p></li>
+</ul>
+    <p>When using function <code>opt_bbfitp</code>, the parameter updates are stored as <code>"mcmc"</code>
+  objects. In this case the traceplots can be visualized using <code><a href='plot.bamlss.html'>plot.bamlss</a></code>.</p>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>For function <code>bbfit()</code> a list containing the following objects:</p>
+    <p>For function <code>opt_bbfit()</code> a list containing the following objects:</p>
 <dt>fitted.values</dt><dd><p>A named list of the fitted values of the modeled parameters
     of the selected distribution.</p></dd>
   <dt>parameters</dt><dd><p>The estimated set regression coefficients and smoothing variances.</p></dd>
@@ -273,17 +304,84 @@
 <span class='no'>tf</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/tempfile'>tempdir</a></span>()
 <span class='fu'><a href='https://www.rdocumentation.org/packages/utils/topics/write.table'>write.table</a></span>(<span class='no'>d</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/file.path'>file.path</a></span>(<span class='no'>tf</span>, <span class='st'>"d.raw"</span>), <span class='kw'>quote</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>row.names</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>","</span>)
 
-<span class='co'>## Estimation using batch-wise backfitting.</span>
+<span class='co'>## Model formula.</span>
 <span class='no'>f</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/list'>list</a></span>(
   <span class='no'>num</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>10</span>),
   <span class='no'>sigma</span> ~ <span class='fu'>s</span>(<span class='no'>x1</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x2</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>s</span>(<span class='no'>x3</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>40</span>) + <span class='fu'>te</span>(<span class='no'>lon</span>,<span class='no'>lat</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>10</span>)
 )
 
-<span class='no'>b</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/file.path'>file.path</a></span>(<span class='no'>tf</span>, <span class='st'>"d.raw"</span>), <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfit</span>,
-  <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>nbatch</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>epochs</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>loglik</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'>## Specify 50 batches with 1000 observations.</span>
+<span class='no'>batch_ids</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"nobs"</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='st'>"nbatch"</span> <span class='kw'>=</span> <span class='fl'>50</span>)
 
-<span class='co'>## Show estimated effects.</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b</span>)
+<span class='co'>## Note, can also be a list of indices, e.g.</span>
+<span class='co'>## batch_ids &lt;- lapply(sample(1:nrow(d), size = 1000))</span>
+
+<span class='co'>## Different flavors:</span>
+<span class='co'>## (1) Using out-of-sample aic for smoothing</span>
+<span class='co'>##     variance estimation. Update is only accepted</span>
+<span class='co'>##     if the "out-of-sample" log-likelihood is</span>
+<span class='co'>##     increased.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>1</span>)
+<span class='no'>b1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfit</span>,
+  <span class='kw'>batch_ids</span> <span class='kw'>=</span> <span class='no'>batch_ids</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>aic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>eps_loglik</span> <span class='kw'>=</span> -<span class='fl'>Inf</span>,
+  <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+
+<span class='co'>## Plot estimated effects.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b1</span>)
+
+<span class='co'>## (2) Same but always update, this mimics the classic SGD.</span>
+<span class='co'>##     Note, for prediction only the last iteration is</span>
+<span class='co'>##     used in this case. To use more iterations use opt_bbfitp(),</span>
+<span class='co'>##     Then iterations are stored as "mcmc" object and we can</span>
+<span class='co'>##     predict using the burnin argment, e.g.,</span>
+<span class='co'>##     p &lt;- predict(b2, model = "mu", burnin = 35)</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>2</span>)
+<span class='no'>b2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfit</span>,
+  <span class='kw'>batch_ids</span> <span class='kw'>=</span> <span class='no'>batch_ids</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>aic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>eps_loglik</span> <span class='kw'>=</span> -<span class='fl'>Inf</span>,
+  <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+
+<span class='co'>## Plot coefficient paths for x3 in mu.</span>
+<span class='fu'><a href='pathplot.html'>pathplot</a></span>(<span class='no'>b2</span>, <span class='kw'>name</span> <span class='kw'>=</span> <span class='st'>"mu.s.s(x3).b"</span>)
+
+<span class='co'>## (3) Boosting type flavor, only update model term with</span>
+<span class='co'>##     the largest contribution in the "out-of-sample"</span>
+<span class='co'>##     log-likelihood. In this case, if edf = 0 during</span>
+<span class='co'>##     runtime of the algorithm, no model has an additional</span>
+<span class='co'>##     contribution and the algorithm converges. This</span>
+<span class='co'>##     behavior is controlled by argument eps_loglik, the</span>
+<span class='co'>##     higher eps_loglik, the more restrictive is the</span>
+<span class='co'>##     updating step.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>3</span>)
+<span class='no'>b3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfit</span>,
+    <span class='kw'>batch_ids</span> <span class='kw'>=</span> <span class='no'>batch_ids</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>aic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>eps_loglik</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
+    <span class='kw'>select</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>always</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+
+<span class='co'>## Plot log-likelihood contributions.</span>
+<span class='fu'>contribplot</span>(<span class='no'>b3</span>)
+
+<span class='co'>## Note, prediction uses last iterate.</span>
+<span class='no'>p3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b3</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>)
+
+<span class='co'>## (4) Use slice sampling under the "out-of-sample"</span>
+<span class='co'>##     log likelihood for estimation of smoothing</span>
+<span class='co'>##     variances. In this case model terms are always</span>
+<span class='co'>##     updated ad parameter paths behave like a MCMC</span>
+<span class='co'>##     chain. Therefore, use opt_bbfitp(), which stores</span>
+<span class='co'>##     parameter paths as "mcmc" objects and we can</span>
+<span class='co'>##     inspect using traceplots. Note nu = 1 if</span>
+<span class='co'>##     slice = TRUE.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/Random'>set.seed</a></span>(<span class='fl'>4</span>)
+<span class='no'>b4</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='bamlss.html'>bamlss</a></span>(<span class='no'>f</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>d</span>, <span class='kw'>sampler</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>optimizer</span> <span class='kw'>=</span> <span class='no'>opt_bbfitp</span>,
+  <span class='kw'>batch_ids</span> <span class='kw'>=</span> <span class='no'>batch_ids</span>, <span class='kw'>aic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>slice</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b4</span>)
+
+<span class='co'>## Plot parameter updates/samples.</span>
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/plot'>plot</a></span>(<span class='no'>b4</span>, <span class='kw'>which</span> <span class='kw'>=</span> <span class='st'>"samples"</span>)
+
+<span class='co'>## Predict with burnin and compute mean</span>
+<span class='co'>## prediction of the last 20 iterates.</span>
+<span class='no'>p4</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/stats/topics/predict'>predict</a></span>(<span class='no'>b4</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='st'>"mu"</span>, <span class='kw'>burnin</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>FUN</span> <span class='kw'>=</span> <span class='no'>mean</span>)
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
