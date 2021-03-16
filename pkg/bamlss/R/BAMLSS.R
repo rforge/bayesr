@@ -3397,8 +3397,10 @@ compute_s.effect <- function(x, get.X, fit.fun, psamples,
         pid <- chull(as.matrix(data[, tterms]))
         pol <- data[c(pid, pid[1]), ]
         pip <- point.in.polygon(nd[, 1], nd[, 2], pol[, 1], pol[, 2])
-        nd[pip < 1, ] <- NA
-        nd <- na.omit(nd)
+        if(any(pip > 0)) {
+          nd[pip < 1, ] <- NA
+          nd <- na.omit(nd)
+        }
       }
       data0 <- data
       data <- nd
