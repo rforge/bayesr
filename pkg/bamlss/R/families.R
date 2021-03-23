@@ -990,7 +990,7 @@ AR1_bamlss <- function(...)
 #        h <- a / b
 #        -h
 #      }
-#    ),
+    ),
     "crps" = function(y, par, ...) {
       if(!is.null(dim(y))) {
         i <- which(y[, 2L] > 0)
