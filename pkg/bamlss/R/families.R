@@ -117,6 +117,27 @@ make.link2 <- function(link)
             eta <- pmin(eta, 700)
             pmax(-exp(eta) * exp(-exp(eta)), .Machine$double.eps)
           }
+        ),
+        "sigmoid" = list(
+          "linkfun" = function(mu) {
+            i <- mu <= -1
+            if(any(i))
+              mu[i] <- mu[i] <- -0.9999
+            i <- mu >= 1
+            if(any(i))
+              mu[i] <- mu[i] <- 0.9999 
+            -log(2/(mu + 1) - 1)
+          },
+          "linkinv" = function(eta) {
+            tanh(eta/2)
+          },
+          "mu.eta" = function(eta) {
+            0.5 / cosh(eta * 0.5)^2
+          },
+          "mu.eta2" = function(eta) {
+            eta2 <- eta * 0.5
+            -(0.5 * (2 * (sinh(eta2) * 0.5 * cosh(eta2)))/(cosh(eta2)^2)^2)
+          }
         )
       )
     }
@@ -856,7 +877,177 @@ AR0_bamlss <- function(ar.start = NULL, ...)
 }
 
 
-AR1_bamlss <- function(ar.start = NULL, ...)
+AR1_bamlss <- function(...)
+{
+  rval <- list(
+    "family" = "AR1",
+    "names" = c("mu", "sigma", "alpha"),
+    "links" = c(mu = "identity", sigma = "log", alpha = "sigmoid"),
+    "d" = function(y, par, log = FALSE, ...) {
+      if(!is.null(dim(y))) {
+        i <- which(y[, 2L] > 0)
+        y <- y[, 1L]
+      } else {
+        i <- 1L
+      }
+      e <- y - par$mu
+      e <- c(0, e[-length(e)])
+      e[i] <- 0
+      mu <- par$mu + par$alpha * e
+      d <- dnorm(y, mu, par$sigma, log = log)
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      if(!is.null(dim(y))) {
+        i <- which(y[, 2L] > 0)
+        y <- y[, 1L]
+      } else {
+        i <- 1L
+      }
+      e <- y - par$mu
+      e <- c(0, e[-length(e)])
+      e[i] <- 0
+      mu <- par$mu + par$alpha * e
+      d <- pnorm(y, mu, par$sigma)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        if(!is.null(dim(y))) {
+          i <- which(y[, 2L] > 0)
+          y <- y[, 1L]
+        } else {
+          i <- 1L
+        }
+        e <- y - par$mu
+        e <- c(0, e[-length(e)])
+        e[i] <- 0
+        mu <- par$mu + par$alpha * e
+        (y - mu) / par$sigma^2
+      },
+      "sigma" = function(y, par, ...) {
+        if(!is.null(dim(y))) {
+          i <- which(y[, 2L] > 0)
+          y <- y[, 1L]
+        } else {
+          i <- 1L
+        }
+        e <- y - par$mu
+        e <- c(0, e[-length(e)])
+        e[i] <- 0
+        mu <- par$mu + par$alpha * e
+        (y - mu)^2 / par$sigma^2 - 1
+      },
+      "alpha" = function(y, par, ...) {
+        if(!is.null(dim(y))) {
+          i <- which(y[, 2L] > 0)
+          y <- y[, 1L]
+        } else {
+          i <- 1L
+        }
+        e <- y - par$mu
+        e <- c(0, e[-length(e)])
+        e[i] <- 0
+        mu <- par$mu + par$alpha * e
+        eta_alpha <- tanh(par$alpha / 2)
+        (y - mu) / par$sigma^2 * 2 * exp(-eta_alpha) * e / (exp(-eta_alpha) + 1)^2
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        1 / par$sigma^2
+      },
+      "sigma" = function(y, par, ...) {
+        if(!is.null(dim(y))) {
+          i <- which(y[, 2L] > 0)
+          y <- y[, 1L]
+        } else {
+          i <- 1L
+        }
+        e <- y - par$mu
+        e <- c(0, e[-length(e)])
+        e[i] <- 0
+        mu <- par$mu + par$alpha * e
+        2 * (y - mu)^2 / par$sigma^2
+      }
+#      "alpha" = function(y, par, ...) {
+#        if(!is.null(dim(y))) {
+#          i <- which(y[, 2L] > 0)
+#          y <- y[, 1L]
+#        } else {
+#          i <- 1L
+#        }
+#        e <- y - par$mu
+#        e <- c(0, e[-length(e)])
+#        e[i] <- 0
+#        eta_alpha <- tanh(par$alpha / 2)
+
+#        a <- 2 * e * exp(eta_alpha - 2 * log(par$sigma)) *
+#          ( exp(2 * eta_alpha) * (-y + 2 * e + par$mu - 1) + y - 4 * e * exp(eta_alpha) - par$mu + 1 )
+#        b <- (par$sigma + 1)^4
+
+#        h <- a / b
+#        -h
+#      }
+    ),
+    "crps" = function(y, par, ...) {
+      if(!is.null(dim(y))) {
+        i <- which(y[, 2L] > 0)
+        y <- y[, 1L]
+      } else {
+        i <- 1L
+      }
+      e <- y - par$mu
+      e <- c(0, e[-length(e)])
+      e[i] <- 0
+      mu <- par$mu + par$alpha * e
+      scoringRules::crps_norm(y, mean = mu, sd = par$sigma)
+    },
+    "initialize" = list(
+      "mu"    = function(y, ...) { (y + mean(y)) / 2 },
+      "sigma" = function(y, ...) { rep(sd(y), length(y)) },
+      "alpha" = function(y, ...) { rep(1e-05, length(y)) }
+    )
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
+if(FALSE) {
+  time <- seq(-3, 3, length = 10000)
+  y <- rep(0, length(time))
+  alpha <- bamlss:::make.link2("sigmoid")$linkinv
+
+  for(i in 2:length(time)) {
+    y[i] <- sin(time[i]) + alpha(0.6 * cos(time[i] * 4)) * (y[i - 1] - sin(time[i - 1])) + rnorm(1, sd = 0.2)
+  }
+  time <- time[-1]
+  y <- y[-1]
+
+  ar.start <- rep(FALSE, length(y))
+  ar.start[1] <- TRUE
+  Y <- cbind(y, ar.start)
+
+  plot(time, y)
+
+  f <- list(
+    Y ~ s(time),
+    sigma ~ 1,
+    alpha ~ s(time)
+  )
+
+  b <- bamlss(f, family = AR1_bamlss)
+
+  p <- predict(b, model = "alpha")
+  plot(time, p, type = "l")
+  lines(0.6 * cos(time * 4) ~ time, col = 2, lwd = 2)
+}
+
+
+AR00_bamlss <- function(ar.start = NULL, ...)
 {
   if(is.null(list(...)$mu)) {
     rval <- list(
