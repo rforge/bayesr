@@ -970,7 +970,7 @@ AR1_bamlss <- function(...)
         e[i] <- 0
         mu <- par$mu + par$alpha * e
         2 * (y - mu)^2 / par$sigma^2
-      }
+      },
 #      "alpha" = function(y, par, ...) {
 #        if(!is.null(dim(y))) {
 #          i <- which(y[, 2L] > 0)
@@ -983,14 +983,14 @@ AR1_bamlss <- function(...)
 #        e[i] <- 0
 #        eta_alpha <- tanh(par$alpha / 2)
 
-#        a <- 2 * e * exp(eta_alpha - 2 * log(par$sigma)) *
-#          ( exp(2 * eta_alpha) * (-y + 2 * e + par$mu - 1) + y - 4 * e * exp(eta_alpha) - par$mu + 1 )
-#        b <- (par$sigma + 1)^4
+#        a <- 4 * e * exp(2 * (eta_alpha - par$sigma)) *
+#          ( e * cosh(eta_alpha) - 2 * e + sinh(eta_alpha) * (par$mu - y) )
+#        b <- (exp(eta_alpha + 1))^4
 
 #        h <- a / b
 #        -h
 #      }
-    ),
+#    ),
     "crps" = function(y, par, ...) {
       if(!is.null(dim(y))) {
         i <- which(y[, 2L] > 0)
