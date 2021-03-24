@@ -990,9 +990,25 @@ AR1_bamlss <- function(...)
       scoringRules::crps_norm(y, mean = mu, sd = par$sigma)
     },
     "initialize" = list(
-      "mu"    = function(y, ...) { (y + mean(y)) / 2 },
-      "sigma" = function(y, ...) { rep(sd(y), length(y)) },
-      "alpha" = function(y, ...) { rep(1e-05, length(y)) }
+      "mu"    = function(y, ...) {
+        start <- if(is.null(dim(y))) {
+          (y + mean(y, na.rm = TRUE)) / 2
+        } else {
+          (y[, 1L] + mean(y[, 1L], na.rm = TRUE)) / 2
+        }
+        start
+      },
+      "sigma" = function(y, ...) {
+        start <- if(is.null(dim(y))) {
+          rep(sd(y), length(y))
+        } else {
+          rep(sd(y[, 1L], na.rm = TRUE), nrow(y))
+        }
+        start
+      },
+      "alpha" = function(y, ...) {
+        rep(1e-05, if(is.null(dim(y))) length(y) else nrow(y))
+      }
     )
   )
 
