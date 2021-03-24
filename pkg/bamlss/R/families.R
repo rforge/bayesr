@@ -1040,7 +1040,7 @@ if(FALSE) {
     alpha ~ s(time)
   )
 
-  d <- as.ffdf(data.frame("Y" = Y, "time" = time))
+  d <- data.frame("Y" = Y, "time" = time)
 
   b <- bamlss(f, family = AR1_bamlss, data = d)
 
