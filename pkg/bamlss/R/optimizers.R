@@ -5668,7 +5668,10 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
     batch_select <- TRUE
   }
 
-  y  <- y[[1]]
+  if(!is.null(dim(y))) {
+    if(ncol(y) < 2)
+      y  <- y[[1]]
+  }
 
   noff <- !inherits(y, "ff")
 
