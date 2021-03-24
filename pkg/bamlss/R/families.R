@@ -970,7 +970,7 @@ AR1_bamlss <- function(...)
         e[i] <- 0
         mu <- par$mu + par$alpha * e
         2 * (y - mu)^2 / par$sigma^2
-      },
+      }
 #      "alpha" = function(y, par, ...) {
 #        if(!is.null(dim(y))) {
 #          i <- which(y[, 2L] > 0)
