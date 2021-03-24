@@ -879,6 +879,7 @@ AR0_bamlss <- function(ar.start = NULL, ...)
 
 AR1_bamlss <- function(...)
 {
+  ## https://arxiv.org/pdf/1711.05204.pdf
   rval <- list(
     "family" = "AR1",
     "names" = c("mu", "sigma", "alpha"),
