@@ -95,7 +95,11 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
     }
   } else {
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
-    rn <- rn[rn %in% names(bf$model.frame)]
+    if(!any(rn %in% names(bf$model.frame))) {
+      rn <- grep(paste0(rn, "."), names(bf$model.frame), fixed = TRUE, value = TRUE)
+    } else {
+      rn <- rn[rn %in% names(bf$model.frame)]
+    }
     bf$y <- bf$model.frame[rn]
   }
 

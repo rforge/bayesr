@@ -960,6 +960,9 @@ AR1_bamlss <- function(...)
         1 / par$sigma^2
       },
       "sigma" = function(y, par, ...) {
+        rep(2, length(par[[1L]]))
+      },
+      "alpha" = function(y, par, ...) {
         if(!is.null(dim(y))) {
           i <- which(y[, 2L] > 0)
           y <- y[, 1L]
@@ -969,28 +972,9 @@ AR1_bamlss <- function(...)
         e <- y - par$mu
         e <- c(0, e[-length(e)])
         e[i] <- 0
-        mu <- par$mu + par$alpha * e
-        2 * (y - mu)^2 / par$sigma^2
+        eta_alpha <- tanh(par$alpha / 2)
+        4 * e^2 * exp(2 * (eta_alpha - log(par$sigma))) / (exp(eta_alpha) + 1)^4
       }
-#      "alpha" = function(y, par, ...) {
-#        if(!is.null(dim(y))) {
-#          i <- which(y[, 2L] > 0)
-#          y <- y[, 1L]
-#        } else {
-#          i <- 1L
-#        }
-#        e <- y - par$mu
-#        e <- c(0, e[-length(e)])
-#        e[i] <- 0
-#        eta_alpha <- tanh(par$alpha / 2)
-
-#        a <- 4 * e * exp(2 * (eta_alpha - par$sigma)) *
-#          ( e * cosh(eta_alpha) - 2 * e + sinh(eta_alpha) * (par$mu - y) )
-#        b <- (exp(eta_alpha + 1))^4
-
-#        h <- a / b
-#        -h
-#      }
     ),
     "crps" = function(y, par, ...) {
       if(!is.null(dim(y))) {
@@ -1018,7 +1002,7 @@ AR1_bamlss <- function(...)
 
 
 if(FALSE) {
-  time <- seq(-3, 3, length = 10000)
+  time <- seq(-3, 3, length = 5000)
   y <- rep(0, length(time))
   alpha <- bamlss:::make.link2("sigmoid")$linkinv
 
@@ -1040,7 +1024,9 @@ if(FALSE) {
     alpha ~ s(time)
   )
 
-  b <- bamlss(f, family = AR1_bamlss)
+  d <- as.ffdf(data.frame("Y" = Y, "time" = time))
+
+  b <- bamlss.frame(f, family = AR1_bamlss, data = d)
 
   p <- predict(b, model = "alpha")
   plot(time, p, type = "l")
