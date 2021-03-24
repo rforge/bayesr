@@ -1036,13 +1036,13 @@ if(FALSE) {
 
   f <- list(
     Y ~ s(time),
-    sigma ~ 1,
+    sigma ~ s(time),
     alpha ~ s(time)
   )
 
   d <- as.ffdf(data.frame("Y" = Y, "time" = time))
 
-  b <- bamlss.frame(f, family = AR1_bamlss, data = d)
+  b <- bamlss(f, family = AR1_bamlss, data = d)
 
   p <- predict(b, model = "alpha")
   plot(time, p, type = "l")

@@ -96,7 +96,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
   } else {
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
     if(!any(rn %in% names(bf$model.frame))) {
-      rn <- grep(paste0(rn, "."), names(bf$model.frame), fixed = TRUE, value = TRUE)
+      rn <- grep2(paste0(rn, "."), names(bf$model.frame), fixed = TRUE, value = TRUE)
     } else {
       rn <- rn[rn %in% names(bf$model.frame)]
     }
@@ -912,6 +912,8 @@ ffmatrixmult <- function(x,y=NULL,xt=FALSE,yt=FALSE,ram.output=FALSE, override.b
 sparse.matrix.index <- function(x, ...)
 {
   if(is.null(dim(x)))
+    return(NULL)
+  if(inherits(x, "ff"))
     return(NULL)
   index <- apply(x, 1, function(x) {
     which(x != 0)
