@@ -5818,7 +5818,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  bw <- runif(length(unlist(object$n.weights)), -0.0001, 0.0001)
+  bw <- runif(length(unlist(object$n.weights)), -0.01, 0.01)
   names(bw) <- names(unlist(object$n.weights))
   object$state$parameters <- c(object$state$parameters, bw, tau2)
   object$state$edf <- 0
@@ -5940,6 +5940,22 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
     opt <- try(optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
       method = "L-BFGS-B", i = i, j = j, fit = fit), silent = TRUE)
+
+#    H <- matrix_inv(hessfun(c(par[j], par[i]), i = i, j = j, fit = fit))
+#    S <- gradfun(c(par[j], par[i]), i = i, j = j, fit = fit)
+#    step <- try(drop(H %*% S), silent = TRUE)
+
+#    if(inherits(step, "try-error")) {
+#      fit <- fit + Z[, j] * par[j]
+#      next
+#    }
+
+#    g <- c(par[j], par[i]) - 0.000001 * S
+
+#    opt <- list(
+#      "value" = objfun(g, i = i, j = j, fit = fit),
+#      "par" = g
+#    )
 
 #    opt <- try(nlm(f = objfun, p = c(par[j], par[i]), i = i, j = j, fit = fit,
 #      check.analyticals = FALSE, hessian = TRUE), silent = TRUE)
