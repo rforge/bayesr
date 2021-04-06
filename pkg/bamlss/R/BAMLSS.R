@@ -5723,7 +5723,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   object$update <- object$xt$update <- nnet0_update
   object$boost.fit <- function(...) stop("Boost not yet implemented for n()!")
-  object$propose <- GMCMC_iwls
+  object$propose <- GMCMC_iwls ## nnet0_propose
 
   object$activ_fun <- switch(type[1],
     "relu" = function(x) {
@@ -6004,6 +6004,138 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   x$state$log.prior <- x$prior(par)
 
   return(x$state)
+}
+
+nnet0_propose <- function(family, theta, id, eta, y, data, weights = NULL, offset = NULL, ...)
+{
+  theta <- theta[[id[1]]][[id[2]]]
+  id <- id[1]
+
+  if(!is.null(offset)) {
+    for(j in names(offset))
+      eta[[j]] <- eta[[j]] + offset[[j]]
+  }
+
+  if(is.null(attr(theta, "fitted.values")))
+    attr(theta, "fitted.values") <- data$fit.fun(data$X, theta)
+
+  tau2 <- 1/data$xt$decay
+  I <- diag(c(1e-10, rep(1/tau2, ncol(data$X))))
+
+  gradfun <- function(w, i, j, eta, id) {
+    Xw <- drop(data$X %*% w[-1L])
+    Zj <- data$activ_fun(Xw)
+    eta[[id]] <- eta[[id]] + Zj * w[1L]
+    score <- family$score[[id]](y, family$map2par(eta))
+    gr <- score * cbind(Zj, w[1L] * data$activ_grad(Xw) * data$X)
+    gr <- colSums(gr) - drop(I %*% w)
+    return(gr)
+  }
+
+  hessfun <- function(w, i, j, eta, id) {
+    Xw <- drop(data$X %*% w[-1L])
+    Zj <- data$activ_fun(Xw)
+    eta[[id]] <- eta[[id]] + Zj * w[1L]
+    score <- family$score[[id]](y, family$map2par(eta))
+    hess <- family$hess[[id]](y, family$map2par(eta))
+
+    h0 <- sum(Zj^2 * hess)
+
+    dh <- w[1L]^2 * data$activ_grad(Xw)^2 * hess +  w[1L] * data$activ_hess(Xw) * score
+    h1 <- crossprod(data$X * dh, data$X)
+
+    h2 <- data$X * w[1L] * Zj * data$activ_grad(Xw) * hess +
+      data$X * data$activ_grad(Xw) * score
+    h2 <- colSums(h2)
+
+    h3 <- rbind(c(h0, h2), cbind(h2, h1)) + I
+
+    return(-h3)    
+  }
+
+  nc <- ncol(data$X)
+
+  pf <- function(gamma) {
+    tau2 <- 1/data$xt$decay
+    a <- b <- 1e-04
+    igs <- log((b^a)) - log(gamma(a))
+    lp <- -log(tau2) * (ncol(data$X) + 1)/2 + drop(-0.5/tau2 * 
+      t(gamma) %*% I %*% gamma) + (igs + (-a - 1) * log(tau2) - b/tau2)
+    lp
+  }
+
+  fit <- data$fit.fun(data$X, theta)
+
+  for(j in 1:data$nodes) {
+    i <- paste0("bw", j, "_w", 0:(nc - 1))
+
+    pibeta <- family$loglik(y, family$map2par(eta))
+    p1 <- pf(c(theta[j], theta[i]))
+
+    fj0 <- data$activ_fun(data$X %*% theta[i]) * theta[j]
+
+#plot(y ~ x, data = d)
+#plot2d(eta[[id]] ~ d$x, add = TRUE, col.lines = 4, lwd = 5)
+
+    eta[[id]] <- eta[[id]] - fj0
+
+    g <- gradfun(c(theta[j], theta[i]), i = i, j = j, eta = eta, id = id)
+    h <- hessfun(c(theta[j], theta[i]), i = i, j = j, eta = eta, id = id)
+
+    S <- matrix_inv(-1 * h)
+
+    m <- drop(c(theta[j], theta[i]) + S %*% g)
+
+    theta2 <- drop(rmvnorm(n = 1, mean = m, sigma = S))
+
+    p2 <- pf(theta2)
+    qbetaprop <- dmvnorm(matrix(theta2, nrow = 1), mean = m, sigma = S, log = TRUE)
+
+    g2 <- gradfun(theta2, i = i, j = j, eta = eta, id = id)
+    h2 <- hessfun(theta2, i = i, j = j, eta = eta, id = id)
+
+    S2 <- matrix_inv(-1 * h2)
+
+    m2 <- drop(theta2 + S2 %*% g2)
+
+    Xw <- drop(data$X %*% theta2[-1L])
+    fj1 <- data$activ_fun(Xw) * theta2[1L]
+    eta[[id]] <- eta[[id]] + fj1
+
+#plot2d(eta[[id]] ~ d$x, add = TRUE, col.lines = 3, lwd = 3)
+#Sys.sleep(1)
+
+    pibetaprop <- family$loglik(y, family$map2par(eta))
+
+    qbeta <- dmvnorm(matrix(c(theta[j], theta[i]), nrow = 1), mean = m2, sigma = S2, log = TRUE)
+
+    alpha <- drop((pibetaprop + qbeta + p2) - (pibeta + qbetaprop + p1))
+    if(!is.finite(alpha))
+      alpha <- NA
+    accepted <- if(is.na(alpha)) FALSE else log(runif(1)) <= alpha
+
+#print(accepted)
+#print(pibeta)
+#print(pibetaprop)
+#cat("**")
+#print(qbeta)
+#print(qbetaprop)
+#cat("---\n")
+
+    if(accepted) {
+      theta[j] <- theta2[1L]
+      theta[i] <- theta2[-1L]
+      fit <- fit - fj0 + fj1
+    } else {
+      eta[[id]] <- (eta[[id]] - fj1) + fj0
+    }
+  }
+
+  fit <- fit - mean(fit)
+  attr(theta, "fitted.values") <- fit
+
+  return(list("parameters" = theta, "alpha" = log(1),
+    "extra" = c("edf" = data$nodes * ncol(data$X))))
 }
 
 nnet00_update <- function(x, family, y, eta, id, weights, criterion, ...)
