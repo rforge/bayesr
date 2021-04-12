@@ -64,7 +64,7 @@ b0 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC")
 b1 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
   transform = AR1(rho = 0.8))
 
-## Estimate AR1 correlation.
+## Estimate full AR1 model.
 b2 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
   family = "AR1")
 rho <- predict(b2, model = "alpha", type = "parameter")
@@ -74,7 +74,6 @@ print(range(rho))
 sd0 <- predict(b0, model = "sigma", type = "parameter")
 sd1 <- predict(b1, model = "sigma", type = "parameter")
 sd2 <- predict(b2, model = "sigma", type = "parameter")
-
 print(round(c(sd0[1], sd1[1], sd2[1]), 2))
 
 ## Plot fitted trends.
