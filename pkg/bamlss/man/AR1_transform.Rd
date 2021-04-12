@@ -38,15 +38,22 @@ set.seed(123)
 
 n <- 1000
 d <- data.frame("t" = 1:n)
+
+## Nonlinear function.
 f <- function(x) {
   2 + sin(x / n * 2 * pi - pi)
 }
-d$y <- rep(0, n)
-d$y[1] <- f(d$t[1])
-for(i in 2:n) {
-  d$y[i] <- f(d$t[i]) + 0.8 * (d$y[i - 1] - f(d$t[i - 1])) + rnorm(1, sd = 0.1)
+
+## Correlated errors.
+rho <- 0.8
+e <- rnorm(n, sd = 0.1)
+u <- c(e[1], rep(NA, n - 1))
+for(i in 2:n){
+  u[i] <- rho * u[i - 1] + e[i]
 }
-d <- d[-1, ]
+
+## Response.
+d$y <- f(d$t) + u
 
 plot(d, type = "l")
 
