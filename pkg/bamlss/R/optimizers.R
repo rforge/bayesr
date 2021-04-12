@@ -5552,6 +5552,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
   epochs = 1, nbatch = 10, verbose = TRUE, ...)
 {
   ## Paper: https://openreview.net/pdf?id=ryQu7f-RZ
+  ##        https://www.ijcai.org/proceedings/2018/0753.pdf
   aic <- list(...)$aic
   loglik <- list(...)$loglik
   if(is.null(loglik))
@@ -5777,7 +5778,10 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             }
           }
           if(!srandom) {
-            take <- batch[[1L]][1L]:batch[[1L]][2L]
+            if(length(batch[[1L]]) < 3)
+              take <- batch[[1L]][1L]:batch[[1L]][2L]
+            else
+              take <- batch[[1L]]
           } else {
             take <- sample(samp_ids, floor(batch[[1L]][1L] * N))
           }
@@ -5793,14 +5797,15 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
               }
             }
             edf <- tryCatch(sum_diag(XX %*% matrix_inv(XX + S)), error = function(e) { 2 * ncX })
-            if(retedf)
+            if(retedf) {
               return(edf)
-            else
+            } else {
               return((min(c(ncX - 1, 4)) - edf)^2)
+            }
           }
           tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
-          opt <- try(tau2.optim(objfun1, start = tau2[[i]][[j]], maxit = 1000, scale = 10,
-            add = FALSE, force.stop = FALSE, eps = .Machine$double.eps^0.8), silent = TRUE)
+          opt <- try(tau2.optim(objfun1, start = tau2[[i]][[j]],
+            maxit = 1000), silent = TRUE)
           if(!inherits(opt, "try-error")) {
             cat("  .. df", i, "term", x[[i]]$smooth.construct[[j]]$label,
               objfun1(opt, retedf = TRUE), "\n")

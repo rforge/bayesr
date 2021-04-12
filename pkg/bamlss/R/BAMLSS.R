@@ -9496,7 +9496,7 @@ samples.bamlss <- samples.bamlss.frame <- function(object, model = NULL, term = 
       stop("cannot find model!")
     j <- grep(paste(nx[i], ".", sep = ""), snames, fixed = TRUE, value = TRUE)
     for(k in seq_along(x)) {
-      x[[k]] <- x[[k]][, j]
+      x[[k]] <- x[[k]][, j, drop = FALSE]
     }
     tx <- tx[nx[i]]
     snames <- colnames(x[[1]])
