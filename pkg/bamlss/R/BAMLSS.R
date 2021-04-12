@@ -94,7 +94,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 #      }
     }
   } else {
-    rn <- response.name(formula, hierarchical = FALSE, keep.functions = TRUE)
+    rn <- response.name(formula, hierarchical = FALSE, keep.functions = FALSE)
     if(!any(rn %in% names(bf$model.frame))) {
       rn <- grep2(paste0(rn, "."), names(bf$model.frame), fixed = TRUE, value = TRUE)
     } else {
@@ -3011,6 +3011,8 @@ response.name <- function(formula, hierarchical = TRUE, keep.functions = FALSE, 
       rn <- if(length(cf) < 3) character(0) else cf[2]
     } else {
       rn <- all.vars(f)
+      if(any(grepl("|", rn, fixed = TRUE)))
+        rn <- all.vars(as.Formula(f))
     }
   } else {
     if(inherits(formula, "list")) {
