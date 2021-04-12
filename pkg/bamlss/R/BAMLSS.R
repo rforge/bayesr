@@ -3250,6 +3250,54 @@ randomize <- function(x)
 }
 
 
+AR1_transform <- function(rho = 0.1) {
+  function(x) {
+    if(bframe <- inherits(x, "bamlss.frame")) {
+      if(is.null(x$x))
+        stop("no 'x' object to randomize in 'bamlss.frame'!")
+    }
+
+    n <- if(is.null(dim(x$y))) length(y) else nrow(x$y)
+
+    v <- rep(1, n)
+    w <- rep(rho, n)
+    v[1] <- sqrt(1 - rho^2)
+    w[1] <- 0
+
+    ind <- 1:(n - 1)
+
+    trans_fun <- function(x)
+    {
+      if(m <- length(x$smooth.construct)) {
+        for(j in 1:m) {
+          x$smooth.construct[[j]]$X <- v * x$smooth.construct[[j]]$X - w * rbind(0, x$smooth.construct[[j]]$X[ind, , drop = FALSE])
+        }
+      }
+      if(!is.null(x$model.matrix)) {
+        x$model.matrix <- v * x$model.matrix - w * rbind(0, x$model.matrix[ind, , drop = FALSE])
+      }
+      x
+    }
+
+    elmts <- c("formula", "fake.formula")
+    for(j in seq_along(x$x)) {
+      if(!all(elmts %in% names(x$x[[j]]))) {
+        for(i in seq_along(x$x[[j]]))
+          x$x[[j]][[i]] <- trans_fun(x$x[[j]][[i]])
+      } else x$x[[j]] <- trans_fun(x$x[[j]])
+    }
+
+    if(is.null(dim(x$y))) {
+      x$y <- v * x$y - w * c(0, x$y[ind])
+    } else {
+      x$y <- v * x$y - w * rbind(0, x$y[ind, , drop = FALSE])
+    }
+
+    return(x)
+  }
+}
+
+
 ## Combine sample chains.
 process.chains <- function(x, combine = TRUE, drop = FALSE, burnin = NULL, thin = NULL)
 {
