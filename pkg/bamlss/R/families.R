@@ -882,8 +882,8 @@ AR1_bamlss <- function(...)
   ## https://arxiv.org/pdf/1711.05204.pdf
   rval <- list(
     "family" = "AR1",
-    "names" = c("mu", "sigma", "alpha"),
-    "links" = c(mu = "identity", sigma = "log", alpha = "sigmoid"),
+    "names" = c("mu", "sigma", "rho"),
+    "links" = c(mu = "identity", sigma = "log", rho = "sigmoid"),
     "d" = function(y, par, log = FALSE, ...) {
       if(!is.null(dim(y))) {
         i <- which(y[, 2L] > 0)
@@ -894,7 +894,7 @@ AR1_bamlss <- function(...)
       e <- y - par$mu
       e <- c(0, e[-length(e)])
       e[i] <- 0
-      mu <- par$mu + par$alpha * e
+      mu <- par$mu + par$rho * e
       d <- dnorm(y, mu, par$sigma, log = log)
       if(!log)
         d <- exp(d)
@@ -910,7 +910,7 @@ AR1_bamlss <- function(...)
       e <- y - par$mu
       e <- c(0, e[-length(e)])
       e[i] <- 0
-      mu <- par$mu + par$alpha * e
+      mu <- par$mu + par$rho * e
       d <- pnorm(y, mu, par$sigma)
     },
     "score" = list(
@@ -924,7 +924,7 @@ AR1_bamlss <- function(...)
         e <- y - par$mu
         e <- c(0, e[-length(e)])
         e[i] <- 0
-        mu <- par$mu + par$alpha * e
+        mu <- par$mu + par$rho * e
         (y - mu) / par$sigma^2
       },
       "sigma" = function(y, par, ...) {
@@ -937,10 +937,10 @@ AR1_bamlss <- function(...)
         e <- y - par$mu
         e <- c(0, e[-length(e)])
         e[i] <- 0
-        mu <- par$mu + par$alpha * e
+        mu <- par$mu + par$rho * e
         (y - mu)^2 / par$sigma^2 - 1
       },
-      "alpha" = function(y, par, ...) {
+      "rho" = function(y, par, ...) {
         if(!is.null(dim(y))) {
           i <- which(y[, 2L] > 0)
           y <- y[, 1L]
@@ -950,9 +950,9 @@ AR1_bamlss <- function(...)
         e <- y - par$mu
         e <- c(0, e[-length(e)])
         e[i] <- 0
-        mu <- par$mu + par$alpha * e
-        eta_alpha <- tanh(par$alpha / 2)
-        (y - mu) / par$sigma^2 * 2 * exp(-eta_alpha) * e / (exp(-eta_alpha) + 1)^2
+        mu <- par$mu + par$rho * e
+        eta_rho <- tanh(par$rho / 2)
+        (y - mu) / par$sigma^2 * 2 * exp(-eta_rho) * e / (exp(-eta_rho) + 1)^2
       }
     ),
     "hess" = list(
@@ -962,7 +962,7 @@ AR1_bamlss <- function(...)
       "sigma" = function(y, par, ...) {
         rep(2, length(par[[1L]]))
       },
-      "alpha" = function(y, par, ...) {
+      "rho" = function(y, par, ...) {
         if(!is.null(dim(y))) {
           i <- which(y[, 2L] > 0)
           y <- y[, 1L]
@@ -972,8 +972,8 @@ AR1_bamlss <- function(...)
         e <- y - par$mu
         e <- c(0, e[-length(e)])
         e[i] <- 0
-        eta_alpha <- tanh(par$alpha / 2)
-        4 * e^2 * exp(2 * (eta_alpha - log(par$sigma))) / (exp(eta_alpha) + 1)^4
+        eta_rho <- tanh(par$rho / 2)
+        4 * e^2 * exp(2 * (eta_rho - log(par$sigma))) / (exp(eta_rho) + 1)^4
       }
     ),
     "crps" = function(y, par, ...) {
@@ -986,7 +986,7 @@ AR1_bamlss <- function(...)
       e <- y - par$mu
       e <- c(0, e[-length(e)])
       e[i] <- 0
-      mu <- par$mu + par$alpha * e
+      mu <- par$mu + par$rho * e
       scoringRules::crps_norm(y, mean = mu, sd = par$sigma)
     },
     "initialize" = list(
@@ -1006,7 +1006,7 @@ AR1_bamlss <- function(...)
         }
         start
       },
-      "alpha" = function(y, ...) {
+      "rho" = function(y, ...) {
         rep(1e-05, if(is.null(dim(y))) length(y) else nrow(y))
       }
     )
@@ -1020,10 +1020,10 @@ AR1_bamlss <- function(...)
 if(FALSE) {
   time <- seq(-3, 3, length = 5000)
   y <- rep(0, length(time))
-  alpha <- bamlss:::make.link2("sigmoid")$linkinv
+  rho <- bamlss:::make.link2("sigmoid")$linkinv
 
   for(i in 2:length(time)) {
-    y[i] <- sin(time[i]) + alpha(0.6 * cos(time[i] * 4)) * (y[i - 1] - sin(time[i - 1])) + rnorm(1, sd = 0.2)
+    y[i] <- sin(time[i]) + rho(0.6 * cos(time[i] * 4)) * (y[i - 1] - sin(time[i - 1])) + rnorm(1, sd = 0.2)
   }
   time <- time[-1]
   y <- y[-1]
@@ -1037,14 +1037,14 @@ if(FALSE) {
   f <- list(
     Y ~ s(time),
     sigma ~ s(time),
-    alpha ~ s(time)
+    rho ~ s(time)
   )
 
   d <- data.frame("Y" = Y, "time" = time)
 
   b <- bamlss(f, family = AR1_bamlss, data = d)
 
-  p <- predict(b, model = "alpha")
+  p <- predict(b, model = "rho")
   plot(time, p, type = "l")
   lines(0.6 * cos(time * 4) ~ time, col = 2, lwd = 2)
 }
