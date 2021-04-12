@@ -13,15 +13,16 @@
 }
 
 \usage{
-AR1_transform(x)
+AR1_transform(rho = 0.1)
+AR1(rho = 0.1)
 }
 
 \arguments{
-  \item{x}{Object returned from function \code{\link{bamlss.frame}}.}
+  \item{rho}{Specifies the correlation parameter at lag 1.}
 }
 
 \value{
-  A transformed \code{\link{bamlss.frame}}.
+  A transformer function which can be used in the \code{\link{bamlss}} call.
 }
 
 \references{
@@ -38,11 +39,12 @@ set.seed(123)
 n <- 1000
 d <- data.frame("t" = 1:n)
 f <- function(x) {
-  sin(x / n * 2 * pi - pi)
+  2 + sin(x / n * 2 * pi - pi)
 }
 d$y <- rep(0, n)
+d$y[1] <- f(d$t[1])
 for(i in 2:n) {
-  d$y[i] <- f(d$t[i]) + 0.9 * (d$y[i - 1] - f(d$t[i - 1])) + rnorm(1, sd = 0.05)
+  d$y[i] <- f(d$t[i]) + 0.8 * (d$y[i - 1] - f(d$t[i - 1])) + rnorm(1, sd = 0.1)
 }
 d <- d[-1, ]
 
@@ -50,12 +52,19 @@ plot(d, type = "l")
 
 ## Estimate models without and with AR1 transformation.
 b0 <- bamlss(y ~ s(t,k=40), data = d)
-b1 <- bamlss(y ~ s(t,k=40), data = d, transform = AR1(rho = 0.9))
+b1 <- bamlss(y ~ s(t,k=40), data = d, transform = AR1(rho = 0.8))
 
 ## Estimate AR1 correlation.
 b2 <- bamlss(y ~ s(t,k=40), data = d, family = "AR1")
 rho <- predict(b2, model = "alpha", type = "parameter")
 print(rho[1])
+
+## Estimated standard deviations.
+sd0 <- predict(b0, model = "sigma", type = "parameter")
+sd1 <- predict(b1, model = "sigma", type = "parameter")
+sd2 <- predict(b2, model = "sigma", type = "parameter")
+
+print(round(c(sd0[1], sd1[1], sd2[1]), 2))
 
 ## Plot fitted trends.
 p0 <- predict(b0, model = "mu")
