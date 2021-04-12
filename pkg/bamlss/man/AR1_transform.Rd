@@ -13,13 +13,12 @@
 }
 
 \usage{
-AR1_transform(rho = 0.1, ...)
-AR1(rho = 0.1, ...)
+AR1_transform(rho = 0.1)
+AR1(rho = 0.1)
 }
 
 \arguments{
   \item{rho}{Specifies the correlation parameter at lag 1.}
-  \item{\dots}{Not used.}
 }
 
 \value{
