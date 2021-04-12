@@ -66,7 +66,7 @@ b1 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
 ## Estimate full AR1 model.
 b2 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
   family = "AR1")
-rho <- predict(b2, model = "alpha", type = "parameter")
+rho <- predict(b2, model = "rho", type = "parameter")
 print(range(rho))
 
 ## Estimated standard deviations.
