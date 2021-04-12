@@ -58,11 +58,11 @@ d$y <- f(d$t) + u
 plot(d, type = "l")
 
 ## Estimate models without and with AR1 transformation.
-b0 <- bamlss(y ~ s(t,k=40), data = d)
-b1 <- bamlss(y ~ s(t,k=40), data = d, transform = AR1(rho = 0.8))
+b0 <- bamlss(y ~ s(t,k=100), data = d)
+b1 <- bamlss(y ~ s(t,k=100), data = d, transform = AR1(rho = 0.8))
 
 ## Estimate AR1 correlation.
-b2 <- bamlss(y ~ s(t,k=40), data = d, family = "AR1")
+b2 <- bamlss(y ~ s(t,k=100), data = d, family = "AR1")
 rho <- predict(b2, model = "alpha", type = "parameter")
 print(rho[1])
 
@@ -83,7 +83,8 @@ lines(f(d$t) ~ d$t, col = 2, lwd = 2)
 lines(p0 ~ d$t, col = 4, lwd = 2)
 lines(p1 ~ d$t, col = 3, lwd = 3)
 lines(p2 ~ d$t, col = 5, lwd = 3)
-legend("topleft", c("no trans", "with trans", "AR model", "truth"),
+legend("topleft",
+  c("no trans", "with trans", "AR model", "truth"),
   lwd = 2, col = c(4, 3, 5, 2), bty = "n")
 }}
 
