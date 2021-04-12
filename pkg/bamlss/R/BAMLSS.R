@@ -3250,7 +3250,7 @@ randomize <- function(x)
 }
 
 
-AR1_transform <- function(rho = 0.1) {
+AR1_transform <- AR1 <- function(rho = 0.1) {
   function(x) {
     if(bframe <- inherits(x, "bamlss.frame")) {
       if(is.null(x$x))
@@ -3270,7 +3270,8 @@ AR1_transform <- function(rho = 0.1) {
     {
       if(m <- length(x$smooth.construct)) {
         for(j in 1:m) {
-          x$smooth.construct[[j]]$X <- v * x$smooth.construct[[j]]$X - w * rbind(0, x$smooth.construct[[j]]$X[ind, , drop = FALSE])
+          x$smooth.construct[[j]]$X <- v * x$smooth.construct[[j]]$X -
+            w * rbind(0, x$smooth.construct[[j]]$X[ind, , drop = FALSE])
         }
       }
       if(!is.null(x$model.matrix)) {

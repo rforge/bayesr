@@ -1,5 +1,6 @@
 \name{AR1_transform}
 \alias{AR1_transform}
+\alias{AR1}
 
 \title{
   AR1 Transformer Function
@@ -49,7 +50,7 @@ plot(d, type = "l")
 
 ## Estimate models without and with AR1 transformation.
 b0 <- bamlss(y ~ s(t,k=40), data = d)
-b1 <- bamlss(y ~ s(t,k=40), data = d, transform = AR1_transform(rho = 0.9))
+b1 <- bamlss(y ~ s(t,k=40), data = d, transform = AR1(rho = 0.9))
 
 ## Estimate AR1 correlation.
 b2 <- bamlss(y ~ s(t,k=40), data = d, family = "AR1")
