@@ -3250,7 +3250,7 @@ randomize <- function(x)
 }
 
 
-AR1_transform <- AR1 <- function(rho = 0.1) {
+AR1_transform <- AR1 <- function(rho = 0.1, ...) {
   function(x) {
     if(bframe <- inherits(x, "bamlss.frame")) {
       if(is.null(x$x))

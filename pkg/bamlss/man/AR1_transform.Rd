@@ -13,12 +13,13 @@
 }
 
 \usage{
-AR1_transform(rho = 0.1)
-AR1(rho = 0.1)
+AR1_transform(rho = 0.1, ...)
+AR1(rho = 0.1, ...)
 }
 
 \arguments{
   \item{rho}{Specifies the correlation parameter at lag 1.}
+  \item{\dots}{Not used.}
 }
 
 \value{
@@ -36,7 +37,7 @@ AR1(rho = 0.1)
 \examples{\dontrun{## Simulate AR1 data.
 set.seed(123)
 
-n <- 1000
+n <- 240
 d <- data.frame("t" = 1:n)
 
 ## Nonlinear function.
@@ -55,16 +56,19 @@ for(i in 2:n){
 ## Response.
 d$y <- f(d$t) + u
 
+## Plot time-series data.
 plot(d, type = "l")
 
 ## Estimate models without and with AR1 transformation.
-b0 <- bamlss(y ~ s(t,k=100), data = d)
-b1 <- bamlss(y ~ s(t,k=100), data = d, transform = AR1(rho = 0.8))
+b0 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC")
+b1 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
+  transform = AR1(rho = 0.8))
 
 ## Estimate AR1 correlation.
-b2 <- bamlss(y ~ s(t,k=100), data = d, family = "AR1")
+b2 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
+  family = "AR1")
 rho <- predict(b2, model = "alpha", type = "parameter")
-print(rho[1])
+print(range(rho))
 
 ## Estimated standard deviations.
 sd0 <- predict(b0, model = "sigma", type = "parameter")
