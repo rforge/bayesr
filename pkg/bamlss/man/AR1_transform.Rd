@@ -1,5 +1,5 @@
-\name{AR1_transform}
-\alias{AR1_transform}
+\name{trans_AR1}
+\alias{trans_AR1}
 \alias{AR1}
 
 \title{
@@ -13,7 +13,7 @@
 }
 
 \usage{
-AR1_transform(rho = 0.1)
+trans_AR1(rho = 0.1)
 AR1(rho = 0.1)
 }
 

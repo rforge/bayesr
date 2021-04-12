@@ -3191,7 +3191,7 @@ formula_hierarchical <- function(formula)
 
 
 ## Transform smooth terms to mixed model representation.
-randomize <- function(x)
+trans_random <- randomize <- function(x)
 {
   if(bframe <- inherits(x, "bamlss.frame")) {
     if(is.null(x$x))
@@ -3250,7 +3250,7 @@ randomize <- function(x)
 }
 
 
-AR1_transform <- AR1 <- function(rho = 0.1) {
+trans_AR1 <- AR1 <- function(rho = 0.1) {
   function(x, ...) {
     if(bframe <- inherits(x, "bamlss.frame")) {
       if(is.null(x$x))
