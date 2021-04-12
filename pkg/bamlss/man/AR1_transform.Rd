@@ -43,6 +43,7 @@ d$y <- rep(0, n)
 for(i in 2:n) {
   d$y[i] <- f(d$t[i]) + 0.9 * (d$y[i - 1] - f(d$t[i - 1])) + rnorm(1, sd = 0.05)
 }
+d <- d[-1, ]
 
 plot(d, type = "l")
 
