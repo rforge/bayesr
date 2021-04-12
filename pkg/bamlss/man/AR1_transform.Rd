@@ -31,7 +31,7 @@ AR1(rho = 0.1)
 
 \seealso{
   \code{\link{bamlss.frame}}, \code{\link{bamlss}}, \code{\link[mgcv]{smooth2random}}.
-}
+} 
 
 \examples{\dontrun{## Simulate AR1 data.
 set.seed(123)
