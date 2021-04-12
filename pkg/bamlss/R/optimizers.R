@@ -5673,6 +5673,8 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
       y  <- y[[1]]
   }
 
+print(y)
+
   noff <- !inherits(y, "ff")
 
   if(!is.null(start))
