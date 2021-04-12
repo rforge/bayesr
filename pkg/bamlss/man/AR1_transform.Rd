@@ -34,7 +34,7 @@ AR1(rho = 0.1)
 } 
 
 \examples{\dontrun{## Simulate AR1 data.
-set.seed(123)
+set.seed(111)
 
 n <- 240
 d <- data.frame("t" = 1:n)
@@ -59,12 +59,12 @@ d$y <- f(d$t) + u
 plot(d, type = "l")
 
 ## Estimate models without and with AR1 transformation.
-b0 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC")
-b1 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
+b0 <- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC")
+b1 <- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC",
   transform = AR1(rho = 0.8))
 
 ## Estimate full AR1 model.
-b2 <- bamlss(y ~ s(t,k=100), data = d, criterion = "BIC",
+b2 <- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC",
   family = "AR1")
 rho <- predict(b2, model = "rho", type = "parameter")
 print(range(rho))
@@ -86,7 +86,7 @@ lines(p0 ~ d$t, col = 4, lwd = 2)
 lines(p1 ~ d$t, col = 3, lwd = 3)
 lines(p2 ~ d$t, col = 5, lwd = 3)
 legend("topleft",
-  c("no trans", "with trans", "AR model", "truth"),
+  c("no trans", "with trans", "AR1 model", "truth"),
   lwd = 2, col = c(4, 3, 5, 2), bty = "n")
 }}
 
