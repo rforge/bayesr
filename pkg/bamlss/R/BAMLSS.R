@@ -685,7 +685,7 @@ smooth.construct_ff <- function(object, data, knots, ...)
 ff_nrow <- function(x, value)
 {
   d <- dim(x)
-  if (is.null(d) || length(d)!=2)
+  if(is.null(d) || length(d)!=2)
     stop("not a two-dimensional array")
   dim(x) <- c(as.integer(value), d[[2]])
   x
