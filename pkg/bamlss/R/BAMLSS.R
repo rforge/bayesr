@@ -202,7 +202,7 @@ bamlss_chunk <- function(x) {
     nrow(x)
   }
   if(N > 100000L) {
-    n <- 0.05 * N
+    n <- max(c(100000, 0.02 * N))
     xc <- cut(seq_len(N), breaks = floor(N/n), include.lowest = TRUE)
     chunks <- split(seq_len(N), xc)
   } else {
@@ -705,6 +705,12 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
 {
   stopifnot(requireNamespace("ff"))
   stopifnot(requireNamespace("ffbase"))
+
+  print(dim(x))
+  print(dim(dat))
+  print(class(x))
+  print(class(d))
+  cat("---\n")
 
   w <- getOption("warn")
   options("warn" = -1)
