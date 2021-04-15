@@ -746,23 +746,24 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     if(!is.factor(data[[j]][1:2])) {
       ux <- length(ffbase::unique.ff(data[[j]]))
       if(ux > 2) {
-        ux <- if(ux < 100L) ux - 1L else 100L
+        ux <- if(ux < 1000L) ux - 1L else 1000L
         xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = ux), na.rm = TRUE)
         names(xq) <- NULL
       } else {
-        xq <- rep(ux, length.out = 100L)
+        xq <- rep(ux, length.out = 1000L)
       }
-      if(length(xq) == 100L) {
+      if(length(xq) == 1000L) {
         nd[[j]] <- sample(xq)
       } else {
-        nd[[j]] <- sample(rep(xq, length.out = 100L))
+        nd[[j]] <- sample(rep(xq, length.out = 1000L))
       }
     } else {
-      nd[[j]] <- sample(rep(unique(data[[j]]), length.out = 100L))
+      nd[[j]] <- sample(rep(unique(data[[j]]), length.out = 1000L))
     }
   }
   nd <- as.data.frame(nd)
   object <- smoothCon(object, data = nd, knots = knots)[[1L]]
+  rm(nd)
   object[["X"]] <- NULL
   sX <- function(x) {
     if(is.null(object$PredictMat)) {
