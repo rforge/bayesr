@@ -706,12 +706,6 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
   stopifnot(requireNamespace("ff"))
   stopifnot(requireNamespace("ffbase"))
 
-  print(dim(x))
-  print(dim(dat))
-  print(class(x))
-  print(class(d))
-  cat("---\n")
-
   w <- getOption("warn")
   options("warn" = -1)
   if(is.null(x))
