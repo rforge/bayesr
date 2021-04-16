@@ -5888,7 +5888,8 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   object$nodes <- nodes
   class(object) <- c(class(object), "special")
 
-  bw <- runif(length(unlist(object$n.weights)), -0.01, 0.01)
+  bw <- runif(length(unlist(object$n.weights)), -1e-05, 1e-05)
+  bw <- rep(1, length(unlist(object$n.weights)))
   names(bw) <- names(unlist(object$n.weights))
   object$state$parameters <- c(object$state$parameters, bw, tau2)
   object$state$edf <- 0
@@ -5963,8 +5964,8 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #    Z[, j] <- x$activ_fun(Xw)
 #    fit <- fit + Z[, j] * w[1L]
 #    eta[[id]] <- eta[[id]] + fit
-#    score <- -1 * family$score[[id]](y, family$map2par(eta))
-#    hess <- family$hess[[id]](y, family$map2par(eta))
+#    score <- family$score[[id]](y, family$map2par(eta))
+#    hess <- -1 * family$hess[[id]](y, family$map2par(eta))
 
 #    h0 <- sum(Z[,j]^2 * hess)
 
@@ -5977,7 +5978,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
 #    h3 <- rbind(c(h0, h2), cbind(h2, h1)) + I
 
-#    return(h3)    
+#    return(-h3)    
 #  }
 
   objfun <- function(w, i, j, fit) {
@@ -6008,7 +6009,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ll0 <- family$loglik(y, family$map2par(eta2))
     fit <- fit - Z[, j] * par[j]
 
-    opt <- try(optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
+    opt <- try(optim(c(par[j], par[i]), fn = objfun, ##gr = gradfun,
       method = "L-BFGS-B", i = i, j = j, fit = fit), silent = TRUE)
 
 #    H <- matrix_inv(hessfun(c(par[j], par[i]), i = i, j = j, fit = fit))
