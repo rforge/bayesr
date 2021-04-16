@@ -6009,7 +6009,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     ll0 <- family$loglik(y, family$map2par(eta2))
     fit <- fit - Z[, j] * par[j]
 
-    opt <- try(optim(c(par[j], par[i]), fn = objfun, ##gr = gradfun,
+    opt <- try(optim(c(par[j], par[i]), fn = objfun, gr = gradfun,
       method = "L-BFGS-B", i = i, j = j, fit = fit), silent = TRUE)
 
 #    H <- matrix_inv(hessfun(c(par[j], par[i]), i = i, j = j, fit = fit))
