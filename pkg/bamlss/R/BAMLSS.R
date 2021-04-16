@@ -713,14 +713,15 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
   n <- nrow(dat)
   nff <- nrow(x)
   cn <- colnames(x)
-  x <- ff_nrow(x, nff + n)
+  ## x <- ff_nrow(x, nff + n)
+  nrow(x) <- nff + n
   if(!identical(colnames(x), colnames(dat))) {
     warning("column names are not identical")
   }
   if(ncol(x) != ncol(dat)) {
     stop("Number of columns does not match")
   }
-  i <- ff::hi(nff + 1, nff + n)
+  i <- hi(nff + 1, nff + n)
   colnames(x) <- NULL
   colnames(dat) <- NULL
   x[i, ] <- dat[,]
@@ -776,9 +777,16 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     colnames(X) <- cn
     return(X)
   }
+  nobs <- nrow(data)
+  k <- 1
   for(ic in bamlss_chunk(data)) {
     object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
+    if(k > 1)
+      cat("\r")
+    cat("  .. ..", paste0(formatC(nrow(object[["X"]]) / nobs * 100, width = 7), "%"))
+    k <- k + 1
   }
+  cat("\n")
   if(!inherits(object, "nnet0.smooth")) {
     csum <- 0
     for(ic in bamlss_chunk(object[["X"]])) {
