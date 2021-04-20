@@ -5330,7 +5330,7 @@ smooth.construct.linear.smooth.spec <- function(object, data, knots, ...)
 
   object$scale <- list("center" = center, "scale" = scale)
 
-  ridge <- if(is.null(object$xt$ridge)) FALSE else object$xt$ridge
+  ridge <- if(is.null(object$xt$ridge)) TRUE else object$xt$ridge
   neigh <- if(is.null(object$xt$neigh)) FALSE else object$xt$neigh
   if(ridge | neigh) {
     if(ridge)

@@ -5580,6 +5580,10 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
   if(OL)
     lasso <- TRUE
 
+  initialize <- list(...)$initialize
+  if(is.null(initialize))
+    initialize <- TRUE
+
   K <- list(...)$K
   if(is.null(K))
     K <- 2
@@ -5707,7 +5711,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
         names(start2) <- gsub(paste0(i, ".p."), "", names(start2))
         beta[[i]][["p"]][names(start2)] <- start2
       } else {
-        if(!is.null(family$initialize) & is.null(offset)) {
+        if(!is.null(family$initialize) & is.null(offset) & initialize) {
           if(noff) {
             shuffle_id <- sample(seq_len(N))
           } else {
@@ -5741,6 +5745,8 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
         ll_contrib[[i]][[paste0("s.", j)]] <- medf[[i]][[paste0("s.", j, ".edf")]] <- -1
         LLC[[i]][[paste0("s.", j)]] <- 0
         ncX <- ncol(x[[i]]$smooth.construct[[j]]$X)
+        if(is.null(x[[i]]$smooth.construct[[j]]$xt$center))
+          x[[i]]$smooth.construct[[j]]$xt$center <- TRUE
         if(inherits(x[[i]]$smooth.construct[[j]], "nnet0.smooth")) {
           tpar <- x[[i]]$smooth.construct[[j]]$state$parameters
           tpar <- tpar[!grepl("tau2", names(tpar))]
@@ -5758,6 +5764,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
         } else {
           colnames(parm[[i]][[paste0("s.", j)]]) <- c(paste0("b", 1:ncX), paste0("tau2", 1:ncS), "edf")
         }
+        
         if(lasso) {
           lS <- length(x[[i]]$smooth.construct[[j]]$S)
           x[[i]]$smooth.construct[[j]]$S[[lS + 1]] <- function(parameters, ...) {
@@ -5996,7 +6003,8 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             }
             if(aic | loglik) {
               if(aic) {
-                ll <- -2 * family$loglik(yt, family$map2par(etas)) + K * ncol(Xt)
+                iedf <- sum_diag(XWX %*% P)
+                ll <- -2 * family$loglik(yt, family$map2par(etas)) + K * iedf
               } else {
                 ll <- -1 * family$loglik(yt, family$map2par(etas))
               }
@@ -6008,7 +6016,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
           ## if(ionly[[i]]) {
           ##   tau2fe <- 1e+350
           ## } else {
-            tau2fe <- try(tau2.optim(objfun2, tau2f), silent = TRUE)
+            tau2fe <- try(tau2.optim(objfun2, tau2f, optim = TRUE), silent = TRUE)
           ## }
           ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
@@ -6037,6 +6045,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
               medf[[i]][["p.edf"]] <- c(medf[[i]][["p.edf"]], tedf)
             }
           }
+
           if(!select) {
             eta[[i]] <- eta[[i]] + drop(Xn %*% beta[[i]][["p"]])
             etas[[i]] <- etas[[i]] + drop(Xt %*% beta[[i]][["p"]])
@@ -6469,7 +6478,7 @@ bbfit_plot <- function(x, name = NULL, ...)
   }
   if(!is.null(name)) {
     for(i in name) {
-      x <- x[, grep(i, colnames(x), fixed = TRUE)]
+      x <- x[, grep(i, colnames(x), fixed = TRUE), drop = FALSE]
     }
   }
   cn <- colnames(x)
