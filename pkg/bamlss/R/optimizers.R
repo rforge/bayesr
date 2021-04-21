@@ -5868,7 +5868,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
   ptm <- proc.time()
   for(ej in 1:epochs) {
-    if(verbose)
+    if(verbose & (epochs > 1))
       cat("starting epoch", ej, "\n")
 
     ## Shuffle observations.
