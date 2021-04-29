@@ -3790,10 +3790,10 @@ ztnbinom_bamlss <- function(...) {
     )
   )
 
-  rval$rps <- function(y, par) {
-    K <- sort(unique(y))
-    rps <- 0
-    for(k in K) {
+  rval$rps <- function(y, par, ymin = 1L, ymax = max(max(y), 100L)) {
+    K <- seq(ymin, ymax, by = 1L)
+    rps <- rep(0, length(y))
+    for (k in K) {
       P <- rval$p(k, par)
       O <- y <= k
       rps <- rps + (P - O)^2
