@@ -793,7 +793,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     physical(object[["X"]])$filename <- paste0(xfile, ".ff")
   } else {
     object[["X"]] <- ff(NA, dim = c(nrow(data), ncol(object[["X"]])),
-      vmode = names(maxffmode(vmode(object[["X"]])))[1],
+      ## vmode = names(maxffmode(vmode(object[["X"]])))[1],
       filename = paste0(xfile, ".ff"))
     sX <- function(x) {
       if(is.null(object$PredictMat)) {
