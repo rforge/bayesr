@@ -788,8 +788,8 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   object <- smoothCon(object, data = nd, knots = knots)[[1L]]
   rm(nd)
   nobs <- nrow(data)
-  if(file.exists(paste(xfile, ".rds"))) {
-    object[["X"]] <- readRDS(paste(xfile, ".rds"))
+  if(file.exists(paste0(xfile, ".rds"))) {
+    object[["X"]] <- readRDS(paste0(xfile, ".rds"))
     physical(object[["X"]])$filename <- paste0(xfile, ".ff")
   } else {
     object[["X"]] <- ff(NA, dim = c(nrow(data), ncol(object[["X"]])),
@@ -813,7 +813,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
       cat("  .. ..", paste0(formatC(np / nobs * 100, width = 7), "%"))
       k <- k + 1
     }
-    saveRDS(object[["X"]], file = paste(xfile, ".rds"))
+    saveRDS(object[["X"]], file = paste0(xfile, ".rds"))
     cat("\n")
   }
   if(!inherits(object, "nnet0.smooth")) {
