@@ -94,6 +94,15 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 #      }
     }
   } else {
+    cat("  .. creating directory for storing matrices.\n")
+    overwrite <- list(...)$overwrite
+    if(is.null(overwrite))
+      overwrite <- TRUE
+    if(file.exists(".ff_data_bamlss") & overwrite) {
+      unlink(".ff_data_bamlss")
+    } else {
+      dir.create(".ff_data_bamlss")
+    }
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = FALSE)
     if(!any(rn %in% names(bf$model.frame))) {
       rn <- grep2(paste0(rn, "."), names(bf$model.frame), fixed = TRUE, value = TRUE)
@@ -730,6 +739,17 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
   x
 }
 
+ffdf_2_ff_matrix <- function(x, ...) 
+{
+  result <- ff(NA, dim = dim(x), vmode = names(maxffmode(vmode(x)))[1], ...)
+  dimnames(result) <- dimnames(x)
+  for(i in chunk(x)) {
+    Log$chunk(i)
+    result[i, ] <- as.matrix(x[i, ])
+  }
+  result
+}
+
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
   object$xt$center <- TRUE
@@ -743,6 +763,8 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   }
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
+  xfile <- rmf(object$label)
+  xfile <- file.path(".ff_data_bamlss", xfile)
   for(j in object$term) {
     if(!is.factor(data[[j]][1:2])) {
       ux <- length(ffbase::unique.ff(data[[j]]))
@@ -765,28 +787,35 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   nd <- as.data.frame(nd)
   object <- smoothCon(object, data = nd, knots = knots)[[1L]]
   rm(nd)
-  object[["X"]] <- NULL
-  sX <- function(x) {
-    if(is.null(object$PredictMat)) {
-      X <- PredictMat(object, data = x)
-    } else {
-      X <- object$PredictMat(object, data = x)
-    }
-    cn <- colnames(X)
-    X <- ff::ff(X, dim = dim(X), dimorder = c(2, 1))
-    colnames(X) <- cn
-    return(X)
-  }
   nobs <- nrow(data)
-  k <- 1
-  for(ic in bamlss_chunk(data)) {
-    object[["X"]] <- ff_matrix_append(object[["X"]], sX(data[ic, ]))
-    if(k > 1)
-      cat("\r")
-    cat("  .. ..", paste0(formatC(nrow(object[["X"]]) / nobs * 100, width = 7), "%"))
-    k <- k + 1
+  if(file.exists(paste(xfile, ".rds"))) {
+    object[["X"]] <- readRDS(paste(xfile, ".rds"))
+    physical(object[["X"]])$filename <- paste0(xfile, ".ff")
+  } else {
+    object[["X"]] <- ff(NA, dim = c(nrow(data), ncol(object[["X"]])),
+      vmode = names(maxffmode(vmode(object[["X"]])))[1],
+      filename = paste0(xfile, ".ff"))
+    sX <- function(x) {
+      if(is.null(object$PredictMat)) {
+        X <- PredictMat(object, data = x)
+      } else {
+        X <- object$PredictMat(object, data = x)
+      }
+      return(X)
+    }
+    k <- 1
+    np <- 0
+    for(ic in bamlss_chunk(data)) {
+      object[["X"]][ic, ] <- sX(data[ic, ])
+      np <- np + length(ic)
+      if(k > 1)
+        cat("\r")
+      cat("  .. ..", paste0(formatC(np / nobs * 100, width = 7), "%"))
+      k <- k + 1
+    }
+    saveRDS(object[["X"]], file = paste(xfile, ".rds"))
+    cat("\n")
   }
-  cat("\n")
   if(!inherits(object, "nnet0.smooth")) {
     csum <- 0
     for(ic in bamlss_chunk(object[["X"]])) {
