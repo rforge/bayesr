@@ -94,14 +94,15 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 #      }
     }
   } else {
-    cat("  .. creating directory for storing matrices.\n")
     overwrite <- list(...)$overwrite
     if(is.null(overwrite))
       overwrite <- TRUE
-    if(file.exists(".ff_data_bamlss") & overwrite) {
-      unlink(".ff_data_bamlss")
-    } else {
-      dir.create(".ff_data_bamlss")
+    if(file.exists("ff_data_bamlss") & overwrite) {
+      unlink("ff_data_bamlss")
+    }
+    if(!file.exists(ff_data_bamlss)) {
+      cat("  .. creating directory for storing matrices.\n")
+      dir.create("ff_data_bamlss")
     }
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = FALSE)
     if(!any(rn %in% names(bf$model.frame))) {
@@ -764,7 +765,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
   xfile <- rmf(object$label)
-  xfile <- file.path(".ff_data_bamlss", xfile)
+  xfile <- file.path("ff_data_bamlss", xfile)
   for(j in object$term) {
     if(!is.factor(data[[j]][1:2])) {
       ux <- length(ffbase::unique.ff(data[[j]]))
