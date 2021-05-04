@@ -818,7 +818,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     saveRDS(object[["X"]], file = paste0(xfile, ".rds"))
     cat("\n")
   }
-  if(!inherits(object, "nnet0.smooth")) {
+  if(!inherits(object, "nnet0.smooth") & FALSE) {
     csum <- 0
     for(ic in bamlss_chunk(object[["X"]])) {
       csum <- csum + colSums(object[["X"]][ic, ])
