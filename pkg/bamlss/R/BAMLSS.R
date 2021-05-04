@@ -849,7 +849,8 @@ Predict.matrix.ff_smooth.smooth.spec <- function(object, data)
   class(object) <- object$orig.class
   if(is.null(object$PredictMat)) {
     X <- Predict.matrix(object, data)
-    X <- X %*% object[["Z"]]
+    if(!is.null(object[["Z"]]))
+      X <- X %*% object[["Z"]]
   } else {
     X <- object$PredictMat(object, data)
   }
