@@ -792,7 +792,9 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     object[["X"]] <- readRDS(paste0(xfile, ".rds"))
     physical(object[["X"]])$filename <- paste0(xfile, ".ff")
   } else {
-    object[["X"]] <- ff(NA, dim = c(nrow(data), ncol(object[["X"]])),
+    object[["X"]] <- ff(0.0,
+      length = nrow(data) * ncol(object[["X"]]),
+      dim = c(nrow(data), ncol(object[["X"]])),
       ## vmode = names(maxffmode(vmode(object[["X"]])))[1],
       filename = paste0(xfile, ".ff"))
     sX <- function(x) {
