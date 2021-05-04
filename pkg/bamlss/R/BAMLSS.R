@@ -100,7 +100,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
     if(file.exists("ff_data_bamlss") & overwrite) {
       unlink("ff_data_bamlss")
     }
-    if(!file.exists(ff_data_bamlss)) {
+    if(!file.exists("ff_data_bamlss")) {
       cat("  .. creating directory for storing matrices.\n")
       dir.create("ff_data_bamlss")
     }
@@ -254,6 +254,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
 
   no_ff <- !inherits(data, "ffdf")
   if(!no_ff) {
+    stopifnot(requireNamespace("bit"))
     stopifnot(requireNamespace("ff"))
     stopifnot(requireNamespace("ffbase"))
   }
@@ -742,7 +743,7 @@ ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...)
 
 ffdf_2_ff_matrix <- function(x, ...) 
 {
-  result <- ff(NA, dim = dim(x), vmode = names(maxffmode(vmode(x)))[1], ...)
+  result <- ff::ff(NA, dim = dim(x), vmode = names(maxffmode(vmode(x)))[1], ...)
   dimnames(result) <- dimnames(x)
   for(i in chunk(x)) {
     Log$chunk(i)
@@ -791,9 +792,9 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   nobs <- nrow(data)
   if(file.exists(paste0(xfile, ".rds"))) {
     object[["X"]] <- readRDS(paste0(xfile, ".rds"))
-    physical(object[["X"]])$filename <- paste0(xfile, ".ff")
+    bit::physical(object[["X"]])$filename <- paste0(xfile, ".ff")
   } else {
-    object[["X"]] <- ff(0.0,
+    object[["X"]] <- ff::ff(0.0,
       length = nrow(data) * ncol(object[["X"]]),
       dim = c(nrow(data), ncol(object[["X"]])),
       ## vmode = names(maxffmode(vmode(object[["X"]])))[1],
