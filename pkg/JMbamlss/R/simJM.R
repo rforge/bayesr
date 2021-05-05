@@ -3,7 +3,6 @@
 
 # Extend the structure given by simJM function in bamlss
 # Add arguments
-# multivariate = FALSE: FALSE if univariate JM, TRUE if multivariate
 # efun_type = "Poly", character string specifying the type of eigenfcts (eFun)
 # ignoreDeg = NULL, vector of numerics specifying the ignored degrees (eFun)
 # eval_type = "linear", character string specifying the type of eigenvals (eVal)
@@ -11,7 +10,6 @@
 
 simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                   long_setting = "functional", 
-                  multivariate = FALSE,
                   alpha_setting = if(nonlinear) "linear" else "nonlinear", 
                   dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax=NULL,    
                   seed = NULL, full = FALSE, file = NULL, nonlinear = FALSE, 
@@ -153,11 +151,8 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                        apply(splines::bs(time, long_df, b_set$knots,
                                          b_set$degree, b_set$intercept,
                                          b_set$Boundary.knots) * beta, 1, sum)),
-     
-     # Vielleicht sollte ich 'einfach' ne Funktion schreiben, die ähnlich zu 
-     # der splines::bs Funktion die Hauptkomponenten auswertet und die apply
-     # Struktur bleibt
-     "fpc" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) +
+     # Here adapt the longitudinal model
+     "fpc" = (1.25 + 0.6*sin(x) + (-0.01)*time +
                 apply(t(funData::eFun(argvals = c(b_set$tmin, time, b_set$tmax),
                    M = long_df, ignoreDeg = b_set$ignoreDeg,
                    type = b_set$type)@X)[-c(1, 2+length(time)), ]*beta, 1, sum)))
