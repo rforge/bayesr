@@ -8,47 +8,49 @@
 #' @param nsub Number of subjects.
 #' @param times Vector of time points.
 #' @param probmiss Probability of missingness.
-#' @param ndim Number of dimensions.
+#' @param nmark Number of markers.
 #' @param M Number of principal components.
+#' @param ncovar Number of covariates.
 #' @param lambda Additive predictor of time-varying survival covariates.
 #' @param gamma Additive predictor of time-constant survival covariates.
-#' @param alpha List of length ndim containing the additive predictors of the
+#' @param alpha List of length nmark containing the additive predictors of the
 #'   association.
-#' @param mu List of length ndim containing the additive predictors of the 
+#' @param mu List of length nmark containing the additive predictors of the 
 #'   longitudinal part.
 #' @param sigma Additive predictor of the variance.
 #' @param tmax Maximal time point of observations.
 #' @param seed Seed for reproducibility.
 #' @param mfpc_args List containing the named arguments "type", "eFunType",
-#'   "ignoreDeg", and "eValType" of function simMultiFunData
+#'   "ignoreDeg", "eValType" of function simMultiFunData and "eValScale" for
+#'   scaling the eigenvalues.
+#' @param full Create a wide-format data.frame and 
 simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
-                       ndim = 2, M = 6,
-                       lambda = function(t) {
-                         1.4*log((time + 10)/1000) - 1.5
+                       nmark = 2, M = 6, ncovar = 2,
+                       lambda = function(t, x) {
+                         1.4*log((t + 10)/1000) - 1.5
                        },
-                       gamma = function(x1) {
-                         0.3*x1
+                       gamma = function(x) {
+                         0.3*x[, 1]
                        },
-                       alpha = rep(list(function(t) {
-                         3
-                       }), ndim),
+                       alpha = rep(list(function(t, x) {
+                         3 + 0*t
+                       }), nmark),
                        mu = rep(list(function(t, x){
-                         1.25 + 0.6*sin(x) + (-0.01)*t
-                       }), ndim),
-                       sigma = function(t) {
-                         0.3
+                         1.25 + 0.6*sin(x[, 2]) + (-0.01)*t
+                       }), nmark),
+                       sigma = function(t, x) {
+                         0.3 + 0*t + I(x$marker == "m2")*0.2
                        }, 
                        tmax = NULL, seed = NULL, 
                        mfpc_args = list(type = "split", eFunType = "Poly",
-                                        ignoreDeg = NULL, eValType = "linear"),
-                  full = FALSE, file = NULL, nonlinear = FALSE, 
-                  fac = FALSE, efun_type = "Poly", ignoreDeg = NULL, 
-                  eval_type = "linear", eval_scale = 1){
+                                        ignoreDeg = NULL, eValType = "linear",
+                                        eValScale = 1),
+                       full = FALSE, file = NULL){
 
   if(length(alpha) != length(mu)) {
     stop("alpha and mu must have same length.\n")
   }
-  if(length(mu) != ndim) {
+  if(length(mu) != nmark) {
     stop("Predictors must be specified for all markers.\n")
   }
   if(is.null(tmax)){
@@ -83,129 +85,145 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   
   
   ## generate baseline covariates 
-  ## (x1=survival covariate, x2=longitudinal covariate)
-  gen_x <- function(nsub){
-    x1 <- runif(nsub, -3, 3) 
-    x2 <- runif(nsub, -3, 3)
-    cbind(x1, x2)
+  gen_x <- function(nsub, ncovar){
+    x <- matrix(data = NA, nrow = nsub, ncol = ncovar)
+    for(i in seq_len(ncovar)) {
+      x[, i] <- runif(n = nsub, min = -3, max = 3)
+    }
+    colnames(x) <- paste0("x", seq_len(ncovar))
+    data.frame(x)
   } 
+  
+  
+  ## Code from Clara Happ-Kurz' package funData and slightly adapted
+  simMultiSplit <- function (argvals, M, eFunType, ignoreDeg = NULL, eValType, 
+                             s) {
+    if (any(c(length(M), length(eFunType), length(eValType)) != 1)) 
+      stop("argvals, M, eFunType, eValType must all be of length 1!")
+    p <- length(argvals)
+    x <- vector("list", length = length(argvals))
+    splitVals <- rep(NA, length(argvals) + 1)
+    x[[1]] <- unlist(argvals[[1]])
+    splitVals[1:2] <- c(0, length(x[[1]]))
+    for (i in 2:p) {
+      x[[i]] <- unlist(argvals[[i]])
+      x[[i]] <- argvals[[i]] - min(argvals[[i]]) + max(x[[i - 1]])
+      splitVals[i + 1] <- splitVals[i] + length(x[[i]])
+    }
+    f <- eFun(unlist(x), M, ignoreDeg = ignoreDeg, type = eFunType)
+    trueFuns <- vector("list", p)
+    for (j in seq_len(p)) trueFuns[[j]] <- funData(argvals[[j]], 
+            s[j] * f@X[, (1 + splitVals[j]):splitVals[j + 1]])
+    return(multiFunData(trueFuns))
+  }
+  
+  ## Code from Clara Happ-Kurz' package funData and slightly adapted
+  simMultiWeight <- function (argvals, M, eFunType, ignoreDeg = NULL, eValType,
+                              alpha) {
+    p <- length(argvals)
+    dimsSupp <- foreach::foreach(j = seq_len(p), .combine = "c") %do% {
+      length(argvals[[j]])
+    }
+    if (any(dimsSupp > 2)) {
+      stop(paste0("Function simMultiWeight: method is not implemented for ",
+                  "objects of dimension > 2!"))
+    }
+    if (p > 1) {
+      if (isTRUE(do.call(all.equal, lapply(M, prod)))) {
+        Mtotal <- prod(M[[1]])
+      }
+      else stop("Function simMultiWeight: basis dimensions must be equal!")
+    }
+    else {
+      Mtotal <- prod(M[[1]])
+    }
+
+    weight <- sqrt(alpha/sum(alpha))
+    basis <- vector("list", p)
+    for (j in seq_len(p)) {
+      if (dimsSupp[j] == 1) 
+        basis[[j]] <- weight[j] * eFun(argvals[[j]][[1]], M = M[[j]], 
+                                       ignoreDeg = ignoreDeg[[j]], 
+                                       type = eFunType[[j]])
+      else basis[[j]] <- weight[j] * tensorProduct(
+        eFun(argvals[[j]][[1]], M = M[[j]][1], ignoreDeg = ignoreDeg[[j]][[1]],
+             type = eFunType[[j]][1]), eFun(argvals[[j]][[2]], M = M[[j]][2], 
+                                            ignoreDeg = ignoreDeg[[j]][[2]], 
+                                            type = eFunType[[j]][2]))
+    }
+    return(multiFunData(basis))
+  }
   
   
   ## generate the multivariate functional principal component basis
   mfpc <- function(argvals, mfpc_args, M) {
     switch(mfpc_args$type,
-           split = funData:::simMultiSplit(argvals = argvals, M = M,
-                                           eFunType = mfpc_args$eFunType,
-                                           ignoreDeg = mfpc_args$ignoreDeg,
-                                           eValType = mfpc_args$eValType,
-                                           N = 0),
-           weighted = funData:::simMultiWeight(argvals = argvals, M = M,
-                                               eFunType = mfpc_args$eFunType,
-                                               ignoreDeg = mfpc_args$ignoreDeg,
-                                               eValType = mfpc_args$eValType,
-                                               N = 0),
+           split = simMultiSplit(argvals = argvals, M = M,
+                                 eFunType = mfpc_args$eFunType,
+                                 ignoreDeg = mfpc_args$ignoreDeg,
+                                 eValType = mfpc_args$eValType,
+                                 s = mfpc_args$mfpc_seed),
+           weighted = simMultiWeight(argvals = argvals, M = M,
+                                     eFunType = mfpc_args$eFunType,
+                                     ignoreDeg = mfpc_args$ignoreDeg,
+                                     eValType = mfpc_args$eValType,
+                                     alpha = mfpc_args$mfpc_seed),
            stop(paste("Choose either 'split' or 'weighted' for the simulation",
-                      "of multivariate functional data."))
+                      "of multivariate functional data.")))
   }
   
   ## generate functional principal component based random effects
-  gen_fpc <- function(times, nsub, M, eval_type = "Poly",
-                      eval_scale = 1, tmax, efun_type = "linear", 
-                      ignoreDeg = NULL, seed = NULL){
+  gen_fpc <- function(times, nsub, M, mfpc_args, tmax, seed = NULL){
     if(!is.null(seed)) set.seed(seed)
     
-    evals <- funData::eVal(M = M, type = eval_type)
+    evals <- funData::eVal(M = M, type = mfpc_args$eValType)
     
-    scores <- mvtnorm::rmvnorm(nsub, sigma = diag(eval_scale * evals),
+    scores <- mvtnorm::rmvnorm(nsub, sigma = diag(mfpc_args$eValScale * evals),
                                method="chol")
     colnames(scores) <- paste0("s", 1:M)
-    b_set <- list(tmin = min(c(times, tmax)),
-                  tmax = tmax,
-                  ignoreDeg = ignoreDeg,
-                  type = efun_type)
+    
+    mfpc_seed <- switch(mfpc_args$type, 
+                        "split" = sample(c(-1, 1), nmark, 0.5),
+                        "weight" = stats::runif(nmark, 0.2, 0.8))
+    b_set <- c(list(tmin = min(c(times, tmax)), tmax = tmax, M = M,
+                    mfpc_seed = mfpc_seed), mfpc_args)
     return(list(scores, b_set))
   }
   
   ## compute predictors
   ## individual longitudinal trajectories
-  mu <-  function(time, x, r, M, b_set, long_setting){
+  mu_fun <-  function(time, x, r, mu, b_set){
     
-    # allow to always extract coefficients as column
+    # duplicate scores for the multiple integration points
     if(is.null(dim(r))){
-      r <- matrix(r, nrow=1)
-    } 
-    
-    beta <- r[, -c(1:2)]
-    # duplicate vector beta for the multiple integration points
-    if(is.null(dim(beta))){
-      beta <- matrix(beta, nrow = length(time), ncol = M, byrow=TRUE)
+      r <- matrix(r, nrow = length(time), ncol = b_set$M, byrow=TRUE)
     }
-    # TODO: Suppress warnings
-    switch(long_setting,
-     "linear" = (1.25 + r[, 1] + 0.6*sin(x) + (-0.01)*time + r[, 2]*0.02*time),
-     "nonlinear" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time)),
-     "functional" = (0.5 + r[, 1] + 0.6*sin(x) + 0.1*(time+2)*exp(-0.075*time) + 
-                       apply(splines::bs(time, M, b_set$knots,
-                                         b_set$degree, b_set$intercept,
-                                         b_set$Boundary.knots) * beta, 1, sum)),
-     # Here adapt the longitudinal model
-     "fpc" = (1.25 + 0.6*sin(x) + (-0.01)*time +
-                apply(t(funData::eFun(argvals = c(b_set$tmin, time, b_set$tmax),
-                   M = M, ignoreDeg = b_set$ignoreDeg,
-                   type = b_set$type)@X)[-c(1, 2+length(time)), ]*beta, 1, sum)))
     
-  }
-  
-  ## association between mu and log-hazard
-  alpha <- function(time, alpha_setting){
-    switch(alpha_setting,
-           "zero" = 0*time,
-           "constant" = 0*time + 1,
-           "linear" = 1 - 0.015*time,
-           "nonlinear" = cos((time-60)/20) + 1,
-           "nonlinear2" = cos((time-33)/33))
-  }
-  
-  alpha_nonlin <- function(time, alpha_setting, x2, x3, r, M, b_set, long_setting){
-    switch(alpha_setting,
-           "zero" = 0*time,
-           "constant" = 0*time + 1,
-           "linear" = 1 * mu(time, x2, r, M, b_set, long_setting),
-           "nonlinear" = -0.1 * (mu(time, x2, r, M, b_set, long_setting) + 3)^2 +
-             mu(time, x2, r, M, b_set, long_setting) + 1.8,
-           "nonlinear2" = x3 * (-0.1 * (mu(time, x2, r, M, b_set, long_setting) + 3)^2 +
-                                  mu(time, x2, r, M, b_set, long_setting) + 1.8) + 
-             (1 - x3) * (0.1 * (mu(time, x2, r, M, b_set, long_setting) - 3)^2 +
-                           0.75 * mu(time, x2, r, M, b_set, long_setting) - 0.8))
-  }
-  
-  # used only for setting up final data
-  alpha_nonlin_simple <- function(alpha_setting, x3, mu){
-    switch(alpha_setting,
-           "zero" = 0,
-           "constant" = 1,
-           "linear" = 1 * mu,
-           "nonlinear" = -0.1 * (mu + 3)^2 + mu + 1.8,
-           "nonlinear2" = x3 * (-0.1 * (mu + 3)^2 +  mu + 1.8) + 
-             (1 - x3) * (0.1 * (mu - 3)^2 + 0.75 * mu - 0.8))
+    # Evaluate the functional principal component bases for different markers
+    pc_bases <- lapply(mfpc(argvals = rep(list(c(b_set$tmin, time, b_set$tmax)),
+                                          length(mu)),
+                            mfpc_args = b_set, M = b_set$M),
+                       function (fundat){
+                         t(fundat@X)[-c(1, 2+length(time)), ]
+                       })
+    
+    mapply(function (mu_k, pc_k) {
+      mu_k(t = time, x = x) + apply(pc_k*r, 1, sum)
+    }, mu_k = mu, pc_k = pc_bases, SIMPLIFY = FALSE)
   }
   
   
-  ## baseline hazard
-  lambda <- pred_lambda[[1]]
-  
-  ## baseline covariate
-  gamma <-  pred_gamma[[1]]
   
   ## full hazard (including nonlinear effect)
   hazard <-  function(time, x, r, ...){
-    if(nonlinear){
-      exp(lambda(time) + gamma(x[1], nonlinear) + 
-            alpha_nonlin(time, alpha_setting, x[2], x[3], r, M, b_set, long_setting))
-    } else{
-      exp(lambda(time) + gamma(x[1]) + 
-            alpha(time, alpha_setting)*mu(time, x[2], r, M, b_set, long_setting))
-    }
+    # mu_fun könnte auch hier als Objekt erstellt und unten ersetzt werden
+    # ich brauche also nur eine Funktion, die mit gegeben time, x und r mu auf
+    # allen markern auswertet
+    exp(lambda(time, x) + gamma(x) + 
+          Reduce('+', mapply(function(alpha_k, mu_k) {
+            alpha_k(time, x)*mu_k
+          }, alpha_k = alpha, mu_k = mu_fun(time, x, r, mu, b_set),
+          SIMPLIFY = FALSE)))
   }
   
   
@@ -214,58 +232,47 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   if(!is.null(seed)){
     set.seed(seed)
   }
-  r <- gen_r(nsub)
-  x <- gen_x(nsub)
-  if(!fac) x[, 3] <- rep(1, nsub)
+  x <- gen_x(nsub, ncovar = ncovar)
   
-  if (long_setting == "fpc") {
-    temp <- gen_fpc(times = times, nsub = nsub, M = M, 
-                    eval_type = eval_type, eval_scale = eval_scale,
-                    tmax = tmax, efun_type = efun_type, ignoreDeg = ignoreDeg)
-  } else {
-    temp <- gen_b(times, nsub, M=M, l=c(1,5))
-  }
-  r <- cbind(r, temp[[1]])
+
+  temp <- gen_fpc(times = times, nsub = nsub, M = M, mfpc_args = mfpc_args,
+                  tmax = tmax)
+  r <- temp[[1]]
   b_set <- temp[[2]]
   
   data_short <- rJM(hazard, censoring, x, r, tmin = times[1], tmax = tmax) 
   
-  data_long <- cbind(id, data_short[id,], obstime = rep(times, nsub))
+  
+  ## Create the full simulated data
+  data_base <- cbind(id, data_short[id,], obstime = rep(times, nsub))
+  i <- !duplicated(data_base$id)
+  data_base$id <- as.factor(data_base$id)
+  
+  # gamma and lambda have only joint intercept which is estimated in
+  # predictor gamma
+  #????
   data_grid <- data.frame(survtime = times,
                           mu = seq(-0.5, 2.5, length.out = length(times)))
-  
-  i <- !duplicated(data_long$id)
-  
-  
-  # gamma and lambda have only joint intercept which is estimated in predictor gamma
-  data_long$mu <- mu(data_long$obstime, data_long$x2, r[id,], M, b_set, long_setting)
-  f_lambda <- lambda(data_long$survtime)[i]   
-  f_gamma <- gamma(data_long$x1, nonlinear)[i]
-  data_long$lambda <- lambda(data_long$survtime) - mean(f_lambda)
+  f_lambda <- lambda(data_short$survtime)  
+  f_gamma <- gamma(data_short[,grep("x[0-9]+", colnames(data_short))])
+  data_base$lambda <- lambda(data_base$obstime) - mean(f_lambda)
   data_grid$lambda <- lambda(data_grid$survtime) - mean(f_lambda)
-  if(nonlinear){
-    data_long$gamma <- gamma(data_long$x1, nonlinear) + mean(f_lambda)
-    data_long$surv_mu <- mu(data_long$survtime, data_long$x2, r[id,], M, b_set, long_setting)
-    data_long$alpha <- alpha_nonlin_simple(alpha_setting, data_long$x3, data_long$surv_mu)
-    data_long$alpha_l <- alpha_nonlin_simple(alpha_setting, data_long$x3, data_long$mu)
-    data_grid$mu <- seq(-0.5, 2.5, length.out = nrow(data_grid))
-    if(fac){
-      data_grid$alpha1 <- alpha_nonlin_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
-      data_grid$alpha0 <- alpha_nonlin_simple(alpha_setting, rep(0, nrow(data_grid)), data_grid$mu)
-    } else {
-      data_grid$alpha <- alpha_nonlin_simple(alpha_setting, rep(1, nrow(data_grid)), data_grid$mu)
-    }
-    
-  } else {
-    data_long$alpha <- alpha(data_long$survtime, alpha_setting)
-    data_grid$alpha <- alpha(data_grid$survtime, alpha_setting)
-    data_long$gamma <- gamma(data_long$x1, nonlinear) + mean(f_lambda)
-  }
-  
-  data_long$dmu <- dmu(data_long$obstime, r[id,], M, b_set, long_setting)
-  data_long$id <- as.factor(data_long$id)
-  data_long$sigma <- rep(log(sigma), nrow(data_long))
-  data_long$x3 <- as.factor(data_long$x3)
+  data_base$gamma <- gamma(x[id, ]) + mean(f_lambda)
+  data_grid$alpha <- cbind(data_grid,
+                           alpha = do.call(cbind, 
+                                           lapply(alpha, function(alpha_k) {
+                                             alpha_k(data_grid$survtime, 0)
+                                           })))
+  #????
+  data_long <- do.call(rbind, rep(list(data_base), nmark))
+  data_long$marker <- factor(rep(paste0("m", seq_len(nmark)),
+                                 each = length(id)))
+  data_long$mu <- do.call(c, mu_fun(data_base$obstime, x[id, ], r[id,], mu,
+                                    b_set))
+  data_long$alpha <- do.call(c, lapply(alpha, function(alpha_k) {
+                       alpha_k(data_base$obstime, x[id, ])
+                     }))
+  data_long$sigma <- sigma(t = data_long$obstime, x = data_long)
   
   # censoring                   
   data_long <- data_long[data_long$obstime <= data_long$survtime,]
@@ -277,8 +284,10 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   data_long <- miss_fct(data_long, probmiss)
   
   # Draw longitudinal observations
-  data_long$y <- rnorm(nrow(data_long), data_long$mu, sigma)
+  data_long$y <- rnorm(nrow(data_long), data_long$mu, sd = exp(data_long$sigma))
   
+  
+  #------------------
   ygrid <- quantile(data_long$y, probs = seq(0.025, 0.975, 0.025))
   # adjust predictions with constraint median(y)
   if(nonlinear){
