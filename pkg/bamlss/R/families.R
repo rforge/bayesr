@@ -1028,25 +1028,22 @@ if(FALSE) {
   time <- time[-1]
   y <- y[-1]
 
-  ar.start <- rep(FALSE, length(y))
-  ar.start[1] <- TRUE
-  Y <- cbind(y, ar.start)
-
   plot(time, y)
 
   f <- list(
     Y ~ s(time),
     sigma ~ s(time),
-    rho ~ s(time)
+    rho ~ s(lag1time)
   )
 
-  d <- data.frame("Y" = Y, "time" = time)
+  d <- data.frame("time" = time[-1], "lag1time" = time[-length(time)])
+  d$Y <- cbind("y" = y[-1], "ar.start" = c(1, rep(0, nrow(d) - 1)))
 
   b <- bamlss(f, family = AR1_bamlss, data = d)
 
   p <- predict(b, model = "rho")
-  plot(time, p, type = "l")
-  lines(0.6 * cos(time * 4) ~ time, col = 2, lwd = 2)
+  plot(d$lag1time, p, type = "l")
+  lines(0.6 * cos(d$lag1time * 4) ~ d$lag1time, col = 2, lwd = 2)
 }
 
 
