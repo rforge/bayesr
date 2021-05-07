@@ -33,7 +33,7 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                          0.3*x[, 1]
                        },
                        alpha = rep(list(function(t, x) {
-                         3 + 0*t
+                         0.3 + 0*t
                        }), nmark),
                        mu = rep(list(function(t, x){
                          1.25 + 0.6*sin(x[, 2]) + (-0.01)*t
@@ -110,11 +110,11 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
       x[[i]] <- argvals[[i]] - min(argvals[[i]]) + max(x[[i - 1]])
       splitVals[i + 1] <- splitVals[i] + length(x[[i]])
     }
-    f <- eFun(unlist(x), M, ignoreDeg = ignoreDeg, type = eFunType)
+    f <- funData::eFun(unlist(x), M, ignoreDeg = ignoreDeg, type = eFunType)
     trueFuns <- vector("list", p)
-    for (j in seq_len(p)) trueFuns[[j]] <- funData(argvals[[j]], 
+    for (j in seq_len(p)) trueFuns[[j]] <- funData::funData(argvals[[j]], 
             s[j] * f@X[, (1 + splitVals[j]):splitVals[j + 1]])
-    return(multiFunData(trueFuns))
+    return(funData::multiFunData(trueFuns))
   }
   
   ## Code from Clara Happ-Kurz' package funData and slightly adapted
@@ -142,16 +142,16 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     basis <- vector("list", p)
     for (j in seq_len(p)) {
       if (dimsSupp[j] == 1) 
-        basis[[j]] <- weight[j] * eFun(argvals[[j]][[1]], M = M[[j]], 
-                                       ignoreDeg = ignoreDeg[[j]], 
-                                       type = eFunType[[j]])
+        basis[[j]] <- weight[j] * funData::eFun(argvals[[j]][[1]], M = M[[j]], 
+             ignoreDeg = ignoreDeg[[j]], type = eFunType[[j]])
       else basis[[j]] <- weight[j] * tensorProduct(
-        eFun(argvals[[j]][[1]], M = M[[j]][1], ignoreDeg = ignoreDeg[[j]][[1]],
-             type = eFunType[[j]][1]), eFun(argvals[[j]][[2]], M = M[[j]][2], 
-                                            ignoreDeg = ignoreDeg[[j]][[2]], 
-                                            type = eFunType[[j]][2]))
+        funData::eFun(argvals[[j]][[1]], M = M[[j]][1], 
+             ignoreDeg = ignoreDeg[[j]][[1]], type = eFunType[[j]][1]), 
+              funData::eFun(argvals[[j]][[2]], M = M[[j]][2], 
+                            ignoreDeg = ignoreDeg[[j]][[2]], 
+                            type = eFunType[[j]][2]))
     }
-    return(multiFunData(basis))
+    return(funData::multiFunData(basis))
   }
   
   
@@ -186,7 +186,7 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                         "split" = sample(c(-1, 1), nmark, 0.5),
                         "weight" = stats::runif(nmark, 0.2, 0.8))
     b_set <- c(list(tmin = min(c(times, tmax)), tmax = tmax, M = M,
-                    mfpc_seed = mfpc_seed), mfpc_args)
+                    mfpc_seed = mfpc_seed, evals = evals), mfpc_args)
     return(list(scores, b_set))
   }
   
@@ -240,7 +240,7 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   r <- temp[[1]]
   b_set <- temp[[2]]
   
-  data_short <- rJM(hazard, censoring, x, r, tmin = times[1], tmax = tmax) 
+  data_short <- bamlss::rJM(hazard, censoring, x, r, tmin = times[1], tmax = tmax) 
   
   
   ## Create the full simulated data
@@ -273,6 +273,14 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
                        alpha_k(data_base$obstime, x[id, ])
                      }))
   data_long$sigma <- sigma(t = data_long$obstime, x = data_long)
+  fpcs <- do.call(rbind, lapply(mfpc(argvals = rep(list(data_base$obstime), 
+                                                   nmark), mfpc_args = b_set,
+                                     M = M), function (mark) {
+                                       t(mark@X)
+                                     }))
+  data_long <- cbind(data_long,
+                     fpc = fpcs,
+                     wfpc = t(t(fpcs)*b_set$evals))
   
   # censoring                   
   data_long <- data_long[data_long$obstime <= data_long$survtime,]
@@ -286,24 +294,6 @@ simMultiJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   # Draw longitudinal observations
   data_long$y <- rnorm(nrow(data_long), data_long$mu, sd = exp(data_long$sigma))
   
-  
-  #------------------
-  ygrid <- quantile(data_long$y, probs = seq(0.025, 0.975, 0.025))
-  # adjust predictions with constraint median(y)
-  if(nonlinear){
-    # constraint acts on group 0. to be checked
-    alpha_constraint <- mean(alpha_nonlin_simple(alpha_setting, 0, ygrid))
-    data_long$alpha <- data_long$alpha - alpha_constraint
-    data_long$alpha_l <- data_long$alpha_l - alpha_constraint
-    if(fac){
-      data_grid$alpha1 <- data_grid$alpha1 - alpha_constraint
-      data_grid$alpha0 <- data_grid$alpha0 - alpha_constraint
-    } else {
-      data_grid$alpha <- data_grid$alpha - alpha_constraint
-    }
-    data_long$gamma <- data_long$gamma + alpha_constraint
-    data_long$alpha_constraint <- alpha_constraint
-  } 
   
   if(full){
     d <- list(data=data_long, data_grid = data_grid, data_full = data_full)
