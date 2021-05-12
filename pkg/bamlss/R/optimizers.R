@@ -5807,12 +5807,20 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             if(retedf) {
               return(edf)
             } else {
-              return((min(c(ncX - 1, 4)) - edf)^2)
+              tedf <- if(ncX == 9) {
+                4
+              } else {
+                if(ncX < 9)
+                  ncX - 2
+                else
+                  floor(ncX * 0.5)
+              }
+              return((tedf - edf)^2)
             }
           }
-          tau2[[i]][[j]] <- rep(1, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(0.01, length(x[[i]]$smooth.construct[[j]]$S))
           opt <- try(tau2.optim(objfun1, start = tau2[[i]][[j]],
-            maxit = 1000), silent = TRUE)
+            scale = 1000, optim = TRUE), silent = TRUE)
           if(!inherits(opt, "try-error")) {
             cat("  .. df", i, "term", x[[i]]$smooth.construct[[j]]$label,
               objfun1(opt, retedf = TRUE), "\n")
