@@ -321,8 +321,19 @@ design.construct <- function(formula, data = NULL, knots = NULL,
         }
         mm_test <- model.matrix(mm_terms, data = data[1:10, , drop = FALSE])
         if(ncol(mm_test) > 0) {
-          for(cff in bamlss_chunk(data)) {
-            obj$model.matrix <- ff_matrix_append(obj$model.matrix, ff_mm(data[cff, ]))
+          nobs <- nrow(data)
+          obj$model.matrix <- ff::ff(0.0,
+            length = nobs * ncol(mm_test),
+            dim = c(nobs, ncol(mm_test)))
+          k <- 1
+          np <- 0
+          for(ic in bamlss_chunk(data)) {
+            obj$model.matrix[ic, ] <- model.matrix(mm_terms, data = data[ic, ])
+            np <- np + length(ic)
+            if(k > 1)
+              cat("\r")
+            cat("  .. ..", paste0(formatC(np / nobs * 100, width = 7), "%"))
+            k <- k + 1
           }
         }
       }
@@ -712,45 +723,46 @@ ff_ncol <- function(x, value)
 }
 
 
-ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...) 
-{
-  stopifnot(requireNamespace("ff"))
-  stopifnot(requireNamespace("ffbase"))
+#ff_matrix_append <- function(x, dat, recode = TRUE, adjustvmode = TRUE, ...) 
+#{
+#  stopifnot(requireNamespace("bit"))
+#  stopifnot(requireNamespace("ff"))
+#  stopifnot(requireNamespace("ffbase"))
 
-  w <- getOption("warn")
-  options("warn" = -1)
-  if(is.null(x))
-    return(dat)
-  n <- nrow(dat)
-  nff <- nrow(x)
-  cn <- colnames(x)
-  ## x <- ff_nrow(x, nff + n)
-  nrow(x) <- nff + n
-  if(!identical(colnames(x), colnames(dat))) {
-    warning("column names are not identical")
-  }
-  if(ncol(x) != ncol(dat)) {
-    stop("Number of columns does not match")
-  }
-  i <- hi(nff + 1, nff + n)
-  colnames(x) <- NULL
-  colnames(dat) <- NULL
-  x[i, ] <- dat[,]
-  colnames(x) <- cn
-  options("warn" = w)
-  x
-}
+#  w <- getOption("warn")
+#  options("warn" = -1)
+#  if(is.null(x))
+#    return(dat)
+#  n <- nrow(dat)
+#  nff <- nrow(x)
+#  cn <- colnames(x)
+#  ## x <- ff_nrow(x, nff + n)
+#  nrow(x) <- nff + n
+#  if(!identical(colnames(x), colnames(dat))) {
+#    warning("column names are not identical")
+#  }
+#  if(ncol(x) != ncol(dat)) {
+#    stop("Number of columns does not match")
+#  }
+#  i <- hi(nff + 1, nff + n)
+#  colnames(x) <- NULL
+#  colnames(dat) <- NULL
+#  x[i, ] <- dat[,]
+#  colnames(x) <- cn
+#  options("warn" = w)
+#  x
+#}
 
-ffdf_2_ff_matrix <- function(x, ...) 
-{
-  result <- ff::ff(NA, dim = dim(x), vmode = names(maxffmode(vmode(x)))[1], ...)
-  dimnames(result) <- dimnames(x)
-  for(i in chunk(x)) {
-    Log$chunk(i)
-    result[i, ] <- as.matrix(x[i, ])
-  }
-  result
-}
+#ffdf_2_ff_matrix <- function(x, ...) 
+#{
+#  result <- ff::ff(NA, dim = dim(x), vmode = names(maxffmode(vmode(x)))[1], ...)
+#  dimnames(result) <- dimnames(x)
+#  for(i in chunk(x)) {
+#    Log$chunk(i)
+#    result[i, ] <- as.matrix(x[i, ])
+#  }
+#  result
+#}
 
 smooth.construct_ff.default <- function(object, data, knots, ...)
 {
@@ -3310,7 +3322,7 @@ trans_AR1 <- AR1 <- function(rho = 0.1) {
         stop("no 'x' object to randomize in 'bamlss.frame'!")
     }
 
-    n <- if(is.null(dim(x$y))) length(y) else nrow(x$y)
+    n <- if(is.null(dim(x$y))) length(x$y) else nrow(x$y)
 
     v <- rep(1, n)
     w <- rep(rho, n)
@@ -5864,7 +5876,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     "sigmoid" = function(x) {
       1 / (1 + exp2(-x)) * (1 - 1 / (1 + exp2(-x)))
     },
-    "tanh" = 1 - tanh(x)^2,
+    "tanh" = function(x) { 1 - tanh(x)^2 },
     "sin" = cos,
     "cos" = sin,
     "gauss" = function(x) -(exp2(-x^2) * (2 * x)),
@@ -5875,7 +5887,7 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     "sigmoid" = function(x) {
       exp2(-x)/(1 + exp2(-x))^2 * (1 - 1/(1 + exp2(-x))) - 1/(1 + exp2(-x)) * (exp2(-x)/(1 + exp2(-x))^2)
     },
-    "tanh" = -(2 * (1/cosh(x)^2 * tanh(x))),
+    "tanh" = function(x) { -(2 * (1/cosh(x)^2 * tanh(x))) },
     "sin" = sin,
     "cos" = cos,
     "gauss" = function(x) -(exp2(-x^2) * 2 - exp2(-x^2) * (2 * x) * (2 * x)),
