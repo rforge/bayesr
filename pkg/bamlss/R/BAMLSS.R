@@ -335,6 +335,7 @@ design.construct <- function(formula, data = NULL, knots = NULL,
             cat("  .. ..", paste0(formatC(np / nobs * 100, width = 7), "%"))
             k <- k + 1
           }
+          colnames(obj$model.matrix) <- colnames(mm_test)
         }
       }
     }
