@@ -5811,7 +5811,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
                 4
               } else {
                 if(ncX < 9)
-                  ncX - 2
+                  max(c(ncX - 2, 4))
                 else
                   min(c(20, floor(ncX * 0.5)))
               }
