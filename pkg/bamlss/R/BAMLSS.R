@@ -101,7 +101,7 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
       unlink("ff_data_bamlss")
     }
     if(!file.exists("ff_data_bamlss")) {
-      cat("  .. creating directory for storing matrices.\n")
+      cat("  .. creating directory 'ff_data_bamlss' for storing matrices. Note, the directory is not deleted and matrices can be used for another model.\n")
       dir.create("ff_data_bamlss")
     }
     rn <- response.name(formula, hierarchical = FALSE, keep.functions = FALSE)
