@@ -1,7 +1,7 @@
 library(bamlss)
 library(funData)
 library(tidyverse)
-source("simJM.R")
+source("../R/simJM.R")
 sim_dat <- simJM(nsub = 10, long_setting = "fpc", alpha_setting = "constant",
                  long_df = 3, sigma = 0.05, seed = 120, eval_scale = 2)
 
