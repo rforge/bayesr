@@ -125,7 +125,8 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
     b_set <- list(tmin = min(c(times, tmax)),
                   tmax = tmax,
                   ignoreDeg = ignoreDeg,
-                  type = efun_type)
+                  type = efun_type,
+                  evals = evals)
     return(list(scores, b_set))
   }
   
@@ -315,6 +316,20 @@ simJM <- function(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
   data_long$id <- as.factor(data_long$id)
   data_long$sigma <- rep(log(sigma), nrow(data_long))
   data_long$x3 <- as.factor(data_long$x3)
+  
+  # Include functional principal components if long_setting == "fpc"
+  if (long_setting == "fpc") {
+    data_long <- cbind(data_long, 
+      fpc = t(funData::eFun(
+        argvals = c(b_set$tmin, data_long$obstime, b_set$tmax),
+        M = long_df, ignoreDeg = b_set$ignoreDeg,
+        type = b_set$type)@X)[-c(1, 2+length(data_long$obstime)), ],
+      wfpc = t(funData::eFun(
+        argvals = c(b_set$tmin, data_long$obstime, b_set$tmax),
+        M = long_df, ignoreDeg = b_set$ignoreDeg,
+        type = b_set$type)@X[, -c(1, 2+length(data_long$obstime))]*b_set$evals))
+  }
+
   
   # censoring                   
   data_long <- data_long[data_long$obstime <= data_long$survtime,]
