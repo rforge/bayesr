@@ -5101,8 +5101,16 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
     const <- 1e-05
   if(!fuse & !ridge) {
     if(object$type == "single") {
-      object$S[[1]] <- function(parameters) {
+      object$S[[1]] <- function(parameters, fixed.hyper = NULL) {
         b <- get.par(parameters, "b")
+        w <- rep(1, length(b))
+        if(!is.null(fixed.hyper)) {
+          w <- fixed.hyper
+        } else {
+          if(length(i <- grep("lasso", names(parameters)))) {
+            w <- parameters[i]
+          }
+        }
         A <- df / sqrt(b^2 + const)
         for(j in seq_along(group)) {
           if(all(!is.na(group[[j]]))) {
@@ -5110,6 +5118,7 @@ smooth.construct.la.smooth.spec <- function(object, data, knots, ...)
           }
         }
         ## FIXME: adaptive weights: A <- A * MLpen ## 1 / abs(beta)
+        A <- A * 1 / abs(w)
         A <- if(length(A) < 2) matrix(A, 1, 1) else diag(A)
         A
       }

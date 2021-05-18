@@ -4046,6 +4046,10 @@ opt_lasso <- lasso <- function(x, y, start = NULL, adaptive = TRUE,
       }
     }
     x <- lasso_transform(x, zeromodel, nobs = nrow(y))
+  } else {
+    if(!is.null(zeromodel)) {
+      x <- lasso_transform(x, zeromodel, nobs = nrow(y))
+    }
   }
   
   for(l in 1:nrow(lambdas)) {
@@ -4190,6 +4194,11 @@ lasso_transform <- function(x, zeromodel, nobs = NULL, ...)
               w[ff] <- w[ff] * 1 / abs(t(Af[, ff]) %*% beta)
             }
           }
+          names(w) <- paste("lasso", 1:length(w), sep = "")
+          w[!is.finite(w)] <- 1e10
+          x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
+        } else {
+          w <- get.par(zeromodel$parameters[[i]]$s[[j]], "b")
           names(w) <- paste("lasso", 1:length(w), sep = "")
           w[!is.finite(w)] <- 1e10
           x[[i]]$smooth.construct[[j]]$fixed.hyper <- w
