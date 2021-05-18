@@ -41,7 +41,9 @@ f <- list(
   alpha ~ 1,
   dalpha ~ -1
 )
+# the following model can also be loaded from inst/objects
 m <- bamlss(f, data = sim_dat, family = "jm", timevar = "obstime", idvar = "id")
+# save(m, file = "objects/m_fpc.Rdata")
 # optimizer ca. 2 min
 # sampler ca. 20 min
 nrow(coef(m))
@@ -60,8 +62,10 @@ f1 <- list(
   alpha ~ 1,
   dalpha ~ -1
 )
+# the following model can also be loaded from inst/objects
 m1 <- bamlss(f1, data = sim_dat, family = "jm", timevar = "obstime",
              idvar = "id")
+# save(m1, file = "objects/m_bsp.Rdata")
 # optimizer ca 1 min
 # sampler ca 8 min
 nrow(coef(m1))
