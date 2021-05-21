@@ -5999,6 +5999,9 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   par <- x$state$parameters
   Z <- x$getZ(x$X, par)
   nc <- ncol(x$X)
+
+  lls <- family$loglik(y, family$map2par(eta))
+
   eta[[id]] <- eta[[id]] - fitted(x$state)
   e <- z - eta[[id]]
 
@@ -6095,7 +6098,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 #stop()
 
     if(!inherits(opt, "try-error")) {
-      if((-1 * opt$value) > ll0) {
+      if(((-1 * opt$value) > ll0) & (-1 * opt$value > lls)) {
         par[i] <- opt$par[-1L]
         par[j] <- opt$par[1L]
         Z[, j] <- x$activ_fun(drop(x$X %*% opt$par[-1L]))
@@ -6112,12 +6115,21 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
     P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
     edf <- sum_diag(ZWZ %*% P) + nc * x$nodes
     g <- P %*% crossprod(Z * hess, e)
+    fit <- drop(Z %*% g)
+    fit <- fit - mean(fit)
     eta[[id]] <- eta[[id]] + drop(Z %*% g)
     ic <- get.ic(family, y, family$map2par(eta), edf0 + edf, nobs, type = "BIC")
     return(ic)
   }
 
-  tau2 <- tau2.optim(objfun2, start = tau2)
+  ic0 <- objfun2(tau2)
+
+  tau22 <- tau2.optim(objfun2, start = tau2)
+
+  ic1 <- objfun2(tau2)
+
+  if(ic1 < ic0)
+    tau2 <- tau22
 
   P <- matrix_inv(ZWZ + 1/tau2 * x$S[[1]])
   par[1:x$nodes] <- drop(P %*% crossprod(Z * hess, e))
@@ -6129,6 +6141,12 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
   x$state$parameters <- par
   x$state$edf <- sum_diag(ZWZ %*% P)
   x$state$log.prior <- x$prior(par)
+
+#  eta[[id]] <- eta[[id]] + fit
+#  lls2 <- family$loglik(y, family$map2par(eta))
+
+#  cat("\n---\n")
+#  print(c(lls, lls2))
 
   return(x$state)
 }
