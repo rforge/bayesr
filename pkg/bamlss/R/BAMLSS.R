@@ -4205,6 +4205,7 @@ predict.bamlss <- function(object, newdata, model = NULL, term = NULL, match.nam
           } else {
             if(inherits(x[[jj]], "nnet0.smooth")) {
               X <- Predict.matrix.nnet0.smooth(x[[jj]], data)
+              ## X <- x[[jj]]$getZ(X, samps[1L, sn, drop = FALSE])
             } else {
               X <- x[[jj]]$PredictMat(x[[jj]], data)
             }
@@ -5737,7 +5738,12 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     object$type <- "single"
     object$xt$k <- object$bs.dim
   }
-  object$xt[["standardize"]] <- object[["standardize01"]] <- object$xt[["standardize01"]] <-  TRUE
+
+  oc <- object$xt$oc
+  if(is.null(oc))
+    oc <- FALSE
+
+  object$xt[["standardize"]] <- object[["standardize01"]] <- object$xt[["standardize01"]] <- TRUE
   object <- smooth.construct.la.smooth.spec(object, data, knots)
   object[!(names(object) %in% c("formula", "term", "label", "dim", "X", "xt", "lasso"))] <- NULL
   nodes <- object$xt$k
@@ -5906,9 +5912,29 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
 
   nc <- ncol(object$X) - 1L
 
+  if(oc) {
+    ## Null( cbind(m, Null(universe)) )
+    object$oc <- list()
+    for(j in object$term) {
+      if(is.numeric(data[[j]])) {
+        sm <- eval(parse(text = paste0("ti(", j, ",k=20)")))
+        object$oc[[j]] <- smoothCon(sm, data, knots)[[1]]
+      }
+    }
+    OC <- list()
+    for(j in object$term) {
+      if(is.numeric(data[[j]]))
+        OC[[j]] <- PredictMat(object$oc[[j]], data)
+    }
+    OC <- do.call("cbind", OC)
+    OC <- tcrossprod(qr.Q(qr(OC)))
+    attr(object$X, "oc") <- OC
+    ##object$X <- object$X - object$smC %*% object$X
+  }
+
   object$fit.fun <- function(X, b, ...) {
     nb <- names(b)
-    if(is.null(nb)) {
+    if(is.null(nb) | (ncol(X) == nc)) {
       fit <- drop(X %*% b)
     } else {
       nb <- strsplit(nb, ".", fixed = TRUE)
@@ -5929,6 +5955,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
     for(j in 1:nodes) {
       z <- drop(X %*% b[paste0("bw", j, "_w", 0:nc)])
       Z[, j] <- object$activ_fun(z)
+    }
+    if(!is.null(attr(X, "oc"))) {
+      Z <- Z - attr(X, "oc") %*% Z
     }
     return(Z)
   }
@@ -5998,6 +6027,7 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
   par <- x$state$parameters
   Z <- x$getZ(x$X, par)
+
   nc <- ncol(x$X)
 
   lls <- family$loglik(y, family$map2par(eta))
@@ -6107,6 +6137,9 @@ nnet0_update <- function(x, family, y, eta, id, weights, criterion, ...)
 
     fit <- fit + Z[, j] * par[j]
   }
+
+  if(!is.null(attr(x$X, "oc")))
+    Z <- Z - attr(x$X, "oc") %*% Z
 
   ZWZ <- crossprod(Z * hess, Z)
   edf0 <- args$edf - x$state$edf
@@ -6908,10 +6941,22 @@ forward_reg2 <- function(x, y, n = 4, nu, maxit = 100, ...)
 
 
 Predict.matrix.nnet0.smooth <- function(object, data)
-{ 
+{
   object[["standardize"]] <- standardize <- if(is.null(object$xt[["standardize"]])) TRUE else object$xt[["standardize"]]
   object[["standardize01"]] <- if(standardize) TRUE else FALSE
   X <- cbind(1, Predict.matrix.lasso.smooth(object, data))
+
+  if(!is.null(object$oc)) {
+    OC <- list()
+    for(j in object$term) {
+      if(is.numeric(data[[j]]))
+        OC[[j]] <- PredictMat(object$oc[[j]], data)
+    }
+    OC <- do.call("cbind", OC)
+    OC <- tcrossprod(qr.Q(qr(OC)))
+    attr(X, "oc") <- OC
+  }
+
   return(X)
 }
 
