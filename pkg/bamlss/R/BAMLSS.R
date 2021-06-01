@@ -1995,6 +1995,10 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     bf <- light_bamlss(bf)
 
   ## Remove ff directory?
+  if(bf$delete) {
+    if(dir.exists("ff_data_bamlss"))
+      unlink("ff_data_bamlss")
+  }
 
 
   bf$call <- match.call()
