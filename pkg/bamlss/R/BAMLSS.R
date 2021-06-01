@@ -213,7 +213,10 @@ bamlss_chunk <- function(x) {
   }
   if(N > 100000L) {
     n <- max(c(100000, 0.02 * N))
-    xc <- cut(seq_len(N), breaks = floor(N/n), include.lowest = TRUE)
+    bn <- floor(N/n)
+    if(bn < 2)
+      bn <- 10
+    xc <- cut(seq_len(N), breaks = bn, include.lowest = TRUE)
     chunks <- split(seq_len(N), xc)
   } else {
     chunks <- list(seq_len(N))
