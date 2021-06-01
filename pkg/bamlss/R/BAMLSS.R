@@ -148,6 +148,11 @@ bamlss.frame <- function(formula, data = NULL, family = "gaussian",
 
   bf$knots <- knots
 
+  ## Delete ff directory?
+  bf$delete <- list(...)$delete
+  if(is.null(bf$delete))
+    bf$delete <- TRUE
+
   ## Assign class and return.
   class(bf) <- c("bamlss.frame", "list")
 
@@ -772,18 +777,20 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
 {
   object$xt$center <- TRUE
   object$xt$nocenter <- FALSE
+  terms <- object$term
   if(object$by != "NA") {
     object$label <- strsplit(object$label, "")[[1]]
     object$label <- paste0(object$label[-length(object$label)], collapse = "")
     object$label <- paste0(object$label, ",by=", object$by, ")")
     object$xt$center <- FALSE
     object$xt$nocenter <- TRUE
+    terms <- c(term, object$by)
   }
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
   xfile <- rmf(object$label)
   xfile <- file.path("ff_data_bamlss", xfile)
-  for(j in object$term) {
+  for(j in terms) {
     if(!is.factor(data[[j]][1:2])) {
       ux <- length(ffbase::unique.ff(data[[j]]))
       if(ux > 2) {
@@ -1986,6 +1993,9 @@ bamlss <- function(formula, family = "gaussian", data = NULL, start = NULL, knot
     bf$x <- NULL
   if(light)
     bf <- light_bamlss(bf)
+
+  ## Remove ff directory?
+
 
   bf$call <- match.call()
   class(bf) <- c("bamlss", "bamlss.frame", "list")
@@ -10550,7 +10560,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         se <- (1/dnorm(z)) * (sqrt(p * (1 - p)/length(d$y)))
         low <- qnorm((1 - level)/2) * se
         high <- -low
-        args <- list(...)
+        args <- list(...) 
         if(is.null(args$col))
           args$col <- 1
         if(is.null(args$pch))
