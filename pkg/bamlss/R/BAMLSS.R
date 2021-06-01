@@ -784,7 +784,7 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
     object$label <- paste0(object$label, ",by=", object$by, ")")
     object$xt$center <- FALSE
     object$xt$nocenter <- TRUE
-    terms <- c(term, object$by)
+    terms <- c(terms, object$by)
   }
   nd <- list()
   cat("  .. ff processing term", object$label, "\n")
