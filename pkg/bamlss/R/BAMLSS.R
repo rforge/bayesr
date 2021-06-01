@@ -792,13 +792,17 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   xfile <- file.path("ff_data_bamlss", xfile)
   for(j in terms) {
     if(!is.factor(data[[j]][1:2])) {
-      ux <- length(ffbase::unique.ff(data[[j]]))
-      if(ux > 2) {
-        ux <- if(ux < 1000L) ux - 1L else 1000L
-        xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = ux), na.rm = TRUE)
+      ux <- ffbase::unique.ff(data[[j]])
+      uxn <- length(ux)
+      if(uxn > 2) {
+        uxl <- if(uxn < 1000L) uxn - 1L else 1000L
+        xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = uxl), na.rm = TRUE)
         names(xq) <- NULL
+        if(length(unique(xq)) < 100) {
+          xq <- rep(ux[], length.out = 1000L)
+        }
       } else {
-        xq <- rep(ux, length.out = 1000L)
+        xq <- rep(ux[], length.out = 1000L)
       }
       if(length(xq) == 1000L) {
         nd[[j]] <- sample(xq)
