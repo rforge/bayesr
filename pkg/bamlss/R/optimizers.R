@@ -4546,7 +4546,7 @@ dl.bamlss <- function(object,
 
   model <- model %>% keras::compile(
     loss = nll, 
-    optimizer = "adam"
+    optimizer = optimizer
   )
 
   names(X) <- NULL
