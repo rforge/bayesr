@@ -71,8 +71,8 @@
   scale, and shape (and beyond) -- with the name reflecting the most important distributional
   quantities (among others) that can be modeled with the software.
   At the core of the package are algorithms for highly-efficient Bayesian
-  estimation and inference that can be applied to generalized additive models (GAMs) or
-  generalized additive models for location, scale, and shape (GAMLSS), or more general
+  estimation and inference that can be applied to generalized additive models or
+  generalized additive models for location, scale, and shape, or more general
   distributional regression models. However, its building
   blocks are designed as ``Lego bricks'' encompassing various distributions (exponential family,
   Cox, joint models, etc.), regression terms (linear, splines, random effects, tensor
@@ -859,7 +859,7 @@ and principled constructions for such priors).
 \hypertarget{somerefs}{}Examples of distributional models that fit well in this
 framework are the ones for: \label{somerefs2}
 \begin{itemize}
-  \item Univariate responses of any type, e.g.~counts with zero-inflation and or overdispersion as
+  \item Univariate responses of any type, e.g., counts with zero-inflation and or overdispersion as
     proposed in \citet{bamlss:Klein+Kneib+Lang:2015, bamlss:Herwartz+Klein+Strumann:2016, bamlss:Stasinopoulos+Rigby:2019},
     continuous responses with spikes, skewness, heavy tails or bounded support as in
     \citet{bamlss:Klein+Denuit+Kneib+Lang:2014,bamlss:Klein+Kneib+Lang+Sohn:2015,bamlss:Stasinopoulos+Rigby:2019}, as well as
@@ -927,7 +927,7 @@ $\mathbf{z}_k - \boldsymbol{\eta}_{k, -j}^{(t+1)}$ can be used (for detailed der
 \citealp{bamlss:Umlauf+Klein+Zeileis:2018}).
 
 The great advantage of this modular architecture is that the concept does not limit to modeling
-of the distributional parameters $\theta_k$ in (\ref{eqn:dreg}), e.g.\ as mentioned above,
+of the distributional parameters $\theta_k$ in (\ref{eqn:dreg}), e.g., as mentioned above,
 based on the survival function,
 \citet{bamlss:Koehler+Umlauf+Greven:2016} and \citet{bamlss:Koehler+Umlauf+Greven:2018} implement
 Bayesian joint models for survival and longitudinal data. Moreover, the updating schemes do not
