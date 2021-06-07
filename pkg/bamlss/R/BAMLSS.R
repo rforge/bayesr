@@ -5910,6 +5910,11 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   )
 
   object$activ_grad <- switch(type[1],
+    "relu" = function(x) {
+      x[x > 0] <- 1
+      x[x <= 0] <- 0
+      return(x)
+    },
     "sigmoid" = function(x) {
       1 / (1 + exp2(-x)) * (1 - 1 / (1 + exp2(-x)))
     },
@@ -5921,6 +5926,9 @@ smooth.construct.nnet0.smooth.spec <- function(object, data, knots, ...)
   )
 
   object$activ_hess <- switch(type[1],
+    "relu" = function(x) {
+      return(rep(0, length(x)))
+    },
     "sigmoid" = function(x) {
       exp2(-x)/(1 + exp2(-x))^2 * (1 - 1/(1 + exp2(-x))) - 1/(1 + exp2(-x)) * (exp2(-x)/(1 + exp2(-x))^2)
     },

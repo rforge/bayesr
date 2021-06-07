@@ -105,7 +105,7 @@
 }
 
 % for \usepackage{Sweave}
-\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE}
+\SweaveOpts{engine = R, eps = FALSE, keep.source = TRUE, prefix.string=Figures/jss2924}
 
 <<preliminaries, echo=FALSE, results=hide>>=
 options(width = 70, prompt = "R> ", continue = "+  ",
@@ -113,6 +113,8 @@ options(width = 70, prompt = "R> ", continue = "+  ",
 library("bamlss")
 library("gamlss.dist")
 Sys.setenv("TZ" = "UTC")
+if(!file.exists("Figures"))
+  dir.create("Figures")
 @
 
 \begin{document}

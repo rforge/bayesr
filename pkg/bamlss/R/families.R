@@ -701,6 +701,20 @@ gaussian_bamlss <- function(...)
       "model" = BUGSmodel,
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
+    "keras" = list(
+      "loglik" = function(y_true, y_pred) {
+        K = backend()
+
+        mu = y_pred[, 1]
+        sigma = K$exp(y_pred[,2])
+        sigma2 = K$pow(sigma, 2)
+
+        ll = -0.5 * K$log(6.28318530717959 * sigma2) - 0.5 * K$pow((y_true[,1] - mu), 2) / sigma2
+        ll = K$sum(ll)
+
+        return(-1 * ll)
+      }
+    ),
     "score" = list(
       "mu" = function(y, par, ...) { drop((y - par$mu) / (par$sigma^2)) },
       "sigma" = function(y, par, ...) { drop(-1 + (y - par$mu)^2 / (par$sigma^2)) }
