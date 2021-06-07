@@ -4479,7 +4479,7 @@ lasso_stop <- function(x)
 
 ## Deep learning bamlss.
 dl.bamlss <- function(object,
-  optimizer = NULL, epochs = 30, batch_size = NULL,
+  optimizer = "adam", epochs = 30, batch_size = NULL,
   nlayers = 2, units = 100, activation = "sigmoid",
   verbose = TRUE, ...)
 {

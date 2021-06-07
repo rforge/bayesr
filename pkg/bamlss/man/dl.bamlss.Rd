@@ -13,7 +13,7 @@
 
 \usage{
 ## Deep learning bamlss.
-dl.bamlss(object, optimizer = NULL,
+dl.bamlss(object, optimizer = "adam",
   epochs = 30, batch_size = NULL,
   nlayers = 2, units = 100, activation = "sigmoid",
   verbose = TRUE, ...)
