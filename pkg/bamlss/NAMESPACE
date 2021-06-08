@@ -123,6 +123,7 @@ export(
   "ztnbinom_bamlss",
   "lognormal_bamlss",
   "weibull_bamlss",
+  "gumbel_bamlss",
   "gF",
   "Sichel_bamlss",
   "GEV_bamlss",

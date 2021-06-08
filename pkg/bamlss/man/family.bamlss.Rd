@@ -28,6 +28,7 @@
 \alias{logNN_bamlss}
 \alias{Sichel_bamlss}
 \alias{GEV_bamlss}
+\alias{gumbel_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -71,6 +72,7 @@ lognormal_bamlss(...)
 weibull_bamlss(...)
 Sichel_bamlss(...)
 GEV_bamlss(...)
+gumbel_bamlss(...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)

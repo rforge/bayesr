@@ -2653,6 +2653,80 @@ lognormal2_bamlss <- function(...)
 }
 
 
+gumbel_bamlss <- function(...)
+{
+ links <- c(mu = "identity", sigma = "log")
+
+  rval <- list(
+    "family" = "gumbel",
+    "names" = c("mu", "sigma"),
+    "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
+    "keras" = list(
+      "loglik" = function(y_true, y_pred) {
+        stopifnot(requireNamespace("keras"))
+
+        K = keras::backend()
+
+        mu = y_pred[, 1]
+        sigma = K$exp(y_pred[,2])
+
+        ll = -1 * y_pred[, 2] + ((y_true[,1] - mu)/sigma) - K$exp((y_true[,1] - mu)/sigma)
+        ll = K$sum(ll)
+
+        return(-1 * ll)
+      }
+    ),
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        s1 <- 1/par$sigma
+        return(-1 * (s1 - exp((y - par$mu)/par$sigma) * s1))
+      },
+      "sigma" = function(y, par, ...) {
+        ymus <- (y - par$mu)/par$sigma
+        return(-1 * (ymus + 1 - exp(ymus) * ymus))
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) { 
+        return(exp((y - par$mu)/par$sigma) * 1/par$sigma^2)
+      },
+      "sigma" = function(y, par, ...) {
+        ymus <- (y - par$mu)/par$sigma
+        h <- ymus - (exp(ymus) * ymus + exp(ymus) * ymus^2)
+        return(-1 * h)
+      }
+    ),
+    "d" = function(y, par, log = FALSE) {
+      d <- -log(par$sigma) + ((y - par$mu)/par$sigma) - exp((y - par$mu)/par$sigma)
+      if(!log)
+        d <- exp(d)
+      return(d)
+    },
+    "p" = function(y, par, ...) {
+      1 - exp(-exp((y - par$mu)/par$sigma))
+    },
+    "r" = function(n, par) {
+      rnorm(n, mean = par$mu, sd = par$sigma)
+    },
+    "q" = function(p, par) {
+      q <- par$mu + par$sigma * log(-log(1 - p))
+    },
+    "initialize" = list(
+      "mu"    = function(y, ...) { (y + mean(y)) / 2 },
+      "sigma" = function(y, ...) { rep((sqrt(6) * sd(y))/pi, length(y)) }
+    ),
+    "valid.response" = function(x) {
+      if(is.factor(x) | is.character(x))
+        stop("the response should be numeric!")
+      return(TRUE)
+    }
+  )
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+
+
 dagum_bamlss <- function(...)
 {
   links <- c(a = "log", b = "log", p = "log")
