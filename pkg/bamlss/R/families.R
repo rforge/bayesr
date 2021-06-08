@@ -703,7 +703,9 @@ gaussian_bamlss <- function(...)
     ),
     "keras" = list(
       "loglik" = function(y_true, y_pred) {
-        K = backend()
+        stopifnot(requireNamespace("keras"))
+
+        K = keras::backend()
 
         mu = y_pred[, 1]
         sigma = K$exp(y_pred[,2])

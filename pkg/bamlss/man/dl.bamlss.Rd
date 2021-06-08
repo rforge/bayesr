@@ -40,7 +40,6 @@ dl.bamlss(object, optimizer = "adam",
   \item{l1}{Shrinkage parameter for L1 penalty.}
   \item{l2}{Shrinkage parameter for L2 penalty.}
   \item{verbose}{Print information during runtime of the algorithm.}
-  \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{newdata}{A \code{\link[base]{list}} or \code{\link[base]{data.frame}} that should
     be used for prediction.}
   \item{model}{Character or integer specifying for which distributional parameter predictions should

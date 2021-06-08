@@ -4566,7 +4566,7 @@ dl.bamlss <- function(object,
 
   model <- keras::keras_model(inputs, final_output)
 
-  model <- model %>% keras::compile(
+  model <- keras::compile(model,
     loss = nll, 
     optimizer = optimizer
   )
@@ -4584,7 +4584,7 @@ dl.bamlss <- function(object,
 
   ptm <- proc.time()
 
-  history <- model %>% keras::fit(
+  history <- keras::fit(model,
     x = X, 
     y = Y, 
     epochs = epochs, batch_size = batch_size,
@@ -4605,6 +4605,7 @@ dl.bamlss <- function(object,
   object$fitted.values <- as.data.frame(predict(model, X))
   colnames(object$fitted.values) <- nx
   object$elapsed <- elapsed
+  object$history <- history
 
   class(object) <- "dl.bamlss"
 
@@ -4616,6 +4617,7 @@ dl.bamlss <- function(object,
 fitted.dl.bamlss <- function(object, ...) { object$fitted.values }
 family.dl.bamlss <- function(object) { object$family }
 residuals.dl.bamlss <- function(object, ...) { residuals.bamlss(object, ...) }
+plot.dl.bamlss <- function(x, ...) { plot(x$history, ...) }
 
 
 ## Predict function.
