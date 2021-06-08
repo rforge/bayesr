@@ -85,7 +85,7 @@ f <- list(
 
 ## Fit neural network.
 library("keras")
-b <- dl.bamlss(f, epochs = 1000)
+b <- dl.bamlss(f, epochs = 2000)
 
 ## Plot estimated functions.
 par(mfrow = c(1, 2))
@@ -105,6 +105,10 @@ plot2d(p$mu ~ x, data = nd, add = TRUE)
 plot2d(p$sigma ~ x, data = nd,
   ylim = range(c(nd$p$sigma, fsigma)))
 plot2d(fsigma ~ x, add = TRUE, col.lines = "red")
+
+## Plot quantile residuals.
+e <- residuals(b)
+plot(e)
 }
 }
 

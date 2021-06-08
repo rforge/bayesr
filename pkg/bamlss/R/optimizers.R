@@ -4480,7 +4480,7 @@ lasso_stop <- function(x)
 ## Deep learning bamlss.
 dl.bamlss <- function(object,
   optimizer = "adam", epochs = 30, batch_size = NULL,
-  nlayers = 2, units = 100, activation = "sigmoid",
+  nlayers = 2, units = 100, activation = "sigmoid", l1 = NULL, l2 = NULL,
   verbose = TRUE, ...)
 {
   stopifnot(requireNamespace("keras"))
@@ -4500,9 +4500,6 @@ dl.bamlss <- function(object,
   X <- list()
   for(i in nx) {
     X[[i]] <- object$x[[i]]$model.matrix
-    if(any(j <- grepl("(Intercept)", colnames(X[[i]]), fixed = TRUE))) {
-      X[[i]] <- X[[i]][, -which(j), drop = FALSE]
-    }
   }
 
   family <- family(object)
@@ -4524,20 +4521,41 @@ dl.bamlss <- function(object,
   units <- rep(units, length.out = nlayers)
   activation <- rep(activation, length.out = nlayers)
 
-  jj <- 1
-  for(j in seq_along(nx)) {
-    if(ncol(X[[j]]) > 0) {
-      inputs[[jj]] <- keras::layer_input(shape = ncol(X[[j]]))
+  if(!is.null(l1))
+    l1 <- rep(l1, length.out = nlayers)
+  if(!is.null(l2))
+    l2 <- rep(l2, length.out = nlayers)
 
-      opts <- c('outputs[[jj]] <- inputs[[jj]] %>%',
-        paste0('layer_dense(units = ', units, ', activation = "', activation, '") %>%'),
-        'layer_dense(units = 1)')
+  pen <- NULL
+  if(!is.null(l1) & is.null(l2))
+    pen <- paste0('regularizer_l1(', l1, ')')
+  if(is.null(l1) & !is.null(l2))
+    pen <- paste0('regularizer_l2(', l2, ')')
+  if(!is.null(l1) & !is.null(l2))
+    pen <- paste0('regularizer_l1_l2(', l1,, ', ',  l2, ')')
 
-      opts <- paste(opts, collapse = " ")
-      eval(parse(text = opts))
+  for(j in 1:length(X)) {
+    inputs[[j]] <- keras::layer_input(shape = ncol(X[[j]]))
 
-      jj <- jj + 1
+    itcpt <- FALSE
+    if(ncol(X[[j]]) < 2) {
+      if(colnames(X[[i]]) == "(Intercept)")
+        itcpt <- TRUE
     }
+
+    if(itcpt) {
+      opts <- c('outputs[[j]] <- inputs[[j]] %>%',
+        'layer_dense(units = 1, use_bias = FALSE)')
+    } else {
+      opts <- c('outputs[[j]] <- inputs[[j]] %>%',
+        paste0('layer_dense(units = ', units,
+          if(!is.null(pen)) paste0(', kernel_regularizer = ', pen) else NULL,
+          ', activation = "', activation, '") %>%'),
+        'layer_dense(units = 1)')
+    }
+
+    opts <- paste(opts, collapse = " ")
+    eval(parse(text = opts))
   }
 
   final_output <- keras::layer_concatenate(outputs)
@@ -4550,23 +4568,26 @@ dl.bamlss <- function(object,
   )
 
   names(X) <- NULL
+  if(length(X) > 1) {
+    Y <- matrix(y, ncol = 1)
+    for(j in 1:(length(nx) - 1))
+      Y <- cbind(Y, 1)
+  } else {
+    Y <- matrix(y, ncol = 1)
+  }
+  if(length(X) < 2)
+    X <- X[[1L]]
 
   ptm <- proc.time()
 
   history <- model %>% keras::fit(
     x = X, 
-    y = cbind(y, length(nx) - 1), 
+    y = Y, 
     epochs = epochs, batch_size = batch_size,
     verbose = as.integer(verbose)
   )
 
   elapsed <- c(proc.time() - ptm)[3]
-
-  plot <- list(...)$plot
-  if(is.null(plot))
-    plot <- TRUE
-  if(plot)
-    plot(history)
   
   if(verbose) {
     cat("\n")
@@ -4581,7 +4602,7 @@ dl.bamlss <- function(object,
   colnames(object$fitted.values) <- nx
   object$elapsed <- elapsed
 
-  class(object) <- c("dl.bamlss", "list")
+  class(object) <- "dl.bamlss"
 
   return(object)
 }
@@ -4590,6 +4611,7 @@ dl.bamlss <- function(object,
 ## Extractor functions.
 fitted.dl.bamlss <- function(object, ...) { object$fitted.values }
 family.dl.bamlss <- function(object) { object$family }
+residuals.dl.bamlss <- function(object, ...) { residuals.bamlss(object, ...) }
 
 
 ## Predict function.
@@ -4620,18 +4642,14 @@ predict.dl.bamlss <- function(object, newdata, model = NULL,
   type <- match.arg(type)
 
   nx <- names(object$formula)
-  j <- 1
   X <- list()
-  for(i in nx) {
-    ff <- formula(as.Formula(object$formula[[i]]$fake.formula), lhs = FALSE)
-    X[[j]] <- model.matrix(ff, data = newdata)
-    if(length(jj <- grep("(Intercept)", colnames(X[[j]]), fixed = TRUE)))
-      X[[j]] <- X[[j]][, -jj, drop = FALSE]
-    if(ncol(X[[j]]) > 0)
-      j <- j + 1
-    else
-      X[[j]] <- NULL
+  for(i in seq_along(nx)) {
+    ff <- formula(as.Formula(object$formula[[i]]$formula), lhs = FALSE)
+    X[[i]] <- model.matrix(ff, data = newdata)
   }
+
+  if(length(X) < 2)
+    X <- X[[1L]]
 
   pred <- as.data.frame(predict(object$model, X))
   colnames(pred) <- nx
