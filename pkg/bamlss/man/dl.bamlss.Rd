@@ -16,6 +16,7 @@
 dl.bamlss(object, optimizer = "adam",
   epochs = 30, batch_size = NULL,
   nlayers = 2, units = 100, activation = "sigmoid",
+  l1 = NULL, l2 = NULL,
   verbose = TRUE, ...)
 
 ## Predict method.
@@ -36,6 +37,8 @@ dl.bamlss(object, optimizer = "adam",
   \item{nlayers}{Number of hidden layers.}
   \item{units}{Number of nodes per hidden layer, can be a vector.}
   \item{activation}{Activation functions used for the hidden layers, can be a vector.}
+  \item{l1}{Shrinkage parameter for L1 penalty.}
+  \item{l2}{Shrinkage parameter for L2 penalty.}
   \item{verbose}{Print information during runtime of the algorithm.}
   \item{digits}{Set the digits for printing when \code{verbose = TRUE}.}
   \item{newdata}{A \code{\link[base]{list}} or \code{\link[base]{data.frame}} that should
