@@ -4500,6 +4500,10 @@ dl.bamlss <- function(object,
   X <- list()
   for(i in nx) {
     X[[i]] <- object$x[[i]]$model.matrix
+    if(!is.null(object$x[[i]]$smooth.construct)) {
+      for(j in seq_along(object$x[[i]]$smooth.construct))
+        X[[i]] <- cbind(X[[i]], object$x[[i]]$smooth.construct[[j]]$X)
+    }
   }
 
   family <- family(object)
@@ -4597,7 +4601,7 @@ dl.bamlss <- function(object,
     cat("\n elapsed time: ", et, "\n", sep = "")
   }
 
-  object$model <- model
+  object$dnn <- model
   object$fitted.values <- as.data.frame(predict(model, X))
   colnames(object$fitted.values) <- nx
   object$elapsed <- elapsed
@@ -4619,9 +4623,9 @@ predict.dl.bamlss <- function(object, newdata, model = NULL,
   type = c("link", "parameter"), drop = TRUE, ...)
 {
   ## If data have been scaled (scale.d = TRUE)
-  if (!missing(newdata) & ! is.null(attr(object$model.frame,'scale')) ) {
+  if(!missing(newdata) & ! is.null(attr(object$model.frame, 'scale')) ) {
     sc <- attr(object$model.frame, 'scale')
-    for ( name in unique(unlist(lapply(sc,names))) ) {
+    for( name in unique(unlist(lapply(sc,names))) ) {
       newdata[,name] <- (newdata[,name] - sc$center[name] ) / sc$scale[name]
     }
   }
@@ -4644,14 +4648,20 @@ predict.dl.bamlss <- function(object, newdata, model = NULL,
   nx <- names(object$formula)
   X <- list()
   for(i in seq_along(nx)) {
-    ff <- formula(as.Formula(object$formula[[i]]$formula), lhs = FALSE)
-    X[[i]] <- model.matrix(ff, data = newdata)
+    tfi <- drop.terms.bamlss(object$x[[i]]$terms,
+      sterms = FALSE, keep.response = FALSE, data = newdata, specials = NULL)
+    X[[i]] <- model.matrix(tfi, data = newdata)
+    if(!is.null(object$x[[i]]$smooth.construct)) {
+      for(j in seq_along(object$x[[i]]$smooth.construct)) {
+        X[[i]] <- cbind(X[[i]], PredictMat(object$x[[i]]$smooth.construct[[j]], newdata))
+      }
+    }
   }
 
   if(length(X) < 2)
     X <- X[[1L]]
 
-  pred <- as.data.frame(predict(object$model, X))
+  pred <- as.data.frame(predict(object$dnn, X))
   colnames(pred) <- nx
 
   if(!is.null(model)) {
