@@ -702,9 +702,7 @@ gaussian_bamlss <- function(...)
       "reparam" = c(sigma = "1 / sqrt(sigma)")
     ),
     "keras" = list(
-      "loglik" = function(y_true, y_pred) {
-        stopifnot(requireNamespace("keras"))
-
+      "nloglik" = function(y_true, y_pred) {
         K = keras::backend()
 
         mu = y_pred[, 1]
@@ -2457,6 +2455,16 @@ gamma_bamlss <- function(...)
       "eta" = BUGSeta,
       "model" = BUGSmodel
     ),
+    "keras" = list(
+      "nloglik" = function(y_true, y_pred) {
+        K = keras::backend()
+
+        mu = K$exp(y_pred[, 1])
+        sigma = K$exp(y_pred[,2])
+
+        stop("not working yet!")
+      }
+    ),
     "score" = list(
       "mu" = function(y, par, ...) {
         sigma <- par$sigma
@@ -2662,9 +2670,7 @@ gumbel_bamlss <- function(...)
     "names" = c("mu", "sigma"),
     "links" = parse.links(links, c(mu = "identity", sigma = "log"), ...),
     "keras" = list(
-      "loglik" = function(y_true, y_pred) {
-        stopifnot(requireNamespace("keras"))
-
+      "nloglik" = function(y_true, y_pred) {
         K = keras::backend()
 
         mu = y_pred[, 1]
@@ -5437,6 +5443,40 @@ nbinom_bamlss <- function(...) {
     )
   )
 
+#  dnbinom2 <- function(x, mu, size, log = FALSE) {
+#    prob <- size / (size + mu)
+
+#    d <- lgamma(x + size) - lgamma(size) - lfactorial(x) +
+#      size * log(prob) + x * log(1-prob)
+#    if(!log)
+#      d <- exp(d)
+
+#    d
+#  }
+
+#  dnbinom(1:10, mu = 3, size=2)
+#  dnbinom2(1:10, mu = 3, size=2)
+
+
+  rval$keras <- list(
+    "nloglik" = function(y_true, y_pred) {
+      K = keras::backend()
+      tf = tensorflow::tf
+
+      mu = K$exp(y_pred[, 1])
+      size = K$exp(y_pred[, 2])
+      x = y_true[, 1]
+
+      prob = size / (size + mu)
+
+      ll = tf$math$lgamma(x + size) - tf$math$lgamma(size) -
+        tf$math$lgamma(x + 1) + size * K$log(prob) + x * K$log(1 - prob)
+      ll = K$sum(ll)
+
+      return(-1 * ll)
+    }
+  )
+
   class(rval) <- "family.bamlss"
   rval
 }
@@ -5886,13 +5926,14 @@ discretize <- function(family)
 
 
 ## https://www.jstor.org/stable/2288808?seq=1#metadata_info_tab_contents
-dSichel <- function(x, alpha = 1, zeta = 1, gamma = 1, log = FALSE, ...)
+## From gamlss.dist.
+dSichel <- function(x, mu = 1, sigma = 1, nu = 1, log = FALSE, ...)
 {
-  w <- sqrt(zeta^2 + alpha^2) - zeta
+  alpha <- sqrt(1/sigma^2 + 2 * mu/sigma)
 
-  d <- gamma * log(w) - gamma * log(alpha) - log(besselK(w, gamma, expon.scaled = TRUE)) +
-    x * log(zeta * w) - x * log(alpha) -
-    lfactorial(x) + log(besselK(alpha, x + gamma, expon.scaled = TRUE))
+  a <- x * log(mu) + log(besselK(alpha, x + nu))
+  b <- lfactorial(x) + (x + nu) * (log(alpha) + log(sigma)) + log(besselK(1/sigma, nu))
+  d <- a - b
 
   if(!log)
     d <- exp(d)
@@ -5903,6 +5944,7 @@ dSichel <- function(x, alpha = 1, zeta = 1, gamma = 1, log = FALSE, ...)
 if(FALSE) {
   x <- 0:100
   d <- dSichel(x)
+  d2 <- dSICHEL(x, mu = 1, sigma = 1, nu = 1)
   plot(d ~ x, type = "h")
   print(sum(d))
 }
@@ -5911,20 +5953,15 @@ Sichel_bamlss <- function(...)
 {
   rval <- list(
     "family" = "Sichel",
-    "names" = c("alpha", "zeta", "gamma"),
-    "links" = c(alpha = "log", zeta = "log", gamma = "log"),
+    "names" = c("mu", "sigma", "nu"),
+    "links" = c(mu = "log", sigma = "log", nu = "identity"),
     "valid.response" = function(x) {
       if(is.factor(x)) return(FALSE)
-      if(ok <- !all(x > 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
       ok
     },
     "d" = function(y, par, log = FALSE) {
-      dSichel(y, alpha = par$alpha, zeta = par$zeta, gamma = par$gamma, log = log)
-    },
-    "mean" = function(par, ...) {
-      w <- sqrt(par$zeta^2 + par$alpha^2) - par$zeta
-      R <- besselK(w, par$gamma + 1, expon.scaled = TRUE) / besselK(w, par$gamma, expon.scaled = TRUE)
-      par$zeta * R
+      dSichel(y, mu = par$mu, sigma = par$sigma, nu = par$nu, log = log)
     }
   )
 
@@ -5933,7 +5970,7 @@ Sichel_bamlss <- function(...)
     n <- length(y)
     p <- rep(0, n)
     for(i in 1:n) {
-      dy <- dSichel(0:y[i], alpha = par$alpha[i], zeta = par$zeta[i], gamma = par$gamma[i])
+      dy <- dSichel(0:y[i], mu = par$mu[i], sigma = par$sigma[i], nu = par$nu[i])
       p[i] <- sum(dy)
     }
     return(p)
@@ -5948,6 +5985,14 @@ Sichel_bamlss <- function(...)
       rps <- rps + (P - O)^2
     }
     return(rps)
+  }
+
+  rval$mean <- function(par, ...) {
+    s1 <- 1/par$sigma
+    k1 <- besselK(s1, par$nu + 1)
+    k2 <- besselK(s1, par$nu)
+    a <- k1/k2
+    return(par$mu * a)
   }
 
   rval$type <- "discrete"

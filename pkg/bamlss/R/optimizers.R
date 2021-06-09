@@ -4484,6 +4484,7 @@ dl.bamlss <- function(object,
   verbose = TRUE, ...)
 {
   stopifnot(requireNamespace("keras"))
+  stopifnot(requireNamespace("tensorflow"))
 
   if(!inherits(object, "bamlss")) {
     object <- bamlss.frame(object, ...)
@@ -4508,10 +4509,10 @@ dl.bamlss <- function(object,
 
   family <- family(object)
 
-  if(is.null(family$keras$loglik))
-    stop("no keras (negative) loglik() function is specified!")
+  if(is.null(family$keras$nloglik))
+    stop("no keras negative loglik() function is specified!")
 
-  nll <- family$keras$loglik
+  nll <- family$keras$nloglik
 
   if(is.null(optimizer))
     optimizer <- keras::optimizer_rmsprop(lr = 0.0001)
