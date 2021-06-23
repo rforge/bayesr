@@ -5622,7 +5622,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
     if(!is.list(batch_ids)) {
       if(length(batch_ids) == 2L) {
         yind <- 1:N
-        nb <- batch_ids[1]
+        nb <- floor(batch_ids[1])
         ni <- batch_ids[2]
         batch_ids <- vector(mode = "list", length = ni)
         for(i in 1:ni)
@@ -5867,7 +5867,8 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
     }
   }
   tbeta <- if(select) beta else NA
-  tau2f <- 100
+  tau2f <- rep(0.001, length(nx))
+  names(tau2f) <- nx
 
   iter <- 1L
 
@@ -5987,6 +5988,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
           XWX <- crossprod(Xn * hess, Xn)
           I <- diag(1, ncol(XWX))
+          #I[1, 1] <- 1e-10
 
           ## if(!ionly[[i]]) {
           ##  if(ncol(I) > 1)
@@ -6021,14 +6023,11 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
           ## if(ionly[[i]]) {
           ##   tau2fe <- 1e+350
           ## } else {
-            tau2fe <- try(tau2.optim(objfun2, tau2f, optim = TRUE), silent = TRUE)
+            tau2fe <- try(tau2.optim(objfun2, tau2f[i], optim = TRUE), silent = TRUE)
           ## }
           ll_contrib[[i]][["p"]] <- NA
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE, step = TRUE)
-            epsll <- (ll1 - ll0)/abs(ll0)
-
-
             epsll <- (ll1 - ll0)/abs(ll0)
             if(is.na(epsll)) {
               ll1 <- ll0 <- 1
@@ -6037,8 +6036,8 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             accept <- epsll >= -0.5
 
             if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
-              tau2f <- tau2fe
-              P <- matrix_inv(XWX + 1/tau2f * I)
+              tau2f[i] <- tau2fe
+              P <- matrix_inv(XWX + 1/tau2f[i] * I)
               if(select) {
                 tbeta[[i]][["p"]] <- b0 + nu * (drop(P %*% crossprod(Xn * hess, e)) - b0)
               } else {
