@@ -5804,13 +5804,10 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             if(retedf) {
               return(edf)
             } else {
-              tedf <- if(ncX == 9) {
+              tedf <- if(ncX <= 40) {
                 4
               } else {
-                if(ncX < 9)
-                  max(c(ncX - 2, 4))
-                else
-                  min(c(20, floor(ncX * 0.5)))
+                10
               }
               return((tedf - edf)^2)
             }

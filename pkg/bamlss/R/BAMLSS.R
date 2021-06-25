@@ -10499,7 +10499,8 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           args$y <- x2[, "97.5%"]
           upper <- do.call(qqnorm, args)
 
-          ylim <- range(c(mean$y, lower$y, upper$y), na.rm = TRUE)
+          ylim <- range(c(as.numeric(mean$y), as.numeric(lower$y), as.numeric(upper$y)),
+            na.rm = TRUE)
           args$plot.it <- TRUE
           if(is.null(args$ylim))
             args$ylim <- ylim
@@ -10517,7 +10518,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           args$y <- x2[, "Mean"]
           qqline(args$y)
         } else {
-          args$y <- x
+          args$y <- as.numeric(x)
 #          if(is.null(args$ylim)) {
 #            args$ylim <- range(x[is.finite(x)], na.rm = TRUE)
 #            args$ylim <- c(-2.5, 2.5) * max(args$ylim)
@@ -10553,7 +10554,14 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
           x2 <- x
         }
         d <- qqnorm(x2, plot = FALSE)
-        d$y <- d$y - d$x
+
+        probs <- c(0.25, 0.75)
+        y3 <- quantile(x2, probs, type = 7, na.rm = TRUE)
+        x3 <- qnorm(probs)
+        slope <- diff(y3)/diff(x3)
+        int <- y3[1L] - slope * x3[1L]
+        d$y <- d$y - (int + slope * d$x)
+        ##d$y <- d$y - d$x
         if(!is.null(xlo)) {
           d2 <- qqnorm(xlo, plot = FALSE)
           d$ylo <- d2$y - d2$x
@@ -10565,7 +10573,7 @@ plot.bamlss.residuals <- function(x, which = c("hist-resid", "qq-resid", "wp"), 
         level <- 0.95
         xlim <- max(abs(d$x))
         xlim <- c(-xlim, xlim)
-        ylim <- max(abs(c(d$y, d$ylo, d$yup)))
+        ylim <- max(abs(c(as.numeric(d$y), as.numeric(d$ylo), as.numeric(d$yup))))
         ylim <- c(-ylim, ylim)
         if(!is.null(args$ylim2))
           ylim <- args$ylim2
