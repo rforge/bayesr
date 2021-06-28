@@ -5728,6 +5728,9 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             yn <- y[shuffle_id[take], , drop = FALSE]
           }
           if(i %in% names(family$initialize)) {
+            if(any(is.na(yn))) {
+              stop("NA values in response, please check!")
+            }
             yinit <- make.link2(family$links[i])$linkfun(family$initialize[[i]](yn))
             beta[[i]][["p"]]["(Intercept)"] <- mean(yinit, na.rm = TRUE)
           }
@@ -6092,6 +6095,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             } else {
               eta[[i]] <- eta[[i]] - drop(Xn %*% b0)
             }
+
             e <- z - eta[[i]]
 
             if(x[[i]]$smooth.construct[[j]]$xt$center) {

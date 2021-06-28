@@ -790,27 +790,32 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   cat("  .. ff processing term", object$label, "\n")
   xfile <- rmf(object$label)
   xfile <- file.path("ff_data_bamlss", xfile)
-  for(j in terms) {
-    if(!is.factor(data[[j]][1:2])) {
-      ux <- ffbase::unique.ff(data[[j]])
-      uxn <- length(ux)
-      if(uxn > 2) {
-        uxl <- if(uxn < 1000L) uxn - 1L else 1000L
-        xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = uxl), na.rm = TRUE)
-        names(xq) <- NULL
-        if(length(unique(xq)) < 100) {
+  is_f <- sapply(data, is.factor)
+  if((length(terms) > 1) & !any(is_f)) {
+    nd <- data[sample(1:nrow(data), size = 1000L), ]
+  } else {
+    for(j in terms) {
+      if(!is.factor(data[[j]][1:2])) {
+        ux <- ffbase::unique.ff(data[[j]])
+        uxn <- length(ux)
+        if(uxn > 2) {
+          uxl <- if(uxn < 1000L) uxn - 1L else 1000L
+          xq <- ffbase::quantile.ff(data[[j]], probs = seq(0, 1, length = uxl), na.rm = TRUE)
+          names(xq) <- NULL
+          if(length(unique(xq)) < 100) {
+            xq <- rep(ux[], length.out = 1000L)
+          }
+        } else {
           xq <- rep(ux[], length.out = 1000L)
         }
+        if(length(xq) == 1000L) {
+          nd[[j]] <- sample(xq)
+        } else {
+          nd[[j]] <- sample(rep(xq, length.out = 1000L))
+        }
       } else {
-        xq <- rep(ux[], length.out = 1000L)
+        nd[[j]] <- sample(rep(unique(data[[j]]), length.out = 1000L))
       }
-      if(length(xq) == 1000L) {
-        nd[[j]] <- sample(xq)
-      } else {
-        nd[[j]] <- sample(rep(xq, length.out = 1000L))
-      }
-    } else {
-      nd[[j]] <- sample(rep(unique(data[[j]]), length.out = 1000L))
     }
   }
   nd <- as.data.frame(nd)
