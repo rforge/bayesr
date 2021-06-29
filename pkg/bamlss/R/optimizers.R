@@ -6162,6 +6162,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
             if(!slice) {
               tau2s <- try(tau2.optim(objfun3, tau2[[i]][[j]], maxit = 10), silent = TRUE)
+print(tau2s)
             } else {
               theta <- c(b0, "tau2" = tau2[[i]][[j]])
               ii <- grep("tau2", names(theta))
