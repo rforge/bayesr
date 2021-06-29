@@ -792,7 +792,16 @@ smooth.construct_ff.default <- function(object, data, knots, ...)
   xfile <- file.path("ff_data_bamlss", xfile)
   is_f <- sapply(data, is.factor)
   if((length(terms) > 1) & !any(is_f)) {
-    nd <- data[sample(1:nrow(data), size = 1000L), ]
+    ud <- nrow(unique(data[, terms]))
+    km <- kmeans(data[, terms], min(c(1000, floor(0.9 * ud))))
+    uc <- unique(km$cluster)
+    nd <- matrix(NA, length(uc), length(terms))
+    for(i in seq_along(uc)) {
+      nd[i, ] <- as.numeric(data[sample(which(km$cluster == uc[i]), size = 1), terms])
+    }
+    nd <- as.data.frame(nd)
+    names(nd) <- terms
+    ##nd <- data[sample(1:nrow(data), size = 1000L), ]
   } else {
     for(j in terms) {
       if(!is.factor(data[[j]][1:2])) {
