@@ -5561,7 +5561,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
   eps_loglik <- list(...)$eps_loglik
   if(is.null(eps_loglik))
-    eps_loglik <- 0.01
+    eps_loglik <- 0.001
 
   select <- list(...)$select
   if(is.null(select))
@@ -5815,7 +5815,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
               return((tedf - edf)^2)
             }
           }
-          tau2[[i]][[j]] <- rep(0.01, length(x[[i]]$smooth.construct[[j]]$S))
+          tau2[[i]][[j]] <- rep(0.1, length(x[[i]]$smooth.construct[[j]]$S))
           opt <- try(tau2.optim(objfun1, start = tau2[[i]][[j]],
             scale = 10000, optim = TRUE), silent = TRUE)
           if(!inherits(opt, "try-error")) {
@@ -5867,7 +5867,7 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
     }
   }
   tbeta <- if(select) beta else NA
-  tau2f <- rep(0.001, length(nx))
+  tau2f <- rep(1, length(nx))
   names(tau2f) <- nx
 
   iter <- 1L
@@ -5988,12 +5988,12 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
           XWX <- crossprod(Xn * hess, Xn)
           I <- diag(1, ncol(XWX))
-          #I[1, 1] <- 1e-10
+          I[1, 1] <- 1e-10
 
-          ## if(!ionly[[i]]) {
-          ##  if(ncol(I) > 1)
-          ##    I[1, 1] <- 0
-          ## }
+          if(!ionly[[i]]) {
+            if(ncol(I) > 1)
+              I[1, 1] <- 0
+          }
 
           etas[[i]] <- etas[[i]] - drop(Xt %*% b0)
 
@@ -6020,12 +6020,14 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
             }
             return(ll)
           }
-          ## if(ionly[[i]]) {
-          ##   tau2fe <- 1e+350
-          ## } else {
+          if(ionly[[i]]) {
+            tau2fe <- 1e+10
+          } else {
             tau2fe <- try(tau2.optim(objfun2, tau2f[i], optim = TRUE), silent = TRUE)
-          ## }
+          }
+
           ll_contrib[[i]][["p"]] <- NA
+
           if(!inherits(tau2fe, "try-error")) {
             ll1 <- objfun2(tau2fe, retLL = TRUE, step = TRUE)
             epsll <- (ll1 - ll0)/abs(ll0)
@@ -6034,7 +6036,6 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
               epsll <- -1
             }
             accept <- epsll >= -0.5
-
             if((((ll1 > ll0) & (epsll > eps_loglik)) | always) & accept) {
               tau2f[i] <- tau2fe
               P <- matrix_inv(XWX + 1/tau2f[i] * I)
@@ -6162,7 +6163,6 @@ opt_bbfit <- bbfit <- function(x, y, family, shuffle = TRUE, start = NULL, offse
 
             if(!slice) {
               tau2s <- try(tau2.optim(objfun3, tau2[[i]][[j]], maxit = 10), silent = TRUE)
-print(tau2s)
             } else {
               theta <- c(b0, "tau2" = tau2[[i]][[j]])
               ii <- grep("tau2", names(theta))
