@@ -11861,7 +11861,7 @@ engines <- function(family, ...)
 }
 
 
-CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, ...) {
+CRPS <- function(object, newdata = NULL, interval = c(-Inf, Inf), FUN = mean, term = NULL, ...) {
   yname <- response_name(object)
   fam <- family(object)
   if(!is.null(fam$type)) {

@@ -2133,7 +2133,21 @@ t_bamlss <- function(...)
     "p" = function(y, par, ...) {
       arg <- (y - par$mu) / sqrt(par$sigma2)
       pt(arg, df = par$df, ...)
-    }
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        ((par$df + 1) * (y - par$mu)) / (par$sigma2 * par$df + (y - par$mu)^2)
+      },
+      "sigma2" = function(y, par, ...) {
+        -0.5 + ((par$df + 1) * (y - par$mu)^2) / (2 * (par$sigma2 * par$df + (y - par$mu)^2))
+      },
+      "df" = function(y, par, ...) {
+        a <- par$df/2 * (digamma((par$df + 1) / 2) - digamma(par$df / 2) -
+          log(1 + (y - par$mu)^2/(par$sigma2 * par$df)))
+        b <- -0.5 + ((par$df + 1) * (y - par$mu)^2) / (2 * (par$sigma2 * par$df + (y - par$mu)^2))
+        a + b
+      }
+    )
   )
 
   class(rval) <- "family.bamlss"
