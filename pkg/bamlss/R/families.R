@@ -6307,6 +6307,7 @@ mix_bamlss <- function(f1, f2, ...)
       for(i in 1:n) {
         p[i] <- sum(dfun(0:y[i], par[i, ]), na.rm = TRUE)
       }
+      p[p > 1] <- 1
       return(p)
     }
   )
