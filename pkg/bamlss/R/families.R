@@ -6248,3 +6248,73 @@ gamlss_distributions <- function(type = c("continuous", "discrete"))
   return(d)
 }
 
+mix_bamlss <- function(f1, f2, ...)
+{
+  if(is.function(f1))
+    f1 <- f1()
+  if(is.function(f2))
+    f2 <- f2()
+  if(!inherits(f1, "gamlss.family"))
+    stop("all families need to be of class 'gamlss.family'!")
+  if(!inherits(f2, "gamlss.family"))
+    stop("all families need to be of class 'gamlss.family'!")
+
+  npar <- f1$nopar + f2$nopar + 1
+  pn0 <- c("mu", "sigma", "nu", "tau")
+  links <- c(f1[paste0(pn0[1:f1$nopar], ".link")],
+    f2[paste0(pn0[1:f2$nopar], ".link")])
+  links <- unlist(links)
+  links <- c("logit", links)
+  names(links) <- c("alpha", paste0("beta", 1:(npar - 1)))
+
+  fn1 <- f1$family[1]
+  fn2 <- f2$family[1]
+
+  fn1 <- paste0("d", fn1, "(y")
+  fn2 <- paste0("d", fn2, "(y")
+
+  k <- 1
+  for(j in 1:f1$nopar) {
+    fn1 <- paste0(fn1, ",", pn0[j], "=par$beta", k)
+    k <- k + 1
+  }
+  for(j in 1:f2$nopar) {
+    fn2 <- paste0(fn2, ",", pn0[j], "=par$beta", k)
+    k <- k + 1
+  }
+  fn1 <- paste0(fn1, ")")
+  fn2 <- paste0(fn2, ")")
+
+  dfun <- paste0("dy <- par$alpha*", fn1, "+(1-par$alpha)*", fn2)
+  dfun <- c("function(y,par,log=FALSE,...) {", dfun, "if(log)\n  dy <- log(dy)", "return(dy)", "}")
+  dfun <- paste0(dfun, collapse ="\n")
+  dfun <- eval(parse(text = dfun)) 
+
+  rval <- list(
+    "family" = paste("mix", f1$family[1], f2$family[1]),
+    "names" = names(links),
+    "links" = links,
+    "valid.response" = function(x) {
+      if(is.factor(x)) return(FALSE)
+      if(ok <- !all(x >= 0)) stop("response values smaller than 0 not allowed!", call. = FALSE)
+      ok
+    },
+    "d" = dfun,
+    "p" = function(y, par, log = FALSE, ...) {
+      par <- as.data.frame(par)
+      n <- length(y)
+      p <- rep(0, n)
+      for(i in 1:n) {
+        p[i] <- sum(dfun(0:y[i], par[i, ]), na.rm = TRUE)
+      }
+      return(p)
+    }
+  )
+  rval$type <- unique(tolower(c(f1$type, f2$type)))
+  if(length(rval$type) > 1)
+    stop("types of mixing distributions must be identical!")
+
+  class(rval) <- "family.bamlss"
+  rval
+}
+

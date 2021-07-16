@@ -29,6 +29,7 @@
 \alias{Sichel_bamlss}
 \alias{GEV_bamlss}
 \alias{gumbel_bamlss}
+\alias{mix_bamlss}
 
 \title{
   Distribution Families in \pkg{bamlss}
@@ -73,6 +74,7 @@ weibull_bamlss(...)
 Sichel_bamlss(...)
 GEV_bamlss(...)
 gumbel_bamlss(...)
+mix_bamlss(f1, f2, ...)
 
 ## Extractor functions:
 \method{family}{bamlss}(object, ...)
@@ -91,6 +93,7 @@ gumbel_bamlss(...)
   \item{link}{Possible link functions.}
   \item{tau}{The quantile the should be fitted.}
   \item{eps}{Constant to be used for the approximation of the absolute function.}
+  \item{f1, f2}{A family of class \class{gamlss.family}, see package \pkg{gamlss.dist}.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }
 

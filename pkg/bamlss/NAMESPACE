@@ -127,6 +127,7 @@ export(
   "gF",
   "Sichel_bamlss",
   "GEV_bamlss",
+  "mix_bamlss",
 
   ## extractor functions
   "DIC",
