@@ -93,7 +93,7 @@ mix_bamlss(f1, f2, ...)
   \item{link}{Possible link functions.}
   \item{tau}{The quantile the should be fitted.}
   \item{eps}{Constant to be used for the approximation of the absolute function.}
-  \item{f1, f2}{A family of class \class{gamlss.family}, see package \pkg{gamlss.dist}.}
+  \item{f1, f2}{A family of class \code{"gamlss.family"}, see package \pkg{gamlss.dist}.}
   \item{\dots}{Arguments passed to functions that are called within the family object.}
 }
 
